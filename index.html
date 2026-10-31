@@ -2159,8 +2159,9 @@ button.small{padding:6px 10px;font-size:.82rem}
     ctx.halves.forEach(function (h) { s.push(function (c) { headCands(c, h); }); }); s.push(headPick);
     if (ctx.opts.mlKneeHook) s.push(kneeGuess); // pause: the driver runs the ml-1.1 knee model on ctx.kneeGuess, sets opts.mlKnees
     ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'knee'); mlKnee(c, h); }); });
+    ctx.halves.forEach(function (h) { s.push(function (c) { tibiaTrace(c, h); }); });
     if (ctx.opts.mlAnkleHook) s.push(ankleGuess); // pause: the driver runs the ml-1.1 ankle model on ctx.ankleGuess, sets opts.mlAnkles
-    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'ankle'); mlAnkle(c, h); }); });
+    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'ankle'); mlAnkle(c, h); ankleFallback(c, h); }); });
     s.push(assemble); return s;
   }
   function step(ctx) {
@@ -2179,6 +2180,83 @@ button.small{padding:6px 10px;font-size:.82rem}
       try { if (kind === 'knee') opts.mlKnees = await kneeFn(c.kneeGuess, c); else opts.mlAnkles = await ankleFn(c.ankleGuess, c); } catch (e) { c.res.info.push(kind === 'knee' ? 'mlKneeUnavailable' : 'mlAnkleUnavailable'); } } }
     return c.res;
   }
+  /** Tibial shaft, per side, on the pre-processed native image (rulers masked): from the knee centre down to the film bottom,
+   *  tracked with a band filter of tibial-shaft width (wider than the fibula), then a robust straight axis x = a + b·y.
+   *  Also the distal end: plafond = most distal dark tibio-talar gap along the axis, else the lower film border (cut film). */
+  function tibiaTrace(ctx, half) {
+    var L = ctx.limb[half]; if (!L || !L.found || !L.knee) return;
+    var g = ctx.gs, W = ctx.W, H = ctx.H, G = ctx.gray, inv = ctx.inv, BN = ctx.boxN, kr = L.kneeRes, hr = L.headRes;
+    var KT = kr && kr.found ? V((kr.TP1.x + kr.TP2.x) / 2, (kr.TP1.y + kr.TP2.y) / 2) : (L.kneeN || toNat(g, V(L.xAt(L.knee.y), L.knee.y)));
+    var fl = hr && hr.found ? Math.max(1, KT.y - hr.c.y) : 0.45 * (BN.y1 - BN.y0), wT = kr && kr.found ? Math.abs(kr.TP2.x - kr.TP1.x) : 0;
+    if (!(wT > 0.1 * fl && wT < 0.3 * fl)) wT = 0.17 * fl;
+    var midN = toNat(g, V(ctx.mid, 0)).x, xLo = half === 'left' ? BN.x0 + 1 : midN, xHi = half === 'left' ? midN : BN.x1 - 1;
+    if (ctx.centralRuler) { if (half === 'left') xHi = Math.max(xHi, ctx.centralRuler.x1); else xLo = Math.min(xLo, ctx.centralRuler.x0); } // legs may converge onto the (masked) ruler
+    var px = function (x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return 0; var v = clamp((G[y * W + x] / 255 - ctx.p1) / ctx.range, 0, 1); return inv ? 1 - v : v; };
+    var rowMean = function (xa, xb, y, dy) { var s = 0, n = 0, st = Math.max(1, (xb - xa) / 12); for (var yy = y - dy; yy <= y + dy; yy += Math.max(1, dy)) for (var x = xa; x <= xb; x += st) { s += px(x, yy); n++; } return n ? s / n : 0; };
+    var bw = 0.34 * wT, fw = 0.18 * wT, dy = Math.max(1, Math.round(0.02 * wT)), stepY = Math.max(1, 0.06 * wT), yEnd = BN.y1 - 1;
+    var pts = [], x = KT.x, win = 0.3 * wT, y0 = KT.y + 0.6 * wT;
+    for (var y = y0; y <= yEnd; y += stepY) {
+      var best = null, xs = Math.max(xLo + bw / 2, x - win), xe = Math.min(xHi - bw / 2, x + win);
+      for (var xc = xs; xc <= xe; xc += Math.max(1, 0.02 * wT)) { var sc = rowMean(xc - bw / 2, xc + bw / 2, y, dy) - 0.5 * (rowMean(xc - bw / 2 - fw, xc - bw / 2, y, dy) + rowMean(xc + bw / 2, xc + bw / 2 + fw, y, dy)); if (!best || sc > best.sc) best = { x: xc, sc: sc }; }
+      if (!best) break; pts.push({ x: best.x, y: y, sc: best.sc }); x = best.x; win = 0.12 * wT;
+      if (pts.length > 4) { var a2 = pts[pts.length - 5], b2 = pts[pts.length - 1]; x = b2.x + (b2.x - a2.x) / 4 * 0.5; }
+    }
+    if (pts.length < 6) return;
+    // robust axis on the shaft part (skip the proximal metaphysis and the distal widening)
+    var yA = KT.y + 0.25 * (yEnd - KT.y), yB = KT.y + 0.85 * (yEnd - KT.y), sh = pts.filter(function (p) { return p.y >= yA && p.y <= yB; }); if (sh.length < 4) sh = pts;
+    var fit = function (P) { var n = P.length, my = 0, mx = 0; P.forEach(function (p) { my += p.y; mx += p.x; }); my /= n; mx /= n; var sxy = 0, syy = 0; P.forEach(function (p) { sxy += (p.y - my) * (p.x - mx); syy += (p.y - my) * (p.y - my); }); var b = syy ? sxy / syy : 0; return { a: mx - b * my, b: b }; };
+    var ax = fit(sh); for (var it = 0; it < 2; it++) { var res = sh.map(function (p) { return Math.abs(p.x - (ax.a + ax.b * p.y)); }), md = median(res) || 1; var keep = sh.filter(function (p, i) { return res[i] <= 2.5 * md + 1; }); if (keep.length >= 4) ax = fit(keep); }
+    var xAx = function (yy) { return ax.a + ax.b * yy; };
+    // the shaft line from the knee centre: direction from the tibial axis, anchored at KT when consistent
+    var dK = KT.x - xAx(KT.y); if (Math.abs(dK) < 0.25 * wT) { var a0 = ax.a; ax = { a: a0 + dK * 0.5, b: ax.b }; }
+    // distal end along the axis: tibial band profile, plafond = last bright→dark→(talus) gap in the distal 30 %
+    var yS = KT.y + Math.min(0.7 * (yEnd - KT.y), 0.65 * fl), prof = [], ys = [];
+    for (var y2 = yS; y2 <= yEnd; y2 += 1) { prof.push(rowMean(xAx(y2) - 0.18 * wT, xAx(y2) + 0.18 * wT, y2, 0)); ys.push(y2); }
+    var sm = Array.prototype.slice.call(smooth1(prof, Math.max(1, 0.015 * wT))), dl = Math.max(2, Math.round(0.05 * wT)), gaps = [], amp = Math.max(0.02, pct(new Float32Array(sm), 0.9) - pct(new Float32Array(sm), 0.1));
+    var spanM = function (a, b) { var t = 0, n = 0; for (var k = Math.max(0, a); k <= Math.min(sm.length - 1, b); k++) { t += sm[k]; n++; } return n ? t / n : 0; };
+    for (var i = dl; i < sm.length - dl; i++) { var v = Math.min(spanM(i - 2 * dl, i - dl), spanM(i + dl, i + 2 * dl)) - sm[i]; /* bone on both sides over a span: a thin bright overlay line is not a joint */ if (v > Math.max(0.12 * amp, 0.02) && sm[i] <= sm[i - 1] && sm[i] <= sm[i + 1]) gaps.push({ y: ys[i], v: v }); }
+    // the bone must reach close to this level (not soft tissue below the foot): band level above the gap is bone-like
+    var boneLv = median(pts.map(function (p) { return rowMean(p.x - 0.1 * wT, p.x + 0.1 * wT, p.y, 0); })), yPl = null, cut = false;
+    // distal tibial width just above level yq, across the axis, inside this limb (the masked ruler carries interpolated data only)
+    var widthAt = function (yq) {
+    var wy = yq - 0.1 * wT, xc0 = xAx(wy), pr = [], xq = [];
+    for (var xx = Math.max(xLo, xc0 - 0.6 * wT); xx <= Math.min(xHi, xc0 + 0.6 * wT); xx += 1) { pr.push(rowMean(xx, xx, wy, Math.max(1, Math.round(0.03 * wT)))); xq.push(xx); }
+    var ci = 0; xq.forEach(function (q, k) { if (Math.abs(q - xc0) < Math.abs(xq[ci] - xc0)) ci = k; });
+    var prS = Array.prototype.slice.call(smooth1(pr, Math.max(1, 0.02 * wT))), srt = prS.slice().sort(function (p, q) { return p - q; }), base = srt[Math.floor(srt.length * 0.15)] || 0, peakV = Math.max.apply(null, prS.slice(Math.max(0, ci - 3), ci + 4));
+    var tB = base + 0.45 * (peakV - base), li = ci, ri = ci; while (li > 0 && prS[li - 1] > tB) li--; while (ri < prS.length - 1 && prS[ri + 1] > tB) ri++;
+    var wid = xq.length ? xq[ri] - xq[li] : 0; return { w: wid, xL: xq[li], xR: xq[ri], xc0: xc0 };
+    };
+    // plafond level: candidates = strong gaps with a metaphyseal widening above them, plus the lower film border when bone reaches it
+    // (film cut through the talus); choose by the tibia/femur length prior (KT→plafond ≈ 0.84 × head→KT, ±0.04; hard 0.74–0.97)
+    var gb = gaps.reduce(function (m, q) { return q.v > m ? q.v : m; }, 0), C2 = gaps.filter(function (q) { return q.v > 0.35 * gb && widthAt(q.y).w > 0.4 * wT; }).map(function (q) { return { y: q.y, cut: false }; });
+    var bottomBone = rowMean(xAx(yEnd - 2) - 0.12 * wT, xAx(yEnd - 2) + 0.12 * wT, yEnd - 2, 1) > ctx.bg + 0.5 * (boneLv - ctx.bg);
+    if (bottomBone) C2.push({ y: yEnd - Math.max(1, 0.02 * wT), cut: true });
+    C2 = C2.map(function (q) { q.r = (q.y - KT.y) / fl; return q; }).filter(function (q) { return q.r > 0.74 && q.r < 0.97; }).sort(function (p, q) { return Math.abs(p.r - 0.84) - Math.abs(q.r - 0.84); });
+    if (C2.length) { yPl = C2[0].y; cut = C2[0].cut; } else if (bottomBone) { yPl = yEnd - Math.max(1, 0.02 * wT); cut = true; }
+    var WA = widthAt(yPl !== null ? yPl : yEnd), wid = WA.w, okW = wid > 0.28 * wT && wid < 0.85 * wT, xc0 = WA.xc0;
+    L.tib = { ax: ax, wT: wT, KT: KT, fl: fl, pts: pts, yPl: yPl, gaps: gaps.map(function (q) { return { y: Math.round(q.y), v: Math.round(q.v * 1000) / 1000, w: Math.round(widthAt(q.y).w / wT * 100) / 100 }; }), cut: cut, bottomBone: bottomBone, xL: okW ? WA.xL : xc0 - 0.25 * wT, xR: okW ? WA.xR : xc0 + 0.25 * wT, widthOk: okW, yEnd: yEnd };
+  }
+  /** Layered ankle fallback: ML (plausible) → classical (on the shaft) → tibial shaft + distal widening / plafond (or the cut
+   *  border) → extrapolation along the tibial axis to the bottom row. Fallbacks are always low confidence (orange). */
+  function ankleFallback(ctx, half) {
+    var L = ctx.limb[half]; if (!L || !L.found) return; var T = L.tib, ar = L.ankleRes; if (!T) return;
+    var xA = function (y) { return T.ax.a + T.ax.b * y; }, y, c, reason, conf;
+    if (T.yPl !== null) { y = T.yPl; c = T.widthOk ? 0.5 * (T.xL + T.xR) : xA(y); if (Math.abs(c - xA(y)) > 0.2 * T.wT) c = xA(y); reason = T.cut ? 'ankleAtBorder' : 'ankleFromShaft'; conf = T.widthOk ? 0.4 : 0.3; }
+    else if (T.bottomBone) { y = T.yEnd - 1; c = xA(y); reason = 'ankleExtrapolated'; conf = 0.2; }
+    else return;
+    y = Math.min(y, ctx.boxN.y1 - ctx.U);
+    // plafond segment: perpendicular to the tibial axis, ≈ 0.4 × plateau width (adult plafond ≈ 30 of 75 mm)
+    var hw = 0.2 * T.wT, n = Math.hypot(1, T.ax.b), dx = hw / n, dyy = -T.ax.b * hw / n;
+    var yMx = ctx.boxN.y1 - 0.6 * ctx.U, cy1 = Math.min(y - dyy, yMx), cy2 = Math.min(y + dyy, yMx);
+    L.ankleFb = { found: true, fallback: reason, metal: 0, AN1: V(c - dx, cy1), AN2: V(c + dx, cy2), conf: conf, reasons: [reason], classical: null };
+    if (ar && ar.found) { var ac = V((ar.AN1.x + ar.AN2.x) / 2, (ar.AN1.y + ar.AN2.y) / 2), off = Math.abs(ac.x - xA(ac.y));
+      var ends = [ar.AN1, ar.AN2].every(function (q) { return Math.abs(q.x - xA(q.y)) < 0.6 * T.wT; }) && Math.abs(ar.AN2.x - ar.AN1.x) < 0.9 * T.wT; // lenient: only clearly wrong proposals are replaced (the ML pass already checked the shaft)
+      var lvlOk = ar.ml || ac.y - T.KT.y > 0.72 * T.fl; // classical gap too proximal for a tibia (tibia ≈ 0.8 × femur) = a shaft/soft-tissue line
+      if (off < 0.4 * T.wT && ends && lvlOk && ac.y > T.KT.y + 2.5 * T.wT) return; // on this tibia: keep (ML or classical)
+      L.ankleRejected = { AN1: ar.AN1, AN2: ar.AN2, why: 'offShaft' }; }
+    L.ankleRes = L.ankleFb; L.ankle = { y: toCrop(ctx.gs, V(c, y)).y, sc: 0, fb: true };
+    if (ctx.res.info.indexOf('ankleFallback') < 0) ctx.res.info.push('ankleFallback');
+  }
   /** Ankle search window (native px): tibia ≈ 0.83 × femur along the hip→knee direction (HKA ≈ 180 ± 10° covered by the window),
    *  the traced tibia when it agrees, side ≈ 0.32 × femoral length; kept inside the film (feet are often cut off). */
   function ankleGuess(ctx) {
@@ -2188,9 +2266,15 @@ button.small{padding:6px 10px;font-size:.82rem}
       var KF = V((kr.FC1.x + kr.FC2.x) / 2, (kr.FC1.y + kr.FC2.y) / 2), KT = V((kr.TP1.x + kr.TP2.x) / 2, (kr.TP1.y + kr.TP2.y) / 2), H = hr.c, fl = Math.hypot(KF.x - H.x, KF.y - H.y);
       var dir = V((KF.x - H.x) / fl, (KF.y - H.y) / fl), A = V(KT.x + 0.83 * fl * dir.x, KT.y + 0.83 * fl * dir.y), ymax = B.y1 - 0.04 * fl;
       if (A.y > ymax) A = V(A.x, ymax);
-      var tx = toNat(g, V(L.xAt(toCrop(g, A).y), 0)).x; if (Math.abs(tx - A.x) < 0.12 * fl) A = V(0.5 * (A.x + tx), A.y);
-      var alt = [-0.1, 0.1].map(function (f) { return { x: A.x + f * fl * dir.x, y: Math.min(ymax, A.y + f * fl * dir.y), S: 0.32 * fl, fl: fl }; });
-      out[hf] = { x: A.x, y: A.y, S: 0.32 * fl, fl: fl, alt: alt, half: hf };
+      var T = L.tib, alt;
+      if (T) { // legs converge below the knee (valgus tibiae, central ruler): follow the traced tibial shaft, not the femoral direction
+        var yP = T.yPl !== null ? T.yPl : Math.min(A.y, T.yEnd - 0.04 * fl), xT = function (yy) { return T.ax.a + T.ax.b * yy; }, A0 = V(xT(A.y), A.y); A = V(xT(yP), Math.min(ymax, yP));
+        alt = [-0.08, 0.06].map(function (f) { var yy = Math.min(ymax, A.y + f * fl); return { x: xT(yy), y: yy, S: 0.32 * fl, fl: fl }; }).concat([{ x: xT(ymax), y: ymax, S: 0.24 * fl, fl: fl }, { x: A0.x, y: A0.y, S: 0.32 * fl, fl: fl }]);
+        var prior = { a: T.ax.a, b: T.ax.b, wT: T.wT }; alt.forEach(function (q) { q.prior = prior; });
+      } else {
+        var tx = toNat(g, V(L.xAt(toCrop(g, A).y), 0)).x; if (Math.abs(tx - A.x) < 0.12 * fl) A = V(0.5 * (A.x + tx), A.y);
+        alt = [-0.1, 0.1].map(function (f) { return { x: A.x + f * fl * dir.x, y: Math.min(ymax, A.y + f * fl * dir.y), S: 0.32 * fl, fl: fl }; }); }
+      out[hf] = { x: A.x, y: A.y, S: 0.32 * fl, fl: fl, alt: alt, half: hf, prior: T ? { a: T.ax.a, b: T.ax.b, wT: T.wT } : null };
     });
     ctx.ankleGuess = out; ctx.pause = 'ankle';
   }
@@ -2198,7 +2282,7 @@ button.small{padding:6px 10px;font-size:.82rem}
   function mlAnkle(ctx, half) {
     var MA = ctx.opts.mlAnkles, a = MA && MA[half], L = ctx.limb[half]; if (!a || !L || !L.found) return false;
     if (!a.plausible || a.peak < 0.25) { L.mlAnkleDeclined = true; return false; }
-    var cl = L.ankleRes || {}, metalF = cl.metal > 0.004 ? 0.5 : 1, c = sstep(0.25, 0.65, a.peak) * metalF * 0.9; // small training set: never fully certain
+    var cl = L.ankleRes || {}, metalF = cl.metal > 0.004 ? 0.5 : 1, c = Math.max(a.onShaft ? 0.15 : 0, sstep(0.25, 0.65, a.peak) * metalF * 0.9); // on the traced tibia: a weak but plausible proposal stays (orange) // small training set: never fully certain
     var ac = V((a.AN[0].x + a.AN[1].x) / 2, (a.AN[0].y + a.AN[1].y) / 2);
     L.ankleRes = { found: true, ml: true, metal: cl.metal || 0, AN1: V(a.AN[0].x, a.AN[0].y), AN2: V(a.AN[1].x, a.AN[1].y), conf: c, reasons: (cl.metal > 0.004 ? ['metal'] : []).concat(c < LOW && metalF === 1 ? ['mlUncertain'] : []), classical: cl.found ? { AN1: cl.AN1, AN2: cl.AN2 } : null };
     L.ankle = { y: toCrop(ctx.gs, ac).y, sc: (L.ankle && L.ankle.sc) || 0, ml: true };
@@ -2272,7 +2356,7 @@ button.small{padding:6px 10px;font-size:.82rem}
       for (var x2 = xa0; x2 <= xb0; x2++) if (Pe[x2] > thrE) E.push(x2);
       if (E.length < 2) return; var best = null;
       for (var a = 0; a < E.length; a++) for (var b = a + 1; b < E.length; b++) { var wd = E[b] - E[a]; if (wd < 2 || wd > maxW) continue; var sc2 = Pe[E[a]] + Pe[E[b]]; if (!best || sc2 > best.sc || (sc2 === best.sc && wd > best.b - best.a)) best = { a: E[a], b: E[b], sc: sc2 }; }
-      if (!best) return; var L0 = Math.max(bx0, best.a - 2 - Math.round(U0)), R0 = Math.min(bx1, best.b + 2 + Math.round(U0));
+      if (!best) return; var mg = Math.max(1, Math.round(0.5 * U0)), L0 = Math.max(bx0, best.a - mg), R0 = Math.min(bx1, best.b + mg); // tight: legs may touch the ruler (medial malleolus)
       var cl = colMed(g.d, w, h, L0, Math.round(4 * U0)), cr = colMed(g.d, w, h, R0, Math.round(4 * U0));
       for (var y2 = 0; y2 < h; y2++) for (var x3 = L0 + 1; x3 < R0; x3++) { var tq = (x3 - L0) / (R0 - L0); g.d[y2 * w + x3] = cl[y2] * (1 - tq) + cr[y2] * tq; }
       var nL = Math.max(0, Math.floor(natX(L0))), nR = Math.min(W - 1, Math.ceil(natX(R0))), rad = Math.round(4 * H / 1000), ncl = colMed(gray, W, H, nL, rad), ncr = colMed(gray, W, H, nR, rad);
@@ -2624,7 +2708,12 @@ button.small{padding:6px 10px;font-size:.82rem}
       o.gates = [];
       var COMP = { head: ['FH1', 'FH2', 'FH3'], knee: ['FC1', 'FC2', 'TP1', 'TP2'], ankle: ['AN1', 'AN2'] };
       var has = function (c) { return COMP[c].every(function (k) { return o.lm[k]; }); };
-      var drop = function (c, why) { if (!has(c)) return; COMP[c].forEach(function (k) { delete o.lm[k]; delete o.conf[k]; o.reasons[k] = ['gate:' + why]; }); o.gates.push({ part: c, gate: why }); };
+      var fb = L.ankleFb, isFb = !!(ar && ar.fallback);
+      var drop = function (c, why) { if (!has(c)) return;
+        // the tibia visibly reaches this level: an ankle is never removed, it is replaced by / kept as the low-confidence shaft fallback
+        if (c === 'ankle' && fb) { if (!isFb) { put('AN1', fb.AN1, fb.conf, fb.reasons); put('AN2', fb.AN2, fb.conf, fb.reasons); isFb = true; if (ctx.res.info.indexOf('ankleFallback') < 0) ctx.res.info.push('ankleFallback'); }
+          ['AN1', 'AN2'].forEach(function (k) { o.conf[k] = Math.min(o.conf[k], why === 'border' || why === 'outsideBone' ? o.conf[k] : 0.2); if (o.reasons[k].indexOf('fallbackGate') < 0) o.reasons[k] = o.reasons[k].concat(['fallbackGate']); }); o.gates.push({ part: c, gate: why, kept: 'fallback' }); return; }
+        COMP[c].forEach(function (k) { delete o.lm[k]; delete o.conf[k]; o.reasons[k] = ['gate:' + why]; }); o.gates.push({ part: c, gate: why }); };
       // near-zero-confidence components are noise, not proposals
       ['head', 'knee', 'ankle'].forEach(function (c) { if (has(c) && COMP[c].every(function (k) { return o.conf[k] < 0.08; })) drop(c, 'noEvidence'); });
       var BN = ctx.boxN, Ub = 3 * ctx.U, hcN = BN.y1 - BN.y0, gs = ctx.gs;
@@ -2643,13 +2732,13 @@ button.small{padding:6px 10px;font-size:.82rem}
       if (has('head') && has('knee')) { var fl = ctr('knee').y - hr.c.y; if (!(fl / hcN > 0.22 && fl / hcN < 0.62)) drop('head', 'femurLength'); }
       // 4) femur/tibia length ratio (normal ≈ 1.1–1.35): hard 1.0–1.5, the less certain end is dropped
       if (has('head') && has('knee') && has('ankle')) { var kc = ctr('knee'), lf = Math.hypot(kc.x - hr.c.x, kc.y - hr.c.y), lt = Math.hypot(ctr('ankle').x - kc.x, ctr('ankle').y - kc.y), rt = lf / Math.max(1, lt);
-        if (!(rt > 1.0 && rt < 1.5)) { var cH = o.conf.FH1 || 0, cA = o.conf.AN1 || 0; if (Math.abs(cH - cA) < 0.15) { drop('head', 'lengthRatio'); drop('ankle', 'lengthRatio'); } else drop(cA < cH ? 'ankle' : 'head', 'lengthRatio'); }
+        if (!(rt > 1.0 && rt < 1.5)) { var cH = o.conf.FH1 || 0, cA = o.conf.AN1 || 0; if (isFb) drop('ankle', 'lengthRatio'); else if (Math.abs(cH - cA) < 0.15) { drop('head', 'lengthRatio'); drop('ankle', 'lengthRatio'); } else drop(cA < cH ? 'ankle' : 'head', 'lengthRatio'); }
         else if (!(rt > 1.08 && rt < 1.4)) ['FH1', 'FH2', 'FH3', 'AN1', 'AN2'].forEach(function (k) { o.conf[k] = Math.min(o.conf[k], 0.45); o.reasons[k] = o.reasons[k].concat(['lengthRatio']); }); }
       if (!has('head') && has('knee') && has('ankle')) { var lt2 = ctr('ankle').y - ctr('knee').y; if (!(lt2 / hcN > 0.18 && lt2 / hcN < 0.55)) drop('ankle', 'tibiaLength'); }
       // 5) angles: mLDFA / MPTA 75–105°, HKA 150–210°
       if (has('head') && has('knee') && has('ankle') && X) { var r0 = X.compute(o.lm, hf === 'left' ? 1 : -1);
         if (!(r0.ldfa >= 75 && r0.ldfa <= 105 && r0.mpta >= 75 && r0.mpta <= 105) || !(r0.jlca <= 10)) drop('knee', 'angleRange');
-        else if (!(r0.hka >= 150 && r0.hka <= 210)) { drop('head', 'hkaRange'); drop('ankle', 'hkaRange'); } }
+        else if (!(r0.hka >= 150 && r0.hka <= 210)) { if (!isFb) drop('head', 'hkaRange'); drop('ankle', 'hkaRange'); } }
       if (!o.lm.FC1) { delete o.lm.KF; delete o.conf.KF; } if (!o.lm.TP1) { delete o.lm.KT; delete o.conf.KT; }
       // joint points close to a masked ruler/strip: part of the bone outline was hidden → ask the surgeon to check
       var mk = ctx.res.info, nearM = 14 * ctx.U;
@@ -2770,13 +2859,17 @@ button.small{padding:6px 10px;font-size:.82rem}
   async function findAnkleMulti(M, g, W, H, guesses, opt) {
     var R = [];
     for (var i = 0; i < guesses.length; i++) R.push(await findAnkle(M, g, W, H, guesses[i], opt));
-    var lf = guesses[0].fl || guesses[0].S / 0.32, tol = 0.03 * lf, sc = R.map(function (r) { return (r.plausible ? 1 : 0.3) * r.peak; });
+    var lf = guesses[0].fl || guesses[0].S / 0.32, tol = 0.03 * lf, P = guesses[0].prior;
+    // traced tibial shaft (detector): both plafond ends must lie on this tibia (not on the other ankle across a central ruler)
+    var onShaft = function (r) { if (!P) return true; var c = (r.AN[0].x + r.AN[1].x) / 2, cy = (r.AN[0].y + r.AN[1].y) / 2, xs = P.a + P.b * cy;
+      return Math.abs(c - xs) < 0.25 * P.wT && r.AN.every(function (q) { return Math.abs(q.x - (P.a + P.b * q.y)) < 0.45 * P.wT; }) && Math.abs(r.AN[1].x - r.AN[0].x) < 0.75 * P.wT; };
+    var sc = R.map(function (r) { r.onShaft = onShaft(r); var wf = P ? Math.exp(-Math.pow((Math.abs(r.AN[1].x - r.AN[0].x) / P.wT - 0.42) / 0.18, 2)) : 1; return (r.plausible ? 1 : 0.3) * r.peak * (r.onShaft ? 1 : 0.05) * (0.2 + 0.8 * wf); }); // plafond ≈ 0.4 × plateau width (malleolar span ≈ 0.7)
     var cen = R.map(function (r) { return { x: (r.AN[0].x + r.AN[1].x) / 2, y: (r.AN[0].y + r.AN[1].y) / 2 }; });
     var sup = R.map(function (r, i) { return R.reduce(function (s, q, j) { var d = Math.hypot(cen[i].x - cen[j].x, cen[i].y - cen[j].y) / tol; return s + sc[j] * Math.exp(-d * d); }, 0); });
     var b = sup.indexOf(Math.max.apply(null, sup)), grp = R.map(function (r, j) { return j; }).filter(function (j) { return Math.hypot(cen[j].x - cen[b].x, cen[j].y - cen[b].y) < tol && R[j].plausible === R[b].plausible; });
     var ws = grp.reduce(function (s, j) { return s + sc[j]; }, 0) || 1, avg = function (k, c) { return grp.reduce(function (s, j) { return s + R[j].AN[k][c] * sc[j]; }, 0) / ws; };
     var out = Object.assign({}, R[b]); out.AN = [0, 1].map(function (k) { return { x: avg(k, 'x'), y: avg(k, 'y'), peak: grp.reduce(function (s, j) { return s + R[j].AN[k].peak * sc[j]; }, 0) / ws }; });
-    out.peak = Math.min(out.AN[0].peak, out.AN[1].peak); out.support = grp.length; out.windows = R.length; return out;
+    out.peak = Math.min(out.AN[0].peak, out.AN[1].peak); out.onShaft = onShaft(out); if (!out.onShaft) out.plausible = false; out.support = grp.length; out.windows = R.length; return out;
   }
   async function findAnkle(M, g, W, H, guess, opt) {
     opt = opt || {}; var t0 = Date.now(), inv = !!opt.inverted, S0 = guess.S;
@@ -3549,7 +3642,7 @@ button.small{padding:6px 10px;font-size:.82rem}
       srcAuto: 'αυτόματα (επιβεβαιωμένα)', srcCorr: 'αυτόματα + διόρθωση', srcManual: 'χειροκίνητα', landmarks: 'Σημεία', oAuto: 'αυτόματο', oCorr: 'αυτόματο, διορθώθηκε', oManual: 'χειροκίνητο', conf: 'βαθμός βεβαιότητας', cHi: 'υψηλή βεβαιότητα', cLo: 'χαμηλή',
       infInv: 'Η εικόνα αναγνωρίστηκε ως αρνητική (φωτεινό φόντο) – αντιστράφηκε για την ανάλυση και την προβολή.', infLow: 'Χαμηλή αντίθεση εικόνας – μειωμένη βεβαιότητα.', infMarkers: 'Οι δείκτες R/L δεν διαβάζονται αυτόματα· η πλευρά προκύπτει από τον προσανατολισμό (προεπιλογή: δεξί στα αριστερά της εικόνας). Επιβεβαιώστε με τον μολύβδινο δείκτη.',
       infMethod: 'Κλασική ανάλυση εικόνας στη συσκευή (χωρίς εκπαιδευμένο μοντέλο). Η βεβαιότητα είναι ευρετικός δείκτης ποιότητας ακμών/προσαρμογής, όχι πιθανότητα. Ακρίβεια επαληθευμένη μόνο σε συνθετικές εικόνες· σε πραγματικές ακτινογραφίες άγνωστη έως ότου ελεγχθεί.', took: 'Χρόνος',
-      r_metal: 'μέταλλο/εμφύτευμα', r_mlUncertain: 'αβέβαιη πρόταση μοντέλου', r_mlUnavailable: 'μοντέλο μη διαθέσιμο',  r_weakEdge: 'ασθενές περίγραμμα', r_fewPoints: 'λίγα σημεία ακμής', r_extent: 'αβέβαια άκρα', r_partialEdge: 'μερικώς ορατό περίγραμμα', r_irregular: 'ακανόνιστο περίγραμμα', r_implausible: 'ανατομικά απίθανο', r_lowContrast: 'χαμηλή αντίθεση', r_notFound: 'δεν βρέθηκε', r_lengthRatio: 'ασυνήθης λόγος μηριαίου/κνήμης', r_nearMask: 'δίπλα σε χάρακα/λωρίδα – μέρος του περιγράμματος κρυμμένο',
+      r_metal: 'μέταλλο/εμφύτευμα', r_mlUncertain: 'αβέβαιη πρόταση μοντέλου', r_mlUnavailable: 'μοντέλο μη διαθέσιμο',  r_weakEdge: 'ασθενές περίγραμμα', r_fewPoints: 'λίγα σημεία ακμής', r_extent: 'αβέβαια άκρα', r_partialEdge: 'μερικώς ορατό περίγραμμα', r_irregular: 'ακανόνιστο περίγραμμα', r_implausible: 'ανατομικά απίθανο', r_lowContrast: 'χαμηλή αντίθεση', r_notFound: 'δεν βρέθηκε', r_lengthRatio: 'ασυνήθης λόγος μηριαίου/κνήμης', r_nearMask: 'δίπλα σε χάρακα/λωρίδα – μέρος του περιγράμματος κρυμμένο', r_ankleAtBorder: 'το φιλμ κόβεται στον αστράγαλο – κέντρο από τον άξονα της κνήμης, ελέγξτε', r_ankleFromShaft: 'εκτίμηση από τον άξονα/διεύρυνση της κνήμης – ελέγξτε', r_ankleExtrapolated: 'προέκταση του άξονα της κνήμης ως το κάτω άκρο – ελέγξτε', r_fallbackGate: 'εκτός συνήθων ορίων – ελέγξτε',
       cpakHeld: 'μετά τον έλεγχο των πορτοκαλί σημείων', gateHdr: 'Απορρίφθηκαν από έλεγχο αληθοφάνειας (δεν χρησιμοποιούνται για γωνίες/CPAK):', noCalc: 'Για αυτή την πλευρά δεν εμφανίζονται γωνίες ή CPAK μέχρι να τοποθετηθούν/διορθωθούν τα σημεία.',
       part_head: 'κεφαλή μηριαίου', part_knee: 'γόνατο (κόνδυλοι/κνημιαίο πλατό)', part_ankle: 'ποδοκνημική',
       gate_border: 'στο όριο του φιλμ', gate_outsideBone: 'εκτός οστού', gate_femurLength: 'απίθανο μήκος μηριαίου', gate_lengthRatio: 'λόγος μηριαίου/κνήμης εκτός 1,0–1,5', gate_tibiaLength: 'απίθανο μήκος κνήμης', gate_angleRange: 'mLDFA/MPTA εκτός 75–105° ή JLCA > 10°', gate_hkaRange: 'HKA εκτός 150–210°', gate_noEvidence: 'χωρίς επαρκή ένδειξη',
@@ -3571,7 +3664,7 @@ button.small{padding:6px 10px;font-size:.82rem}
       srcAuto: 'automatic (confirmed)', srcCorr: 'automatic + corrected', srcManual: 'manual', landmarks: 'Landmarks', oAuto: 'automatic', oCorr: 'automatic, corrected', oManual: 'manual', conf: 'confidence score', cHi: 'high confidence', cLo: 'low',
       infInv: 'Image recognised as inverted (bright background) – inverted for analysis and display.', infLow: 'Low image contrast – reduced confidence.', infMarkers: 'R/L markers are not read automatically; the side follows the orientation (default: right on the image left). Confirm with the lead marker.',
       infMethod: 'Classical on-device image analysis (no trained model). Confidence is a heuristic edge/fit quality score, not a probability. Accuracy verified on synthetic images only; unknown on real radiographs until tested.', took: 'Time',
-      r_metal: 'metal/implant', r_mlUncertain: 'model uncertain', r_mlUnavailable: 'model unavailable',  r_weakEdge: 'weak edge', r_fewPoints: 'few edge points', r_extent: 'uncertain end points', r_partialEdge: 'partially visible contour', r_irregular: 'irregular contour', r_implausible: 'anatomically implausible', r_lowContrast: 'low contrast', r_notFound: 'not found', r_lengthRatio: 'unusual femur/tibia ratio', r_nearMask: 'next to a ruler/strip – part of the outline hidden',
+      r_metal: 'metal/implant', r_mlUncertain: 'model uncertain', r_mlUnavailable: 'model unavailable',  r_weakEdge: 'weak edge', r_fewPoints: 'few edge points', r_extent: 'uncertain end points', r_partialEdge: 'partially visible contour', r_irregular: 'irregular contour', r_implausible: 'anatomically implausible', r_lowContrast: 'low contrast', r_notFound: 'not found', r_lengthRatio: 'unusual femur/tibia ratio', r_nearMask: 'next to a ruler/strip – part of the outline hidden', r_ankleAtBorder: 'film cut at the ankle – centre from the tibial shaft, please check', r_ankleFromShaft: 'estimated from the tibial shaft / distal widening – please check', r_ankleExtrapolated: 'tibial axis extrapolated to the film edge – please check', r_fallbackGate: 'outside the usual limits – please check',
       cpakHeld: 'after checking the orange points', gateHdr: 'Rejected by plausibility checks (not used for angles/CPAK):', noCalc: 'No angles or CPAK are shown for this side until the landmarks are placed/corrected.',
       part_head: 'femoral head', part_knee: 'knee (condyles/tibial plateau)', part_ankle: 'ankle',
       gate_border: 'at the film border', gate_outsideBone: 'outside bone', gate_femurLength: 'implausible femoral length', gate_lengthRatio: 'femur/tibia ratio outside 1.0–1.5', gate_tibiaLength: 'implausible tibial length', gate_angleRange: 'mLDFA/MPTA outside 75–105° or JLCA > 10°', gate_hkaRange: 'HKA outside 150–210°', gate_noEvidence: 'no sufficient evidence',
