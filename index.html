@@ -203,6 +203,12 @@ details#dashProto summary{cursor:pointer}
 .romwrap{max-width:620px}.romsvg{width:100%;height:auto;background:#fff;border:1px solid #e3eaed;border-radius:10px}
 button.small{padding:6px 10px;font-size:.82rem}
 @media (max-width:600px){.measinner{padding:8px 10px}.camtoggle{padding:8px}}
+/* tab bar: all tabs reachable on narrow screens (wrap into compact pills with icons) */
+.tabs button[data-tab=proms]::before{content:'📝 '}.tabs button[data-tab=dash]::before{content:'📊 '}.tabs button[data-tab=xray]::before{content:'🩻 '}
+@media (max-width:700px){
+  .tabs{flex-wrap:wrap;overflow:visible;gap:5px;padding:0 8px}
+  .tabs button{flex:1 1 auto;border-radius:10px;padding:9px 10px;font-size:.86rem;line-height:1.2;text-align:center;min-width:0}
+}
 /* ---- X-rays tab ---- */
 .xgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:12px;max-width:1200px;margin:0 auto}
 @media (max-width:900px){.xgrid{grid-template-columns:1fr}}
@@ -223,6 +229,29 @@ button.small{padding:6px 10px;font-size:.82rem}
 .xform .fld input[type=file]{padding:6px}
 @media (max-width:600px){.xview{height:62vh;min-height:360px}.xloupe{width:120px!important;height:120px!important}.xtools .rng input{width:70px}}
 .warnrow{background:#fff1cc;color:#7a5a00;font-size:.82rem}
+/* ---- automatic landmark proposal ---- */
+.xauto{border:1px solid #d7e4e9;border-radius:10px;padding:8px 10px;margin-bottom:8px;background:#f8fbfc}
+.xauto .row{gap:6px;flex-wrap:wrap;align-items:center}.xauto select{width:auto;min-height:36px}.xauto .chk{font-size:.8rem;display:flex;gap:4px;align-items:center}.xauto .chk input{width:auto;min-height:0}
+.xauto progress{width:100%;height:10px;margin-top:6px;accent-color:#0b7285}
+.autostat{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:.85rem;border-left:5px solid}
+.autostat.ok{background:#ecfdf3;border-color:#22a06b}.autostat.check{background:#fff4e5;border-color:#f97316}.autostat.fail{background:#fdecec;border-color:#d64545}
+.lowlist{margin:6px 0 2px;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:3px}.lowlist li{cursor:pointer;font-size:.82rem}.lowlist li:hover{text-decoration:underline}
+.dot.lowc,.xsteps li.done .dot.lowc{background:#f97316!important;color:#fff;display:inline-flex;width:20px;height:20px;border-radius:50%;align-items:center;justify-content:center;font-weight:700}
+.xsteps li.done .dot.autoc{background:#16a34a}.xsteps li.done .dot.corrc{background:#2563eb}.xsteps li.low{background:#fff4e5;border-color:#fdba74}
+.cf{font-size:.72rem;padding:1px 6px;border-radius:9px;background:#e7f6ec;color:#166534;white-space:nowrap}.cf.low{background:#ffedd5;color:#9a3412;font-weight:700}.cf.corr{background:#dbeafe;color:#1e40af}
+.prophead{background:#fff4e5;color:#9a3412;border:1px solid #fdba74;border-radius:8px 8px 0 0;padding:6px 10px;font-weight:700;font-size:.86rem}
+.xres.prop{outline:2px dashed #fdba74;outline-offset:-1px}
+.confirmrow{margin:8px 0;padding:8px 10px;border-radius:8px;background:#f1f6f8}.confirmrow.done{background:#ecfdf3;color:#14532d;font-size:.86rem}
+.confirmrow button{width:100%}button.warn{background:#f97316!important;color:#fff!important;border-color:#ea580c!important}
+#xSave[aria-disabled=true]{opacity:.55}
+.xbanner{position:absolute;left:8px;right:8px;top:8px;z-index:3;padding:7px 10px;border-radius:8px;font-size:.84rem;color:#fff;pointer-events:none;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.xbanner.run{background:rgba(11,114,133,.92)}.xbanner.ok{background:rgba(21,128,61,.92)}.xbanner.check{background:rgba(234,88,12,.94)}.xbanner.fail{background:rgba(185,28,28,.94)}
+.fld.inl{display:flex;align-items:center;gap:6px;font-size:.85rem}.fld.inl select{width:auto}
+@media (max-width:600px){.xbanner{font-size:.76rem;top:4px;left:4px;right:4px}}
+.xgrid>*{min-width:0}
+@media (max-width:900px){.xgrid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){.xres td:nth-child(2){white-space:normal}.xres{font-size:.84rem}.xauto select{max-width:100%}.xsteps li{font-size:.82rem}}
+#xSide table{max-width:100%}
 </style>
 </head>
 <body>
@@ -1783,9 +1812,522 @@ button.small{padding:6px 10px;font-size:.82rem}
   }
 
   root.OrthoXray = { circle3: circle3, compute: compute, cpak: cpak, vv: vv, derived: derived, angleBetween: angleBetween, snapToEdge: snapToEdge,
-    parseDicom: parseDicom, dicomToRGBA: dicomToRGBA, demoGeometry: demoGeometry, buildLimb: buildLimb, seedStudies: seedStudies, round1: round1,
+    parseDicom: parseDicom, dicomToRGBA: dicomToRGBA, demoGeometry: demoGeometry, DEMO_SPEC: DEMO_SPEC, buildLimb: buildLimb, seedStudies: seedStudies, round1: round1,
     medialFor: function (side, mirrored) { var m = side === 'R' ? 1 : -1; return mirrored ? -m : m; },
     STEPS: ['FH1', 'FH2', 'FH3', 'FC1', 'FC2', 'KF', 'TP1', 'TP2', 'KT', 'AN1', 'AN2'] };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<!-- ===== X-ray synthetic DEMO images + automatic landmark proposal (pure; tested in Node) ===== -->
+<script id="ortho-xray-synth">
+(function (root) {
+  'use strict';
+  // ===== Synthetic long-leg AP radiographs with known ground truth (DEMO / test data only – never a patient) =====
+  // Bones, soft tissue and implants are modelled as signed-distance shapes; each pixel integrates an attenuation profile
+  // (cortical rim, trabecular texture, soft-tissue envelope), then exposure, heel effect, scatter/fog, blur and quantum noise.
+  var X = root.OrthoXray, D2R = Math.PI / 180;
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function sstep(a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+  function V(x, y) { return { x: x, y: y }; }
+  function add(a, b) { return V(a.x + b.x, a.y + b.y); }
+  function mul(a, k) { return V(a.x * k, a.y * k); }
+  function dot(a, b) { return a.x * b.x + a.y * b.y; }
+  function along(p, d, k) { return V(p.x + d.x * k, p.y + d.y * k); }
+  function xorshift(seed) { var s = (seed >>> 0) || 0x9e3779b9; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  function hash2(ix, iy, seed) { var h = Math.imul(ix, 374761393) + Math.imul(iy, 668265263) + Math.imul(seed, 1442695041) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+  function vnoise(x, y, seed) {
+    var ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+    var a = hash2(ix, iy, seed), b = hash2(ix + 1, iy, seed), c = hash2(ix, iy + 1, seed), d = hash2(ix + 1, iy + 1, seed);
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  }
+  // ---------- signed-distance primitives (negative inside) ----------
+  function circle(c, r) { return { d: function (x, y) { return Math.hypot(x - c.x, y - c.y) - r; }, bb: [c.x - r, c.y - r, c.x + r, c.y + r] }; }
+  function capsule(a, b, r0, r1) {
+    if (r1 == null) r1 = r0; var bx = b.x - a.x, by = b.y - a.y, L2 = bx * bx + by * by || 1, rm = Math.max(r0, r1);
+    return { d: function (x, y) { var t = clamp(((x - a.x) * bx + (y - a.y) * by) / L2, 0, 1); return Math.hypot(x - a.x - bx * t, y - a.y - by * t) - (r0 + (r1 - r0) * t); },
+      bb: [Math.min(a.x, b.x) - rm, Math.min(a.y, b.y) - rm, Math.max(a.x, b.x) + rm, Math.max(a.y, b.y) + rm] };
+  }
+  function poly(P) {
+    var n = P.length, bb = [1e9, 1e9, -1e9, -1e9]; P.forEach(function (p) { bb[0] = Math.min(bb[0], p.x); bb[1] = Math.min(bb[1], p.y); bb[2] = Math.max(bb[2], p.x); bb[3] = Math.max(bb[3], p.y); });
+    return { d: function (x, y) {
+      var d = (x - P[0].x) * (x - P[0].x) + (y - P[0].y) * (y - P[0].y), s = 1;
+      for (var i = 0, j = n - 1; i < n; j = i, i++) {
+        var ex = P[j].x - P[i].x, ey = P[j].y - P[i].y, wx = x - P[i].x, wy = y - P[i].y, t = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey), 0, 1), bx = wx - ex * t, by = wy - ey * t;
+        d = Math.min(d, bx * bx + by * by);
+        var c1 = y >= P[i].y, c2 = y < P[j].y, c3 = ex * wy > ey * wx; if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+      }
+      return s * Math.sqrt(d); }, bb: bb };
+  }
+  function ellipse(c, rx, ry, ang) {
+    var ca = Math.cos(ang || 0), sa = Math.sin(ang || 0), m = Math.min(rx, ry), R = Math.max(rx, ry);
+    return { d: function (x, y) { var dx = x - c.x, dy = y - c.y, u = dx * ca + dy * sa, v = -dx * sa + dy * ca; return (Math.hypot(u / rx, v / ry) - 1) * m; }, bb: [c.x - R, c.y - R, c.x + R, c.y + R] };
+  }
+  function arc(c, R, w, a0, a1) { // annular arc, angles in degrees (image coords, y down), a0 < a1
+    var e0 = V(c.x + R * Math.cos(a0 * D2R), c.y + R * Math.sin(a0 * D2R)), e1 = V(c.x + R * Math.cos(a1 * D2R), c.y + R * Math.sin(a1 * D2R));
+    return { d: function (x, y) { var a = Math.atan2(y - c.y, x - c.x) / D2R; while (a < a0) a += 360; if (a <= a1) return Math.abs(Math.hypot(x - c.x, y - c.y) - R) - w; return Math.min(Math.hypot(x - e0.x, y - e0.y), Math.hypot(x - e1.x, y - e1.y)) - w; },
+      bb: [c.x - R - w, c.y - R - w, c.x + R + w, c.y + R + w] };
+  }
+  function half(p, n) { return { d: function (x, y) { return (x - p.x) * n.x + (y - p.y) * n.y; } }; } // inside where (q − p)·n < 0
+
+  // ---------- variants (synthetic ground truth) ----------
+  var VARIANTS = {
+    demo: { el: 'Τυπική', en: 'Standard', R: {}, L: {}, seed: 11 },
+    varus: { el: 'Ραιβό', en: 'Varus', R: { ldfa: 89, mpta: 83, femTilt: 3.5 }, L: { ldfa: 88, mpta: 86 }, seed: 12 },
+    valgus: { el: 'Βλαισό', en: 'Valgus', R: { ldfa: 85, mpta: 90 }, L: { ldfa: 86, mpta: 93, femTilt: 6 }, seed: 13 },
+    neutral: { el: 'Ουδέτερο', en: 'Neutral', R: { ldfa: 90, mpta: 90 }, L: { ldfa: 89, mpta: 89 }, seed: 14 },
+    lowcontrast: { el: 'Χαμηλή αντίθεση', en: 'Low contrast', R: { ldfa: 91, mpta: 87 }, L: { ldfa: 87, mpta: 88 }, look: { lo: 0.30, hi: 0.62, gamma: 1.5, fog: 0.18, noise: 5 }, dens: 0.75, seed: 15 },
+    noisy: { el: 'Θόρυβος', en: 'Noisy', R: { ldfa: 88, mpta: 84 }, L: { ldfa: 90, mpta: 91 }, look: { noise: 16, blur: 2 }, seed: 16 },
+    rotated: { el: 'Περιστροφή 4°', en: 'Rotated 4°', R: { ldfa: 89, mpta: 86 }, L: { ldfa: 87, mpta: 90 }, rot: 4, seed: 17 },
+    implant: { el: 'Μεταλλικό εμφύτευμα (TKA δεξιά)', en: 'Metal implant (right TKA)', R: { ldfa: 90, mpta: 90, implant: true }, L: { ldfa: 88, mpta: 86 }, seed: 18 },
+    inverted: { el: 'Αρνητική (ανεστραμμένη), χωρίς δείκτες', en: 'Inverted, no side markers', R: { ldfa: 88, mpta: 87 }, L: { ldfa: 91, mpta: 88 }, invert: true, markers: false, seed: 19 },
+    small: { el: 'Χαμηλή ανάλυση (0,6×)', en: 'Low resolution (0.6×)', R: { ldfa: 87, mpta: 85 }, L: { ldfa: 89, mpta: 87 }, scale: 0.6, markers: false, seed: 20 }
+  };
+  function limbSpecs(v) {
+    return X.DEMO_SPEC.limbs.map(function (b) { var o = {}; for (var k in b) o[k] = b[k]; var ov = v[b.side] || {}; for (var k2 in ov) o[k2] = ov[k2]; return o; });
+  }
+
+  // ---------- scene ----------
+  function scene(v) {
+    var specs = limbSpecs(v), limbs = specs.map(function (s) { var L = X.buildLimb(s); L.spec = s; return L; }), objs = [], seed = v.seed || 1, dens = v.dens || 1;
+    var cortVar = function (o, len, axis, from, thick) { return function (x, y) { var tt = ((x - o.x) * axis.x + (y - o.y) * axis.y) / len; return 2.2 + thick * sstep(from[0], from[1], tt) * (1 - sstep(from[2], from[3], tt)); }; };
+    var hr = limbs[0].H, hl = limbs[1].H, cx = (hr.x + hl.x) / 2;
+    // pelvis (both sides) with obturator foramina and acetabular roofs
+    objs.push({ kind: 'soft', prims: [ellipse(V(cx, hr.y - 40), 430, 190)], mu: 0.42, Rs: 150 });
+    var arcPts = function (c, R, a0, a1, n) { var o = []; for (var i = 0; i <= n; i++) { var a = (a0 + (a1 - a0) * i / n) * D2R; o.push(V(c.x + R * Math.cos(a), c.y + R * Math.sin(a))); } return o; };
+    var rR = limbs[0].r + 10, rL = limbs[1].r + 10;
+    var pel = [V(hr.x - 125, hr.y - 190), V(cx, hr.y - 235), V(hl.x + 125, hl.y - 190), V(hl.x + 95, hl.y - 60)].concat(arcPts(hl, rL, 340, 210, 8), [V(hl.x - 32, hl.y + 30), V(hl.x - 70, hl.y + 88), V(cx + 18, hl.y + 98), V(cx - 18, hr.y + 98), V(hr.x + 70, hr.y + 88), V(hr.x + 32, hr.y + 30)], arcPts(hr, rR, 330, 200, 8), [V(hr.x - 95, hr.y - 60)]);
+    objs.push({ kind: 'bone', prims: [poly(pel), arc(hr, limbs[0].r + 9, 3, 185, 300), arc(hl, limbs[1].r + 9, 3, 240, 355)], subs: [ellipse(V(hr.x + 78, hr.y + 50), 26, 36, 0.3), ellipse(V(hl.x - 78, hl.y + 50), 26, 36, -0.3)], mut: 0.38, muc: 0.7, Rb: 22, cort: function () { return 2.4; }, dens: 0.8 * dens, tex: 1 });
+    limbs.forEach(function (L, li) {
+      var med = L.side === 'R' ? 1 : -1, lat = V(-med, 0), up = L.up, down = L.down, l = L.l, tm = mul(l, -1), lm = L.landmarks, s = L.spec;
+      // soft tissue envelope (thigh, leg, foot)
+      objs.push({ kind: 'soft', prims: [capsule(add(along(L.H, lat, 40), mul(up, 30)), L.Jf, 128, 78), capsule(L.Jf, L.A, 78, 40), ellipse(along(L.A, down, 62), 70, 50)], mu: 0.55, Rs: 85, fat: 0.10 });
+      // femur
+      var neckB = along(along(L.H, lat, 62), up, -48), gt = along(along(L.H, lat, 86), up, -36), shA = along(along(L.H, lat, 60), up, -66), shB = along(L.Jf, up, 150), mb = along(L.Jf, up, 95), rc = 30;
+      var c1 = along(lm.FC1, L.lineN, -rc), c2 = along(lm.FC2, L.lineN, -rc);
+      var fem = [circle(L.H, L.r), capsule(L.H, neckB, 25, 23), circle(gt, 26), circle(along(along(L.H, lat, 36), up, -132), 11), capsule(shA, shB, 21, 22),
+        poly([along(mb, l, -24), along(mb, l, 24), along(c2, l, rc), along(c1, l, -rc)]), circle(c1, rc), circle(c2, rc)];
+      var femObj = { kind: 'bone', prims: fem, mut: 0.55, muc: 0.85, Rb: 24, cort: cortVar(L.H, s.femLen, mul(up, -1), [0.18, 0.3, 0.72, 0.84], 4.6), dens: dens, tex: 1 };
+      objs.push(femObj);
+      // patella (projects over the distal femur)
+      objs.push({ kind: 'bone', prims: [ellipse(along(L.Jf, up, 46), 23, 30, Math.atan2(l.y, l.x))], mut: 0.3, muc: 0.35, Rb: 18, cort: function () { return 2; }, dens: dens, tex: 1 });
+      // tibia
+      var mt = along(L.Jt, down, 120), dTop = along(L.A, down, -110), anMed = dot(lm.AN1, tm) > dot(lm.AN2, tm) ? lm.AN1 : lm.AN2, anLat = anMed === lm.AN1 ? lm.AN2 : lm.AN1;
+      var tib = [poly([lm.TP1, lm.TP2, along(mt, tm, -20), along(mt, tm, 20)]), poly([along(lm.KT, tm, 9), along(L.Jt, down, -10), along(lm.KT, tm, -9), along(along(L.Jt, tm, -9), down, 2), along(along(L.Jt, tm, 9), down, 2)]),
+        capsule(mt, dTop, 18, 16), poly([along(dTop, tm, -17), along(dTop, tm, 17), anMed, anLat]), capsule(along(along(anMed, tm, 6), down, -6), along(along(anMed, tm, 7), down, 22), 7, 5.5)];
+      objs.push({ kind: 'bone', prims: tib, mut: 0.55, muc: 0.85, Rb: 22, cort: cortVar(L.Jt, s.tibLen, down, [0.15, 0.28, 0.74, 0.86], 4.0), dens: dens, tex: 1 });
+      // fibula
+      var fT = along(along(L.Jt, down, 40), tm, -48), fB = along(along(L.A, down, 25), tm, -40);
+      objs.push({ kind: 'bone', prims: [capsule(fT, fB, 7, 6), circle(fT, 11), circle(fB, 9)], mut: 0.45, muc: 0.7, Rb: 8, cort: function () { return 2.2; }, dens: dens, tex: 1 });
+      // talus + foot
+      var ang = Math.atan2(down.y, down.x) - Math.PI / 2;
+      objs.push({ kind: 'bone', prims: [ellipse(along(L.A, down, 30), 30, 24, ang), poly([along(along(L.A, down, 30), tm, 28), along(along(L.A, down, 30), tm, -28), along(along(L.A, down, 66), tm, -30), along(along(L.A, down, 66), tm, 30)])], mut: 0.5, muc: 0.65, Rb: 22, cort: function () { return 2; }, dens: dens, tex: 1 });
+      objs.push({ kind: 'bone', prims: [ellipse(along(L.A, down, 92), 58, 26, ang)], mut: 0.32, muc: 0.4, Rb: 20, cort: function () { return 2; }, dens: dens, tex: 1 });
+      // total knee arthroplasty (metal femoral component + tibial tray/stem, radiolucent insert)
+      if (s.implant) {
+        var femU = function (x, y) { var d = 1e9; for (var i = 4; i < fem.length; i++) d = Math.min(d, fem[i].d(x, y)); return d; };
+        objs.push({ kind: 'metal', custom: function (x, y) { var d = femU(x, y); return Math.max(d, -(d + 7), (x - L.Jf.x) * -L.lineN.x + (y - L.Jf.y) * -L.lineN.y - 44); }, bb: [L.Jf.x - 110, L.Jf.y - 90, L.Jf.x + 110, L.Jf.y + 30], mu: 7 });
+        var tr = [along(lm.TP1, tm, 3), along(lm.TP2, tm, -3), along(along(lm.TP2, tm, -3), down, 7), along(along(lm.TP1, tm, 3), down, 7)];
+        objs.push({ kind: 'metal', prims: [poly(tr), capsule(along(L.Jt, down, 7), along(L.Jt, down, 72), 8, 6)], mu: 7 });
+        objs.push({ kind: 'soft', prims: [poly([lm.TP1, lm.TP2, along(lm.FC2, L.lineN, 1), along(lm.FC1, L.lineN, 1)])], mu: 0.12, Rs: 4 });
+      }
+      void li;
+    });
+    return { limbs: limbs, objs: objs, seed: seed };
+  }
+  var GLYPH = { R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'], L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'] };
+
+  /** Render a variant. Returns { W, H, gray (Uint8ClampedArray), truth: { left, right } image-space landmarks, sides, angles, variant }. */
+  function render(name, opt) {
+    opt = opt || {};
+    var v = VARIANTS[name] || VARIANTS.demo, sc = scene(v), k = v.scale || 1, rot = (v.rot || 0) * D2R, cM = V(X.DEMO_SPEC.W / 2, X.DEMO_SPEC.H / 2);
+    var W = Math.round(X.DEMO_SPEC.W * k), H = Math.round(X.DEMO_SPEC.H * k), cI = V(W / 2, H / 2), cr = Math.cos(rot), sr = Math.sin(rot);
+    var fwd = function (p) { var dx = p.x - cM.x, dy = p.y - cM.y; return V(cI.x + k * (dx * cr - dy * sr), cI.y + k * (dx * sr + dy * cr)); };
+    var A = new Float32Array(W * H), seed = sc.seed;
+    sc.objs.forEach(function (o) {
+      var bb = o.bb || (function () { var b = [1e9, 1e9, -1e9, -1e9]; o.prims.forEach(function (p) { b[0] = Math.min(b[0], p.bb[0]); b[1] = Math.min(b[1], p.bb[1]); b[2] = Math.max(b[2], p.bb[2]); b[3] = Math.max(b[3], p.bb[3]); }); return b; })();
+      var cs = [fwd(V(bb[0] - 3, bb[1] - 3)), fwd(V(bb[2] + 3, bb[1] - 3)), fwd(V(bb[0] - 3, bb[3] + 3)), fwd(V(bb[2] + 3, bb[3] + 3))];
+      var x0 = Math.max(0, Math.floor(Math.min(cs[0].x, cs[1].x, cs[2].x, cs[3].x))), x1 = Math.min(W - 1, Math.ceil(Math.max(cs[0].x, cs[1].x, cs[2].x, cs[3].x)));
+      var y0 = Math.max(0, Math.floor(Math.min(cs[0].y, cs[1].y, cs[2].y, cs[3].y))), y1 = Math.min(H - 1, Math.ceil(Math.max(cs[0].y, cs[1].y, cs[2].y, cs[3].y)));
+      var sdf = o.custom || function (x, y) { var d = 1e9, i; for (i = 0; i < o.prims.length; i++) { var q = o.prims[i].d(x, y); if (q < d) d = q; } if (o.subs) for (i = 0; i < o.subs.length; i++) d = Math.max(d, -o.subs[i].d(x, y)); return d; };
+      for (var y = y0; y <= y1; y++) for (var x = x0; x <= x1; x++) {
+        var dx = (x + 0.5 - cI.x) / k, dy = (y + 0.5 - cI.y) / k, mx = cM.x + dx * cr + dy * sr, my = cM.y - dx * sr + dy * cr;
+        var d = sdf(mx, my); if (d > 1.2) continue; var u = -d, a;
+        if (o.kind === 'soft') a = o.mu * Math.sqrt(sstep(-0.8, o.Rs, u)) + (o.fat || 0) * sstep(6, 26, u);
+        else if (o.kind === 'metal') a = o.mu * sstep(-0.7, 0.7, u);
+        else {
+          var aa = sstep(-0.8, 0.8, u); if (aa <= 0) continue;
+          var c = o.cort(mx, my), tex = 0.62 * vnoise(mx / 3.2, my / 6.5, seed) + 0.38 * vnoise(mx / 9, my / 13, seed + 7);
+          var trab = o.mut * Math.sqrt(clamp(u / o.Rb, 0, 1)) * (0.62 + 0.7 * tex) * (c > 4 ? 0.62 : 1);
+          var cortx = o.muc * Math.exp(-Math.pow((u - c * 0.45) / (c * 0.7 + 0.6), 2)) * (0.9 + 0.2 * tex);
+          a = aa * (trab + cortx) * o.dens;
+        }
+        A[y * W + x] += a;
+      }
+    });
+    // lead side markers
+    if (v.markers !== false) sc.limbs.forEach(function (L) {
+      var g = GLYPH[L.side], org = fwd(V(L.side === 'R' ? 40 : X.DEMO_SPEC.W - 80, 330)), cell = 7 * k;
+      for (var r = 0; r < 7; r++) for (var c = 0; c < 5; c++) if (g[r][c] === '1') for (var yy = 0; yy < cell; yy++) for (var xx = 0; xx < cell; xx++) { var px = Math.round(org.x + c * cell + xx), py = Math.round(org.y + r * cell + yy); if (px >= 0 && py >= 0 && px < W && py < H) A[py * W + px] += 6; }
+    });
+    // exposure → film density → display
+    var look = v.look || {}, lo = look.lo != null ? look.lo : 0.03, hi = look.hi != null ? look.hi : 0.97, gam = look.gamma || 1.25, fog = look.fog || 0.03, heel = 0.16;
+    var g = new Float32Array(W * H);
+    for (var y2 = 0; y2 < H; y2++) { var kk = 1 + heel * (y2 / H - 0.5); for (var x2 = 0; x2 < W; x2++) { var i2 = y2 * W + x2, D = 1 - Math.exp(-A[i2] * kk); D = fog + (1 - fog) * D; g[i2] = lo + (hi - lo) * Math.pow(D, gam); } }
+    var passes = look.blur || 1; for (var p = 0; p < passes; p++) g = box3(g, W, H);
+    var rnd = xorshift(seed * 7919 + 1), sig = (look.noise != null ? look.noise : 6) / 255, out = new Uint8ClampedArray(W * H);
+    for (var j = 0; j < W * H; j++) {
+      var u1 = rnd() || 1e-12, u2 = rnd(), n = Math.sqrt(-2 * Math.log(u1)) * Math.cos(6.283185307 * u2);
+      var val = g[j] + sig * n * Math.sqrt(g[j] + 0.05) * 1.3; if (A[j] > 5) val = 1; // metal / lead saturates
+      out[j] = Math.round(clamp(v.invert ? 1 - val : val, 0, 1) * 255);
+    }
+    if (opt.banner) banner(out, W, H, seed);
+    var truth = {}, angles = {}, sides = {};
+    sc.limbs.forEach(function (L) {
+      var halfName = L.side === 'R' ? 'left' : 'right', t = {}; for (var key in L.landmarks) t[key] = fwd(L.landmarks[key]);
+      truth[halfName] = t; sides[halfName] = L.side; angles[halfName] = { ldfa: L.spec.ldfa, mpta: L.spec.mpta, implant: !!L.spec.implant, headR: L.r * k };
+    });
+    return { W: W, H: H, gray: out, truth: truth, sides: sides, angles: angles, variant: name, label: { el: v.el, en: v.en } };
+  }
+  function box3(g, W, H) {
+    var t = new Float32Array(W * H), o = new Float32Array(W * H), x, y;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) { var i = y * W + x; t[i] = (g[i - (x > 0 ? 1 : 0)] + g[i] + g[i + (x < W - 1 ? 1 : 0)]) / 3; }
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) { var j = y * W + x; o[j] = (t[j - (y > 0 ? W : 0)] + t[j] + t[j + (y < H - 1 ? W : 0)]) / 3; }
+    return o;
+  }
+  /** Emulates the purple DEMO banners the app paints (mid-grey with white text blocks) so tests see the same image as the UI. */
+  function banner(out, W, H, seed) {
+    var bh = Math.round(46 * W / 900), r = xorshift(seed + 99);
+    [[0, bh], [H - bh, H]].forEach(function (b) {
+      for (var y = b[0]; y < b[1]; y++) for (var x = 0; x < W; x++) out[y * W + x] = 119;
+      for (var cx = Math.round(W * 0.2); cx < W * 0.8; cx += Math.round(W / 60)) if (r() < 0.8) for (var yy = b[0] + Math.round(bh * 0.3); yy < b[0] + Math.round(bh * 0.7); yy++) for (var xx = cx; xx < cx + W / 110; xx++) out[yy * W + Math.round(xx)] = 255;
+    });
+  }
+  root.OrthoXraySynth = { VARIANTS: VARIANTS, render: render, names: Object.keys(VARIANTS) };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-xray-auto">
+(function (root) {
+  'use strict';
+  // ===== Automatic landmark PROPOSAL for long-leg AP radiographs – classical image analysis, no trained model =====
+  // Pipeline: grayscale → downscale → percentile stretch / inversion check → limb columns (intensity profiles) → shaft tracing →
+  // knee & ankle joint gaps (oriented profile search) → condyle bitangent / plateau & plafond lines (edge points + RANSAC) →
+  // femoral head (gradient circular Hough + radial edge circle fit). Output maps to the 9-point model; every point carries a
+  // confidence 0–1 and reasons. Results are proposals for the surgeon to confirm or correct – never final.
+  var VERSION = 'classic-1.0', LOW = 0.6;
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function sstep(a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+  function V(x, y) { return { x: x, y: y }; }
+  function median(a) { if (!a.length) return 0; var b = a.slice().sort(function (p, q) { return p - q; }); var m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
+  function mad(a) { var m = median(a); return 1.4826 * median(a.map(function (v) { return Math.abs(v - m); })); }
+
+  // ---------- image utilities ----------
+  /** Area-average resample of region (x0,y0,w,h) of a W×H 0–255 image by factor f (≤ 1) → { d: Float32 0–1, w, h, f, x0, y0 }. */
+  function crop(src, W, H, x0, y0, w, h, f) {
+    x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0)); w = Math.min(W - x0, Math.ceil(w)); h = Math.min(H - y0, Math.ceil(h));
+    var ow = Math.max(1, Math.round(w * f)), oh = Math.max(1, Math.round(h * f)), out = new Float32Array(ow * oh), cnt = new Float32Array(ow * oh), fx = ow / w, fy = oh / h;
+    for (var y = 0; y < h; y++) { var dy = Math.min(oh - 1, (y * fy) | 0), row = (y0 + y) * W + x0, orow = dy * ow; for (var x = 0; x < w; x++) { var j = orow + Math.min(ow - 1, (x * fx) | 0); out[j] += src[row + x]; cnt[j]++; } }
+    for (var i = 0; i < out.length; i++) out[i] = cnt[i] ? out[i] / cnt[i] / 255 : 0;
+    return { d: out, w: ow, h: oh, fx: fx, fy: fy, x0: x0, y0: y0 };
+  }
+  function toNat(c, p) { return V(c.x0 + (p.x + 0.5) / c.fx - 0.5, c.y0 + (p.y + 0.5) / c.fy - 0.5); }
+  function toCrop(c, p) { return V((p.x - c.x0 + 0.5) * c.fx - 0.5, (p.y - c.y0 + 0.5) * c.fy - 0.5); }
+  function blur(img, w, h, s) {
+    if (s <= 0) return img; var r = Math.ceil(2.5 * s), k = [], ks = 0, i, x, y; for (i = -r; i <= r; i++) { var v = Math.exp(-i * i / (2 * s * s)); k.push(v); ks += v; } k = k.map(function (v) { return v / ks; });
+    var t = new Float32Array(w * h), o = new Float32Array(w * h);
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) { var a = 0; for (i = -r; i <= r; i++) { var xx = x + i < 0 ? 0 : x + i >= w ? w - 1 : x + i; a += img[y * w + xx] * k[i + r]; } t[y * w + x] = a; }
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) { var b = 0; for (i = -r; i <= r; i++) { var yy = y + i < 0 ? 0 : y + i >= h ? h - 1 : y + i; b += t[yy * w + x] * k[i + r]; } o[y * w + x] = b; }
+    return o;
+  }
+  function samp(c, x, y) {
+    var w = c.w, h = c.h; if (x < 0) x = 0; if (y < 0) y = 0; if (x > w - 1.001) x = w - 1.001; if (y > h - 1.001) y = h - 1.001;
+    var ix = x | 0, iy = y | 0, fx = x - ix, fy = y - iy, i = iy * w + ix, d = c.d;
+    return d[i] * (1 - fx) * (1 - fy) + d[i + 1] * fx * (1 - fy) + d[i + w] * (1 - fx) * fy + d[i + w + 1] * fx * fy;
+  }
+  function pct(d, p) { var hst = new Uint32Array(1024), n = d.length, i; for (i = 0; i < n; i++) hst[Math.min(1023, Math.max(0, (d[i] * 1023) | 0))]++; var tgt = p * n, a = 0; for (i = 0; i < 1024; i++) { a += hst[i]; if (a >= tgt) return i / 1023; } return 1; }
+  function smooth1(a, s) { var r = Math.ceil(2.5 * s), o = new Float32Array(a.length); for (var i = 0; i < a.length; i++) { var sum = 0, ws = 0; for (var j = -r; j <= r; j++) { var k = i + j; if (k < 0 || k >= a.length) continue; var w = Math.exp(-j * j / (2 * s * s)); sum += a[k] * w; ws += w; } o[i] = sum / ws; } return o; }
+
+  // ---------- robust geometry ----------
+  function lineFitLS(P) { // u = a + b t (least squares)
+    var n = P.length, st = 0, su = 0, stt = 0, stu = 0; P.forEach(function (p) { st += p.t; su += p.u; stt += p.t * p.t; stu += p.t * p.u; });
+    var den = n * stt - st * st; if (!n || Math.abs(den) < 1e-9) return null; var b = (n * stu - st * su) / den; return { a: (su - b * st) / n, b: b };
+  }
+  function ransacLine(P, tol, minSpan) {
+    var n = P.length; if (n < 4) return null; var step = Math.max(1, Math.floor(n / 70)), best = null;
+    for (var i = 0; i < n; i += step) for (var j = i + 1; j < n; j += step) {
+      var p = P[i], q = P[j]; if (Math.abs(q.t - p.t) < minSpan) continue; var b = (q.u - p.u) / (q.t - p.t), a = p.u - b * p.t, c = 0, err = 0;
+      for (var k = 0; k < n; k++) { var e = Math.abs(P[k].u - (a + b * P[k].t)); if (e <= tol) { c++; err += e; } }
+      if (!best || c > best.c || (c === best.c && err < best.err)) best = { a: a, b: b, c: c, err: err };
+    }
+    if (!best) return null;
+    var inl = P.filter(function (p) { return Math.abs(p.u - (best.a + best.b * p.t)) <= tol; }), f = lineFitLS(inl) || best;
+    inl = P.filter(function (p) { return Math.abs(p.u - (f.a + f.b * p.t)) <= tol; }); f = lineFitLS(inl) || f;
+    var res = inl.map(function (p) { return p.u - (f.a + f.b * p.t); }), rms = Math.sqrt(res.reduce(function (s, v) { return s + v * v; }, 0) / Math.max(1, res.length));
+    return { a: f.a, b: f.b, inl: inl, frac: inl.length / n, rms: rms };
+  }
+  /** Distal bitangent: line touching both condyles from the joint side (no edge points beyond it), maximal support. u increases toward the gap. */
+  function bitangent(P, tc, minSpan, tol) {
+    var Lh = P.filter(function (p) { return p.t < tc; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 30), Rh = P.filter(function (p) { return p.t >= tc; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 30), best = null;
+    Lh.forEach(function (p) { Rh.forEach(function (q) {
+      if (q.t - p.t < minSpan) return; var b = (q.u - p.u) / (q.t - p.t), a = p.u - b * p.t, sup = 0, vio = 0;
+      for (var k = 0; k < P.length; k++) { var e = P[k].u - (a + b * P[k].t); if (e > tol) vio++; else if (e > -1.6 * tol) sup++; }
+      var sc = sup - 5 * vio; if (!best || sc > best.sc) best = { a: a, b: b, sc: sc, sup: sup, vio: vio };
+    }); });
+    if (!best) return null;
+    var near = function (side) { var s = P.filter(function (p) { return (side ? p.t >= tc : p.t < tc) && Math.abs(p.u - (best.a + best.b * p.t)) <= 1.6 * tol; }); return s; };
+    var l = near(false), r = near(true); if (!l.length || !r.length) return null;
+    var tl = median(l.map(function (p) { return p.t; })), tr = median(r.map(function (p) { return p.t; }));
+    return { a: best.a, b: best.b, tl: tl, tr: tr, supL: l.length, supR: r.length, vio: best.vio, n: P.length };
+  }
+  function circleFit(P) { // algebraic (Kåsa) fit
+    var n = P.length, sx = 0, sy = 0; P.forEach(function (p) { sx += p.x; sy += p.y; }); var mx = sx / n, my = sy / n, suu = 0, svv = 0, suv = 0, suuu = 0, svvv = 0, suvv = 0, svuu = 0;
+    P.forEach(function (p) { var u = p.x - mx, v = p.y - my; suu += u * u; svv += v * v; suv += u * v; suuu += u * u * u; svvv += v * v * v; suvv += u * v * v; svuu += v * u * u; });
+    var a = suu, b = suv, c = suv, d = svv, e = 0.5 * (suuu + suvv), f = 0.5 * (svvv + svuu), det = a * d - b * c; if (Math.abs(det) < 1e-9) return null;
+    var uc = (e * d - b * f) / det, vc = (a * f - c * e) / det; return { x: uc + mx, y: vc + my, r: Math.sqrt(uc * uc + vc * vc + (suu + svv) / n) };
+  }
+
+  // ---------- pipeline stages ----------
+  function start(input, opts) {
+    opts = opts || {};
+    return { in: input, opts: opts, halves: opts.halves || ['left', 'right'], i: 0, stages: null, res: { version: VERSION, halves: {}, info: [], ms: 0 }, t0: Date.now(), progress: 0, done: false };
+  }
+  function stageList(ctx) {
+    var s = [prep, limbs]; ctx.halves.forEach(function (h) { s.push(function (c) { trace(c, h); }); });
+    ctx.halves.forEach(function (h) { s.push(function (c) { head(c, h); }); });
+    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'knee'); }); });
+    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'ankle'); }); });
+    s.push(assemble); return s;
+  }
+  function step(ctx) {
+    if (ctx.done) return ctx; if (!ctx.stages) ctx.stages = stageList(ctx);
+    try { ctx.stages[ctx.i](ctx); } catch (e) { ctx.res.error = String(e && e.message || e); ctx.i = ctx.stages.length - 1; ctx.stages[ctx.i](ctx); }
+    ctx.i++; ctx.progress = ctx.i / ctx.stages.length; if (ctx.i >= ctx.stages.length) { ctx.done = true; ctx.res.ms = Date.now() - ctx.t0; }
+    return ctx;
+  }
+  function detect(input, opts) { var c = start(input, opts); while (!c.done) step(c); return c.res; }
+
+  function prep(ctx) {
+    var I = ctx.in, W = I.W, H = I.H, f = Math.min(1, 1000 / H), g = crop(I.gray, W, H, 0, 0, W, H, f), n = g.d.length, i;
+    var sat = 0; for (i = 0; i < n; i++) if (g.d[i] > 0.985 || g.d[i] < 0.004) sat++;
+    var p1 = pct(g.d, 0.01), p99 = pct(g.d, 0.995), rngv = Math.max(0.02, p99 - p1);
+    for (i = 0; i < n; i++) g.d[i] = clamp((g.d[i] - p1) / rngv, 0, 1);
+    // background = air lateral to the limbs (left/right image bands, middle 80 % of height); bright air ⇒ inverted (negative) display
+    var bg = []; for (var y = Math.round(g.h * 0.1); y < g.h * 0.9; y += 2) for (var x = 0; x < g.w * 0.03; x++) { bg.push(g.d[y * g.w + x]); bg.push(g.d[y * g.w + g.w - 1 - x]); }
+    var bgm = median(bg), inv = bgm > 0.55; if (inv) { for (i = 0; i < n; i++) g.d[i] = 1 - g.d[i]; bgm = 1 - bgm; }
+    ctx.inv = inv; ctx.bg = bgm; ctx.range = rngv; ctx.p1 = p1; ctx.g = g; ctx.gs = { d: blur(g.d, g.w, g.h, 1.0), w: g.w, h: g.h, fx: g.fx, fy: g.fy, x0: 0, y0: 0 };
+    ctx.U = H / 1000; ctx.Uw = g.h / 1000; ctx.W = W; ctx.H = H;
+    // native-intensity view for fine stages (stretched, inversion applied)
+    ctx.nat = function (cr) { for (var k = 0; k < cr.d.length; k++) { var v = clamp((cr.d[k] - p1) / rngv, 0, 1); cr.d[k] = inv ? 1 - v : v; } return cr; };
+    ctx.satMask = function (cr) { var m = new Uint8Array(cr.d.length); for (var k = 0; k < cr.d.length; k++) if (inv ? cr.d[k] < 0.012 : cr.d[k] > 0.985) m[k] = 1; return m; };
+    if (inv) ctx.res.info.push('inverted');
+    if (rngv < 0.35) ctx.res.info.push('lowContrast');
+    ctx.res.inverted = inv; ctx.res.satFrac = sat / n;
+  }
+  function limbs(ctx) {
+    var g = ctx.gs, w = g.w, h = g.h, prof = new Float32Array(w);
+    for (var x = 0; x < w; x++) { var s = 0, c = 0; for (var y = Math.round(h * 0.3); y < h * 0.8; y += 2) { s += g.d[y * w + x]; c++; } prof[x] = s / c; }
+    prof = smooth1(prof, w / 60); ctx.limb = {};
+    [['left', 0.03, 0.5], ['right', 0.5, 0.97]].forEach(function (hf) {
+      var a = Math.round(w * hf[1]), b = Math.round(w * hf[2]), bi = a, bv = -1; for (var x2 = a; x2 < b; x2++) if (prof[x2] > bv) { bv = prof[x2]; bi = x2; }
+      var base = Math.min(prof[a], prof[b - 1]); ctx.limb[hf[0]] = { x: bi, prom: bv - base, found: bv - base > 0.06 };
+    });
+  }
+  function trace(ctx, half) {
+    var L = ctx.limb[half], g = ctx.gs, w = g.w, h = g.h, U = ctx.Uw, pts = [];
+    if (!L.found) return;
+    var xmin = half === 'left' ? 0 : Math.round(w * 0.5) - 1, xmax = half === 'left' ? Math.round(w * 0.5) : w - 1;
+    var rowPeak = function (y, x0, win) { var a = Math.max(xmin, Math.round(x0 - win)), b = Math.min(xmax, Math.round(x0 + win)), best = x0, bv = -1, r = Math.ceil(6 * U);
+      for (var x = a; x <= b; x++) { var s = 0, c = 0; for (var k = -r; k <= r; k += 2) { var xx = x + k; if (xx < 0 || xx >= w) continue; s += g.d[y * w + xx] * (1 - Math.abs(k) / (r + 1)); c++; } s /= c; if (s > bv) { bv = s; best = x; } } return { x: best, v: bv }; };
+    var y0 = Math.round(h * 0.35), p0 = rowPeak(y0, L.x, 70 * U), stepy = Math.max(2, Math.round(2 * U));
+    pts.push({ x: p0.x, y: y0, v: p0.v });
+    [-1, 1].forEach(function (dir) { var x = p0.x; for (var y = y0 + dir * stepy; y > h * 0.08 && y < h * 0.98; y += dir * stepy) { var q = rowPeak(y, x, 7 * U); x = q.x; pts.push({ x: q.x, y: y, v: q.v }); } });
+    pts.sort(function (a, b) { return a.y - b.y; }); L.trace = pts;
+    L.xAt = function (y) { var best = pts[0]; for (var i = 0; i < pts.length; i++) if (Math.abs(pts[i].y - y) < Math.abs(best.y - y)) best = pts[i]; return best.x; };
+    // coarse joint levels: darker band between two brighter bands along the limb
+    var band = function (y, hw) { var x = L.xAt(y), s = 0, c = 0; for (var k = -hw; k <= hw; k++) { var xx = Math.round(x + k); if (xx < 0 || xx >= w) continue; s += g.d[Math.round(y) * w + xx]; c++; } return c ? s / c : 0; };
+    // candidates = local maxima of the gap score; the most proximal one with ≥ 50 % of the best score wins (the joint lies above foot / background transitions)
+    var gapSearch = function (ya, yb, hw, dl, bgMin) {
+      var sc = [], y0 = Math.round(ya), best = 0;
+      for (var y = y0; y < yb; y++) { var v = -1; if (y - dl >= 0 && y + dl < h) { var m = (band(y - 1, hw) + band(y, hw) + band(y + 1, hw)) / 3; v = Math.min(band(y - dl, hw), band(y + dl, hw)) - m; if (m < bgMin) v *= 0.2; } sc.push(v); if (v > best) best = v; }
+      if (best <= 0) return null;
+      for (var i = 0; i < sc.length; i++) if (sc[i] === best) return { y: y0 + i, sc: best };
+      return null;
+    };
+    // femoral anatomical shaft axis (x as a function of y) for the head-side prior
+    var fpts = pts.filter(function (p) { return p.y > h * 0.2 && p.y < h * 0.42; }).map(function (p) { return { t: p.y, u: p.x }; });
+    L.femAxis = ransacLine(fpts, 2.5 * U, 0.1 * h);
+    var kn = gapSearch(h * 0.36, h * 0.72, Math.round(25 * U), Math.round(14 * U), ctx.bg + 0.04);
+    L.knee = kn; if (!kn) return;
+
+  }
+  function head(ctx, half) {
+    var L = ctx.limb[half]; if (!L.found || !L.knee) return;
+    var g = ctx.gs, w = g.w, h = g.h, U = ctx.Uw;
+    var x0 = half === 'left' ? Math.round(w * 0.02) : Math.round(w * 0.5), x1 = half === 'left' ? Math.round(w * 0.5) : Math.round(w * 0.98), y0 = Math.round(h * 0.02), y1 = Math.round(Math.min(h * 0.34, L.knee.y - h * 0.18));
+    var rw = x1 - x0, rh = y1 - y0; if (rw < 20 || rh < 20) return;
+    var E = []; var mags = [];
+    for (var y = y0 + 1; y < y1 - 1; y++) for (var x = x0 + 1; x < x1 - 1; x++) {
+      var i = y * w + x, d = g.d, gx = (d[i - w + 1] + 2 * d[i + 1] + d[i + w + 1]) - (d[i - w - 1] + 2 * d[i - 1] + d[i + w - 1]), gy = (d[i + w - 1] + 2 * d[i + w] + d[i + w + 1]) - (d[i - w - 1] + 2 * d[i - w] + d[i - w + 1]), m = Math.hypot(gx, gy);
+      mags.push(m); E.push([x, y, gx / (m || 1), gy / (m || 1), m]);
+    }
+    var thr = median(mags) + 3 * mad(mags); thr = Math.max(thr, pct(new Float32Array(mags.map(function (v) { return Math.min(1, v / 4); })), 0.85) * 4);
+    E = E.filter(function (e) { return e[4] > thr; });
+    var cands = [], acc = new Float32Array(rw * rh), sm = new Float32Array(rw * rh), med = half === 'left' ? 1 : -1;
+    for (var r = Math.round(12 * U); r <= Math.round(36 * U); r += Math.max(1, Math.round(1.5 * U))) {
+      acc.fill(0); sm.fill(0);
+      for (var k = 0; k < E.length; k++) { var e = E[k], cx = Math.round(e[0] + r * e[2]) - x0, cy = Math.round(e[1] + r * e[3]) - y0; if (cx < 1 || cy < 1 || cx >= rw - 1 || cy >= rh - 1) continue; var wv = Math.min(2, e[4] / thr); acc[cy * rw + cx] += wv; }
+      for (var yy = 1; yy < rh - 1; yy++) for (var xx = 1; xx < rw - 1; xx++) { var j = yy * rw + xx; sm[j] = acc[j] + 0.5 * (acc[j - 1] + acc[j + 1] + acc[j - rw] + acc[j + rw]); }
+      for (var n3 = 0; n3 < 3; n3++) { // top peaks per radius with non-maximum suppression
+        var bj = -1, bv = 0; for (var j2 = 0; j2 < sm.length; j2++) if (sm[j2] > bv) { bv = sm[j2]; bj = j2; } if (bj < 0) break;
+        var px = bj % rw, py = (bj / rw) | 0; cands.push({ x: px + x0, y: py + y0, r: r, sc: bv / (2 * Math.PI * r) });
+        for (var qy = Math.max(0, py - r); qy < Math.min(rh, py + r); qy++) for (var qx = Math.max(0, px - r); qx < Math.min(rw, px + r); qx++) sm[qy * rw + qx] = 0;
+      }
+    }
+    // prior: the femoral head lies medial and proximal to the femoral shaft (the greater trochanter lies lateral)
+    var ax = L.femAxis, best = null;
+    cands.forEach(function (c) { var sx = ax ? ax.a + ax.b * c.y : L.xAt(c.y), dm = (c.x - sx) * med, pr = sstep(4 * U, 18 * U, dm) * (0.6 + 0.4 * sstep(12 * U, 24 * U, c.r)); c.score = c.sc * pr; if (!best || c.score > best.score) best = c; });
+    if (!best || best.score <= 0) return;
+    // refine at (near) native resolution with radial edge search
+    var Rn = best.r / g.fy, cN = toNat(g, V(best.x, best.y)), f = Math.min(1, 60 / Rn), cr = ctx.nat(crop(ctx.in.gray, ctx.W, ctx.H, cN.x - 1.6 * Rn, cN.y - 1.6 * Rn, 3.2 * Rn, 3.2 * Rn, f));
+    var crs = { d: blur(cr.d, cr.w, cr.h, 1.0), w: cr.w, h: cr.h, fx: cr.fx, fy: cr.fy, x0: cr.x0, y0: cr.y0 }, c0 = toCrop(crs, cN), rc = Rn * crs.fy, P = [], es = [];
+    for (var a = 0; a < 120; a++) {
+      var th = a * Math.PI / 60, dx = Math.cos(th), dy = Math.sin(th), bestE = null;
+      for (var rr = rc * 0.7; rr <= rc * 1.3; rr += 0.5) {
+        var q = function (rad) { var s = 0; for (var o = -1; o <= 1; o++) s += samp(crs, c0.x + rad * dx - o * dy, c0.y + rad * dy + o * dx); return s / 3; };
+        var ev = q(rr - 1.2) - q(rr + 1.2); es.push(ev); if (!bestE || ev > bestE.e) bestE = { e: ev, r: rr };
+      }
+      if (bestE) P.push({ x: c0.x + bestE.r * dx, y: c0.y + bestE.r * dy, e: bestE.e, a: a });
+    }
+    var sig = mad(es) || 0.01; P = P.filter(function (p) { return p.e > 3 * sig; });
+    var fit = P.length >= 8 ? circleFit(P) : null;
+    for (var it = 0; it < 3 && fit; it++) { var res = P.map(function (p) { return Math.abs(Math.hypot(p.x - fit.x, p.y - fit.y) - fit.r); }), lim = Math.max(1.2, 2.5 * mad(res)); var P2 = P.filter(function (p, i2) { return res[i2] <= lim; }); if (P2.length < 8) break; P = P2; fit = circleFit(P); }
+    if (!fit) { L.headRes = { found: false }; return; }
+    var resid = P.map(function (p) { return Math.hypot(p.x - fit.x, p.y - fit.y) - fit.r; }), rms = Math.sqrt(resid.reduce(function (s, v) { return s + v * v; }, 0) / resid.length);
+    var cov = P.length / 120, snr = median(P.map(function (p) { return p.e; })) / sig;
+    var C = toNat(crs, V(fit.x, fit.y)), Rf = fit.r / crs.fy;
+    var conf = sstep(0.2, 0.45, cov) * (1 - sstep(0.03, 0.08, rms / fit.r)) * sstep(2.2, 4.5, snr) * (Rf / ctx.H > 0.01 && Rf / ctx.H < 0.04 ? 1 : 0.3);
+    L.headRes = { found: true, c: C, r: Rf, cov: cov, rms: rms / crs.fy, snr: snr, conf: conf, reasons: conf < LOW ? [cov < 0.45 ? 'partialEdge' : snr < 4 ? 'weakEdge' : 'irregular'] : [] };
+  }
+  /** Knee or ankle: oriented gap search → edge points above/below → bitangent / RANSAC lines. Coordinates: t along the joint, u toward distal. */
+  function joint(ctx, half, kind) {
+    var L = ctx.limb[half]; if (!L.found || !L.knee) return; if (kind === 'ankle') ankleCoarse(ctx, L); var coarse = kind === 'knee' ? L.knee : L.ankle; if (!coarse) return;
+    var U = ctx.U, g = ctx.gs, cN = toNat(g, V(L.xAt(coarse.y), coarse.y)), Rk = (kind === 'knee' ? 80 : 64) * U, f = Math.min(1, (kind === 'knee' ? 240 : 150) / Rk);
+    var raw = crop(ctx.in.gray, ctx.W, ctx.H, cN.x - Rk, cN.y - Rk, 2 * Rk, 2 * Rk, f), satM = ctx.satMask(raw), cr = ctx.nat(raw);
+    var C = { d: blur(cr.d, cr.w, cr.h, 1.1), w: cr.w, h: cr.h, fx: cr.fx, fy: cr.fy, x0: cr.x0, y0: cr.y0 }, u = U * C.fy, c0 = toCrop(C, cN);
+    // bone width just proximal to the gap (condyles / distal tibia) → half-width Wb and centre
+    var rowsA = kind === 'knee' ? [-15, -7] : [-12, -5], prof = [], xs = [];
+    for (var x = 0; x < C.w; x++) { var s = 0, n = 0; for (var yy = rowsA[0] * u; yy <= rowsA[1] * u; yy += 1) { s += samp(C, x, c0.y + yy); n++; } prof.push(s / n); xs.push(x); }
+    prof = Array.prototype.slice.call(smooth1(prof, 1.5 * u)); var ci = Math.round(clamp(c0.x, 0, C.w - 1)), pk = 0; for (var x2 = Math.max(0, ci - Math.round(20 * u)); x2 < Math.min(C.w, ci + 20 * u); x2++) if (prof[x2] > prof[pk] || pk < ci - 20 * u) pk = x2;
+    var base = Math.min.apply(null, prof), tB = base + 0.45 * (prof[pk] - base), li = pk, ri = pk; while (li > 0 && prof[li - 1] > tB) li--; while (ri < C.w - 1 && prof[ri + 1] > tB) ri++;
+    var Wb = (ri - li) / 2, defW = (kind === 'knee' ? 36 : 14) * u; if (!(Wb > defW * 0.45 && Wb < defW * 2.2)) Wb = defW; var xc = kind === 'knee' ? (li + ri) / 2 : c0.x;
+    if (Math.abs(xc - c0.x) > 25 * u) xc = c0.x;
+    // oriented gap search
+    var dg = (kind === 'knee' ? 8 : 4) * u, sRange = (kind === 'knee' ? 22 : 30) * u, bestG = null;
+    for (var th = -14; th <= 14; th += 0.5) {
+      var a = th * Math.PI / 180, d = V(Math.cos(a), Math.sin(a)), nn = V(-d.y, d.x), p = [];
+      for (var s2 = -sRange - dg; s2 <= sRange + dg; s2 += 0.5) { var sm = 0, cn = 0; for (var t = -0.75 * Wb; t <= 0.75 * Wb; t += 1.5) { sm += samp(C, xc + t * d.x + s2 * nn.x, c0.y + t * d.y + s2 * nn.y); cn++; } p.push(sm / cn); }
+      var k0 = Math.round(dg / 0.5);
+      for (var k = k0; k < p.length - k0; k++) { var sc = Math.min(p[k - k0], p[k + k0]) - p[k]; if (!bestG || sc > bestG.sc) bestG = { sc: sc, th: th, s: -sRange - dg + k * 0.5, d: d, n: nn }; }
+    }
+    if (!bestG || bestG.sc <= 0) { L[kind + 'Res'] = { found: false }; return; }
+    var D = bestG.d, N = bestG.n, G0 = V(xc + bestG.s * N.x, c0.y + bestG.s * N.y), up = [], dn = [], allE = [];
+    var q = function (t, uu) { var s3 = 0; for (var o = -1; o <= 1; o++) s3 += samp(C, G0.x + (t + o) * D.x + uu * N.x, G0.y + (t + o) * D.y + uu * N.y); return s3 / 3; };
+    var tExt = (kind === 'knee' ? 1.15 : 1.45) * Wb, uMax = (kind === 'knee' ? 22 : 12) * u, half0 = (kind === 'knee' ? 3 : 1.5) * u;
+    for (var t2 = -tExt; t2 <= tExt; t2 += 1) {
+      var bu = null, bd = null;
+      for (var uu = half0; uu >= -uMax; uu -= 0.5) { var e = q(t2, uu - 1) - q(t2, uu + 1); allE.push(e); if (!bu || e > bu.e) bu = { e: e, u: uu }; }
+      if (kind === 'knee') for (var uu2 = -half0; uu2 <= uMax; uu2 += 0.5) { var e2 = q(t2, uu2 + 1) - q(t2, uu2 - 1); if (!bd || e2 > bd.e) bd = { e: e2, u: uu2 }; }
+      if (bu) up.push({ t: t2, u: bu.u, e: bu.e }); if (bd) dn.push({ t: t2, u: bd.u, e: bd.e });
+    }
+    var sig = mad(allE) || 0.005, good = function (pp) { return pp.e > 5 * sig; };
+    up = up.filter(good); dn = dn.filter(good);
+    var toN = function (t, uu) { return toNat(C, V(G0.x + t * D.x + uu * N.x, G0.y + t * D.y + uu * N.y)); };
+    // saturated (metal / implant) pixels in a band around the joint lowers confidence
+    var mc = 0, mn = 0; for (var mt = -1.2 * Wb; mt <= 1.2 * Wb; mt += 2) for (var mu = -uMax; mu <= uMax; mu += 2) { var mp = V(G0.x + mt * D.x + mu * N.x, G0.y + mt * D.y + mu * N.y), mx = Math.round(mp.x), my = Math.round(mp.y); if (mx < 0 || my < 0 || mx >= C.w || my >= C.h) continue; mn++; mc += satM[my * C.w + mx]; }
+    var metal = mn ? mc / mn : 0, metalF = metal > 0.004 ? 0.5 : 1, reasons = metal > 0.004 ? ['metal'] : [];
+    var tc = xc === c0.x ? 0 : 0; void tc;
+    if (kind === 'knee') {
+      var ts = up.map(function (p2) { return p2.t; }), tmid = ts.length ? (Math.min.apply(null, ts) + Math.max.apply(null, ts)) / 2 : 0;
+      var bt = bitangent(up, tmid, 0.8 * Wb, Math.max(1, 0.5 * u));
+      var spine = 0.22 * Wb, dn2 = dn.filter(function (p2) { return Math.abs(p2.t - tmid) > spine; });
+      var tl = ransacLine(dn2, Math.max(1, 0.55 * u), 0.8 * Wb);
+      var res = { found: !!(bt && tl), metal: metal };
+      if (bt) {
+        var snrF = median(up.filter(function (p2) { return Math.abs(p2.u - (bt.a + bt.b * p2.t)) <= 1.6; }).map(function (p2) { return p2.e; })) / sig;
+        res.FC1 = toN(bt.tl, bt.a + bt.b * bt.tl); res.FC2 = toN(bt.tr, bt.a + bt.b * bt.tr);
+        var cf = sstep(2, 7, Math.min(bt.supL, bt.supR)) * (1 - sstep(0.02, 0.12, bt.vio / Math.max(1, bt.n))) * sstep(2.5, 5, snrF) * metalF;
+        res.confF = cf; res.reasonsF = reasons.concat(cf < LOW && metalF === 1 ? [Math.min(bt.supL, bt.supR) < 4 ? 'fewPoints' : 'weakEdge'] : []);
+      }
+      if (tl) {
+        var inT = tl.inl.map(function (p2) { return p2.t; }).sort(function (a2, b2) { return a2 - b2; });
+        // largest contiguous inlier runs on either side of the spines
+        var lo = inT[Math.min(1, inT.length - 1)], hi = inT[Math.max(0, inT.length - 2)];
+        var snrT = median(tl.inl.map(function (p2) { return p2.e; })) / sig;
+        res.TP1 = toN(lo, tl.a + tl.b * lo); res.TP2 = toN(hi, tl.a + tl.b * hi);
+        var span = bt ? Math.abs(bt.tr - bt.tl) : 1.2 * Wb, ct = sstep(0.3, 0.6, tl.frac) * (1 - sstep(0.5, 1.6, tl.rms / u)) * sstep(2.5, 5, snrT) * sstep(0.65, 0.9, (hi - lo) / span) * metalF;
+        res.confT = ct; res.reasonsT = reasons.concat(ct < LOW && metalF === 1 ? [tl.frac < 0.45 ? 'fewPoints' : (hi - lo) / span < 0.8 ? 'extent' : 'weakEdge'] : []);
+      }
+      res.gapScore = bestG.sc; L.kneeRes = res;
+    } else {
+      var al = ransacLine(up, Math.max(1, 0.55 * u), 0.8 * Wb);
+      var resA = { found: !!al, metal: metal };
+      if (al) {
+        var tsA = al.inl.map(function (p2) { return p2.t; }).sort(function (a2, b2) { return a2 - b2; }), m0 = median(tsA), runL = m0, runR = m0, gapMax = 3 * u;
+        var idx = tsA.indexOf(m0) >= 0 ? tsA.indexOf(m0) : tsA.length >> 1; for (var i3 = idx; i3 > 0 && tsA[i3] - tsA[i3 - 1] <= gapMax; i3--) runL = tsA[i3 - 1]; for (var i4 = idx; i4 < tsA.length - 1 && tsA[i4 + 1] - tsA[i4] <= gapMax; i4++) runR = tsA[i4 + 1];
+        resA.AN1 = toN(runL, al.a + al.b * runL); resA.AN2 = toN(runR, al.a + al.b * runR);
+        var snrA = median(al.inl.map(function (p2) { return p2.e; })) / sig;
+        var ca = sstep(0.3, 0.6, al.frac) * (1 - sstep(0.5, 1.6, al.rms / u)) * sstep(2.5, 5, snrA) * sstep(10 * u, 18 * u, runR - runL) * metalF;
+        resA.conf = ca; resA.reasons = reasons.concat(ca < LOW && metalF === 1 ? [al.frac < 0.45 ? 'fewPoints' : runR - runL < 16 * u ? 'extent' : 'weakEdge'] : []);
+      }
+      L.ankleRes = resA;
+    }
+  }
+  /** Coarse ankle level on a near-native strip along the distal tibia (the tibiotalar gap is only a few px wide at working scale).
+   *  Window from the femoral length (head → knee): tibia/femur ≈ 0.65–1.15. Falls back to the distal 40 % of the film. */
+  function ankleCoarse(ctx, L) {
+    var g = ctx.gs, U = ctx.U, kn = toNat(g, V(L.xAt(L.knee.y), L.knee.y)), hr = L.headRes, fl = hr && hr.found ? kn.y - hr.c.y : 0.42 * ctx.H;
+    var ya = kn.y + 0.65 * fl, yb = Math.min(ctx.H - 2, kn.y + 1.18 * fl), f = Math.min(1, 2 / U), hw = 10 * U, prof = [], ys = [];
+    for (var y = ya; y < yb; y += 1 / f) { var yw = toCrop(g, V(0, y)).y, x = toNat(g, V(L.xAt(yw), yw)).x, s = 0, n = 0; for (var k = -hw; k <= hw; k += 1 / f) { var xx = Math.round(x + k), yy = Math.round(y); if (xx < 0 || xx >= ctx.W) continue; s += ctx.in.gray[yy * ctx.W + xx]; n++; } prof.push(n ? s / n / 255 : 0); ys.push(y); }
+    if (ctx.inv) prof = prof.map(function (v) { return 1 - v; });
+    prof = Array.prototype.slice.call(smooth1(prof, 0.8 * U * f)); var dl = Math.max(2, Math.round(4.5 * U * f)), best = null, bgN = ctx.p1 + (ctx.bg + 0.04) * ctx.range;
+    for (var i = dl; i < prof.length - dl; i++) { var v = Math.min(prof[i - dl], prof[i + dl]) - prof[i]; if (prof[i] < bgN) v *= 0.2; if (!best || v > best.sc) best = { i: i, sc: v }; }
+    L.ankle = best && best.sc > 0 ? { y: toCrop(g, V(0, ys[best.i])).y, sc: best.sc } : null;
+  }
+  function assemble(ctx) {
+    var X = root.OrthoXray, out = ctx.res, LIM = ctx.limb || {};
+    ctx.halves.forEach(function (hf) {
+      var L = LIM[hf] || {}, o = { found: false, lm: {}, conf: {}, reasons: {}, parts: {} };
+      out.halves[hf] = o;
+      if (!L.found) { o.reasons.limb = ['notFound']; o.missing = ['limb']; o.low = []; o.status = 'fail'; return; }
+      var hr = L.headRes, kr = L.kneeRes, ar = L.ankleRes;
+      var put = function (k, p, c, r) { if (!p) return; o.lm[k] = { x: p.x, y: p.y }; o.conf[k] = Math.round(clamp(c, 0, 1) * 100) / 100; o.reasons[k] = r || []; };
+      if (hr && hr.found) { var side = hf === 'left' ? 1 : -1; [[200, 'FH1'], [270, 'FH2'], [340, 'FH3']].forEach(function (a) { var ang = (side === 1 ? a[0] : 180 - a[0]) * Math.PI / 180; put(a[1], V(hr.c.x + hr.r * Math.cos(ang), hr.c.y + hr.r * Math.sin(ang)), hr.conf, hr.reasons); }); o.parts.head = { r: hr.r, cov: hr.cov, rms: hr.rms, snr: hr.snr }; }
+      if (kr && kr.found !== undefined) { put('FC1', kr.FC1, kr.confF, kr.reasonsF); put('FC2', kr.FC2, kr.confF, kr.reasonsF); put('TP1', kr.TP1, kr.confT, kr.reasonsT); put('TP2', kr.TP2, kr.confT, kr.reasonsT); }
+      if (ar && ar.found) { put('AN1', ar.AN1, ar.conf, ar.reasons); put('AN2', ar.AN2, ar.conf, ar.reasons); }
+      var need = ['FH1', 'FH2', 'FH3', 'FC1', 'FC2', 'TP1', 'TP2', 'AN1', 'AN2'], miss = need.filter(function (k) { return !o.lm[k]; });
+      o.missing = miss; o.found = miss.length === 0;
+      if (o.lm.FC1 && o.lm.FC2) { o.lm.KF = V((o.lm.FC1.x + o.lm.FC2.x) / 2, (o.lm.FC1.y + o.lm.FC2.y) / 2); o.conf.KF = o.conf.FC1; o.reasons.KF = o.reasons.FC1; }
+      if (o.lm.TP1 && o.lm.TP2) { o.lm.KT = V((o.lm.TP1.x + o.lm.TP2.x) / 2, (o.lm.TP1.y + o.lm.TP2.y) / 2); o.conf.KT = o.conf.TP1; o.reasons.KT = o.reasons.TP1; }
+      // anatomical plausibility on the proposal (medial = towards the image midline on a bilateral AP)
+      if (o.found && X) {
+        var r = X.compute(o.lm, hf === 'left' ? 1 : -1), bad = function (keys, why) { keys.forEach(function (k) { o.conf[k] = Math.min(o.conf[k], 0.4); if (o.reasons[k].indexOf(why) < 0) o.reasons[k] = o.reasons[k].concat([why]); }); };
+        if (!(r.ldfa > 78 && r.ldfa < 102)) bad(['FC1', 'FC2', 'KF'], 'implausible');
+        if (!(r.mpta > 78 && r.mpta < 102)) bad(['TP1', 'TP2', 'KT'], 'implausible');
+        if (!(r.jlca < 8)) bad(['FC1', 'FC2', 'TP1', 'TP2', 'KF', 'KT'], 'implausible');
+        if (!(Math.abs(r.mhka) < 20)) bad(need, 'implausible');
+        var lenF = Math.hypot(r.KF.x - r.H.x, r.KF.y - r.H.y), lenT = Math.hypot(r.A.x - r.KT.x, r.A.y - r.KT.y); if (!(lenT / lenF > 0.7 && lenT / lenF < 1.25)) bad(need, 'implausible');
+        o.preview = { hka: r.hka, ldfa: r.ldfa, mpta: r.mpta, cpak: r.cpak && r.cpak.roman };
+      }
+      if (ctx.res.info.indexOf('lowContrast') >= 0) Object.keys(o.conf).forEach(function (k) { o.conf[k] = Math.round(o.conf[k] * 0.85 * 100) / 100; if (o.conf[k] < LOW && o.reasons[k].indexOf('lowContrast') < 0) o.reasons[k] = o.reasons[k].concat(['lowContrast']); });
+      o.low = Object.keys(o.conf).filter(function (k) { return o.conf[k] < LOW && k !== 'KF' && k !== 'KT'; });
+      o.status = !o.found ? 'fail' : o.low.length ? 'check' : 'ok';
+    });
+    var st = ctx.halves.map(function (h) { return out.halves[h] && out.halves[h].status; });
+    out.status = st.indexOf('fail') >= 0 ? 'fail' : st.indexOf('check') >= 0 ? 'check' : 'ok';
+    ctx.limb = LIM;
+  }
+  /** RGBA (canvas ImageData) → 8-bit luminance. */
+  function grayFromRGBA(d, n) { var g = new Uint8ClampedArray(n); for (var i = 0; i < n; i++) g[i] = (d[4 * i] * 77 + d[4 * i + 1] * 150 + d[4 * i + 2] * 29) >> 8; return g; }
+
+  root.OrthoXrayAuto = { VERSION: VERSION, LOW: LOW, detect: detect, start: start, step: step, grayFromRGBA: grayFromRGBA, _ransacLine: ransacLine, _bitangent: bitangent, _circleFit: circleFit };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== PROMs + doctor dashboard UI (DEMO, localStorage) ===== -->
@@ -2498,7 +3040,15 @@ button.small{padding:6px 10px;font-size:.82rem}
       hka: 'HKA (μηχανικός άξονας)', ldfa: 'mLDFA', mpta: 'MPTA', ahka: 'aHKA = MPTA − mLDFA', jlo: 'JLO = MPTA + mLDFA', jlca: 'JLCA (γωνία σύγκλισης αρθρικών γραμμών)', mad: 'Απόκλιση μηχανικού άξονα (MAD)', cpak: 'CPAK', px: 'px', lat: 'έξω', med: 'έσω',
       cpakT: 'Ταξινόμηση CPAK (MacDessi 2021)', varus: 'Ραιβό', neutral: 'Ουδέτερο', valgus: 'Βλαισό', apexDistal: 'Κορυφή περιφερικά', jlNeutral: 'Ουδέτερη', apexProximal: 'Κορυφή κεντρικά', aHKAax: 'aHKA (°)', jloAx: 'JLO (°)',
       dashT: 'Ακτινολογική ευθυγράμμιση κάτω άκρου', dashNone: 'Δεν υπάρχουν μετρήσεις ακτινογραφιών.', change: 'Μεταβολή', open: 'Άνοιγμα καρτέλας Ακτινογραφίες', dicomErr: 'Το αρχείο DICOM δεν μπορεί να διαβαστεί: ', compressed: 'συμπιεσμένο DICOM (JPEG/JPEG 2000/RLE) δεν υποστηρίζεται στο demo – εξαγάγετε ως μη συμπιεσμένο DICOM ή PNG.',
-      demoNote: 'DEMO: συνθετική σχηματική εικόνα, όχι ασθενής. Γνωστές τιμές: Δεξί mLDFA 90°, MPTA 85° (CPAK I) · Αριστερό mLDFA 88°, MPTA 92° (CPAK VI).', loupe: 'Μεγεθυντικός φακός', srcT: 'Ορισμοί & πηγές', dicomInfo: 'DICOM', spacing: 'Μέγεθος pixel' },
+      demoNote: 'DEMO: συνθετική εικόνα ({v}), όχι ασθενής. Γνωστές τιμές: {truth}.', loupe: 'Μεγεθυντικός φακός', srcT: 'Ορισμοί & πηγές', dicomInfo: 'DICOM', spacing: 'Μέγεθος pixel',
+      variant: 'Παραλλαγή DEMO', autoBtn: 'Αυτόματη ανίχνευση', scopeBoth: 'Και οι δύο πλευρές', scopeCur: 'Μόνο η τρέχουσα πλευρά', autoRun: 'αυτόματα μετά τη φόρτωση', running: 'Αυτόματη ανίχνευση σε εξέλιξη…',
+      proposal: 'Αυτόματη πρόταση – επιβεβαιώστε', propShort: 'πρόταση', stOk: 'Όλα τα σημεία με υψηλή βεβαιότητα – ελέγξτε τα και επιβεβαιώστε.', stCheck: '{n} σημεία χαμηλής βεβαιότητας (πορτοκαλί) – ελέγξτε/διορθώστε τα πριν από την επιβεβαίωση.',
+      stFail: 'Η αυτόματη ανίχνευση δεν ολοκληρώθηκε – λείπουν: {m}. Τοποθετήστε τα σημεία χειροκίνητα.', noLimb: 'δεν βρέθηκε σκέλος σε αυτή την πλευρά της εικόνας', confirmed: 'Επιβεβαιώθηκε', confirmBtn: 'Επιβεβαίωση σημείων', confirmAnyway: 'Επιβεβαίωση παρ’ όλα αυτά',
+      lowArm: '{n} σημεία χαμηλής βεβαιότητας δεν έχουν ελεγχθεί/μετακινηθεί. Ελέγξτε τα στον μεγεθυντικό φακό ή πατήστε ξανά για επιβεβαίωση ως έχουν.', needConfirm: 'Επιβεβαιώστε πρώτα τα σημεία της πλευράς (βήμα «Επιβεβαίωση»).', confirmedMsg: 'Τα σημεία επιβεβαιώθηκαν από τον ιατρό.',
+      srcAuto: 'αυτόματα (επιβεβαιωμένα)', srcCorr: 'αυτόματα + διόρθωση', srcManual: 'χειροκίνητα', landmarks: 'Σημεία', oAuto: 'αυτόματο', oCorr: 'αυτόματο, διορθώθηκε', oManual: 'χειροκίνητο', conf: 'βαθμός βεβαιότητας', cHi: 'υψηλή βεβαιότητα', cLo: 'χαμηλή',
+      infInv: 'Η εικόνα αναγνωρίστηκε ως αρνητική (φωτεινό φόντο) – αντιστράφηκε για την ανάλυση και την προβολή.', infLow: 'Χαμηλή αντίθεση εικόνας – μειωμένη βεβαιότητα.', infMarkers: 'Οι δείκτες R/L δεν διαβάζονται αυτόματα· η πλευρά προκύπτει από τον προσανατολισμό (προεπιλογή: δεξί στα αριστερά της εικόνας). Επιβεβαιώστε με τον μολύβδινο δείκτη.',
+      infMethod: 'Κλασική ανάλυση εικόνας στη συσκευή (χωρίς εκπαιδευμένο μοντέλο). Η βεβαιότητα είναι ευρετικός δείκτης ποιότητας ακμών/προσαρμογής, όχι πιθανότητα. Ακρίβεια επαληθευμένη μόνο σε συνθετικές εικόνες· σε πραγματικές ακτινογραφίες άγνωστη έως ότου ελεγχθεί.', took: 'Χρόνος',
+      r_metal: 'μέταλλο/εμφύτευμα', r_weakEdge: 'ασθενές περίγραμμα', r_fewPoints: 'λίγα σημεία ακμής', r_extent: 'αβέβαια άκρα', r_partialEdge: 'μερικώς ορατό περίγραμμα', r_irregular: 'ακανόνιστο περίγραμμα', r_implausible: 'ανατομικά απίθανο', r_lowContrast: 'χαμηλή αντίθεση', r_notFound: 'δεν βρέθηκε' },
     en: { title: 'X-rays – lower-limb alignment (full-length standing AP)', lead: 'Upload a full-length standing AP lower-limb radiograph (hip to ankle). Images are processed on this device only and are neither uploaded nor stored; only the landmarks and angles are saved to the record.',
       file: 'File (JPG, PNG or uncompressed DICOM)', demo: 'Load DEMO image', patient: 'Patient', date: 'X-ray date', phase: 'Phase', pre: 'Pre-operative', post: 'Post-operative', side: 'Side', R: 'Right', L: 'Left',
       zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit', bright: 'Brightness', contrast: 'Contrast', invert: 'Invert', snap: 'Snap to edge', mirror: 'Right on image right', medWarn: '⚠️ Side check: the ankle centre is not medial to the femoral head centre for the selected side/orientation. Check the side (R/L) and the image orientation.', resetSide: 'Reset side',
@@ -2508,7 +3058,15 @@ button.small{padding:6px 10px;font-size:.82rem}
       hka: 'HKA (mechanical axis)', ldfa: 'mLDFA', mpta: 'MPTA', ahka: 'aHKA = MPTA − mLDFA', jlo: 'JLO = MPTA + mLDFA', jlca: 'JLCA (joint-line convergence angle)', mad: 'Mechanical axis deviation (MAD)', cpak: 'CPAK', px: 'px', lat: 'lateral', med: 'medial',
       cpakT: 'CPAK classification (MacDessi 2021)', varus: 'Varus', neutral: 'Neutral', valgus: 'Valgus', apexDistal: 'Apex distal', jlNeutral: 'Neutral', apexProximal: 'Apex proximal', aHKAax: 'aHKA (°)', jloAx: 'JLO (°)',
       dashT: 'Radiographic lower-limb alignment', dashNone: 'No radiograph measurements.', change: 'Change', open: 'Open X-rays tab', dicomErr: 'The DICOM file cannot be read: ', compressed: 'compressed DICOM (JPEG/JPEG 2000/RLE) is not supported in the demo – export as uncompressed DICOM or PNG.',
-      demoNote: 'DEMO: synthetic schematic image, not a patient. Known values: Right mLDFA 90°, MPTA 85° (CPAK I) · Left mLDFA 88°, MPTA 92° (CPAK VI).', loupe: 'Magnifier', srcT: 'Definitions & sources', dicomInfo: 'DICOM', spacing: 'Pixel spacing' }
+      demoNote: 'DEMO: synthetic image ({v}), not a patient. Known values: {truth}.', loupe: 'Magnifier', srcT: 'Definitions & sources', dicomInfo: 'DICOM', spacing: 'Pixel spacing',
+      variant: 'DEMO variant', autoBtn: 'Auto-detect', scopeBoth: 'Both sides', scopeCur: 'Current side only', autoRun: 'automatically after loading', running: 'Auto-detection running…',
+      proposal: 'Automatic proposal – please confirm', propShort: 'proposal', stOk: 'All landmarks high confidence – review and confirm.', stCheck: '{n} low-confidence landmarks (orange) – check/correct them before confirming.',
+      stFail: 'Auto-detection incomplete – missing: {m}. Place these landmarks manually.', noLimb: 'no limb found on this side of the image', confirmed: 'Confirmed', confirmBtn: 'Confirm landmarks', confirmAnyway: 'Confirm anyway',
+      lowArm: '{n} low-confidence landmarks have not been reviewed/moved. Check them with the magnifier, or press again to confirm them as they are.', needConfirm: 'Confirm this side’s landmarks first (“Confirm” step).', confirmedMsg: 'Landmarks confirmed by the clinician.',
+      srcAuto: 'automatic (confirmed)', srcCorr: 'automatic + corrected', srcManual: 'manual', landmarks: 'Landmarks', oAuto: 'automatic', oCorr: 'automatic, corrected', oManual: 'manual', conf: 'confidence score', cHi: 'high confidence', cLo: 'low',
+      infInv: 'Image recognised as inverted (bright background) – inverted for analysis and display.', infLow: 'Low image contrast – reduced confidence.', infMarkers: 'R/L markers are not read automatically; the side follows the orientation (default: right on the image left). Confirm with the lead marker.',
+      infMethod: 'Classical on-device image analysis (no trained model). Confidence is a heuristic edge/fit quality score, not a probability. Accuracy verified on synthetic images only; unknown on real radiographs until tested.', took: 'Time',
+      r_metal: 'metal/implant', r_weakEdge: 'weak edge', r_fewPoints: 'few edge points', r_extent: 'uncertain end points', r_partialEdge: 'partially visible contour', r_irregular: 'irregular contour', r_implausible: 'anatomically implausible', r_lowContrast: 'low contrast', r_notFound: 'not found' }
   };
   var t = function (k) { return S[lang()][k] != null ? S[lang()][k] : k; };
   var STEP = {
@@ -2526,69 +3084,36 @@ button.small{padding:6px 10px;font-size:.82rem}
   ];
   var NORMAL = { ldfa: '85–90° (Paley)', mpta: '85–90° (Paley)', hka: '180° ± 3°', ahka: '0° ± 2° (CPAK)', jlo: '180° ± 3° (CPAK)' };
 
-  var st = { img: null, name: '', demo: false, dicom: null, W: 0, H: 0, view: { s: 1, tx: 0, ty: 0 }, bright: 100, contrast: 100, invert: false, snap: false, mirror: false, side: 'R', lm: { R: {}, L: {} }, cur: { R: 0, L: 0 }, auto: { R: {}, L: {} }, pid: '', date: '', phase: 'pre', msg: '', lastPng: null, lastCsv: null };
+  var XA = window.OrthoXrayAuto, SY = window.OrthoXraySynth, LOW = XA ? XA.LOW : 0.6;
+  var st = { variant: 'demo', autoOn: true, scope: 'both', origin: { R: {}, L: {} }, det: { R: null, L: null }, confirmed: { R: null, L: null }, arm: null, autoRun: null, img: null, name: '', demo: false, dicom: null, W: 0, H: 0, view: { s: 1, tx: 0, ty: 0 }, bright: 100, contrast: 100, invert: false, snap: false, mirror: false, side: 'R', lm: { R: {}, L: {} }, cur: { R: 0, L: 0 }, auto: { R: {}, L: {} }, pid: '', date: '', phase: 'pre', msg: '', lastPng: null, lastCsv: null };
   var P = function () { return window.__orthoProms; };
   function today() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }
 
   // ---------- demo image ----------
-  function drawDemo() {
-    var g = X.demoGeometry(), c = document.createElement('canvas'); c.width = g.W; c.height = g.H; var x = c.getContext('2d');
-    x.fillStyle = '#0a0d0f'; x.fillRect(0, 0, g.W, g.H);
-    var rg = x.createRadialGradient(g.W / 2, g.H / 2, 100, g.W / 2, g.H / 2, g.H * 0.7); rg.addColorStop(0, 'rgba(60,66,70,0.35)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = rg; x.fillRect(0, 0, g.W, g.H);
-    var bone = '#c9cdd0', cort = '#eef0f1', soft = 'rgba(120,128,132,0.22)';
-    var P2 = function (p) { return [p.x, p.y]; };
-    // pelvis
-    x.fillStyle = bone; x.beginPath(); x.moveTo(150, 60); x.quadraticCurveTo(450, 10, 750, 60); x.lineTo(720, 190); x.quadraticCurveTo(450, 260, 180, 190); x.closePath(); x.globalAlpha = 0.55; x.fill(); x.globalAlpha = 1;
-    g.limbs.forEach(function (L) {
-      var lm = L.landmarks, med = L.side === 'R' ? 1 : -1, lat = { x: -med, y: 0 };
-      var poly = function (pts, fill) { x.beginPath(); x.moveTo(pts[0].x, pts[0].y); for (var i = 1; i < pts.length; i++) x.lineTo(pts[i].x, pts[i].y); x.closePath(); x.fillStyle = fill; x.fill(); };
-      var addv = function (a, b, k) { return { x: a.x + b.x * k, y: a.y + b.y * k }; };
-      // soft tissue envelope
-      x.strokeStyle = soft; x.lineCap = 'round'; x.lineWidth = 150; x.beginPath(); x.moveTo(L.H.x, L.H.y + 40); x.lineTo(L.Jf.x, L.Jf.y); x.lineTo(L.A.x, L.A.y); x.stroke();
-      // acetabulum
-      x.strokeStyle = cort; x.lineWidth = 6; x.beginPath(); x.arc(L.H.x, L.H.y, L.r + 7, L.side === 'R' ? Math.PI * 0.95 : -Math.PI * 0.62, L.side === 'R' ? Math.PI * 1.62 : Math.PI * 0.05); x.stroke();
-      // femur: neck + shaft
-      var troch = { x: L.H.x + lat.x * 70, y: L.H.y + 55 }, shaftTop = addv(L.H, L.up, -120), shaftBot = addv(L.Jf, L.up, 95);
-      x.strokeStyle = bone; x.lineWidth = 48; x.beginPath(); x.moveTo(L.H.x, L.H.y); x.lineTo(troch.x, troch.y); x.stroke();
-      x.lineWidth = 40; x.beginPath(); x.moveTo(troch.x, troch.y); x.lineTo(shaftTop.x + lat.x * 12, shaftTop.y); x.lineTo(shaftBot.x, shaftBot.y); x.stroke();
-      x.fillStyle = bone; x.beginPath(); x.arc(L.H.x, L.H.y, L.r, 0, Math.PI * 2); x.fill(); x.strokeStyle = cort; x.lineWidth = 3; x.stroke();
-      // distal femur metaphysis + condyles (condyles tangent to the distal femoral joint line at FC1/FC2)
-      var rc = 30, c1 = addv(lm.FC1, L.lineN, -rc), c2 = addv(lm.FC2, L.lineN, -rc);
-      poly([addv(shaftBot, L.l, -22), addv(shaftBot, L.l, 22), addv(c2, L.l, rc), addv(c1, L.l, -rc)], bone);
-      [c1, c2].forEach(function (cc) { x.fillStyle = bone; x.beginPath(); x.arc(cc.x, cc.y, rc, 0, Math.PI * 2); x.fill(); });
-      x.fillStyle = '#4a5054'; x.beginPath(); x.arc(L.Jf.x - L.lineN.x * 6, L.Jf.y - L.lineN.y * 6, 9, Math.PI, 0); x.fill(); // notch
-      // tibia: plateau (top edge on tibial joint line), metaphysis, shaft, plafond
-      var tm = { x: -L.l.x, y: -L.l.y };
-      var pl1 = lm.TP1, pl2 = lm.TP2, mt = addv(L.Jt, L.down, 120);
-      poly([pl1, pl2, addv(mt, tm, -20), addv(mt, tm, 20)], bone);
-      x.fillStyle = cort; x.beginPath(); x.moveTo(L.KT.x + tm.x * 9, L.KT.y + tm.y * 9); x.lineTo(L.KT.x - L.down.x * 7, L.KT.y - L.down.y * 7); x.lineTo(L.KT.x - tm.x * 9, L.KT.y - tm.y * 9); x.closePath(); x.fill(); // spines
-      var dTop = addv(L.A, L.down, -110);
-      x.strokeStyle = bone; x.lineWidth = 34; x.beginPath(); x.moveTo(mt.x, mt.y); x.lineTo(dTop.x, dTop.y); x.stroke();
-      poly([addv(dTop, tm, -17), addv(dTop, tm, 17), lm.AN1, lm.AN2], bone);
-      // fibula (lateral)
-      var fibTop = addv(addv(L.Jt, L.down, 40), tm, -48), fibBot = addv(addv(L.A, L.down, 25), tm, -40);
-      x.strokeStyle = '#a9aeb1'; x.lineWidth = 13; x.beginPath(); x.moveTo(fibTop.x, fibTop.y); x.lineTo(fibBot.x, fibBot.y); x.stroke();
-      // talus (dome just below the plafond)
-      x.fillStyle = '#b8bdc0'; x.beginPath(); x.ellipse(L.A.x + L.down.x * 30, L.A.y + L.down.y * 30, 30, 24, Math.atan2(L.down.y, L.down.x) - Math.PI / 2, Math.PI, 0); x.fill();
-      x.fillRect(L.A.x - 30, L.A.y + 30, 60, 40);
-      x.fillStyle = '#ffffff'; x.font = 'bold 54px sans-serif'; x.textAlign = 'center'; x.fillText(L.side === 'R' ? 'R' : 'L', L.side === 'R' ? 70 : g.W - 70, 360);
-    });
-    // deterministic grain
-    var id = x.getImageData(0, 0, g.W, g.H), d = id.data, s = 12345;
-    for (var i = 0; i < d.length; i += 4) { s = (s * 1103515245 + 12345) & 0x7fffffff; var n = ((s >> 8) % 13) - 6; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
-    x.putImageData(id, 0, 0);
-    x.fillStyle = 'rgba(155,89,182,0.92)'; x.fillRect(0, 0, g.W, 46); x.fillRect(0, g.H - 46, g.W, 46);
-    x.fillStyle = '#fff'; x.font = 'bold 22px sans-serif'; x.textAlign = 'center';
-    x.fillText('DEMO – ΣΥΝΘΕΤΙΚΗ ΣΧΗΜΑΤΙΚΗ ΕΙΚΟΝΑ · ΟΧΙ ΑΣΘΕΝΗΣ', g.W / 2, 30); x.fillText('DEMO – synthetic schematic, generated · NOT a patient', g.W / 2, g.H - 16);
-    return c;
+  var SYN = {}; // rendered synthetic variants (generated once per session)
+  function drawDemo(variant) {
+    var v = SY.VARIANTS[variant] ? variant : 'demo', r = SYN[v] || (SYN[v] = SY.render(v)), c = document.createElement('canvas'); c.width = r.W; c.height = r.H; var x = c.getContext('2d');
+    var id = x.createImageData(r.W, r.H), d = id.data; for (var i = 0; i < r.gray.length; i++) { d[4 * i] = d[4 * i + 1] = d[4 * i + 2] = r.gray[i]; d[4 * i + 3] = 255; } x.putImageData(id, 0, 0);
+    var bh = Math.round(46 * r.W / 900); x.fillStyle = 'rgba(155,89,182,0.95)'; x.fillRect(0, 0, r.W, bh); x.fillRect(0, r.H - bh, r.W, bh);
+    x.fillStyle = '#fff'; x.font = 'bold ' + Math.round(22 * r.W / 900) + 'px sans-serif'; x.textAlign = 'center';
+    x.fillText('DEMO – ΣΥΝΘΕΤΙΚΗ ΕΙΚΟΝΑ · ΟΧΙ ΑΣΘΕΝΗΣ · ' + r.label.el, r.W / 2, bh * 0.66); x.fillText('DEMO – synthetic image, generated · NOT a patient · ' + r.label.en, r.W / 2, r.H - bh * 0.34);
+    st.synth = r; return c;
   }
+  function demoNote() {
+    var r = st.synth; if (!r) return '';
+    var tr = ['left', 'right'].map(function (hf) { var a = r.angles[hf], sd = r.sides[hf], c = X.cpak(a.mpta - a.ldfa, a.mpta + a.ldfa); return t(sd) + ' mLDFA ' + a.ldfa + '°, MPTA ' + a.mpta + '° (CPAK ' + c.roman + ')'; }).join(' · ');
+    return t('demoNote').replace('{v}', tx(r.label)).replace('{truth}', tr);
+  }
+  function loadDemo(v) { st.variant = v || st.variant || 'demo'; setImage(drawDemo(st.variant), 'DEMO-synthetic-' + st.variant + '.png', true); }
 
   // ---------- image loading ----------
   function setImage(canvas, name, demo, dicom) {
     st.img = canvas; st.W = canvas.width; st.H = canvas.height; st.name = name; st.demo = demo; st.dicom = dicom || null;
-    st.lm = { R: {}, L: {} }; st.cur = { R: 0, L: 0 }; st.auto = { R: {}, L: {} }; st.msg = demo ? t('demoNote') : '';
+    st.lm = { R: {}, L: {} }; st.cur = { R: 0, L: 0 }; st.auto = { R: {}, L: {} }; st.origin = { R: {}, L: {} }; st.det = { R: null, L: null }; st.confirmed = { R: null, L: null }; st.arm = null;
+    if (!demo) st.synth = null; st.msg = demo ? demoNote() : ''; st.invert = false;
     st.ctx2 = canvas.getContext('2d', { willReadFrequently: true });
     render(); fit();
+    if (st.autoOn && XA) setTimeout(function () { runAuto('both'); }, 30);
   }
   function loadFile(file) {
     if (!file) return;
@@ -2637,10 +3162,12 @@ button.small{padding:6px 10px;font-size:.82rem}
       if (r.H) { var Hc = P2(r.H); cx.fillStyle = c.ax; cx.beginPath(); cx.arc(Hc.x, Hc.y, 4 * sc, 0, Math.PI * 2); cx.fill(); }
       // handles
       X.STEPS.forEach(function (k) {
-        var p = lm[k]; if (!p) return; var s = P2(p);
-        cx.fillStyle = st.auto[sd][k] ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.35)'; cx.strokeStyle = act ? '#ffffff' : '#cbd5e1'; cx.lineWidth = Math.max(1.5, 1.6 * sc);
-        cx.beginPath(); cx.arc(s.x, s.y, 7 * sc, 0, Math.PI * 2); cx.fill(); cx.stroke();
+        var p = lm[k]; if (!p) return; var s = P2(p), o = st.origin[sd][k], low = isLow(sd, k);
+        var col = o === 'auto' ? (low ? '#f97316' : '#4ade80') : o === 'auto-corrected' ? '#60a5fa' : (act ? '#ffffff' : '#cbd5e1'), rad = (low ? 9 : 7) * sc;
+        cx.fillStyle = low ? 'rgba(249,115,22,0.28)' : st.auto[sd][k] ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.35)'; cx.strokeStyle = col; cx.lineWidth = Math.max(1.5, (low ? 2.6 : 1.6) * sc);
+        cx.beginPath(); cx.arc(s.x, s.y, rad, 0, Math.PI * 2); cx.fill(); cx.stroke();
         cx.beginPath(); cx.moveTo(s.x - 3 * sc, s.y); cx.lineTo(s.x + 3 * sc, s.y); cx.moveTo(s.x, s.y - 3 * sc); cx.lineTo(s.x, s.y + 3 * sc); cx.stroke();
+        if (low && act) { cx.font = 'bold ' + Math.round(13 * sc) + 'px system-ui,sans-serif'; cx.fillStyle = '#f97316'; cx.fillText('?', s.x + rad + 2 * sc, s.y - rad + 4 * sc); }
       });
       // labels
       if (r.complete) {
@@ -2650,7 +3177,7 @@ button.small{padding:6px 10px;font-size:.82rem}
         lab('mLDFA ' + f1(r.ldfa) + '°', { x: bx, y: kc.y - 26 * sc }, c.fl);
         lab('MPTA ' + f1(r.mpta) + '°', { x: bx, y: kc.y + 30 * sc }, c.tl);
         lab('HKA ' + f1(r.hka) + '° · ' + tx(X.vv(r.mhka)).replace(/ \(.*\)/, ''), { x: bx, y: kc.y + 56 * sc }, '#ffffff');
-        lab('CPAK ' + r.cpak.roman, { x: bx, y: kc.y + 82 * sc }, '#fde68a');
+        lab('CPAK ' + r.cpak.roman + (isProposal(sd) ? ' · ' + t('propShort') : ''), { x: bx, y: kc.y + 82 * sc }, isProposal(sd) ? '#fdba74' : '#fde68a');
         void side;
       }
       cx.globalAlpha = 1;
@@ -2699,7 +3226,77 @@ button.small{padding:6px 10px;font-size:.82rem}
     for (var i = 0; i < w * h; i++) g[i] = (d[4 * i] * 0.299 + d[4 * i + 1] * 0.587 + d[4 * i + 2] * 0.114);
     var q = X.snapToEdge(g, w, h, { x: p.x - x0, y: p.y - y0 }, r); return { x: q.x + x0, y: q.y + y0 };
   }
-  function place(k, p) { var sd = st.side; st.lm[sd][k] = AUTO[k] ? p : snapPoint(p); if (AUTO[k]) st.auto[sd][k] = false; autoCentres(sd); var n = nextStep(sd); st.cur[sd] = n; renderSide(); draw(); }
+  function changed(sd) { st.confirmed[sd] = null; if (st.arm === sd) st.arm = null; }
+  function place(k, p) { var sd = st.side; st.lm[sd][k] = AUTO[k] ? p : snapPoint(p); if (AUTO[k]) st.auto[sd][k] = false; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); var n = nextStep(sd); st.cur[sd] = n; renderSide(); draw(); }
+  function moved(sd, k) { var o = st.origin[sd][k]; st.origin[sd][k] = o === 'auto' || o === 'auto-corrected' ? 'auto-corrected' : 'manual'; changed(sd); }
+  function isLow(sd, k) { var d = st.det[sd]; return !!(d && st.origin[sd][k] === 'auto' && d.conf[k] != null && d.conf[k] < LOW && !(st.auto[sd][k] && (k === 'KF' || k === 'KT'))); }
+  function lowList(sd) { return X.STEPS.filter(function (k) { return k !== 'KF' && k !== 'KT' && isLow(sd, k); }); }
+  function isProposal(sd) { if (st.confirmed[sd]) return false; var o = st.origin[sd]; return Object.keys(o).some(function (k) { return o[k] === 'auto' || o[k] === 'auto-corrected'; }); }
+  function landmarkSource(sd) {
+    var o = st.origin[sd], ks = X.STEPS.filter(function (k) { return st.lm[sd][k] && !(st.auto[sd][k] && (k === 'KF' || k === 'KT')); }), c = { auto: 0, 'auto-corrected': 0, manual: 0 };
+    ks.forEach(function (k) { c[o[k] || 'manual']++; }); if (!c.auto && !c['auto-corrected']) return 'manual'; if (!c['auto-corrected'] && !c.manual) return 'auto'; return 'auto+corrected';
+  }
+  function halfFor(sd) { return (sd === 'R') !== !!st.mirror ? 'left' : 'right'; }
+
+  // ---------- automatic landmark proposal (classical image analysis, on device) ----------
+  function runAuto(scope) {
+    if (!st.img || !XA || st.autoRun) return;
+    var sides = scope === 'current' ? [st.side] : ['R', 'L'], t0 = performance.now(), fa = Math.min(1, 2400 / st.H);
+    var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(st.W * fa)); c.height = Math.max(1, Math.round(st.H * fa));
+    var cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(st.img, 0, 0, c.width, c.height);
+    var gray = XA.grayFromRGBA(cx.getImageData(0, 0, c.width, c.height).data, c.width * c.height);
+    var ctx = XA.start({ gray: gray, W: c.width, H: c.height }, { halves: sides.map(halfFor) }), img = st.img;
+    st.autoRun = { p: 0.05 }; updAuto();
+    var tick = function () {
+      if (st.img !== img) { st.autoRun = null; return; }
+      var t1 = performance.now(); while (!ctx.done && performance.now() - t1 < 35) XA.step(ctx);
+      st.autoRun.p = 0.05 + 0.95 * ctx.progress; updAuto();
+      if (!ctx.done) { setTimeout(tick, 0); return; }
+      var ms = Math.round(performance.now() - t0), res = ctx.res;
+      sides.forEach(function (sd) {
+        var o = res.halves[halfFor(sd)] || { lm: {}, conf: {}, reasons: {}, missing: ['limb'], status: 'fail', low: [] };
+        st.lm[sd] = {}; st.auto[sd] = {}; st.origin[sd] = {}; st.confirmed[sd] = null;
+        Object.keys(o.lm).forEach(function (k) { st.lm[sd][k] = { x: o.lm[k].x / fa, y: o.lm[k].y / fa }; st.origin[sd][k] = 'auto'; });
+        if (st.lm[sd].KF) st.auto[sd].KF = true; if (st.lm[sd].KT) st.auto[sd].KT = true;
+        st.det[sd] = { status: o.status, conf: o.conf, reasons: o.reasons, missing: o.missing || [], ms: ms, info: res.info.slice(), version: res.version };
+        st.cur[sd] = nextStep(sd);
+      });
+      if (res.inverted) st.invert = true;
+      st.autoRun = null; st.arm = null; window.__lastAuto = { res: res, ms: ms, scale: fa };
+      var inv = $('xInv'); if (inv) inv.checked = st.invert;
+      renderSide(); draw(); updAuto();
+    };
+    setTimeout(tick, 0);
+  }
+  function reasonText(sd, k) { var d = st.det[sd], r = d && d.reasons[k] || []; return r.map(function (x) { return t('r_' + x); }).join(', '); }
+  function autoStatusHtml(sd) {
+    var d = st.det[sd]; if (!d) return '';
+    var low = lowList(sd), cls = d.status === 'fail' ? 'fail' : low.length ? 'check' : 'ok', h = '<div class="autostat ' + cls + '" id="xAutoStatus" data-status="' + cls + '">';
+    if (d.status === 'fail') { var m = d.missing.indexOf('limb') >= 0 ? t('noLimb') : d.missing.map(function (k) { return k; }).join(', '); h += '<b>⛔ ' + esc(t('stFail').replace('{m}', m)) + '</b>'; }
+    else h += '<b>' + (low.length ? '⚠️ ' + esc(t('stCheck').replace('{n}', low.length)) : '✅ ' + esc(t('stOk'))) + '</b>';
+    if (low.length) h += '<ul class="lowlist">' + low.map(function (k) { return '<li data-low="' + k + '"><span class="dot lowc">!</span> ' + esc(tx(STEP[k])) + ' – ' + esc(t('conf')) + ' ' + Math.round(d.conf[k] * 100) + '/100' + (reasonText(sd, k) ? ' · ' + esc(reasonText(sd, k)) : '') + '</li>'; }).join('') + '</ul>';
+    var inf = []; if (d.info.indexOf('inverted') >= 0) inf.push(t('infInv')); if (d.info.indexOf('lowContrast') >= 0) inf.push(t('infLow')); inf.push(t('infMarkers'));
+    h += '<p class="muted small">' + inf.map(esc).join(' ') + '</p><p class="muted small">🧠 ' + esc(t('infMethod')) + ' ' + esc(t('took')) + ': ' + d.ms + ' ms.</p></div>';
+    return h;
+  }
+  function updAuto() {
+    var pr = $('xProg'), b = $('xAuto'), bn = $('xBanner'); if (pr) { pr.classList.toggle('hidden', !st.autoRun); pr.value = st.autoRun ? st.autoRun.p : 0; }
+    if (b) { b.disabled = !!st.autoRun || !st.img; b.textContent = st.autoRun ? '⏳ ' + t('running') + ' ' + Math.round(st.autoRun.p * 100) + '%' : '🤖 ' + t('autoBtn'); }
+    if (!bn) return;
+    if (st.autoRun) { bn.className = 'xbanner run'; bn.textContent = '⏳ ' + t('running') + ' ' + Math.round(st.autoRun.p * 100) + '%'; return; }
+    var parts = ['R', 'L'].filter(function (sd) { return st.det[sd] && isProposal(sd); }).map(function (sd) { var d = st.det[sd], n = lowList(sd).length; return { sd: sd, cls: d.status === 'fail' ? 'fail' : n ? 'check' : 'ok' }; });
+    if (!parts.length) { bn.className = 'xbanner hidden'; bn.textContent = ''; return; }
+    var worst = parts.some(function (p) { return p.cls === 'fail'; }) ? 'fail' : parts.some(function (p) { return p.cls === 'check'; }) ? 'check' : 'ok';
+    bn.className = 'xbanner ' + worst; bn.innerHTML = '🤖 <b>' + esc(t('proposal')) + '</b> · ' + parts.map(function (p) { var n = lowList(p.sd).length; return esc(t(p.sd)) + ': ' + (p.cls === 'fail' ? '⛔' : n ? '⚠️ ' + n + '×' : '✓'); }).join(' · ');
+  }
+  function confirmSide() {
+    var sd = st.side, api = P(), u = api && api.currentUser(); if (!u) return msg(t('needLogin'));
+    var r = X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); if (!r.complete) return msg(t('needDone'));
+    var low = lowList(sd); if (low.length && st.arm !== sd) { st.arm = sd; renderSide(); return msg(t('lowArm').replace('{n}', low.length)); }
+    st.confirmed[sd] = { by: u.email, name: u.name, at: new Date().toISOString(), lowAccepted: low }; st.arm = null;
+    if (api.audit) api.audit('xray-confirm', (st.pid || '—') + ' ' + sd + ' ' + landmarkSource(sd));
+    renderSide(); draw(); updAuto(); msg(t('confirmedMsg'));
+  }
   function hit(scr) { var lm = st.lm[st.side], best = null, bd = 18; X.STEPS.forEach(function (k) { if (!lm[k]) return; var s = toScr(lm[k]), d = Math.hypot(s.x - scr.x, s.y - scr.y); if (d < bd) { bd = d; best = k; } }); return best; }
 
   // ---------- pointer interaction ----------
@@ -2723,7 +3320,7 @@ button.small{padding:6px 10px;font-size:.82rem}
       if (!drag) { if (st.img && e.pointerType === 'mouse' && st.cur[st.side] >= 0) loupe(p); return; }
       if (drag.type === 'pinch') { var ids = Object.keys(ptrs); if (ids.length < 2) return; var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y); zoomAt(d / drag.d, drag.c); drag.d = d; return; }
       if (drag.type === 'maybe') { if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 4) drag = { type: 'handle', k: drag.k }; else { loupe(p); return; } }
-      if (drag.type === 'handle') { var sd = st.side; st.lm[sd][drag.k] = toImg(p); if (AUTO[drag.k]) st.auto[sd][drag.k] = false; autoCentres(sd); draw(); loupe(p); renderResults(); return; }
+      if (drag.type === 'handle') { var sd = st.side; st.lm[sd][drag.k] = toImg(p); if (AUTO[drag.k]) st.auto[sd][drag.k] = false; if (!drag.moved) { drag.moved = true; moved(sd, drag.k); } autoCentres(sd); draw(); loupe(p); renderResults(); return; }
       if (drag.type === 'place') { if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 8) drag = { type: 'pan', last: drag.start }; else { loupe(p); return; } }
       if (drag.type === 'pan') { st.view.tx += p.x - drag.last.x; st.view.ty += p.y - drag.last.y; drag.last = p; draw(); }
     };
@@ -2731,7 +3328,7 @@ button.small{padding:6px 10px;font-size:.82rem}
       var p = rel(e); delete ptrs[e.pointerId];
       if (drag && drag.type === 'place') place(drag.k, toImg(p));
       else if (drag && drag.type === 'maybe') place(drag.step, toImg(p));
-      else if (drag && drag.type === 'handle') { var sd = st.side; if (!AUTO[drag.k]) st.lm[sd][drag.k] = snapPoint(st.lm[sd][drag.k]); autoCentres(sd); renderSide(); draw(); }
+      else if (drag && drag.type === 'handle') { var sd = st.side; if (drag.moved && !AUTO[drag.k]) st.lm[sd][drag.k] = snapPoint(st.lm[sd][drag.k]); autoCentres(sd); renderSide(); draw(); updAuto(); }
       drag = null; if (e.pointerType !== 'mouse') loupe(null);
     };
     oc.onpointerup = up; oc.onpointercancel = function (e) { delete ptrs[e.pointerId]; drag = null; loupe(null); };
@@ -2766,8 +3363,9 @@ button.small{padding:6px 10px;font-size:.82rem}
     var rows = [['hka', r.hka != null ? f1(r.hka) + '° (' + tx(X.vv(r.mhka)) + ')' : '–', NORMAL.hka], ['ldfa', r.ldfa != null ? f1(r.ldfa) + '°' : '–', NORMAL.ldfa], ['mpta', r.mpta != null ? f1(r.mpta) + '°' : '–', NORMAL.mpta],
       ['ahka', r.ahka != null ? (r.ahka > 0 ? '+' : '') + f1(r.ahka) + '°' : '–', NORMAL.ahka], ['jlo', r.jlo != null ? f1(r.jlo) + '°' : '–', NORMAL.jlo], ['jlca', r.jlca != null ? f1(r.jlca) + '°' : '–', ''],
       ['mad', r.mad != null ? f1(Math.abs(r.mad)) + ' ' + t('px') + ' ' + (r.mad > 0 ? t('lat') : t('med')) + (st.dicom && st.dicom.spacing ? ' (' + f1(Math.abs(r.mad) * st.dicom.spacing[0]) + ' mm)' : '') : '–', '']];
-    var h = '<table class="tbl xres" id="xRes"><tr><th>' + esc(t('results')) + ' – ' + esc(t(st.side)) + '</th><th></th><th>' + esc(t('normal')) + '</th></tr>' + rows.map(function (x) { return '<tr data-k="' + x[0] + '"><td>' + esc(t(x[0])) + '</td><td><b>' + esc(x[1]) + '</b></td><td class="muted">' + esc(x[2]) + '</td></tr>'; }).join('') +
-      (r.medialCheck === 'mismatch' ? '<tr><td colspan="3" class="warnrow" id="xMedWarn">' + esc(t('medWarn')) + '</td></tr>' : '') + '<tr data-k="cpak"><td>' + esc(t('cpak')) + '</td><td colspan="2"><b id="xCpak">' + (r.complete ? esc(cpakText(r.cpak)) : '–') + '</b></td></tr></table>';
+    var prop = isProposal(st.side);
+    var h = (prop ? '<div class="prophead" id="xPropHead">🤖 ' + esc(t('proposal')) + '</div>' : '') + '<table class="tbl xres' + (prop ? ' prop' : '') + '" id="xRes"><tr><th>' + esc(t('results')) + ' – ' + esc(t(st.side)) + '</th><th></th><th>' + esc(t('normal')) + '</th></tr>' + rows.map(function (x) { return '<tr data-k="' + x[0] + '"><td>' + esc(t(x[0])) + '</td><td><b>' + esc(x[1]) + '</b></td><td class="muted">' + esc(x[2]) + '</td></tr>'; }).join('') +
+      (r.medialCheck === 'mismatch' ? '<tr><td colspan="3" class="warnrow" id="xMedWarn">' + esc(t('medWarn')) + '</td></tr>' : '') + '<tr data-k="cpak"><td>' + esc(t('cpak')) + '</td><td colspan="2"><b id="xCpak">' + (r.complete ? esc(cpakText(r.cpak)) + (prop ? ' (' + esc(t('propShort')) + ')' : '') : '–') + '</b></td></tr></table>';
     var both = ['R', 'L'].map(function (sd) { var x = X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); return { sd: sd, res: x.complete ? x : null }; });
     h += '<h3>' + esc(t('cpakT')) + '</h3>' + cpakSvg(both);
     return h;
@@ -2779,11 +3377,19 @@ button.small{padding:6px 10px;font-size:.82rem}
     var el = $('xSide'); if (!el) return;
     var sd = st.side, lm = st.lm[sd], cur = st.cur[sd];
     var h = '<div class="seg" id="xSideSeg">' + ['R', 'L'].map(function (k) { return '<button data-xside="' + k + '" class="' + (k === sd ? 'active' : '') + '">' + esc(t(k)) + (X.compute(st.lm[k], X.medialFor(k, st.mirror)).complete ? ' ✓' : '') + '</button>'; }).join('') + '</div>';
+    h += '<div class="xauto"><div class="row"><button class="primary" id="xAuto">🤖 ' + esc(t('autoBtn')) + '</button><select id="xAutoScope" aria-label="' + esc(t('autoBtn')) + '"><option value="both"' + (st.scope === 'both' ? ' selected' : '') + '>' + esc(t('scopeBoth')) + '</option><option value="current"' + (st.scope === 'current' ? ' selected' : '') + '>' + esc(t('scopeCur')) + '</option></select>' +
+      '<label class="chk"><input type="checkbox" id="xAutoOn"' + (st.autoOn ? ' checked' : '') + '> ' + esc(t('autoRun')) + '</label></div><progress id="xProg" class="hidden" max="1" value="0"></progress>' + autoStatusHtml(sd) + '</div>';
     h += '<h3>' + esc(t('steps')) + '</h3><ol class="xsteps" id="xSteps">' + X.STEPS.map(function (k, i) {
-      var done = !!lm[k], au = st.auto[sd][k]; return '<li class="' + (i === cur ? 'cur ' : '') + (done ? 'done' : '') + '" data-step="' + i + '"><span class="dot">' + (done ? (au ? 'A' : '✓') : i + 1) + '</span><span>' + esc(tx(STEP[k])) + (AUTO[k] ? ' <em class="muted">(' + esc(t('auto')) + ')</em>' : '') + (i === cur ? ' <b class="nowtag">← ' + esc(t('current')) + '</b>' : '') + '</span></li>';
+      var done = !!lm[k], au = st.auto[sd][k], o = st.origin[sd][k], low = isLow(sd, k), d = st.det[sd], cf = d && o === 'auto' && !au && d.conf[k] != null ? Math.round(d.conf[k] * 100) : null;
+      var dot = !done ? i + 1 : o === 'auto' ? 'A' : o === 'auto-corrected' ? '✎' : au ? 'A' : '✓';
+      return '<li class="' + (i === cur ? 'cur ' : '') + (done ? 'done ' : '') + (low ? 'low ' : '') + (o ? 'o-' + o : '') + '" data-step="' + i + '" data-k="' + k + '"><span class="dot' + (low ? ' lowc' : o === 'auto' ? ' autoc' : o === 'auto-corrected' ? ' corrc' : '') + '">' + dot + '</span><span>' + esc(tx(STEP[k])) + (AUTO[k] ? ' <em class="muted">(' + esc(t('auto')) + ')</em>' : '') +
+        (cf != null ? ' <span class="cf' + (low ? ' low' : '') + '" title="' + esc(t('conf')) + ' ' + cf + '/100">' + (low ? esc(t('cLo')) + ' · ' + cf + '/100' : esc(t('cHi'))) + '</span>' : '') + (o === 'auto-corrected' ? ' <span class="cf corr">' + esc(t('oCorr')) + '</span>' : '') + (i === cur ? ' <b class="nowtag">← ' + esc(t('current')) + '</b>' : '') + '</span></li>';
     }).join('') + '</ol>';
     h += '<div id="xResults">' + resultsHtml() + '</div>';
-    h += '<div class="row"><button class="primary" id="xSave">💾 ' + esc(t('save')) + '</button><button id="xPng">🖼 ' + esc(t('png')) + '</button><button id="xCsv">⬇ ' + esc(t('csv')) + '</button></div>';
+    var cfd = st.confirmed[sd], rr = X.compute(lm, X.medialFor(sd, st.mirror));
+    h += '<div class="confirmrow ' + (cfd ? 'done' : '') + '" id="xConfirmRow">' + (cfd ? '<b>✔ ' + esc(t('confirmed')) + '</b> · ' + esc(cfd.name || cfd.by) + ' · ' + esc(cfd.at.slice(11, 16)) + ' UTC · ' + esc(t('landmarks')) + ': ' + esc(t(srcKey(landmarkSource(sd)))) :
+      '<button id="xConfirm" class="' + (st.arm === sd ? 'warn' : '') + '"' + (rr.complete ? '' : ' disabled') + '>' + (st.arm === sd ? '⚠️ ' + esc(t('confirmAnyway')) + ' (' + lowList(sd).length + ')' : '✔ ' + esc(t('confirmBtn')) + ' – ' + esc(t(sd))) + '</button>') + '</div>';
+    h += '<div class="row"><button class="primary" id="xSave"' + (cfd ? '' : ' aria-disabled="true"') + '>💾 ' + esc(t('save')) + '</button><button id="xPng">🖼 ' + esc(t('png')) + '</button><button id="xCsv">⬇ ' + esc(t('csv')) + '</button></div>';
     h += '<div class="xmsg" id="xMsg">' + esc(st.msg) + '</div>';
     h += '<p class="muted small">📏 ' + esc(t('calib')) + ' ' + esc(t('medial')) + '</p>';
     if (st.dicom) h += '<p class="muted small">' + esc(t('dicomInfo')) + ': ' + esc([st.dicom.modality, st.dicom.photometric, st.dicom.bits + '-bit', st.dicom.ts].filter(Boolean).join(' · ')) + (st.dicom.spacing ? ' · ' + esc(t('spacing')) + ' ' + esc(st.dicom.spacing.join(' × ')) + ' mm' : '') + '</p>';
@@ -2794,9 +3400,15 @@ button.small{padding:6px 10px;font-size:.82rem}
       REFS.map(function (r) { return '<li>' + esc(r.text) + ' <a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + esc(r.url.replace('https://doi.org/', 'doi:')) + ' ↗</a></li>'; }).join('') + '</ul></details>';
     el.innerHTML = h;
     el.querySelectorAll('[data-xside]').forEach(function (b) { b.onclick = function () { st.side = b.dataset.xside; renderSide(); draw(); }; });
-    el.querySelectorAll('[data-step]').forEach(function (li) { li.onclick = function () { st.cur[st.side] = +li.dataset.step; renderSide(); }; });
+    el.querySelectorAll('[data-step]').forEach(function (li) { li.onclick = function () { st.cur[st.side] = +li.dataset.step; var p = st.lm[st.side][li.dataset.k]; if (p) centreOn(p); renderSide(); }; });
+    el.querySelectorAll('[data-low]').forEach(function (li) { li.onclick = function () { var p = st.lm[st.side][li.dataset.low]; if (p) { centreOn(p, 2.5); loupe(toScr(p)); } }; });
     $('xSave').onclick = saveStudy; $('xPng').onclick = exportPng; $('xCsv').onclick = exportCsv;
+    if ($('xConfirm')) $('xConfirm').onclick = confirmSide;
+    $('xAuto').onclick = function () { runAuto(st.scope); }; $('xAutoScope').onchange = function () { st.scope = this.value; }; $('xAutoOn').onchange = function () { st.autoOn = this.checked; };
+    updAuto();
   }
+  function srcKey(s) { return s === 'auto' ? 'srcAuto' : s === 'auto+corrected' ? 'srcCorr' : 'srcManual'; }
+  function centreOn(p, minScale) { var z = vsize(); if (minScale) { var fitS = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view.s = Math.max(st.view.s, fitS * minScale); } st.view.tx = z.w / 2 - p.x * st.view.s; st.view.ty = z.h / 2 - p.y * st.view.s; draw(); }
   function render() {
     var root = $('tab-xray'); if (!root) return;
     var api = P(), pts = api ? api.store.patients : [];
@@ -2806,19 +3418,20 @@ button.small{padding:6px 10px;font-size:.82rem}
       '<label class="fld">' + esc(t('date')) + '<input type="date" id="xDate" value="' + esc(st.date) + '"></label>' +
       '<label class="fld">' + esc(t('phase')) + '<select id="xPhase"><option value="pre"' + (st.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (st.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label>' +
       '<label class="fld">' + esc(t('file')) + '<input type="file" id="xFile" accept="image/png,image/jpeg,.dcm,application/dicom"></label></div>' +
-      '<div class="row"><button id="xDemo">🧪 ' + esc(t('demo')) + '</button></div></div>';
+      '<div class="row"><button id="xDemo">🧪 ' + esc(t('demo')) + '</button><label class="fld inl">' + esc(t('variant')) + ' <select id="xVariant">' + (SY ? SY.names : ['demo']).map(function (n) { return '<option value="' + n + '"' + (n === st.variant ? ' selected' : '') + '>' + esc(SY ? tx(SY.VARIANTS[n]) : n) + '</option>'; }).join('') + '</select></label></div></div>';
     h += '<div class="xgrid"><div class="card xviewcard"><div class="row xtools">' +
       '<button id="xZo" title="' + esc(t('zoomOut')) + '" aria-label="' + esc(t('zoomOut')) + '">−</button><button id="xZi" title="' + esc(t('zoomIn')) + '" aria-label="' + esc(t('zoomIn')) + '">+</button><button id="xFit">' + esc(t('fit')) + '</button>' +
       '<label class="rng">☀ ' + esc(t('bright')) + '<input type="range" id="xBr" min="40" max="220" value="' + st.bright + '"></label><label class="rng">◐ ' + esc(t('contrast')) + '<input type="range" id="xCo" min="40" max="300" value="' + st.contrast + '"></label>' +
       '<label class="chk"><input type="checkbox" id="xInv"' + (st.invert ? ' checked' : '') + '> ' + esc(t('invert')) + '</label><label class="chk"><input type="checkbox" id="xMirror"' + (st.mirror ? ' checked' : '') + '> ' + esc(t('mirror')) + '</label><label class="chk"><input type="checkbox" id="xSnap"' + (st.snap ? ' checked' : '') + '> ' + esc(t('snap')) + '</label><button id="xResetSide">↺ ' + esc(t('resetSide')) + '</button></div>' +
-      '<div class="xview" id="xView"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + esc(t('empty')) + '</div></div></div>' +
+      '<div class="xview" id="xView"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><div id="xBanner" class="xbanner hidden" role="status" aria-live="polite"></div><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + esc(t('empty')) + '</div></div></div>' +
       '<div class="card xpanel" id="xSide"></div></div>';
     root.innerHTML = h;
     $('xPid').onchange = function () { st.pid = this.value; };
     $('xDate').onchange = function () { st.date = this.value; };
     $('xPhase').onchange = function () { st.phase = this.value; };
     $('xFile').onchange = function (e) { loadFile(e.target.files[0]); };
-    $('xDemo').onclick = function () { setImage(drawDemo(), 'DEMO-synthetic-long-leg.png', true); };
+    $('xDemo').onclick = function () { loadDemo($('xVariant').value); };
+    $('xVariant').onchange = function () { loadDemo(this.value); };
     $('xZi').onclick = function () { var z = vsize(); zoomAt(1.25, { x: z.w / 2, y: z.h / 2 }); };
     $('xZo').onclick = function () { var z = vsize(); zoomAt(0.8, { x: z.w / 2, y: z.h / 2 }); };
     $('xFit').onclick = fit;
@@ -2826,8 +3439,8 @@ button.small{padding:6px 10px;font-size:.82rem}
     $('xCo').oninput = function () { st.contrast = +this.value; draw(); };
     $('xInv').onchange = function () { st.invert = this.checked; draw(); };
     $('xSnap').onchange = function () { st.snap = this.checked; };
-    $('xMirror').onchange = function () { st.mirror = this.checked; renderSide(); draw(); };
-    $('xResetSide').onclick = function () { st.lm[st.side] = {}; st.auto[st.side] = {}; st.cur[st.side] = 0; renderSide(); draw(); };
+    $('xMirror').onchange = function () { st.mirror = this.checked; ['R', 'L'].forEach(changed); renderSide(); draw(); };
+    $('xResetSide').onclick = function () { var sd = st.side; st.lm[sd] = {}; st.auto[sd] = {}; st.origin[sd] = {}; st.det[sd] = null; st.confirmed[sd] = null; st.cur[sd] = 0; renderSide(); draw(); updAuto(); };
     bindViewer(); renderSide();
     requestAnimationFrame(function () { if (st.img && !st.fitted) { fit(); st.fitted = true; } else draw(); });
   }
@@ -2840,11 +3453,14 @@ button.small{padding:6px 10px;font-size:.82rem}
     var u = api.currentUser(); if (!u) return msg(t('needLogin'));
     if (!st.pid) return msg(t('needPt'));
     var r = X.compute(st.lm[st.side], X.medialFor(st.side, st.mirror)); if (!r.complete) return msg(t('needDone'));
+    var cfd = st.confirmed[st.side]; if (!cfd) return msg(t('needConfirm'));
+    var sd0 = st.side, det = st.det[sd0], conf = {}; if (det) X.STEPS.forEach(function (k) { if (st.origin[sd0][k] === 'auto' && det.conf[k] != null) conf[k] = det.conf[k]; });
     var res = { hka: r.hka, mhka: r.mhka, ldfa: r.ldfa, mpta: r.mpta, ahka: r.ahka, jlo: r.jlo, jlca: r.jlca, cpak: r.cpak };
     var store = api.store; store.xrays = store.xrays || [];
     store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side); });
-    store.xrays.push({ id: 'x' + Math.random().toString(36).slice(2, 10), patientId: st.pid, date: st.date, phase: st.phase, side: st.side, landmarks: JSON.parse(JSON.stringify(st.lm[st.side])), results: res, image: st.name + (st.demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician' });
-    api.persist(); api.audit('xray-save', st.pid + ' ' + st.side + ' ' + st.phase + ' ' + st.date);
+    store.xrays.push({ id: 'x' + Math.random().toString(36).slice(2, 10), patientId: st.pid, date: st.date, phase: st.phase, side: st.side, landmarks: JSON.parse(JSON.stringify(st.lm[st.side])), results: res, image: st.name + (st.demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician',
+      landmarkSource: landmarkSource(sd0), origins: JSON.parse(JSON.stringify(st.origin[sd0])), autoConfidence: conf, detector: det ? det.version : null, autoStatus: det ? det.status : null, confirmed: cfd });
+    api.persist(); api.audit('xray-save', st.pid + ' ' + st.side + ' ' + st.phase + ' ' + st.date + ' ' + landmarkSource(sd0));
     msg(t('saved') + ': ' + st.pid + ' · ' + t(st.side) + ' · ' + t(st.phase) + ' · HKA ' + f1(r.hka) + '° · ' + cpakText(r.cpak));
   }
   function exportPng() {
@@ -2861,9 +3477,9 @@ button.small{padding:6px 10px;font-size:.82rem}
     var a = document.createElement('a'); a.href = url; a.download = 'orthothessaly_xray_' + (st.pid || 'demo') + '_' + st.date + '.png'; document.body.appendChild(a); a.click(); a.remove();
   }
   function exportCsv() {
-    var head = ['patient_id', 'xray_date', 'phase', 'side', 'image', 'HKA_deg', 'mHKA_deg', 'varus_valgus', 'mLDFA_deg', 'MPTA_deg', 'aHKA_deg', 'JLO_deg', 'JLCA_deg', 'CPAK'].concat(X.STEPS.reduce(function (a, k) { return a.concat([k + '_x', k + '_y']); }, []));
+    var head = ['patient_id', 'xray_date', 'phase', 'side', 'image', 'HKA_deg', 'mHKA_deg', 'varus_valgus', 'mLDFA_deg', 'MPTA_deg', 'aHKA_deg', 'JLO_deg', 'JLCA_deg', 'CPAK', 'landmark_source', 'confirmed_by'].concat(X.STEPS.reduce(function (a, k) { return a.concat([k + '_x', k + '_y']); }, []));
     var q = function (v) { v = v == null ? '' : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var rows = ['R', 'L'].map(function (sd) { var lm = st.lm[sd], r = X.compute(lm, X.medialFor(sd, st.mirror)); if (!r.complete) return null; return [st.pid, st.date, st.phase, sd, st.name + (st.demo ? ' (DEMO)' : ''), f1(r.hka), f1(r.mhka), X.vv(r.mhka).en, f1(r.ldfa), f1(r.mpta), f1(r.ahka), f1(r.jlo), f1(r.jlca), r.cpak.roman].concat(X.STEPS.reduce(function (a, k) { return a.concat([lm[k] ? lm[k].x.toFixed(1) : '', lm[k] ? lm[k].y.toFixed(1) : '']); }, [])); }).filter(Boolean);
+    var rows = ['R', 'L'].map(function (sd) { var lm = st.lm[sd], r = X.compute(lm, X.medialFor(sd, st.mirror)); if (!r.complete) return null; return [st.pid, st.date, st.phase, sd, st.name + (st.demo ? ' (DEMO)' : ''), f1(r.hka), f1(r.mhka), X.vv(r.mhka).en, f1(r.ldfa), f1(r.mpta), f1(r.ahka), f1(r.jlo), f1(r.jlca), r.cpak.roman, landmarkSource(sd), st.confirmed[sd] ? st.confirmed[sd].by : ''].concat(X.STEPS.reduce(function (a, k) { return a.concat([lm[k] ? lm[k].x.toFixed(1) : '', lm[k] ? lm[k].y.toFixed(1) : '']); }, [])); }).filter(Boolean);
     var csv = '\uFEFF# OrthoThessaly DEMO – radiographic alignment; angles need no calibration; coordinates in image pixels\r\n' + [head].concat(rows).map(function (r) { return r.map(q).join(','); }).join('\r\n') + '\r\n';
     window.__lastXrayCsv = csv;
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'orthothessaly_xray_' + (st.pid || 'demo') + '_' + st.date + '.csv'; document.body.appendChild(a); a.click(); a.remove();
@@ -2882,13 +3498,14 @@ button.small{padding:6px 10px;font-size:.82rem}
       var deg = function (v) { return f1(v) + '°'; };
       h += '<div class="tblwrap"><table class="tbl xdash" data-xside="' + sd + '"><tr><th>' + esc(t(sd)) + '</th><th>' + esc(t('pre')) + (pre ? ' <span class="muted">' + esc(pre.date) + '</span>' : '') + '</th><th>' + esc(t('post')) + (post ? ' <span class="muted">' + esc(post.date) + '</span>' : '') + '</th><th>' + esc(t('change')) + '</th></tr>' +
         row('hka', 'HKA', function (v, r) { return f1(v) + '° (' + tx(X.vv(r.mhka)) + ')'; }) + row('ldfa', 'mLDFA', deg) + row('mpta', 'MPTA', deg) + row('ahka', 'aHKA', deg) + row('jlo', 'JLO', deg) +
-        '<tr><td>CPAK</td><td>' + (pre ? '<b>' + esc(pre.results.cpak.roman) + '</b>' : '–') + '</td><td>' + (post ? '<b>' + esc(post.results.cpak.roman) + '</b>' : '–') + '</td><td></td></tr></table></div>';
+        '<tr><td>CPAK</td><td>' + (pre ? '<b>' + esc(pre.results.cpak.roman) + '</b>' : '–') + '</td><td>' + (post ? '<b>' + esc(post.results.cpak.roman) + '</b>' : '–') + '</td><td></td></tr>' +
+        '<tr class="muted"><td>' + esc(t('landmarks')) + '</td><td>' + (pre && pre.landmarkSource ? esc(t(srcKey(pre.landmarkSource))) : '–') + '</td><td>' + (post && post.landmarkSource ? esc(t(srcKey(post.landmarkSource))) : '–') + '</td><td></td></tr></table></div>';
     });
-    return h + '<p class="muted small">' + esc(lang() === 'el' ? 'Γωνίες από τα σημεία που τοποθέτησε ο ιατρός (εικόνες δεν αποθηκεύονται). Μετά από αρθροπλαστική, τα mLDFA/MPTA αφορούν τα εμφυτεύματα· η ταξινόμηση CPAK έχει οριστεί για το φυσικό γόνατο.' : 'Angles from clinician-placed landmarks (images are not stored). After arthroplasty, mLDFA/MPTA refer to the components; CPAK is defined for the native knee.') + '</p>';
+    return h + '<p class="muted small">' + esc(lang() === 'el' ? 'Γωνίες από σημεία που τοποθέτησε ή επιβεβαίωσε ο ιατρός (εικόνες δεν αποθηκεύονται). Μετά από αρθροπλαστική, τα mLDFA/MPTA αφορούν τα εμφυτεύματα· η ταξινόμηση CPAK έχει οριστεί για το φυσικό γόνατο.' : 'Angles from clinician-placed or clinician-confirmed landmarks (images are not stored). After arthroplasty, mLDFA/MPTA refer to the components; CPAK is defined for the native knee.') + '</p>';
   }
 
-  window.__xray = { render: render, dashHtml: dashHtml, loadDemo: function () { setImage(drawDemo(), 'DEMO-synthetic-long-leg.png', true); }, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
-    fit: fit, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile };
+  window.__xray = { render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
+    fit: fit, centreOn: centreOn, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile };
 })();
 </script>
 
