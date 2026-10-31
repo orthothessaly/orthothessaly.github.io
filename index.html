@@ -310,6 +310,9 @@ button.small{padding:6px 10px;font-size:.82rem}
   .ptcard{padding:14px}
 }
 .ptcheck{display:flex;gap:10px;align-items:center;min-height:48px;font-weight:700;cursor:pointer}.ptcheck input{width:26px;height:26px;flex:none}
+
+.ptabbr{font-weight:600;font-size:.82em;color:#4a5d66;white-space:nowrap}
+.ptbig .ptabbr{color:inherit;opacity:.85}
 /* ---- X-rays tab ---- */
 .xgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:12px;max-width:1200px;margin:0 auto}
 @media (max-width:900px){.xgrid{grid-template-columns:1fr}}
@@ -3920,6 +3923,11 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   // Patient-facing instruction text where the stored instruction speaks to clinicians (registries); all item wording is unchanged.
   var PT_INSTR = { ISAR: L2('Δύο σύντομες ερωτήσεις: για τον πόνο σας και για το πόσο ικανοποιημένος/η είστε. Η ερώτηση για την ικανοποίηση γίνεται μόνο μετά την επέμβαση.', 'Two short questions: about your pain and about how satisfied you are. The satisfaction question is asked only after the operation.') };
   var PT_NOSEC = { 'EQ5D5L.VAS': 1 }; // the heading only repeats the scale's technical name; the question itself says "YOUR HEALTH TODAY"
+  // Standard short name of each instrument, shown to the patient in parentheses after the friendly title (surgeon's request).
+  // Registry/anchor items (ISAR, PASS, anchor question) have no standard instrument name, so they get none.
+  var PT_ABBR = { OKS: 'OKS', OHS: 'OHS', OSS: 'OSS', OES: 'OES', KOOS: 'KOOS', HOOS: 'HOOS', KOOSJR: 'KOOS JR', HOOSJR: 'HOOS JR', WOMAC: 'WOMAC', KSS2011: 'KSS', EQ5D5L: 'EQ-5D-5L', IKDC: 'IKDC', FJS12: 'FJS-12',
+    TEGNER: 'Tegner', LYSHOLM: 'Lysholm', HHS: 'HHS', CONSTANT: 'Constant', ACLRSI: 'ACL-RSI', IHOT12: 'iHOT-12', VAS: 'NRS', DASH: 'DASH', QDASH: 'QuickDASH', MARX: 'Marx' };
+  function ptTitleH(id) { var a = PT_ABBR[id]; return esc(ptTitle(id)) + (a ? ' <span class="ptabbr" data-abbr="' + id + '">(' + esc(a) + ')</span>' : ''); }
   function ptTitle(id) { return jt(tx(PT_TITLE[id] || L2('Ερωτηματολόγιο', 'Questionnaire'))); }
   var PSKEY = 'orthothessaly.demo.patient.v1', DKEY = 'orthothessaly.demo.drafts.v1';
   var pst = load(PSKEY) || {}, drafts = load(DKEY) || {}, prun = null;
@@ -3980,7 +3988,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
         var d = doneAt(pt.id, id, ctx.tp), dr = !d && drafts[dkey(id)], st = d ? 'done' : dr ? 'prog' : 'todo', primary = !d && firstTodo; if (primary) firstTodo = false;
         var nAns = dr ? ptItems(id, dr.ans).filter(function (it) { return ptAnswered(it, dr.ans); }).length : 0, nAll = dr ? ptItems(id, dr.ans).length : 0;
         return '<article class="ptcard st-' + st + (primary ? ' next' : '') + '" data-inst="' + id + '" aria-labelledby="ptc-' + id + '"><div class="ptcnum" aria-hidden="true">' + (d ? '✓' : k + 1) + '</div><div class="ptcbody">' +
-          '<h2 class="ptctitle" id="ptc-' + id + '">' + esc(ptTitle(id)) + '</h2><div class="ptcmeta">' + esc(ptMeta(id)) + '</div>' +
+          '<h2 class="ptctitle" id="ptc-' + id + '">' + ptTitleH(id) + '</h2><div class="ptcmeta">' + esc(ptMeta(id)) + '</div>' +
           '<div class="ptcstatus ' + st + '" id="pts-' + id + '">' + esc(d ? t('ptDone') : dr ? t('ptInProg') + ' · ' + fmtT('ptAnswered', nAns, nAll) : t('ptTodo')) + '</div></div>' +
           (d ? '' : '<button class="ptbig' + (primary ? '' : ' alt') + '" data-start="' + id + '" aria-describedby="ptc-' + id + ' pts-' + id + '">' + esc(dr ? t('ptCont') : t('ptStart')) + ' →</button>') + '</article>';
       }).join('') + '</div>';
@@ -4003,7 +4011,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
   function ptIntro(el) {
     var id = prun.inst, ins = PT_INSTR[id] || I[id].instructions;
-    el.innerHTML = ptTop(true) + '<h1 class="pth1" data-focus tabindex="-1" id="ptInstTitle">' + esc(ptTitle(id)) + '</h1><div class="ptcmeta">' + esc(ptMeta(id)) + '</div>' +
+    el.innerHTML = ptTop(true) + '<h1 class="pth1" data-focus tabindex="-1" id="ptInstTitle">' + ptTitleH(id) + '</h1><div class="ptcmeta">' + esc(ptMeta(id)) + '</div>' +
       (ins ? '<div class="ptinstr" id="ptInstr">' + esc(jt(tx(ins))) + '</div>' : '') + '<div class="ptnav"><button class="ptbig" id="ptGo">' + esc(t('ptGo')) + '</button></div>';
     $('ptGo').onclick = function () { prun.screen = 'q'; prun.idx = 0; saveDraft(); renderProms(); ptFocus(el); };
   }
@@ -4020,7 +4028,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function ptQuestion(el) {
     var id = prun.inst, items = ptItems(id, prun.ans), n = items.length; if (prun.idx >= n) prun.idx = n - 1; if (prun.idx < 0) prun.idx = 0;
     var it = items[prun.idx], vr = variant(it, ctx.tp), v = prun.ans[it.id], qtext = jt(tx(vr.text)), pc = Math.round((prun.idx + 1) / n * 100);
-    var h = ptTop(true) + '<div class="ptqhead"><div class="ptqinst">' + esc(ptTitle(id)) + '</div><div class="ptqof" id="ptOf">' + esc(fmtT('ptQof', prun.idx + 1, n)) + '</div>' +
+    var h = ptTop(true) + '<div class="ptqhead"><div class="ptqinst" id="ptQInst">' + ptTitleH(id) + '</div><div class="ptqof" id="ptOf">' + esc(fmtT('ptQof', prun.idx + 1, n)) + '</div>' +
       '<div class="ptbar" role="progressbar" aria-label="' + esc(fmtT('ptQof', prun.idx + 1, n)) + '" aria-valuemin="1" aria-valuemax="' + n + '" aria-valuenow="' + (prun.idx + 1) + '"><i style="width:' + pc + '%"></i></div></div>';
     if (it.sec && tx(it.sec) !== tx(vr.text) && !PT_NOSEC[id + '.' + it.id]) h += '<div class="ptsec" id="ptSec">' + esc(jt(tx(it.sec))) + '</div>';
     if (vr.intro) h += '<div class="ptintro" id="ptIntro">' + esc(jt(tx(vr.intro))) + '</div>';
@@ -4066,7 +4074,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     items.forEach(function (it, i) { if (!ptAnswered(it, prun.ans)) (it.optional ? optMiss : miss).push(i); });
     var nAns = items.length - miss.length - optMiss.length;
     var li = function (i) { var it = items[i]; return '<button class="ptjump" data-jump="' + i + '"><b>' + esc(fmtT('ptQn1', i + 1)) + '</b><span>' + esc(jt(tx(variant(it, ctx.tp).text))) + '</span></button>'; };
-    var h = ptTop(true) + '<h1 class="pth1" data-focus tabindex="-1" id="ptRevT">' + esc(t('ptReviewT')) + '</h1><div class="ptqinst">' + esc(ptTitle(id)) + '</div><p class="ptlead" id="ptRevCount">' + esc(items.length === 1 ? t(nAns ? 'ptRevCount1d' : 'ptRevCount1') : fmtT('ptRevCount', nAns, items.length)) + '</p>';
+    var h = ptTop(true) + '<h1 class="pth1" data-focus tabindex="-1" id="ptRevT">' + esc(t('ptReviewT')) + '</h1><div class="ptqinst" id="ptRevInst">' + ptTitleH(id) + '</div><p class="ptlead" id="ptRevCount">' + esc(items.length === 1 ? t(nAns ? 'ptRevCount1d' : 'ptRevCount1') : fmtT('ptRevCount', nAns, items.length)) + '</p>';
     if (miss.length) h += '<p class="ptwarn">' + esc(t('ptRevMissing')) + '</p><div class="ptjumps" id="ptMissing">' + miss.map(li).join('') + '</div>';
     else h += '<p class="ptdonemsg" id="ptRevAll">' + esc(t('ptRevAll')) + '</p>';
     if (optMiss.length) h += '<p class="pthint">' + esc(t('ptRevOpt')) + '</p><div class="ptjumps opt" id="ptOptMissing">' + optMiss.map(li).join('') + '</div>';
@@ -4084,9 +4092,9 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function ptThanks(el, pt) {
     var list = assignedNow(pt, ctx.tp), nDone = list.filter(function (x) { return doneAt(pt.id, x, ctx.tp); }).length, k = list.indexOf(prun.inst);
     var rest = list.slice(k + 1).concat(list.slice(0, Math.max(0, k))).filter(function (x) { return !doneAt(pt.id, x, ctx.tp); }), nx = rest[0];
-    var h = ptTop(true) + '<div class="ptthanks"><div class="ptok" aria-hidden="true">✓</div><h1 class="pth1" data-focus tabindex="-1" id="ptThanksT">' + esc(t('ptThanksT')) + '</h1><p class="ptlead" id="ptThanks">' + esc(t('ptThanks')) + '</p>' +
+    var h = ptTop(true) + '<div class="ptthanks"><div class="ptok" aria-hidden="true">✓</div><h1 class="pth1" data-focus tabindex="-1" id="ptThanksT">' + esc(t('ptThanksT')) + '</h1><div class="ptqinst" id="ptThanksInst">✓ ' + ptTitleH(prun.inst) + '</div><p class="ptlead" id="ptThanks">' + esc(t('ptThanks')) + '</p>' +
       '<div class="ptoverall"><div class="ptprogtxt" id="ptProgress">' + esc(fmtT('ptProgress', nDone, list.length)) + '</div><div class="ptbar" role="progressbar" aria-label="' + esc(fmtT('ptProgress', nDone, list.length)) + '" aria-valuemin="0" aria-valuemax="' + list.length + '" aria-valuenow="' + nDone + '"><i style="width:' + Math.round(nDone / Math.max(1, list.length) * 100) + '%"></i></div></div></div>';
-    h += nx ? '<button class="ptbig" id="ptNextInst" data-start="' + nx + '"><span class="ptsmall">' + esc(t('ptNextInst')) + '</span> ' + esc(ptTitle(nx)) + ' →</button>' : '<p class="ptdonemsg" id="ptAllDone">🎉 ' + esc(t('ptAllDone')) + '</p>';
+    h += nx ? '<button class="ptbig" id="ptNextInst" data-start="' + nx + '"><span class="ptsmall">' + esc(t('ptNextInst')) + '</span> ' + ptTitleH(nx) + ' →</button>' : '<p class="ptdonemsg" id="ptAllDone">🎉 ' + esc(t('ptAllDone')) + '</p>';
     h += '<button class="ptsecbtn wide" id="ptToHome">' + esc(t('ptToHome')) + '</button>';
     el.innerHTML = h;
     if ($('ptNextInst')) $('ptNextInst').onclick = function () { ptOpen(nx); };
