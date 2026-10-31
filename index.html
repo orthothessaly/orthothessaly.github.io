@@ -1883,12 +1883,12 @@ button.small{padding:6px 10px;font-size:.82rem}
     small: { el: 'Χαμηλή ανάλυση (0,6×)', en: 'Low resolution (0.6×)', R: { ldfa: 87, mpta: 84.5 }, L: { ldfa: 89, mpta: 86.5 }, scale: 0.6, markers: false, seed: 20 },
     // replica of a real stitched long-leg film (332×1024): narrow film, cm ruler along the left edge over the right thigh's soft tissue,
     // bright vertical strip at the right edge, lumbar spine + pelvis at the top, 'R' lead marker top-left, feet to the bottom edge
-    realcase: { el: 'Αντίγραφο πραγματικής διάταξης (στενό φιλμ, χάρακας)', en: 'Real-layout replica (narrow film, ruler)', R: { H: { x: 255, y: 395 }, femLen: 735, tibLen: 650, femTilt: 3, ldfa: 88, mpta: 85 }, L: { H: { x: 645, y: 395 }, femLen: 735, tibLen: 650, femTilt: 4, ldfa: 88, mpta: 85.5 },
-      scale: 0.512, mx0: 126, mW: 648, spine: true, ruler: true, strip: true, markerAt: { x: 225, y: 70 }, onlyR: true, look: { noise: 7, blur: 1 }, seed: 21 },
-    realpad: { el: 'Στενό φιλμ μέσα σε μαύρο περιθώριο', en: 'Narrow film inside black padding', R: { H: { x: 255, y: 395 }, femLen: 735, tibLen: 650, femTilt: 3, ldfa: 89, mpta: 86 }, L: { H: { x: 645, y: 395 }, femLen: 735, tibLen: 650, femTilt: 4, ldfa: 87, mpta: 88 },
-      scale: 0.512, mx0: 126, mW: 648, spine: true, ruler: true, strip: true, markerAt: { x: 225, y: 70 }, onlyR: true, padW: 760, padX: 214, look: { noise: 7, blur: 1 }, seed: 22 },
-    realjpeg: { el: 'Αντίγραφο: JPEG χαμηλής ποιότητας + σμίκρυνση', en: 'Replica: low-quality JPEG + down-sized', R: { H: { x: 255, y: 395 }, femLen: 735, tibLen: 650, femTilt: 3.5, ldfa: 87, mpta: 84 }, L: { H: { x: 645, y: 395 }, femLen: 735, tibLen: 650, femTilt: 4, ldfa: 88.5, mpta: 86 },
-      scale: 0.512, mx0: 126, mW: 648, spine: true, ruler: true, strip: true, markerAt: { x: 225, y: 70 }, onlyR: true, look: { noise: 7, blur: 1 }, downup: 0.6, jpeg: 45, seed: 23 }
+    realcase: { el: 'Αντίγραφο πραγματικής διάταξης (στενό φιλμ, χάρακας)', en: 'Real-layout replica (narrow film, ruler)', R: { H: { x: 288, y: 398 }, femLen: 735, r: 40, tibLen: 650, femTilt: 0.5, ldfa: 88, mpta: 85 }, L: { H: { x: 591, y: 391 }, femLen: 735, r: 40, tibLen: 650, femTilt: 0.5, ldfa: 88, mpta: 85.5 },
+      scale: 0.512, mx0: 126, mW: 648, spine: true, hip: 'real', ruler: true, strip: true, markerAt: { x: 225, y: 70 }, onlyR: true, look: { noise: 7, blur: 1 }, seed: 21 },
+    realpad: { el: 'Στενό φιλμ μέσα σε μαύρο περιθώριο', en: 'Narrow film inside black padding', R: { H: { x: 288, y: 398 }, femLen: 735, r: 40, tibLen: 650, femTilt: 0.5, ldfa: 89, mpta: 86 }, L: { H: { x: 591, y: 391 }, femLen: 735, r: 40, tibLen: 650, femTilt: 0.5, ldfa: 87, mpta: 88 },
+      scale: 0.512, mx0: 126, mW: 648, spine: true, hip: 'real', ruler: true, strip: true, markerAt: { x: 225, y: 70 }, onlyR: true, padW: 760, padX: 214, look: { noise: 7, blur: 1 }, seed: 22 },
+    realjpeg: { el: 'Αντίγραφο: JPEG χαμηλής ποιότητας + σμίκρυνση', en: 'Replica: low-quality JPEG + down-sized', R: { H: { x: 288, y: 398 }, femLen: 735, r: 40, tibLen: 650, femTilt: 0.5, ldfa: 87, mpta: 84 }, L: { H: { x: 591, y: 391 }, femLen: 735, r: 40, tibLen: 650, femTilt: 0.5, ldfa: 88.5, mpta: 86 },
+      scale: 0.512, mx0: 126, mW: 648, spine: true, hip: 'real', ruler: true, strip: true, markerAt: { x: 225, y: 70 }, onlyR: true, look: { noise: 7, blur: 1 }, downup: 0.6, jpeg: 45, seed: 23 }
   };
   function limbSpecs(v) {
     return X.DEMO_SPEC.limbs.map(function (b) { var o = {}; for (var k in b) o[k] = b[k]; var ov = v[b.side] || {}; for (var k2 in ov) o[k2] = ov[k2]; return o; });
@@ -1910,7 +1910,24 @@ button.small{padding:6px 10px;font-size:.82rem}
     var arcPts = function (c, R, a0, a1, n) { var o = []; for (var i = 0; i <= n; i++) { var a = (a0 + (a1 - a0) * i / n) * D2R; o.push(V(c.x + R * Math.cos(a), c.y + R * Math.sin(a))); } return o; };
     var rR = limbs[0].r + 10, rL = limbs[1].r + 10;
     var pel = [V(hr.x - 125, hr.y - 190), V(cx, hr.y - 235), V(hl.x + 125, hl.y - 190), V(hl.x + 95, hl.y - 60)].concat(arcPts(hl, rL, 340, 210, 8), [V(hl.x - 32, hl.y + 30), V(hl.x - 70, hl.y + 88), V(cx + 18, hl.y + 98), V(cx - 18, hr.y + 98), V(hr.x + 70, hr.y + 88), V(hr.x + 32, hr.y + 30)], arcPts(hr, rR, 330, 200, 8), [V(hr.x - 95, hr.y - 60)]);
-    objs.push({ kind: 'bone', prims: [poly(pel), arc(hr, limbs[0].r + 9, 3, 185, 300), arc(hl, limbs[1].r + 9, 3, 240, 355)], subs: [ellipse(V(hr.x + 78, hr.y + 50), 26, 36, 0.3), ellipse(V(hl.x - 78, hl.y + 50), 26, 36, -0.3)], mut: 0.38, muc: 0.7, Rb: 22, cort: function () { return 2.4; }, dens: 0.8 * dens, tex: 1 });
+    if (v.hip !== 'real') objs.push({ kind: 'bone', prims: [poly(pel), arc(hr, limbs[0].r + 9, 3, 185, 300), arc(hl, limbs[1].r + 9, 3, 240, 355)], subs: [ellipse(V(hr.x + 78, hr.y + 50), 26, 36, 0.3), ellipse(V(hl.x - 78, hl.y + 50), 26, 36, -0.3)], mut: 0.38, muc: 0.7, Rb: 22, cort: function () { return 2.4; }, dens: 0.8 * dens, tex: 1 });
+    else { // realistic AP hip (model px ≈ 1.6/mm): the hemipelvis OVERLAPS the femoral head (acetabular walls cross it), dense sourcil arc
+      // over a thin joint space, teardrop, ilio-ischial line, obturator foramen, ischium, pubic rami; true-pelvis inlet left open
+      var pelR = [], subs = [];
+      limbs.forEach(function (L2) {
+        var m = L2.side === 'R' ? 1 : -1, H2 = L2.H, r2 = L2.r, dS = Math.abs(cx - H2.x) - 5, P2 = function (dx, dy) { return V(H2.x + m * dx, H2.y + dy); };
+        var ang = function (a) { return m === 1 ? a : 540 - a; }, rng = function (a0, a1) { var b0 = ang(a0), b1 = ang(a1); return b0 < b1 ? [b0, b1] : [b1, b0]; };
+        pelR.push(poly([P2(-105, -160), P2(-62, -232), P2(30, -262), P2(112, -218), P2(122, -132), P2(132, -40), P2(146, 6), P2(dS, 44), P2(dS, 106), P2(92, 142), P2(42, 150), P2(6, 118), P2(6, 42),
+          P2(-6, 4), P2(-0.55 * r2, -0.95 * r2 - 4), P2(-38, -52), P2(-76, -92)]));
+        var sA = rng(238, 312); objs.push({ kind: 'bone', prims: [arc(H2, r2 + 5, 2.6, sA[0], sA[1])], mut: 0.3, muc: 1.15, Rb: 4, cort: function () { return 2.4; }, dens: dens, tex: 1 }); // sourcil
+        var td = P2(r2 + 12, 22), tA = rng(0, 180);
+        objs.push({ kind: 'bone', prims: [arc(td, 7, 2.2, tA[0], tA[1]), capsule(V(td.x - m * 7, td.y), P2(r2 + 2, -18), 1.8), capsule(V(td.x + m * 7, td.y), P2(r2 + 22, -10), 1.8), capsule(P2(r2 + 26, -120), P2(r2 + 12, 120), 2.2)], mut: 0.3, muc: 0.9, Rb: 3, cort: function () { return 2; }, dens: dens, tex: 1 }); // teardrop + ilio-ischial line
+        var aA = rng(150, 250), pA = rng(100, 230);
+        objs.push({ kind: 'bone', prims: [arc(P2(30, 5), 50, 1.8, aA[0], aA[1]), arc(P2(15, 0), 43, 1.6, pA[0], pA[1])], mut: 0.2, muc: 0.5, Rb: 3, cort: function () { return 1.6; }, dens: dens, tex: 1 }); // anterior / posterior wall rims
+        var jA = rng(225, 320); subs.push(ellipse(P2(96, 82), 38, 46, m * 0.25), arc(H2, r2 + 1.8, 1.3, jA[0], jA[1])); // obturator foramen, joint space
+      });
+      objs.push({ kind: 'bone', prims: pelR, subs: subs, mut: 0.4, muc: 0.75, Rb: 26, cort: function () { return 2.6; }, dens: 0.85 * dens, tex: 1 });
+    }
     limbs.forEach(function (L, li) {
       var med = L.side === 'R' ? 1 : -1, lat = V(-med, 0), up = L.up, down = L.down, l = L.l, tm = mul(l, -1), lm = L.landmarks, s = L.spec;
       // soft tissue envelope (thigh, leg, foot)
@@ -1918,7 +1935,7 @@ button.small{padding:6px 10px;font-size:.82rem}
       // femur
       var neckB = along(along(L.H, lat, 62), up, -48), gt = along(along(L.H, lat, 86), up, -36), shA = along(along(L.H, lat, 60), up, -66), shB = along(L.Jf, up, 150), mb = along(L.Jf, up, 95), rc = 30;
       var c1 = along(lm.FC1, L.lineN, -rc), c2 = along(lm.FC2, L.lineN, -rc);
-      var fem = [circle(L.H, L.r), capsule(L.H, neckB, 25, 23), circle(gt, 26), circle(along(along(L.H, lat, 36), up, -132), 11), capsule(shA, shB, 21, 22),
+      var fem = [circle(L.H, L.r), capsule(L.H, neckB, 25, 23), circle(gt, 26), circle(along(along(L.H, v.hip === 'real' ? mul(lat, -1) : lat, v.hip === 'real' ? 4 : 36), up, -132), v.hip === 'real' ? 13 : 11), capsule(shA, shB, 21, 22),
         poly([along(mb, l, -24), along(mb, l, 24), along(c2, l, rc), along(c1, l, -rc)]), circle(c1, rc), circle(c2, rc)];
       var femObj = { kind: 'bone', prims: fem, mut: 0.55, muc: 0.85, Rb: 24, cort: cortVar(L.H, s.femLen, mul(up, -1), [0.18, 0.3, 0.72, 0.84], 4.6), dens: dens, tex: 1 };
       objs.push(femObj);
@@ -2060,7 +2077,7 @@ button.small{padding:6px 10px;font-size:.82rem}
   // knee & ankle joint gaps (oriented profile search) → condyle bitangent / plateau & plafond lines (edge points + RANSAC) →
   // femoral head (gradient circular Hough + radial edge circle fit). Output maps to the 9-point model; every point carries a
   // confidence 0–1 and reasons. Results are proposals for the surgeon to confirm or correct – never final.
-  var VERSION = 'classic-1.1', LOW = 0.6;
+  var VERSION = 'classic-1.2', LOW = 0.6;
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function sstep(a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
   function V(x, y) { return { x: x, y: y }; }
@@ -2139,7 +2156,7 @@ button.small{padding:6px 10px;font-size:.82rem}
   }
   function stageList(ctx) {
     var s = [prep, limbs]; ctx.halves.forEach(function (h) { s.push(function (c) { trace(c, h); }); });
-    ctx.halves.forEach(function (h) { s.push(function (c) { head(c, h); }); });
+    ctx.halves.forEach(function (h) { s.push(function (c) { headCands(c, h); }); }); s.push(headPick);
     ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'knee'); }); });
     ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'ankle'); }); });
     s.push(assemble); return s;
@@ -2272,10 +2289,14 @@ button.small{padding:6px 10px;font-size:.82rem}
     L.femAxis = ransacLine(fpts, 2.5 * U, 0.1 * (kn.y - B.y0));
 
   }
-  function head(ctx, half) {
+  /** Femoral head, stage 1 – candidate circles (gradient-direction Hough) scored by an anatomical model:
+   *  edge support on the head contour EXCEPT the neck sector, a femoral neck leaving the circle infero-laterally (neck-shaft angle
+   *  ≈ 118–145°) and continuous with its interior, head centre medial to the shaft axis by ≈ the femoral offset, radius ≈ 4.5–8.5 % of
+   *  femur length, height consistent with the tibial length (femur ≈ 1.1–1.35 × tibia), and the circle lying BELOW the acetabular
+   *  roof (a dense sourcil arc just beyond the head contour) rather than on it. */
+  function headCands(ctx, half) {
     var L = ctx.limb[half]; if (!L.found || !L.knee) return;
     var g = ctx.gs, w = g.w, h = g.h, U = ctx.Uw;
-    // ROI anchored to the film content and this limb: between the film edge and the inter-limb midline, proximal 55 % of top→knee
     var B = ctx.box, hc = B.y1 - B.y0 + 1, x0 = half === 'left' ? B.x0 : Math.round(ctx.mid), x1 = half === 'left' ? Math.round(ctx.mid) : B.x1, y0 = Math.round(B.y0 + hc * 0.02), y1 = Math.round(Math.min(B.y0 + 0.55 * (L.knee.y - B.y0), L.knee.y - hc * 0.18));
     var rw = x1 - x0, rh = y1 - y0; if (rw < 20 || rh < 20) return;
     var E = []; var mags = [];
@@ -2288,27 +2309,88 @@ button.small{padding:6px 10px;font-size:.82rem}
     var cands = [], acc = new Float32Array(rw * rh), sm = new Float32Array(rw * rh), med = half === 'left' ? 1 : -1;
     for (var r = Math.round(12 * U); r <= Math.round(36 * U); r += Math.max(1, Math.round(1.5 * U))) {
       acc.fill(0); sm.fill(0);
-      for (var k = 0; k < E.length; k++) { var e = E[k], cx = Math.round(e[0] + r * e[2]) - x0, cy = Math.round(e[1] + r * e[3]) - y0; if (cx < 1 || cy < 1 || cx >= rw - 1 || cy >= rh - 1) continue; var wv = Math.min(2, e[4] / thr); acc[cy * rw + cx] += wv; }
+      for (var k = 0; k < E.length; k++) { var e = E[k], cx = Math.round(e[0] + r * e[2]) - x0, cy = Math.round(e[1] + r * e[3]) - y0; if (cx < 1 || cy < 1 || cx >= rw - 1 || cy >= rh - 1) continue; acc[cy * rw + cx] += Math.min(2, e[4] / thr); }
       for (var yy = 1; yy < rh - 1; yy++) for (var xx = 1; xx < rw - 1; xx++) { var j = yy * rw + xx; sm[j] = acc[j] + 0.5 * (acc[j - 1] + acc[j + 1] + acc[j - rw] + acc[j + rw]); }
-      for (var n3 = 0; n3 < 3; n3++) { // top peaks per radius with non-maximum suppression
+      for (var n3 = 0; n3 < 6; n3++) { // several peaks per radius (non-maximum suppression over half a radius)
         var bj = -1, bv = 0; for (var j2 = 0; j2 < sm.length; j2++) if (sm[j2] > bv) { bv = sm[j2]; bj = j2; } if (bj < 0) break;
-        var px = bj % rw, py = (bj / rw) | 0; cands.push({ x: px + x0, y: py + y0, r: r, sc: bv / (2 * Math.PI * r) });
-        for (var qy = Math.max(0, py - r); qy < Math.min(rh, py + r); qy++) for (var qx = Math.max(0, px - r); qx < Math.min(rw, px + r); qx++) sm[qy * rw + qx] = 0;
+        var px = bj % rw, py = (bj / rw) | 0, nr = Math.max(2, r >> 1); cands.push({ x: px + x0, y: py + y0, r: r, sc: bv / (2 * Math.PI * r) });
+        for (var qy = Math.max(0, py - nr); qy < Math.min(rh, py + nr); qy++) for (var qx = Math.max(0, px - nr); qx < Math.min(rw, px + nr); qx++) sm[qy * rw + qx] = 0;
       }
     }
-    // prior: the femoral head lies medial and proximal to the femoral shaft (the greater trochanter lies lateral)
-    var ax = L.femAxis, best = null;
-    var mg = 2 * U, B0 = ctx.box0;
+    // tibial length from a head-independent ankle pre-pass → expected head height (femur ≈ 1.22 × tibia)
+    var keep = L.ankle; L.headRes = null; ankleCoarse(ctx, L); var pre = L.ankle; L.ankle = keep; var lt = pre && pre.sc > 0.02 ? pre.y - L.knee.y : 0;
+    var ax = L.femAxis, mg = 2 * U, B0 = ctx.box0, I = function (x2, y2) { return samp(g, x2, y2); };
+    var legacy = !!(ctx.opts && ctx.opts.headLegacy); // v1.1 behaviour (strongest Hough circle × size/offset prior) – kept only for regression tests
     cands.forEach(function (c) {
-      // never at the film borders: the centre must lie inside the content box by ≥ half a radius (a ruler may still cover the lateral rim)
-      var bm = 0.5 * c.r + mg; if (c.x < B.x0 + mg || c.x > B.x1 - mg || c.x < B0.x0 + bm || c.x > B0.x1 - bm || c.y - c.r < B.y0 + mg) { c.score = 0; return; }
-      // priors relative to the femoral length fl (head centre → knee): the head centre lies medial to the shaft axis by ≈ 0.05–0.15·fl
-      // (femoral offset; the greater trochanter is lateral, pelvis/sacrum/obturator are further medial) and its radius is ≈ 0.045–0.085·fl
+      if (legacy) { var fl0 = Math.max(1, L.knee.y - c.y), sx0 = ax ? ax.a + ax.b * c.y : L.xAt(c.y), dm0 = (c.x - sx0) * med / fl0, rf0 = c.r / fl0;
+        c.score = c.sc * sstep(0.01, 0.045, dm0) * (1 - sstep(0.17, 0.22, dm0)) * sstep(0.03, 0.045, rf0) * (1 - sstep(0.085, 0.1, rf0)); c.parts = { legacy: 1 }; return; }
+      c.score = 0; var bm = 0.5 * c.r + mg; if (c.x < B.x0 + mg || c.x > B.x1 - mg || c.x < B0.x0 + bm || c.x > B0.x1 - bm || c.y - c.r < B.y0 + mg) return;
       var fl = Math.max(1, L.knee.y - c.y), sx = ax ? ax.a + ax.b * c.y : L.xAt(c.y), dm = (c.x - sx) * med / fl, rf = c.r / fl;
-      var pr = sstep(0.01, 0.045, dm) * (1 - sstep(0.17, 0.22, dm)) * sstep(0.03, 0.045, rf) * (1 - sstep(0.085, 0.1, rf));
-      c.score = c.sc * pr; if (!best || c.score > best.score) best = c; });
-    if (!best || best.score <= 0) return;
-    // refine at (near) native resolution with radial edge search
+      var geo = sstep(0.01, 0.045, dm) * (1 - sstep(0.17, 0.22, dm)) * sstep(0.03, 0.045, rf) * (1 - sstep(0.085, 0.1, rf)); if (geo <= 0) return;
+      // femoral neck: best direction φ below horizontal (lateral-inferior) – bright centre band, darker beyond its cortices
+      var best = null; for (var ph = 20; ph <= 60; ph += 5) { var a = ph * Math.PI / 180, n = V(-med * Math.cos(a), Math.sin(a)), np = V(-n.y, n.x), sc = 0, cn = 0;
+        for (var t = 1.1 * c.r; t <= 2.4 * c.r; t += Math.max(1, 1.5 * U)) { var p = V(c.x + t * n.x, c.y + t * n.y), ce = (I(p.x, p.y) + I(p.x + 0.2 * c.r * np.x, p.y + 0.2 * c.r * np.y) + I(p.x - 0.2 * c.r * np.x, p.y - 0.2 * c.r * np.y)) / 3;
+          var s1 = I(p.x + 1.3 * c.r * np.x, p.y + 1.3 * c.r * np.y), s2 = I(p.x - 1.3 * c.r * np.x, p.y - 1.3 * c.r * np.y); sc += ce - Math.max(s1, s2) * 0.5 - Math.min(s1, s2) * 0.5; cn++; }
+        sc /= cn; var axd = ax ? V(ax.b, 1) : V(0, 1), al = Math.hypot(axd.x, axd.y), nsa = Math.acos(clamp((-n.x * axd.x - n.y * axd.y) / al, -1, 1)) * 180 / Math.PI;
+        var sv = sc * (sstep(112, 120, nsa) * (1 - sstep(143, 152, nsa))); if (!best || sv > best.sv) best = { sv: sv, sc: sc, ph: ph, nsa: nsa, n: n }; }
+      var neck = sstep(-0.01, 0.06, best.sv), thN = Math.atan2(best.n.y, best.n.x);
+      // contour support outside the neck sector (±40°), inside brighter than outside; local search of centre and radius
+      // sectors in the limb frame (α = 0 lateral, +90° down): the head contour is usually visible SUPERO-LATERALLY (−75…−15°, beyond the
+      // lateral acetabular margin) and INFERIORLY / infero-medially (+70…+150°, below the neck towards the obturator); medially and
+      // superiorly it is overlapped by the acetabulum/sourcil. The neck sector (around the neck direction) is excluded.
+      var lat = -med, supF = function (X0, Y0, R0, tol) { var acc2 = { sl: 0, nsl: 0, inf: 0, ninf: 0, oth: 0, noth: 0 };
+        for (var al = -180; al < 180; al += 7.5) { var a2 = al * Math.PI / 180, ux = lat * Math.cos(a2), uy = Math.sin(a2), th = Math.atan2(uy, ux), dd = Math.abs(Math.atan2(Math.sin(th - thN), Math.cos(th - thN))); if (dd < 0.6) continue;
+          var eb = -1; for (var rr = R0 - tol; rr <= R0 + tol; rr += 0.5) { var ev = I(X0 + (rr - 1.5 * U) * ux, Y0 + (rr - 1.5 * U) * uy) - I(X0 + (rr + 1.5 * U) * ux, Y0 + (rr + 1.5 * U) * uy); if (ev > eb) eb = ev; }
+          if (uy < -0.4) { // upper half: a contour with a dark gap just INSIDE it and bright bone again further in = the roof's outer surface
+            var mn = 2; for (var sg = R0 - 9 * U; sg <= R0 - 3 * U; sg += 1) mn = Math.min(mn, I(X0 + sg * ux, Y0 + sg * uy));
+            if (I(X0 + (R0 - 1.5 * U) * ux, Y0 + (R0 - 1.5 * U) * uy) - mn > 0.025 && I(X0 + (R0 - 12 * U) * ux, Y0 + (R0 - 12 * U) * uy) - mn > 0.025) eb = 0; }
+          var v2 = clamp(eb / 0.06, 0, 1); if (al >= -75 && al <= -15) { acc2.sl += v2; acc2.nsl++; } else if (al >= 70 && al <= 150) { acc2.inf += v2; acc2.ninf++; } else { acc2.oth += v2; acc2.noth++; } }
+        var sl = acc2.nsl ? acc2.sl / acc2.nsl : 0, inf = acc2.ninf ? acc2.inf / acc2.ninf : 0, oth = acc2.noth ? acc2.oth / acc2.noth : 0;
+        return 0.8 * Math.sqrt(sl * inf) + 0.2 * oth; };
+      var opt = { x: c.x, y: c.y, r: c.r, s: supF(c.x, c.y, c.r, 1) }, st0 = Math.max(1, Math.round(2 * U));
+      [[0.3 * c.r, st0, 0.25 * c.r, st0], [st0, 1, st0, 1]].forEach(function (G) { var bx = opt.x, by = opt.y, br = opt.r;
+        for (var oy = -G[0]; oy <= G[0]; oy += G[1]) for (var ox = -G[0]; ox <= G[0]; ox += G[1]) for (var orr = -G[2]; orr <= G[2]; orr += G[3]) { var R1 = br + orr; if (R1 < 10 * U) continue; var v1 = supF(bx + ox, by + oy, R1, 1); if (v1 > opt.s) opt = { x: bx + ox, y: by + oy, r: R1, s: v1 }; } });
+      c.x = opt.x; c.y = opt.y; c.r = opt.r; c.thN = thN; c.supF = supF; var sup = opt.s;
+      fl = Math.max(1, L.knee.y - c.y); sx = ax ? ax.a + ax.b * c.y : L.xAt(c.y); dm = (c.x - sx) * med / fl; rf = c.r / fl;
+      geo = sstep(0.01, 0.045, dm) * (1 - sstep(0.17, 0.22, dm)) * sstep(0.03, 0.045, rf) * (1 - sstep(0.085, 0.1, rf)); if (geo <= 0) return;
+      var interior = 0; for (var q2 = 0; q2 < 24; q2++) { var th2 = q2 * Math.PI / 12; interior += I(c.x + 0.5 * c.r * Math.cos(th2), c.y + 0.5 * c.r * Math.sin(th2)) / 24; }
+      // acetabular roof: dense band just ABOVE the contour (beyond a thin joint space) = good; the contour itself sitting on a bright arc = roof-like
+      var roofAb = 0, onArc = 0, nr2 = 0; for (var ra = 245; ra <= 295; ra += 10) { var tr = ra * Math.PI / 180, vx = Math.cos(tr), vy = Math.sin(tr), mxv = -1, mnv = 2;
+        for (var s3 = c.r + 2.5 * U; s3 <= c.r + 9 * U; s3 += 1) mxv = Math.max(mxv, I(c.x + s3 * vx, c.y + s3 * vy)); for (var s4 = c.r; s4 <= c.r + 2.5 * U; s4 += 0.5) mnv = Math.min(mnv, I(c.x + s4 * vx, c.y + s4 * vy));
+        roofAb += mxv - mnv; onArc += I(c.x + c.r * vx, c.y + c.r * vy) - I(c.x + 0.55 * c.r * vx, c.y + 0.55 * c.r * vy); nr2++; }
+      roofAb /= nr2; onArc /= nr2;
+      var roof = (1 + 0.6 * sstep(0, 0.06, roofAb)) * (1 - 0.6 * sstep(0, 0.05, onArc));
+      // neck continuity: head interior and proximal neck of similar brightness (no dark gap between them)
+      var nk = I(c.x + 1.3 * c.r * best.n.x, c.y + 1.3 * c.r * best.n.y), cont = 1 - 0.6 * sstep(0.03, 0.12, interior - nk);
+      if (lt > 0 && !(fl / lt > 1.0 && fl / lt < 1.5)) { c.score = 0; return; } // femur/tibia ratio hard limits (same as the assemble gate)
+      var vert = lt > 0 ? 0.25 + 0.75 * Math.exp(-Math.pow((fl - 1.22 * lt) / (0.16 * lt), 2)) : 1;
+      c.parts = { sup: sup, neck: best.sc, nsa: best.nsa, roofAb: roofAb, onArc: onArc, vert: vert, geo: geo, cont: cont };
+      c.score = sup * (0.25 + 0.75 * neck) * roof * cont * vert * geo;
+    });
+    cands = cands.filter(function (c) { return c.score > 0; }).sort(function (a2, b2) { return b2.score - a2.score; });
+    var kept = []; cands.forEach(function (c) { if (kept.length < 8 && !kept.some(function (o) { return Math.hypot(o.x - c.x, o.y - c.y) < 0.5 * o.r; })) kept.push(c); });
+    L.headCands = kept; L.lt = lt;
+  }
+  /** Femoral head, stage 2 – choose the best LEFT/RIGHT PAIR (similar height, roughly symmetric about the inter-limb midline), then refine. */
+  function headPick(ctx) {
+    var Lh = ctx.limb.left, Rh = ctx.limb.right, cl = (Lh && Lh.headCands) || [], cr = (Rh && Rh.headCands) || [], choice = {};
+    if (cl.length && cr.length) { var bestP = null;
+      cl.forEach(function (a) { cr.forEach(function (b) { var fl = Math.max(1, 0.5 * (Lh.knee.y + Rh.knee.y) - 0.5 * (a.y + b.y)), dy = Math.abs(a.y - b.y) / fl, asym = Math.abs((a.x + b.x) / 2 - ctx.mid) / fl, dr = Math.abs(a.r - b.r) / Math.max(a.r, b.r);
+        var ps = Math.sqrt(a.score * b.score) * Math.exp(-Math.pow(dy / 0.04, 2)) * Math.exp(-Math.pow(asym / 0.08, 2)) * (1 - 0.5 * sstep(0.15, 0.35, dr)); if (!bestP || ps > bestP.ps) bestP = { ps: ps, a: a, b: b, dy: dy, asym: asym }; }); });
+      choice.left = bestP.a; choice.right = bestP.b; ctx.res.headPair = { dy: Math.round(bestP.dy * 1000) / 1000, asym: Math.round(bestP.asym * 1000) / 1000 };
+      // pair agreement is part of the evidence
+      choice.pairF = Math.exp(-Math.pow(bestP.dy / 0.05, 2)) * Math.exp(-Math.pow(bestP.asym / 0.1, 2));
+      // symmetric radius: both heads are (nearly) the same size – re-fit each centre with the pair-mean radius when the two disagree
+      var rm = 0.5 * (bestP.a.r + bestP.b.r);
+      if (Math.abs(bestP.a.r - bestP.b.r) > 0.08 * rm) [bestP.a, bestP.b].forEach(function (c) { if (!c.supF) return; var U = ctx.Uw, st0 = Math.max(1, Math.round(2 * U)), o = { x: c.x, y: c.y, r: rm, s: c.supF(c.x, c.y, rm, 1) };
+        [[0.3 * rm, st0, 0.05 * rm], [st0, 1, 0.05 * rm]].forEach(function (G) { var bx = o.x, by = o.y; for (var oy = -G[0]; oy <= G[0]; oy += G[1]) for (var ox = -G[0]; ox <= G[0]; ox += G[1]) for (var orr = -G[2]; orr <= G[2] + 1e-6; orr += G[2]) { var v1 = c.supF(bx + ox, by + oy, rm + orr, 1); if (v1 > o.s) o = { x: bx + ox, y: by + oy, r: rm + orr, s: v1 }; } });
+        c.x = o.x; c.y = o.y; c.r = o.r; });
+    } else { if (cl.length) choice.left = cl[0]; if (cr.length) choice.right = cr[0]; choice.pairF = 0.8; }
+    ['left', 'right'].forEach(function (hf) { var L = ctx.limb[hf]; if (L && choice[hf]) refineHead(ctx, L, choice[hf], choice.pairF); });
+  }
+  function refineHead(ctx, L, best, pairF) {
+    var g = ctx.gs;
+    // refine at (near) native resolution with radial edge search; the fit may not drift off the anatomical candidate
     var Rn = best.r / g.fy, cN = toNat(g, V(best.x, best.y)), f = Math.min(1, 60 / Rn), cr = ctx.nat(crop(ctx.gray, ctx.W, ctx.H, cN.x - 1.6 * Rn, cN.y - 1.6 * Rn, 3.2 * Rn, 3.2 * Rn, f));
     var crs = { d: blur(cr.d, cr.w, cr.h, 1.0), w: cr.w, h: cr.h, fx: cr.fx, fy: cr.fy, x0: cr.x0, y0: cr.y0 }, c0 = toCrop(crs, cN), rc = Rn * crs.fy, P = [], es = [];
     for (var a = 0; a < 120; a++) {
@@ -2323,11 +2405,13 @@ button.small{padding:6px 10px;font-size:.82rem}
     var fit = P.length >= 8 ? circleFit(P) : null;
     for (var it = 0; it < 3 && fit; it++) { var res = P.map(function (p) { return Math.abs(Math.hypot(p.x - fit.x, p.y - fit.y) - fit.r); }), lim = Math.max(1.2, 2.5 * mad(res)); var P2 = P.filter(function (p, i2) { return res[i2] <= lim; }); if (P2.length < 8) break; P = P2; fit = circleFit(P); }
     if (!fit) { L.headRes = { found: false }; return; }
+    var C0 = toNat(g, V(best.x, best.y)), Cf = toNat(crs, V(fit.x, fit.y)); if (Math.hypot(Cf.x - C0.x, Cf.y - C0.y) > 0.25 * Rn || Math.abs(fit.r / crs.fy - Rn) > 0.25 * Rn) { fit = { x: toCrop(crs, C0).x, y: toCrop(crs, C0).y, r: rc }; P = P.filter(function (p) { return Math.abs(Math.hypot(p.x - fit.x, p.y - fit.y) - fit.r) <= 2; }); if (P.length < 6) { L.headRes = { found: false }; return; } }
     var resid = P.map(function (p) { return Math.hypot(p.x - fit.x, p.y - fit.y) - fit.r; }), rms = Math.sqrt(resid.reduce(function (s, v) { return s + v * v; }, 0) / resid.length);
     var cov = P.length / 120, snr = median(P.map(function (p) { return p.e; })) / sig;
     var C = toNat(crs, V(fit.x, fit.y)), Rf = fit.r / crs.fy;
-    var conf = sstep(0.2, 0.45, cov) * (1 - sstep(0.03, 0.08, rms / fit.r)) * sstep(2.4, 4.8, snr) * (Rf / ctx.H > 0.01 && Rf / ctx.H < 0.04 ? 1 : 0.3);
-    L.headRes = { found: true, c: C, r: Rf, cov: cov, rms: rms / crs.fy, snr: snr, conf: conf, reasons: conf < LOW ? [cov < 0.45 ? 'partialEdge' : snr < 4 ? 'weakEdge' : 'irregular'] : [] };
+    var conf = sstep(0.2, 0.45, cov) * (1 - sstep(0.03, 0.08, rms / fit.r)) * sstep(2.4, 4.8, snr) * (Rf / ctx.H > 0.01 && Rf / ctx.H < 0.04 ? 1 : 0.3) * (0.4 + 0.6 * sstep(0.0, 0.04, best.parts.neck)) * (0.5 + 0.5 * pairF);
+    if (pairF > 0.6 && best.score > 0.3) conf = Math.max(conf, 0.2); // anatomically consistent pair: keep it as an (orange) proposal
+    L.headRes = { found: true, c: C, r: Rf, cov: cov, rms: rms / crs.fy, snr: snr, conf: conf, parts: best.parts, reasons: conf < LOW ? [cov < 0.45 ? 'partialEdge' : snr < 4 ? 'weakEdge' : 'irregular'] : [] };
   }
   /** Knee or ankle: oriented gap search → edge points above/below → bitangent / RANSAC lines. Coordinates: t along the joint, u toward distal. */
   function joint(ctx, half, kind) {
@@ -2374,7 +2458,10 @@ button.small{padding:6px 10px;font-size:.82rem}
     var tc = xc === c0.x ? 0 : 0; void tc;
     if (kind === 'knee') {
       var ts = up.map(function (p2) { return p2.t; }), tmid = ts.length ? (Math.min.apply(null, ts) + Math.max.apply(null, ts)) / 2 : 0;
-      var bt = bitangent(up, tmid, 0.8 * Wb, Math.max(1, 0.5 * u));
+      var bt = bitangent(up, tmid, 0.8 * Wb, Math.max(1, 0.5 * u)), weakF = 1;
+      if (!bt) { // weak condylar edge (compressed export): retry with a lower threshold, at reduced confidence
+        var upW = upAll.filter(weakOk); ts = upW.map(function (p2) { return p2.t; }); tmid = ts.length ? (Math.min.apply(null, ts) + Math.max.apply(null, ts)) / 2 : 0;
+        bt = bitangent(upW, tmid, 0.8 * Wb, Math.max(1, 0.5 * u)); if (bt) { up = upW; weakF = 0.7; } }
       var spine = 0.22 * Wb, dn2 = dn.filter(function (p2) { return Math.abs(p2.t - tmid) > spine; });
       // anatomical prior: the tibial plateau line is within ±8° of the femoral condylar line (JLCA is rarely larger)
       var slOk = bt ? function (b) { return Math.abs(Math.atan(b) - Math.atan(bt.b)) < 8 * Math.PI / 180; } : null, weakT = 1;
@@ -2385,17 +2472,19 @@ button.small{padding:6px 10px;font-size:.82rem}
       if (bt) {
         var snrF = median(up.filter(function (p2) { return Math.abs(p2.u - (bt.a + bt.b * p2.t)) <= 1.6; }).map(function (p2) { return p2.e; })) / sig;
         res.FC1 = toN(bt.tl, bt.a + bt.b * bt.tl); res.FC2 = toN(bt.tr, bt.a + bt.b * bt.tr);
-        var cf = sstep(2, 7, Math.min(bt.supL, bt.supR)) * (1 - sstep(0.02, 0.12, bt.vio / Math.max(1, bt.n))) * sstep(2.5, 5, snrF) * metalF;
+        var cf = sstep(2, 7, Math.min(bt.supL, bt.supR)) * (1 - sstep(0.02, 0.12, bt.vio / Math.max(1, bt.n))) * sstep(2.5, 5, snrF) * metalF * weakF;
         res.confF = cf; res.reasonsF = reasons.concat(cf < LOW && metalF === 1 ? [Math.min(bt.supL, bt.supR) < 4 ? 'fewPoints' : 'weakEdge'] : []);
       }
       if (tl) {
         var inT = tl.inl.map(function (p2) { return p2.t; }).sort(function (a2, b2) { return a2 - b2; });
         // largest contiguous inlier runs on either side of the spines
         var lo = inT[Math.min(1, inT.length - 1)], hi = inT[Math.max(0, inT.length - 2)];
-        var snrT = median(tl.inl.map(function (p2) { return p2.e; })) / sig;
+        var snrT = median(tl.inl.map(function (p2) { return p2.e; })) / sig, ext0 = hi - lo;
+        // plateau run much narrower than the condyles (weak edge on one side): plateau width ≈ condylar width, centred under it
+        if (bt && ext0 < 0.65 * Math.abs(bt.tr - bt.tl)) { var cm = 0.5 * (bt.tl + bt.tr), hw = 0.5 * Math.abs(bt.tr - bt.tl); lo = Math.min(lo, cm - hw); hi = Math.max(hi, cm + hw); }
         res.TP1 = toN(lo, tl.a + tl.b * lo); res.TP2 = toN(hi, tl.a + tl.b * hi);
-        var span = bt ? Math.abs(bt.tr - bt.tl) : 1.2 * Wb, ct = sstep(0.3, 0.6, tl.frac) * (1 - sstep(0.5, 1.6, tl.rms / u)) * sstep(2.5, 5, snrT) * sstep(0.65, 0.9, (hi - lo) / span) * metalF * weakT;
-        res.confT = ct; res.reasonsT = reasons.concat(ct < LOW && metalF === 1 ? [tl.frac < 0.45 ? 'fewPoints' : (hi - lo) / span < 0.8 ? 'extent' : 'weakEdge'] : []);
+        var span = bt ? Math.abs(bt.tr - bt.tl) : 1.2 * Wb, ct = sstep(0.3, 0.6, tl.frac) * (1 - sstep(0.5, 1.6, tl.rms / u)) * sstep(2.5, 5, snrT) * sstep(0.65, 0.9, ext0 / span) * metalF * weakT;
+        res.confT = ct; res.reasonsT = reasons.concat(ct < LOW && metalF === 1 ? [tl.frac < 0.45 ? 'fewPoints' : ext0 / span < 0.8 ? 'extent' : 'weakEdge'] : []);
       }
       res.gapScore = bestG.sc; L.kneeRes = res;
     } else {
