@@ -309,6 +309,7 @@ button.small{padding:6px 10px;font-size:.82rem}
   #tab-proms{padding:8px}
   .ptcard{padding:14px}
 }
+.ptcheck{display:flex;gap:10px;align-items:center;min-height:48px;font-weight:700;cursor:pointer}.ptcheck input{width:26px;height:26px;flex:none}
 /* ---- X-rays tab ---- */
 .xgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:12px;max-width:1200px;margin:0 auto}
 @media (max-width:900px){.xgrid{grid-template-columns:1fr}}
@@ -3546,11 +3547,14 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   // ---------- storage ----------
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.warn('localStorage unavailable'); } }
+  // Demo patients are anchored to TODAY (computed at load, never hard-coded dates): off = days since surgery today,
+  // chosen inside a measurement window and before that timepoint's nominal day, so a questionnaire is always open.
   var DEMO_PTS = [
-    { id: 'DEMO-ACL-01', procedure: 'ACL', surgeryDate: '2024-09-16', h: 0.08, age: 24, sex: 'M' }, { id: 'DEMO-ACL-02', procedure: 'ACL', surgeryDate: '2026-02-09', h: -0.05, age: 31, sex: 'F' },
-    { id: 'DEMO-TKA-01', procedure: 'TKA', surgeryDate: '2025-01-20', h: 0.02, age: 71, sex: 'F' }, { id: 'DEMO-TKA-02', procedure: 'TKA', surgeryDate: '2026-05-04', h: -0.08, age: 66, sex: 'M' },
-    { id: 'DEMO-THA-01', procedure: 'THA', surgeryDate: '2024-11-11', h: 0.1, age: 63, sex: 'M' }, { id: 'DEMO-THA-02', procedure: 'THA', surgeryDate: '2026-03-16', h: 0, age: 74, sex: 'F' },
-    { id: 'DEMO-UL-01', procedure: 'UL', surgeryDate: '2025-06-02', h: 0.04, age: 55, sex: 'F' }, { id: 'DEMO-UL-02', procedure: 'UL', surgeryDate: '2026-08-24', h: -0.04, age: 48, sex: 'M' }];
+    { id: 'DEMO-ACL-01', procedure: 'ACL', off: 700, h: 0.08, age: 24, sex: 'M' }, { id: 'DEMO-ACL-02', procedure: 'ACL', off: 170, h: -0.05, age: 31, sex: 'F' },
+    { id: 'DEMO-TKA-01', procedure: 'TKA', off: 700, h: 0.02, age: 71, sex: 'F' }, { id: 'DEMO-TKA-02', procedure: 'TKA', off: 180, h: -0.08, age: 66, sex: 'M' },
+    { id: 'DEMO-THA-01', procedure: 'THA', off: 719, h: 0.1, age: 63, sex: 'M' }, { id: 'DEMO-THA-02', procedure: 'THA', off: 340, h: 0, age: 74, sex: 'F' },
+    { id: 'DEMO-UL-01', procedure: 'UL', off: 700, h: 0.04, age: 55, sex: 'F' }, { id: 'DEMO-UL-02', procedure: 'UL', off: 68, h: -0.04, age: 48, sex: 'M' }];
+  DEMO_PTS.forEach(function (p) { p.surgeryDate = P.addDays(today(), -p.off); });
   var TRAJ = { pre: 0.32, '6w': 0.4, '3m': 0.56, '6m': 0.68, '1y': 0.78, '2y': 0.82 };
   function makeSub(pt, inst, tp, answers, date, source) {
     var r = P.scoreInstrument(inst, answers);
@@ -3594,6 +3598,33 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   if (store.xrays && window.OrthoXray && window.OrthoXraySynth && store.patients.some(function (p) { return p.id === 'DEMO-TKA-01' && p.demo; }) && !store.xrays.some(function (x) { return x.seedV === 2; })) {
     var nsx = window.OrthoXray.seedStudies(P.addDays, DEMO_PTS).filter(function (x) { return x.seedV === 2; });
     if (nsx.length) { store.xrays = store.xrays.filter(function (x) { return !(x.source === 'seed' && x.patientId === 'DEMO-TKA-01'); }).concat(nsx); save(KEY, store); }
+  }
+  /** Re-anchor stored demo patients (fresh seeds from an earlier day or storage from older builds with fixed dates) so their
+      current timepoint is open today: shift every dated record of that patient, drop seed records that would lie in the future,
+      and re-open the demo timepoint if it was already completed. Real (non-demo) patients are never touched. */
+  function reanchorDemo() {
+    var td = today(), changed = false, byId = {}; DEMO_PTS.forEach(function (d) { byId[d.id] = d; });
+    store.patients.forEach(function (p) {
+      var d = byId[p.id]; if (!d || !p.demo) return;
+      var delta = P.daysBetween(p.surgeryDate, d.surgeryDate);
+      if (delta) {
+        var sh = function (x) { return x ? P.addDays(x.slice(0, 10), delta) + x.slice(10) : x; };
+        p.surgeryDate = d.surgeryDate; if (p.created) p.created = sh(p.created);
+        store.submissions.forEach(function (s) { if (s.patientId === p.id) s.date = sh(s.date); });
+        (store.rom || []).forEach(function (r) { if (r.patientId === p.id) r.date = sh(r.date); });
+        (store.xrays || []).forEach(function (x) { if (x.patientId === p.id) { x.date = sh(x.date); if (x.confirmed && x.confirmed.at) x.confirmed.at = sh(x.confirmed.at); } });
+        changed = true;
+      }
+      var nS = store.submissions.length; store.submissions = store.submissions.filter(function (s) { return !(s.patientId === p.id && s.source === 'seed' && s.date > td); });
+      if (store.rom) store.rom = store.rom.filter(function (r) { return !(r.patientId === p.id && r.source === 'seed' && r.date > td); });
+      if (store.submissions.length !== nS) changed = true;
+      var tp = currentTp(p);
+      if (!tp || !assignedNow(p, tp).some(function (i) { return !doneAt(p.id, i, tp); })) { // demo: completed → open the anchored timepoint again
+        var ss = P.scheduleSummary(p, store.submissions, td).filter(function (x) { return P.daysBetween(x.from, td) >= 0 && P.daysBetween(td, x.to) >= 0; })[0];
+        if (ss) { store.submissions = store.submissions.filter(function (s) { return !(s.patientId === p.id && s.timepoint === ss.tp); }); changed = true; }
+      }
+    });
+    if (changed) save(KEY, store);
   }
   var hash = function (s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return 'fnv' + (h >>> 0).toString(16); }; // DEMO ONLY – not secure
   function authDefault() { return { owner: { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)', pw: hash('demo-owner'), role: 'owner' }, doctors: [], invites: [], session: null, log: [] }; }
@@ -3729,6 +3760,8 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var due = ss.filter(function (x) { return x.status === 'due'; })[0]; if (due) return due.tp;
     var late = ss.filter(function (x) { return x.status === 'partial' || x.status === 'overdue'; }).pop(); return late ? late.tp : null;
   }
+  function nextTpDate(pt) { var u = P.scheduleSummary(pt, store.submissions, today()).filter(function (x) { return x.status === 'upcoming'; })[0]; return u ? u.from : null; }
+  function fmtDay(iso) { var a = iso.split('-'); return a[2] + '/' + a[1] + '/' + a[0]; }
   function assignedNow(pt, tp) { return tp ? P.patientSet(pt).filter(function (id) { return P.appliesAt(id, tp, pt.procedure); }) : []; }
 
   // ---------- Clinic entry by the doctor (full instrument incl. clinician fields, score shown) – doctor side only ----------
@@ -3842,7 +3875,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       ptHow: 'Πατήστε το μεγάλο κουμπί σε κάθε ερωτηματολόγιο. Οι απαντήσεις σας φυλάγονται αυτόματα, οπότε μπορείτε να σταματήσετε και να συνεχίσετε όποτε θέλετε.',
       ptProgress: '{0} από {1} ολοκληρώθηκαν', ptTodo: 'Να συμπληρωθεί', ptInProg: 'Σε εξέλιξη', ptDone: '✓ Ολοκληρώθηκε', ptStart: 'Ξεκινήστε', ptCont: 'Συνέχεια',
       ptQ1: 'ερώτηση', ptQn: 'ερωτήσεις', ptAbout: 'περίπου', ptMin1: 'λεπτό', ptMinN: 'λεπτά', ptAnswered: 'απαντήσατε {0} από {1}',
-      ptNone: 'Δεν έχετε ερωτηματολόγια να συμπληρώσετε αυτή τη στιγμή. Θα σας ενημερώσουμε όταν έρθει η ώρα για τα επόμενα.', ptAllHome: 'Ολοκληρώσατε όλα τα ερωτηματολόγια. Ευχαριστούμε πολύ!',
+      ptAllDoneNext: 'Έχετε συμπληρώσει όλα τα ερωτηματολόγια – ευχαριστούμε! Θα σας ειδοποιήσουμε για τα επόμενα.', ptNextOn: 'Τα επόμενα ερωτηματολόγια ξεκινούν στις {0}.', ptUnknown: 'Δεν βρέθηκε ασθενής με τον κωδικό «{0}». Ελέγξτε ότι τον γράψατε σωστά ή ρωτήστε το ιατρείο σας.', ptNewOk: 'Είμαι νέος ασθενής – δημιουργία με αυτόν τον κωδικό', ptAllHome: 'Ολοκληρώσατε όλα τα ερωτηματολόγια. Ευχαριστούμε πολύ!',
       ptLoginLead: 'Γράψτε τον κωδικό που σας έδωσε το ιατρείο και πατήστε «Συνέχεια».', ptCode: 'Ο κωδικός σας', ptNeedCode: 'Γράψτε πρώτα τον κωδικό σας.',
       ptNewT: 'Πρώτη φορά εδώ; (δοκιμαστική έκδοση)', ptProc: 'Για ποια επέμβαση;', ptSurg: 'Ημερομηνία της επέμβασης', ptNotYou: 'Δεν είστε εσείς; Αλλαγή κωδικού',
       ptBigger: 'Μεγαλύτερα γράμματα', ptNormal: 'Κανονικά γράμματα', ptSizeL: 'Μέγεθος γραμμάτων', ptDemoT: 'Ρυθμίσεις δοκιμής (μόνο για την παρουσίαση)', ptDemoTp: 'Ποια ερωτηματολόγια να εμφανιστούν',
@@ -3857,7 +3890,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       ptHow: 'Tap the big button on each questionnaire. Your answers are kept automatically, so you can stop and continue whenever you like.',
       ptProgress: '{0} of {1} completed', ptTodo: 'To do', ptInProg: 'In progress', ptDone: '✓ Completed', ptStart: 'Start', ptCont: 'Continue',
       ptQ1: 'question', ptQn: 'questions', ptAbout: 'about', ptMin1: 'minute', ptMinN: 'minutes', ptAnswered: 'you answered {0} of {1}',
-      ptNone: 'You have no questionnaires to fill in right now. We will let you know when the next ones are due.', ptAllHome: 'You have completed all questionnaires. Thank you very much!',
+      ptAllDoneNext: 'You have completed all questionnaires – thank you! We will let you know about the next ones.', ptNextOn: 'The next questionnaires start on {0}.', ptUnknown: 'No patient found with the code “{0}”. Please check that you typed it correctly or ask your clinic.', ptNewOk: 'I am a new patient – create with this code', ptAllHome: 'You have completed all questionnaires. Thank you very much!',
       ptLoginLead: 'Type the code your clinic gave you and tap “Continue”.', ptCode: 'Your code', ptNeedCode: 'Please type your code first.',
       ptNewT: 'First time here? (demo version)', ptProc: 'Which operation?', ptSurg: 'Date of the operation', ptNotYou: 'Not you? Change code',
       ptBigger: 'Larger text', ptNormal: 'Normal text', ptSizeL: 'Text size', ptDemoT: 'Demo settings (for the presentation only)', ptDemoTp: 'Which questionnaires to show',
@@ -3890,7 +3923,9 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function ptTitle(id) { return jt(tx(PT_TITLE[id] || L2('Ερωτηματολόγιο', 'Questionnaire'))); }
   var PSKEY = 'orthothessaly.demo.patient.v1', DKEY = 'orthothessaly.demo.drafts.v1';
   var pst = load(PSKEY) || {}, drafts = load(DKEY) || {}, prun = null;
-  if (pst.pid && patientById(pst.pid)) { ctx.pid = pst.pid; ctx.tp = pst.tp || ''; }
+  reanchorDemo();
+  function findPatient(code) { var c = String(code == null ? '' : code).trim().toUpperCase(); return c ? store.patients.filter(function (p) { return String(p.id).trim().toUpperCase() === c; })[0] : null; }
+  (function () { var pt0 = pst.pid && findPatient(pst.pid); if (pt0) { ctx.pid = pt0.id; ctx.tp = currentTp(pt0) || ''; } })();
   function savePst() { pst.pid = ctx.pid; pst.tp = ctx.tp; save(PSKEY, pst); }
   function dkey(id) { return ctx.pid + '|' + ctx.tp + '|' + id; }
   function saveDraft() { if (!prun) return; drafts[dkey(prun.inst)] = { ans: prun.ans, idx: prun.idx, at: new Date().toISOString() }; save(DKEY, drafts); }
@@ -3919,16 +3954,18 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function ptLogin(el) {
     var h = ptTop(false) + '<h1 class="pth1" data-focus tabindex="-1">👋 ' + esc(t('ptWelcome')) + '</h1><p class="ptlead">' + esc(t('ptLoginLead')) + '</p>' +
       '<label class="ptfld" for="pPid">' + esc(t('ptCode')) + '</label><input id="pPid" class="ptinput" list="pPidList" autocomplete="off" autocapitalize="characters" value="' + esc(ctx.pid) + '"><datalist id="pPidList">' + store.patients.map(function (p) { return '<option value="' + esc(p.id) + '"></option>'; }).join('') + '</datalist>' +
-      '<div id="ptNew" class="ptnew hidden"><div class="ptnewt">' + esc(t('ptNewT')) + '</div><label class="ptfld" for="pProc">' + esc(t('ptProc')) + '</label><select id="pProc" class="ptinput">' + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), ctx.procedure === k); }).join('') + '</select>' +
+      '<div id="ptNew" class="ptnew hidden"><div class="ptnewt">' + esc(t('ptNewT')) + '</div><label class="ptcheck"><input type="checkbox" id="pNewOk"> ' + esc(t('ptNewOk')) + '</label><label class="ptfld" for="pProc">' + esc(t('ptProc')) + '</label><select id="pProc" class="ptinput">' + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), ctx.procedure === k); }).join('') + '</select>' +
       '<label class="ptfld" for="pSurg">' + esc(t('ptSurg')) + '</label><input type="date" id="pSurg" class="ptinput" value="' + esc(ctx.surgery) + '"></div>' +
       '<p class="ptmsg" id="pMsg" role="alert"></p><button class="ptbig" id="pStart">' + esc(t('ptCont')) + ' →</button>';
     el.innerHTML = h;
-    var upd = function () { var v = $('pPid').value.trim(); $('ptNew').classList.toggle('hidden', !v || !!patientById(v)); };
+    var upd = function () { var v = $('pPid').value.trim(); $('ptNew').classList.toggle('hidden', !v || !!findPatient(v)); $('pMsg').textContent = ''; };
     $('pPid').oninput = upd; upd();
     $('pPid').onkeydown = function (e) { if (e.key === 'Enter') $('pStart').click(); };
     $('pStart').onclick = function () {
       var id = $('pPid').value.trim(); if (!id) { $('pMsg').textContent = t('ptNeedCode'); $('pPid').focus(); return; }
-      if (!patientById(id)) { var cu = currentUser(); store.patients.push({ id: id, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); save(KEY, store); }
+      var found = findPatient(id); if (found) id = found.id;
+      else if (!$('pNewOk').checked) { $('pMsg').textContent = fmtT('ptUnknown', id); return; }
+      if (!found) { var cu = currentUser(); store.patients.push({ id: id, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); save(KEY, store); }
       var pt = patientById(id); ctx.pid = id; ctx.procedure = pt.procedure; ctx.tp = currentTp(pt) || ''; prun = null; savePst(); syncPatientMeasure(pt); renderProms(); ptFocus(el);
     };
   }
@@ -3938,7 +3975,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if (list.length) {
       var pc = Math.round(nDone / list.length * 100);
       h += '<div class="ptoverall"><div class="ptprogtxt" id="ptProgress">' + esc(fmtT('ptProgress', nDone, list.length)) + '</div><div class="ptbar" role="progressbar" aria-label="' + esc(fmtT('ptProgress', nDone, list.length)) + '" aria-valuemin="0" aria-valuemax="' + list.length + '" aria-valuenow="' + nDone + '"><i style="width:' + pc + '%"></i></div></div>';
-      if (nDone === list.length) h += '<p class="ptdonemsg" id="ptAllDone">🎉 ' + esc(t('ptAllHome')) + '</p>';
+      if (nDone === list.length) h += allDoneNextHtml(pt);
       h += '<div class="ptcards" id="ptCards">' + list.map(function (id, k) {
         var d = doneAt(pt.id, id, ctx.tp), dr = !d && drafts[dkey(id)], st = d ? 'done' : dr ? 'prog' : 'todo', primary = !d && firstTodo; if (primary) firstTodo = false;
         var nAns = dr ? ptItems(id, dr.ans).filter(function (it) { return ptAnswered(it, dr.ans); }).length : 0, nAll = dr ? ptItems(id, dr.ans).length : 0;
@@ -3948,7 +3985,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
           (d ? '' : '<button class="ptbig' + (primary ? '' : ' alt') + '" data-start="' + id + '" aria-describedby="ptc-' + id + ' pts-' + id + '">' + esc(dr ? t('ptCont') : t('ptStart')) + ' →</button>') + '</article>';
       }).join('') + '</div>';
       if (nDone < list.length) h += '<p class="pthow">ℹ️ ' + esc(t('ptHow')) + '</p>';
-    } else h += '<p class="ptdonemsg" id="ptNone">' + esc(t('ptNone')) + '</p>';
+    } else h += allDoneNextHtml(pt);
     if (camAllowed(pt)) h += '<article class="ptcard meas"><div class="ptcnum" aria-hidden="true">📷</div><div class="ptcbody"><h2 class="ptctitle">' + esc(t('ptMeasT')) + '</h2><div class="ptcmeta">' + esc(t('ptMeasLead')) + '</div></div><button class="ptbig alt" id="pMeasure">' + esc(t('ptMeasBtn')) + ' →</button></article>';
     h += '<div class="ptfoot"><button class="ptlink" id="ptSwitch">' + esc(t('ptNotYou')) + '</button>' +
       '<details class="ptdemo"><summary>' + esc(t('ptDemoT')) + '</summary><label class="ptfld" for="pTp">' + esc(t('ptDemoTp')) + '</label><select id="pTp" class="ptinput">' + opt('', '—', !ctx.tp) + TPS.map(function (x) { return opt(x.id, tpName(x.id), ctx.tp === x.id); }).join('') + '</select></details></div>';
@@ -3958,6 +3995,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     $('pTp').onchange = function () { ctx.tp = this.value; prun = null; savePst(); renderProms(); };
     if ($('pMeasure')) $('pMeasure').onclick = function () { syncPatientMeasure(pt); openMeasure(measCtx); };
   }
+  function allDoneNextHtml(pt) { var nd = nextTpDate(pt); return '<p class="ptdonemsg" id="ptAllDoneNext">🎉 ' + esc(t('ptAllDoneNext')) + (nd ? '<br>📅 ' + esc(fmtT('ptNextOn', fmtDay(nd))) : '') + '</p>'; }
   function ptOpen(id) {
     var dr = drafts[dkey(id)];
     prun = dr ? { inst: id, screen: 'q', idx: dr.idx || 0, ans: JSON.parse(JSON.stringify(dr.ans || {})) } : { inst: id, screen: 'intro', idx: 0, ans: {} };
