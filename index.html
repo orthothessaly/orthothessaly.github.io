@@ -3367,13 +3367,279 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   root.OrthoXrayML = { VERSION: VERSION, KNEE_VERSION: KNEE_VERSION, load: load, findHeads: findHeads, findKnee: findKnee, findAnkle: findAnkle, findAnkleMulti: findAnkleMulti, findKneeMulti: findKneeMulti, _cropSq: cropSq, _prepInput: prepInput, MODEL_JS: MODEL_JS, KNEE_MODEL_JS: MODELS.knee.js, ANKLE_MODEL_JS: MODELS.ankle.js };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
-<!-- ===== PROMs + doctor dashboard UI (DEMO, localStorage) ===== -->
+<!-- ===== Cloud data layer: private Supabase database (publishable key only; protected by RLS + patient RPCs) ===== -->
+<script id="ortho-cloud">
+(function (root) {
+  'use strict';
+  // ===== OrthoThessaly cloud data layer: Supabase Auth + PostgREST + Storage over plain fetch (no SDK). =====
+  // Only the PUBLISHABLE key is shipped; all protection is server-side (RLS: invited doctors only; patients via RPCs).
+  var CFG = { url: 'https://buocukhzcoprrkqlvchf.supabase.co', key: 'sb_publishable_CUb0_nfe-4f0Yc0GkVFkeQ_YaajsGjf', bucket: 'films' };
+  var SKEY = 'orthothessaly.cloud.session.v1';
+  var hasLS = function () { try { return typeof localStorage !== 'undefined'; } catch (e) { return false; } };
+  var session = null;
+  function loadSession() { if (!hasLS()) return null; try { return JSON.parse(localStorage.getItem(SKEY)); } catch (e) { return null; } }
+  function saveSession(s) { session = s; if (!hasLS()) return; try { if (s) localStorage.setItem(SKEY, JSON.stringify(s)); else localStorage.removeItem(SKEY); } catch (e) {} }
+  session = loadSession();
+
+  function CloudError(code, msg, status) { var e = new Error(msg || code); e.code = code; e.status = status; return e; }
+  /** Server messages -> stable codes the UI translates (ORTHO_* are raised by our SQL). */
+  function errCode(j, status) {
+    var m = j && (j.message || j.msg || j.error_description || j.error) || '';
+    var k = /ORTHO_[A-Z_]+/.exec(m); if (k) return k[0];
+    if (/not authorized/i.test(m)) return 'MAIL_NOT_AUTHORIZED';
+    if (/sending confirmation|send.*email|smtp/i.test(m)) return 'MAIL_SEND';
+    if (/already (been )?registered|already exists/i.test(m)) return 'EXISTS';
+    if (/invalid login credentials/i.test(m)) return 'BAD_LOGIN';
+    if (/email not confirmed/i.test(m)) return 'NOT_CONFIRMED';
+    if (/password/i.test(m) && /(weak|short|least|characters)/i.test(m)) return 'WEAK_PASSWORD';
+    if (/rate limit|too many/i.test(m) || status === 429) return 'RATE_LIMIT';
+    if (/jwt expired/i.test(m)) return 'JWT_EXPIRED';
+    return 'HTTP_' + (status || 0);
+  }
+  function raw(method, path, body, headers) {
+    var h = { apikey: CFG.key }; for (var k in headers || {}) h[k] = headers[k];
+    if (body !== undefined && !(body instanceof Blob) && !h['Content-Type']) h['Content-Type'] = 'application/json';
+    return fetch(CFG.url + path, { method: method, headers: h, body: body === undefined ? undefined : (body instanceof Blob ? body : JSON.stringify(body)) })
+      .catch(function (e) { throw CloudError('NETWORK', String(e && e.message || e)); })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        var p = r.status === 204 ? Promise.resolve(null) : /json/.test(ct) ? r.json().catch(function () { return null; }) : /^(image|application\/(octet|dicom))/.test(ct) ? r.blob() : r.text();
+        return p.then(function (j) { if (!r.ok) throw CloudError(errCode(j, r.status), (j && (j.message || j.msg || j.error_description)) || ('HTTP ' + r.status), r.status); return j; });
+      });
+  }
+  function takeSession(j) {
+    if (!j || !j.access_token) return null;
+    var s = { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600), user: { id: j.user && j.user.id, email: j.user && j.user.email } };
+    saveSession(s); return s;
+  }
+  var refreshing = null;
+  function refresh() {
+    if (!session || !session.refresh_token) return Promise.reject(CloudError('NO_SESSION'));
+    if (!refreshing) refreshing = raw('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: session.refresh_token })
+      .then(takeSession, function (e) { if (e.status >= 400 && e.status < 500) saveSession(null); throw e; })
+      .then(function (s) { refreshing = null; return s; }, function (e) { refreshing = null; throw e; });
+    return refreshing;
+  }
+  function fresh() { if (session && session.expires_at - 60 < Date.now() / 1000) return refresh(); return Promise.resolve(session); }
+  /** Authenticated (if signed in) request; one transparent token refresh on expiry. */
+  function req(method, path, body, headers, retried) {
+    return fresh().catch(function () { return null; }).then(function () {
+      var h = {}; for (var k in headers || {}) h[k] = headers[k];
+      if (session) h.Authorization = 'Bearer ' + session.access_token;
+      return raw(method, path, body, h).catch(function (e) {
+        if (!retried && session && (e.status === 401 || e.code === 'JWT_EXPIRED')) return refresh().then(function () { return req(method, path, body, headers, true); });
+        throw e;
+      });
+    });
+  }
+  function rpc(name, args) { return req('POST', '/rest/v1/rpc/' + name, args || {}); }
+  var enc = encodeURIComponent;
+
+  // ---------- auth ----------
+  var me = null;
+  function loadMe() {
+    if (!session || !session.user) return Promise.reject(CloudError('NO_SESSION'));
+    return req('GET', '/rest/v1/doctors?select=id,email,full_name,is_owner&id=eq.' + enc(session.user.id)).then(function (rows) {
+      if (!rows || !rows.length) { return signOut().then(function () { throw CloudError('NOT_DOCTOR'); }); }
+      var d = rows[0]; me = { id: d.id, email: d.email, name: d.full_name || d.email, role: d.is_owner ? 'owner' : 'doctor' }; return me;
+    });
+  }
+  function signIn(email, password) {
+    return raw('POST', '/auth/v1/token?grant_type=password', { email: String(email).trim().toLowerCase(), password: password }).then(takeSession).then(loadMe);
+  }
+  /** Invite-gated sign-up: the database trigger validates + consumes the invite atomically and creates the doctors row. */
+  function signUp(email, password, fullName, invite) {
+    email = String(email).trim().toLowerCase();
+    return raw('POST', '/auth/v1/signup', { email: email, password: password, data: { invite: String(invite).trim(), full_name: String(fullName).trim() } }).then(function (j) {
+      if (takeSession(j)) return loadMe();
+      // "Confirm email" is on: the trigger already confirmed the address (the invite is the proof) -> sign in directly
+      return signIn(email, password);
+    });
+  }
+  function signOut() {
+    var s = session; me = null; saveSession(null);
+    if (!s) return Promise.resolve();
+    return raw('POST', '/auth/v1/logout?scope=local', {}, { Authorization: 'Bearer ' + s.access_token }).catch(function () {});
+  }
+  function restore() { if (!session) return Promise.resolve(null); return fresh().then(loadMe).catch(function (e) { if (e.code !== 'NETWORK') saveSession(null); me = null; throw e; }); }
+
+  // ---------- row mapping (app record <-> table row); lossless: unknown app fields travel in `extra` ----------
+  function pick(o, skip) { var x = {}; Object.keys(o || {}).forEach(function (k) { if (skip.indexOf(k) < 0 && o[k] !== undefined && k.charAt(0) !== '_') x[k] = o[k]; }); return x; }
+  var nn = function (v) { return v === undefined ? null : v; };
+  var num = function (v) { return typeof v === 'number' && isFinite(v) ? v : null; };
+  function uuid() { if (root.crypto && root.crypto.randomUUID) return root.crypto.randomUUID(); var h = '0123456789abcdef', s = ''; for (var i = 0; i < 36; i++) s += [8, 13, 18, 23].indexOf(i) >= 0 ? '-' : i === 14 ? '4' : h[(Math.random() * 16) | 0]; return s; }
+  var M = {
+    patients: { table: 'patients',
+      key: function (p) { return p.id; },
+      toRow: function (p) {
+        if (!p._uuid) Object.defineProperty(p, '_uuid', { value: uuid(), enumerable: false, writable: true, configurable: true });
+        var eb = p.enteredBy || {};
+        return { id: p._uuid, code: String(p.id), procedure: p.procedure, surgery_date: nn(p.surgeryDate) || null, age: num(p.age), sex: p.sex === 'M' || p.sex === 'F' ? p.sex : null,
+          optional_instruments: (p.optional || []).slice(), camera: !!p.camera, align_target: nn(p.alignTarget), demo: !!p.demo, entered_by_name: nn(eb.name), entered_by_email: nn(eb.email),
+          created_on: (p.created && String(p.created).slice(0, 10)) || null,
+          extra: pick(p, ['id', 'procedure', 'surgeryDate', 'age', 'sex', 'optional', 'camera', 'alignTarget', 'demo', 'enteredBy', 'created']) };
+      },
+      fromRow: function (r) {
+        var p = pick(r.extra, []); p.id = r.code; p.procedure = r.procedure; p.surgeryDate = r.surgery_date; if (r.age != null) p.age = r.age; if (r.sex) p.sex = r.sex;
+        p.optional = r.optional_instruments || []; p.camera = !!r.camera; if (r.align_target) p.alignTarget = r.align_target; p.demo = !!r.demo;
+        p.enteredBy = { name: r.entered_by_name || '', email: r.entered_by_email || null }; p.created = r.created_on;
+        Object.defineProperty(p, '_uuid', { value: r.id, enumerable: false, writable: true, configurable: true }); return p;
+      } },
+    submissions: { table: 'prom_submissions', child: true,
+      key: function (s) { return s.id; },
+      toRow: function (s, pu) {
+        return { id: s.id, patient_id: pu(s.patientId), procedure: nn(s.procedure), timepoint: s.timepoint, instrument: s.instrument, taken_on: s.date, answers: s.answers || {}, total: num(s.total), primary_score: num(s.primary),
+          subscales: nn(s.subscales), valid: s.valid == null ? null : !!s.valid, notes: nn(s.notes), source: ['patient', 'clinic', 'seed', 'import'].indexOf(s.source) >= 0 ? s.source : 'import',
+          extra: pick(s, ['id', 'patientId', 'procedure', 'timepoint', 'instrument', 'date', 'answers', 'total', 'primary', 'subscales', 'valid', 'notes', 'source']) };
+      },
+      fromRow: function (r, pc) {
+        var s = pick(r.extra, []); s.id = r.id; s.patientId = pc(r.patient_id); s.procedure = r.procedure; s.timepoint = r.timepoint; s.instrument = r.instrument; s.date = r.taken_on; s.answers = r.answers || {};
+        s.total = r.total; s.primary = r.primary_score; s.subscales = r.subscales; s.valid = r.valid; s.notes = r.notes; s.source = r.source; return s;
+      } },
+    rom: { table: 'rom_sessions', child: true,
+      key: function (x) { return x.id; },
+      toRow: function (x, pu) {
+        return { id: x.id, patient_id: pu(x.patientId), taken_on: x.date, joint: x.joint === 'hip' || x.joint === 'knee' ? x.joint : null, side: nn(x.side), max_flex: num(x.max), min_flex: num(x.min), reps: num(x.reps), hip_warn: num(x.hipWarn),
+          target: num(x.target), n_frames: num(x.n), duration_sec: num(x.durationSec), source: x.source || 'patient',
+          extra: pick(x, ['id', 'patientId', 'date', 'joint', 'side', 'max', 'min', 'reps', 'hipWarn', 'target', 'n', 'durationSec', 'source']) };
+      },
+      fromRow: function (r, pc) {
+        var x = pick(r.extra, []); x.id = r.id; x.patientId = pc(r.patient_id); x.date = r.taken_on; x.joint = r.joint; x.side = r.side; x.max = r.max_flex; x.min = r.min_flex; x.reps = r.reps; x.hipWarn = r.hip_warn;
+        x.target = r.target; x.n = r.n_frames; x.durationSec = r.duration_sec; x.source = r.source; return x;
+      } },
+    xrays: { table: 'xray_studies', child: true,
+      key: function (x) { return x.id; },
+      toRow: function (x, pu) {
+        var res = x.results || {};
+        return { id: x.id, patient_id: pu(x.patientId), taken_on: x.date, phase: x.phase, side: x.side, landmarks: x.landmarks || {}, measurements: res, tka: !!x.tka,
+          tka_components: x.tka ? { fca: num(res.ldfa), tca: num(res.mpta) } : null, landmark_source: nn(x.landmarkSource), confirmed: nn(x.confirmed), film_id: nn(x.filmId), film_path: nn(x.filmPath),
+          image_name: nn(x.image), thumb: nn(x.thumb), source: nn(x.source),
+          extra: pick(x, ['id', 'patientId', 'date', 'phase', 'side', 'landmarks', 'results', 'tka', 'landmarkSource', 'confirmed', 'filmId', 'filmPath', 'image', 'thumb', 'source']) };
+      },
+      fromRow: function (r, pc) {
+        var x = pick(r.extra, []); x.id = r.id; x.patientId = pc(r.patient_id); x.date = r.taken_on; x.phase = r.phase; x.side = r.side; x.landmarks = r.landmarks || {}; x.results = r.measurements || {}; x.tka = !!r.tka;
+        if (r.landmark_source != null) x.landmarkSource = r.landmark_source; if (r.confirmed != null) x.confirmed = r.confirmed; if (r.film_id != null) x.filmId = r.film_id; if (r.film_path != null) x.filmPath = r.film_path;
+        if (r.image_name != null) x.image = r.image_name; if (r.thumb != null) x.thumb = r.thumb; if (r.source != null) x.source = r.source; return x;
+      } }
+  };
+  var COLS = ['patients', 'submissions', 'rom', 'xrays'];
+  function codeMaps(store) {
+    var byCode = {}, byUuid = {};
+    (store.patients || []).forEach(function (p) { if (!p._uuid) M.patients.toRow(p); byCode[String(p.id).toUpperCase()] = p._uuid; byUuid[p._uuid] = p.id; });
+    return { pu: function (code) { var u = byCode[String(code).toUpperCase()]; if (!u) throw CloudError('ORPHAN', 'no patient ' + code); return u; }, pc: function (u) { return byUuid[u]; } };
+  }
+  /** Rows of a whole app store, per collection: { patients: {key: row}, ... } (rows of orphan records are skipped). */
+  function storeRows(store) {
+    var mp = codeMaps(store), out = {};
+    COLS.forEach(function (c) { out[c] = {}; (store[c] || []).forEach(function (o) { try { out[c][M[c].key(o)] = M[c].toRow(o, mp.pu); } catch (e) { if (e.code !== 'ORPHAN') throw e; } }); });
+    return out;
+  }
+  function rowsToStore(rows) {
+    var st = { version: 4, cloud: true, patients: rows.patients.map(M.patients.fromRow), submissions: [], rom: [], xrays: [] };
+    var byUuid = {}; st.patients.forEach(function (p) { byUuid[p._uuid] = p.id; }); var pc = function (u) { return byUuid[u]; };
+    st.submissions = rows.submissions.map(function (r) { return M.submissions.fromRow(r, pc); });
+    st.rom = rows.rom.map(function (r) { return M.rom.fromRow(r, pc); });
+    st.xrays = rows.xrays.map(function (r) { return M.xrays.fromRow(r, pc); });
+    return st;
+  }
+  /** Diff two row snapshots -> { upsert: {c: [rows]}, del: {c: [keys]} } */
+  function diff(base, cur) {
+    var up = {}, del = {};
+    COLS.forEach(function (c) {
+      var b = base[c] || {}, n = cur[c] || {};
+      up[c] = Object.keys(n).filter(function (k) { return !b[k] || JSON.stringify(b[k]) !== JSON.stringify(n[k]); }).map(function (k) { return n[k]; });
+      del[c] = Object.keys(b).filter(function (k) { return !n[k]; }).map(function (k) { return b[k].id; });
+    });
+    return { upsert: up, del: del };
+  }
+
+  // ---------- data ----------
+  function getAll(table) {
+    var out = [], step = 1000;
+    var page = function (from) { return req('GET', '/rest/v1/' + table + '?select=*&order=id', undefined, { Range: from + '-' + (from + step - 1), 'Range-Unit': 'items' }).then(function (rows) { out = out.concat(rows || []); return rows && rows.length === step ? page(from + step) : out; }); };
+    return page(0);
+  }
+  var base = null, syncing = null, again = false, listeners = [], state = { status: 'idle', error: null, at: null };
+  function emit(s, err) { state = { status: s, error: err || null, at: new Date().toISOString() }; listeners.forEach(function (f) { try { f(state); } catch (e) {} }); }
+  function loadAll() {
+    return Promise.all([getAll('patients'), getAll('prom_submissions'), getAll('rom_sessions'), getAll('xray_studies')]).then(function (r) {
+      var st = rowsToStore({ patients: r[0], submissions: r[1], rom: r[2], xrays: r[3] }); base = storeRows(st); emit('saved'); return st;
+    });
+  }
+  function upsert(table, rows) { if (!rows.length) return Promise.resolve(); return req('POST', '/rest/v1/' + table + '?on_conflict=id', rows, { Prefer: 'resolution=merge-duplicates,return=minimal' }); }
+  function remove(table, ids) { if (!ids.length) return Promise.resolve(); return req('DELETE', '/rest/v1/' + table + '?id=in.(' + ids.map(function (i) { return '"' + String(i).replace(/"/g, '') + '"'; }).join(',') + ')'); }
+  function syncOnce(store) {
+    var cur = storeRows(store), d = diff(base || {}, cur), T = function (c) { return M[c].table; };
+    var steps = [function () { return upsert('patients', d.upsert.patients); }]
+      .concat(['submissions', 'rom', 'xrays'].map(function (c) { return function () { return upsert(T(c), d.upsert[c]); }; }))
+      .concat(['submissions', 'rom', 'xrays'].map(function (c) { return function () { return remove(T(c), d.del[c]); }; }))
+      .concat([function () { return remove('patients', d.del.patients); }]);
+    return steps.reduce(function (p, f) { return p.then(f); }, Promise.resolve()).then(function () { base = cur; });
+  }
+  /** Debounce-free serialized sync: the latest store state always wins; errors keep the old baseline so the next call retries. */
+  function sync(store) {
+    if (!base) return Promise.resolve();
+    if (syncing) { again = store; return syncing; }
+    emit('saving');
+    syncing = syncOnce(store).then(function () { syncing = null; if (again) { var s = again; again = false; return sync(s); } emit('saved'); }, function (e) { syncing = null; again = false; emit('error', e); throw e; });
+    return syncing;
+  }
+  function idle() { return syncing ? syncing.catch(function () {}).then(idle) : Promise.resolve(); }
+  function reset() { base = null; syncing = null; again = false; }
+
+  // ---------- owner tools ----------
+  function listInvites() { return req('GET', '/rest/v1/invites?select=id,token,email,grants_owner,created_at,expires_at,used_by,used_at,revoked_at&order=created_at.desc&limit=100'); }
+  function createInvite(email, days) {
+    var b = { email: email ? String(email).trim().toLowerCase() : null }; if (days) b.expires_at = new Date(Date.now() + days * 864e5).toISOString();
+    return req('POST', '/rest/v1/invites?select=id,token,email,expires_at', b, { Prefer: 'return=representation' }).then(function (r) { return r[0]; });
+  }
+  function revokeInvite(id) { return req('PATCH', '/rest/v1/invites?id=eq.' + enc(id) + '&used_by=is.null', { revoked_at: new Date().toISOString() }, { Prefer: 'return=minimal' }); }
+  function listDoctors() { return req('GET', '/rest/v1/doctors?select=id,email,full_name,is_owner,created_at&order=created_at'); }
+  function listAudit(n) { return req('GET', '/rest/v1/audit_log?select=at,email,action,detail&order=at.desc&limit=' + (n || 50)); }
+  function audit(action, detail) { if (!me) return Promise.resolve(); return req('POST', '/rest/v1/audit_log', { email: me.email, action: String(action).slice(0, 60), detail: String(detail || '').slice(0, 500) }, { Prefer: 'return=minimal' }).catch(function () {}); }
+
+  // ---------- films (private bucket) ----------
+  function filmPath(patientUuid, filmId) { return patientUuid + '/' + String(filmId).replace(/[^A-Za-z0-9._-]/g, '_'); }
+  function uploadFilm(path, blob) { return req('POST', '/storage/v1/object/' + CFG.bucket + '/' + path, blob, { 'x-upsert': 'true', 'Content-Type': blob.type || 'application/octet-stream' }); }
+  function downloadFilm(path) { return req('GET', '/storage/v1/object/authenticated/' + CFG.bucket + '/' + path); }
+  function deleteFilms(paths) { return req('DELETE', '/storage/v1/object/' + CFG.bucket, { prefixes: paths }); }
+
+  // ---------- patient side (anon RPCs keyed by the patient code) ----------
+  function portal(code) { return rpc('patient_portal', { p_code: String(code).trim() }); }
+  function submit(code, s) { return rpc('patient_submit', { p_code: String(code).trim(), p_instrument: s.instrument, p_timepoint: s.timepoint, p_answers: s.answers || {}, p_total: num(s.total), p_primary: num(s.primary), p_subscales: s.subscales || null, p_valid: s.valid == null ? null : !!s.valid, p_notes: s.notes || null }); }
+  function submitRom(code, r) { return rpc('patient_submit_rom', { p_code: String(code).trim(), p_rom: r }); }
+  function inviteStatus(token) { return rpc('invite_status', { p_token: String(token).trim() }); }
+
+  root.OrthoCloud = { CFG: CFG, signIn: signIn, signUp: signUp, signOut: signOut, restore: restore, get user() { return me; }, get session() { return session; },
+    loadAll: loadAll, sync: sync, idle: idle, reset: reset, onState: function (f) { listeners.push(f); }, get state() { return state; },
+    listInvites: listInvites, createInvite: createInvite, revokeInvite: revokeInvite, listDoctors: listDoctors, listAudit: listAudit, audit: audit,
+    filmPath: filmPath, uploadFilm: uploadFilm, downloadFilm: downloadFilm, deleteFilms: deleteFilms,
+    portal: portal, submit: submit, submitRom: submitRom, inviteStatus: inviteStatus,
+    // pure helpers (unit-tested in Node)
+    _M: M, _storeRows: storeRows, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<!-- ===== PROMs + doctor dashboard UI (DEMO = localStorage, cloud = database) ===== -->
 <script id="ortho-proms-app">
 (function () {
   'use strict';
   // ===== OrthoThessaly PROMs + Doctor dashboard UI (DEMO ONLY, localStorage only) =====
   var P = window.OrthoPROMs, I = P.INSTRUMENTS, PROC = P.PROCEDURES, TPS = P.TIMEPOINTS;
   var KEY = 'orthothessaly.demo.proms.v4', AKEY = 'orthothessaly.demo.auth.v1';
+  // ---- data mode: 'cloud' = private Supabase database (default on the published https site), 'demo' = localStorage only (default for a local file) ----
+  var CL = window.OrthoCloud || null, MKEY = 'orthothessaly.mode';
+  var MODE = (function () {
+    if (!CL) return 'demo';
+    var q = null, inv = null; try { var sp = new URLSearchParams(location.search); q = sp.get('mode'); inv = sp.get('invite'); } catch (e) {}
+    if (q === 'demo' || q === 'cloud') { try { localStorage.setItem(MKEY, q); } catch (e) {} return q; }
+    if (inv && /^https?:$/.test(location.protocol)) return 'cloud'; // a real invite link (published site) always opens the database sign-up
+    var m = null; try { m = localStorage.getItem(MKEY); } catch (e) {}
+    if (m === 'demo' || m === 'cloud') return m;
+    return /^https?:$/.test(location.protocol) ? 'cloud' : 'demo';
+  })();
+  var CLOUD = MODE === 'cloud', cloudUser = null, cloudBusy = false;
+  function setMode(m) { try { localStorage.setItem(MKEY, m); } catch (e) {} var u = location.href.split('#')[0].split('?')[0]; location.replace(u); }
+  function emptyStore() { return { version: 4, cloud: true, patients: [], submissions: [], rom: [], xrays: [] }; }
   var $ = function (id) { return document.getElementById(id); };
   var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
   var tx = function (o) { if (o == null) return ''; if (typeof o === 'string') return o; return o[lang()] != null ? o[lang()] : (o.en != null ? o.en : o.el); };
@@ -3548,6 +3814,11 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
 
   // ---------- storage ----------
+  /** Single write path for the clinical store: localStorage in demo mode, database sync for a signed-in doctor in cloud mode. */
+  function persist() {
+    if (!CLOUD) return save(KEY, store);
+    if (cloudUser && CL) return CL.sync(store).catch(function (e) { console.warn('sync failed', e && e.code); });
+  }
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.warn('localStorage unavailable'); } }
   // Demo patients are anchored to TODAY (computed at load, never hard-coded dates): off = days since surgery today,
@@ -3595,17 +3866,18 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var st = { version: 4, rom: seedRom(td), xrays: window.OrthoXray ? window.OrthoXray.seedStudies(P.addDays, DEMO_PTS) : [], patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, optional: (DEMO_OPT[p.id] || []).slice(), camera: !!DEMO_CAM[p.id], demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate }; }), submissions: subs };
     save(KEY, st); return st;
   }
-  var store = load(KEY); if (!store || !store.patients) store = seed();
-  if (!store.xrays && window.OrthoXray) { store.xrays = window.OrthoXray.seedStudies(P.addDays, DEMO_PTS); save(KEY, store); }
+  var store = CLOUD ? emptyStore() : load(KEY); if (!store || !store.patients) store = seed();
+  if (!CLOUD && !store.xrays && window.OrthoXray) { store.xrays = window.OrthoXray.seedStudies(P.addDays, DEMO_PTS); persist(); }
   // seed v2 (TKA comparison DEMO): replace the old angle-only seed studies of DEMO-TKA-01 with synthetic-film studies (pre + 6 wk + 1 yr)
-  if (store.xrays && window.OrthoXray && window.OrthoXraySynth && store.patients.some(function (p) { return p.id === 'DEMO-TKA-01' && p.demo; }) && !store.xrays.some(function (x) { return x.seedV === 2; })) {
+  if (!CLOUD && store.xrays && window.OrthoXray && window.OrthoXraySynth && store.patients.some(function (p) { return p.id === 'DEMO-TKA-01' && p.demo; }) && !store.xrays.some(function (x) { return x.seedV === 2; })) {
     var nsx = window.OrthoXray.seedStudies(P.addDays, DEMO_PTS).filter(function (x) { return x.seedV === 2; });
-    if (nsx.length) { store.xrays = store.xrays.filter(function (x) { return !(x.source === 'seed' && x.patientId === 'DEMO-TKA-01'); }).concat(nsx); save(KEY, store); }
+    if (nsx.length) { store.xrays = store.xrays.filter(function (x) { return !(x.source === 'seed' && x.patientId === 'DEMO-TKA-01'); }).concat(nsx); persist(); }
   }
   /** Re-anchor stored demo patients (fresh seeds from an earlier day or storage from older builds with fixed dates) so their
       current timepoint is open today: shift every dated record of that patient, drop seed records that would lie in the future,
       and re-open the demo timepoint if it was already completed. Real (non-demo) patients are never touched. */
   function reanchorDemo() {
+    if (CLOUD) return;
     var td = today(), changed = false, byId = {}; DEMO_PTS.forEach(function (d) { byId[d.id] = d; });
     store.patients.forEach(function (p) {
       var d = byId[p.id]; if (!d || !p.demo) return;
@@ -3627,14 +3899,14 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
         if (ss) { store.submissions = store.submissions.filter(function (s) { return !(s.patientId === p.id && s.timepoint === ss.tp); }); changed = true; }
       }
     });
-    if (changed) save(KEY, store);
+    if (changed) persist();
   }
   var hash = function (s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return 'fnv' + (h >>> 0).toString(16); }; // DEMO ONLY – not secure
   function authDefault() { return { owner: { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)', pw: hash('demo-owner'), role: 'owner' }, doctors: [], invites: [], session: null, log: [] }; }
   var auth = load(AKEY) || authDefault();
   if (!auth.log) auth.log = [];
   function saveAuth() { save(AKEY, auth); }
-  function audit(action, detail, email) { var u = email || (auth.session && auth.session.email) || null; auth.log.push({ at: new Date().toISOString(), email: u, action: action, detail: detail || '' }); if (auth.log.length > 500) auth.log.shift(); saveAuth(); }
+  function audit(action, detail, email) { if (CLOUD) { if (cloudUser) CL.audit(action, detail); return; } var u = email || (auth.session && auth.session.email) || null; auth.log.push({ at: new Date().toISOString(), email: u, action: action, detail: detail || '' }); if (auth.log.length > 500) auth.log.shift(); saveAuth(); }
 
   // ---------- tabs ----------
   var curTab = 'proms';
@@ -3700,8 +3972,13 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var d = e.detail || {}, pt = patientById(measCtx.pid); if (!pt) return;
     if (!(d.n > 0) || !isFinite(d.max)) { measMsg = t('measNoSave'); updateMeasureTab(); return; }
     store.rom = store.rom || [];
-    store.rom.push({ id: 'r' + Math.random().toString(36).slice(2, 10), patientId: pt.id, date: today(), joint: d.mode, side: d.side, max: Math.round(d.max), min: isFinite(d.min) ? Math.round(d.min) : null, reps: d.reps, hipWarn: d.hipWarn || 0, target: d.target, n: d.n, durationSec: d.durationSec, source: 'patient' });
-    save(KEY, store); measMsg = t('measSaved') + ' ' + Math.round(d.max) + '°'; updateMeasureTab();
+    var rec = { id: 'r' + Math.random().toString(36).slice(2, 10), patientId: pt.id, date: today(), joint: d.mode, side: d.side, max: Math.round(d.max), min: isFinite(d.min) ? Math.round(d.min) : null, reps: d.reps, hipWarn: d.hipWarn || 0, target: d.target, n: d.n, durationSec: d.durationSec, source: 'patient' };
+    if (CLOUD && !cloudUser) { // patient's own device: send through the patient RPC
+      CL.submitRom(pt.id, rec).then(function (id) { rec.id = id || rec.id; store.rom.push(rec); measMsg = t('measSaved') + ' ' + Math.round(d.max) + '°'; updateMeasureTab(); }, function () { measMsg = t('cSendFail'); updateMeasureTab(); });
+      return;
+    }
+    store.rom.push(rec);
+    persist(); measMsg = t('measSaved') + ' ' + Math.round(d.max) + '°'; updateMeasureTab();
   });
   function romChart(recs, p) {
     var W = 560, H = 210, L = 40, R = 14, T = 14, B = 34;
@@ -3733,7 +4010,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
   function bindCamera(p) {
     var cb = $('camToggle'); if (!cb) return;
-    cb.onchange = function () { p.camera = cb.checked; save(KEY, store); audit(cb.checked ? 'camera-rom-on' : 'camera-rom-off', p.id); if (!cb.checked && measCtx && !measCtx.demo && measCtx.pid === p.id) setMeasCtx(null); renderDash(); };
+    cb.onchange = function () { p.camera = cb.checked; persist(); audit(cb.checked ? 'camera-rom-on' : 'camera-rom-off', p.id); if (!cb.checked && measCtx && !measCtx.demo && measCtx.pid === p.id) setMeasCtx(null); renderDash(); };
   }
   // ---------- source note (per instrument) ----------
   function srcNote(id) {
@@ -3869,7 +4146,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if (miss >= 0) { run.idx = miss; run.msg = t('needAns'); return renderRun(); }
     var inst = curInst(), pt = patientById(run.pid);
     var s = makeSub(pt, inst.id, run.tp, JSON.parse(JSON.stringify(run.ans)), today(), 'clinic');
-    s.demo = true; store.submissions.push(s); save(KEY, store); if (auth.session) audit('clinic-entry', pt.id + ' ' + inst.id + ' ' + run.tp); run.result = s; renderRun();
+    s.demo = true; store.submissions.push(s); persist(); if (auth.session) audit('clinic-entry', pt.id + ' ' + inst.id + ' ' + run.tp); run.result = s; renderRun();
   }
 
   // ---------- Patient-facing questionnaires: plain language only (no protocol, guideline, scoring or licence details) ----------
@@ -3956,6 +4233,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     else if (prun.screen === 'q') ptQuestion(el);
     else if (prun.screen === 'review') ptReview(el, pt);
     else ptThanks(el, pt);
+    if (CLOUD) cloudPatient(el, pt);
     var sz = $('ptSize'); if (sz) sz.onclick = function () { pst.large = !pst.large; save(PSKEY, pst); renderProms(); var b = $('ptSize'); if (b) b.focus(); };
     var hb = $('ptHomeBtn'); if (hb) hb.onclick = function () { if (prun && prun.screen !== 'thanks') saveDraft(); prun = null; renderProms(); ptFocus(el); };
   }
@@ -3973,7 +4251,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       var id = $('pPid').value.trim(); if (!id) { $('pMsg').textContent = t('ptNeedCode'); $('pPid').focus(); return; }
       var found = findPatient(id); if (found) id = found.id;
       else if (!$('pNewOk').checked) { $('pMsg').textContent = fmtT('ptUnknown', id); return; }
-      if (!found) { var cu = currentUser(); store.patients.push({ id: id, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); save(KEY, store); }
+      if (!found) { var cu = currentUser(); store.patients.push({ id: id, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); persist(); }
       var pt = patientById(id); ctx.pid = id; ctx.procedure = pt.procedure; ctx.tp = currentTp(pt) || ''; prun = null; savePst(); syncPatientMeasure(pt); renderProms(); ptFocus(el);
     };
   }
@@ -4085,7 +4363,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     $('ptSubmit').onclick = function () {
       if (miss.length) { $('ptMsg').textContent = t('ptBlocked'); var f = el.querySelector('#ptMissing [data-jump]'); if (f) f.focus(); return; }
       var ans = JSON.parse(JSON.stringify(prun.ans)); pruneHidden(ans, items);
-      var s = makeSub(pt, id, ctx.tp, ans, today(), 'patient'); s.demo = true; store.submissions.push(s); save(KEY, store);
+      var s = makeSub(pt, id, ctx.tp, ans, today(), 'patient'); s.demo = true; store.submissions.push(s); persist();
       delete drafts[dkey(id)]; save(DKEY, drafts); prun = { inst: id, screen: 'thanks' }; renderProms(); ptFocus(el);
     };
   }
@@ -4126,6 +4404,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
 
   // ---------- Doctor gate (SIMULATION) ----------
   function currentUser() {
+    if (CLOUD) return cloudUser;
     var s = auth.session; if (!s) return null;
     if (s.email === auth.owner.email) return auth.owner;
     return auth.doctors.filter(function (d) { return d.email === s.email; })[0] || null;
@@ -4138,6 +4417,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
   var urlInvite = (function () { try { return new URLSearchParams(location.search).get('invite'); } catch (e) { return null; } })();
   function renderGate() {
+    if (CLOUD) return renderCloudGate();
     var tok = urlInvite || '';
     $('dashGate').innerHTML = '<div class="card"><h2>🔒 ' + esc(t('gateT')) + ' <span class="pill demo">DEMO</span></h2><div class="simnote">⚠️ ' + esc(t('simNote')) + '</div>' +
       (tok ? '<p class="ok">' + esc(t('inviteDetected')) + '</p>' : '') +
@@ -4191,15 +4471,16 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function renderDash() {
     var u = currentUser();
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
+    if (!u && CLOUD && cloudBusy) { $('dashGate').innerHTML = '<div class="card" id="cLoading">⏳ ' + esc(t('cLoading')) + '</div>'; $('dashBody').innerHTML = ''; return; }
     if (!u) { $('dashBody').innerHTML = ''; closeRun(); renderGate(); return; }
     $('dashGate').innerHTML = '';
     var td = today(), subs = store.submissions;
     var pts = store.patients.filter(function (p) { return !dsel.proc || p.procedure === dsel.proc; });
     var instIds = Object.keys(I).filter(function (id) { return !dsel.proc || PROC[dsel.proc].recommended.concat(PROC[dsel.proc].other).indexOf(id) >= 0; });
     if (dsel.inst && instIds.indexOf(dsel.inst) < 0) dsel.inst = '';
-    var h = '<div class="card"><div class="row" style="justify-content:space-between;margin:0"><span>' + esc(t('signedAs')) + ' <b>' + esc(u.name) + '</b> (' + esc(u.email) + ') · <span class="pill">' + esc(u.role === 'owner' ? t('owner') : t('doctor')) + '</span> <span class="pill demo">' + esc(lang() === 'el' ? 'ΠΡΟΣΟΜΟΙΩΣΗ' : 'SIMULATION') + '</span></span><span><button class="ghost small" id="dDemoMeas">' + esc(t('demoMeas')) + '</button> <button id="dOut">' + esc(t('logout')) + '</button></span></div></div>';
-    if (u.role === 'owner') h += ownerPanel();
-    h += '<div class="card"><h2>' + esc(t('patients')) + ' <span class="pill demo">DEMO</span></h2><p class="muted">👥 ' + esc(t('shared')) + '</p><div class="row"><label class="fld">' + esc(t('filterProc')) + '<select id="fProc">' + opt('', t('all'), !dsel.proc) + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), dsel.proc === k); }).join('') + '</select></label>' +
+    var h = '<div class="card"><div class="row" style="justify-content:space-between;margin:0"><span>' + esc(t('signedAs')) + ' <b>' + esc(u.name) + '</b> (' + esc(u.email) + ') · <span class="pill">' + esc(u.role === 'owner' ? t('owner') : t('doctor')) + '</span> ' + (CLOUD ? '<span class="pill yes" id="cSync" title="' + esc(t('cDbT')) + '">' + esc(syncLabel()) + '</span>' : '<span class="pill demo">' + esc(lang() === 'el' ? 'ΠΡΟΣΟΜΟΙΩΣΗ' : 'SIMULATION') + '</span>') + '</span><span><button class="ghost small" id="dDemoMeas">' + esc(t('demoMeas')) + '</button> <button id="dOut">' + esc(t('logout')) + '</button></span></div></div>';
+    if (CLOUD) h += cloudPanels(u); else if (u.role === 'owner') h += ownerPanel();
+    h += '<div class="card"><h2>' + esc(t('patients')) + (CLOUD ? '' : ' <span class="pill demo">DEMO</span>') + '</h2><p class="muted">👥 ' + esc(t('shared')) + '</p><div class="row"><label class="fld">' + esc(t('filterProc')) + '<select id="fProc">' + opt('', t('all'), !dsel.proc) + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), dsel.proc === k); }).join('') + '</select></label>' +
       '<label class="fld">' + esc(t('filterInst')) + '<select id="fInst">' + opt('', t('all'), !dsel.inst) + instIds.map(function (k) { return opt(k, I[k].short, dsel.inst === k); }).join('') + '</select></label><button id="dCsv" style="align-self:flex-end">⬇ ' + esc(t('csv')) + '</button></div>';
     h += '<div class="tblwrap"><table class="tbl" id="ptTable"><tr><th>ID</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('surgery')) + '</th><th>' + esc(t('enteredBy')) + '</th><th>' + esc(t('subsN')) + '</th><th>' + esc(t('dueN')) + '</th><th>' + esc(t('overdueN')) + '</th><th>' + esc(t('nextTp')) + '</th><th>' + esc(t('mcidN')) + '</th></tr>' + pts.map(function (p) {
       var st = P.protocolStatus(p, subs, td), due = 0, over = 0;
@@ -4208,7 +4489,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       var nx = P.scheduleSummary(p, subs, td).filter(function (x) { return x.status === 'due' || x.status === 'upcoming'; })[0];
       var mr = meaningfulRows(p), mOk = mr.filter(function (r) { return r.m.mcid === true; }).length, mT = mr.filter(function (r) { return r.m.mcid != null; }).length, pOk = mr.filter(function (r) { return r.m.pass === true; }).length, pT = mr.filter(function (r) { return r.m.pass != null; }).length;
       var mc = (mT ? '<span class="badge ' + (mOk === mT ? 'ok' : mOk ? 'na' : 'no') + '" title="MCID">MCID ' + mOk + '/' + mT + '</span> ' : '') + (pT ? '<span class="badge ' + (pOk === pT ? 'ok' : pOk ? 'na' : 'no') + '" title="PASS">PASS ' + pOk + '/' + pT + '</span>' : '') || '–';
-      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '"><td><b>' + esc(p.id) + '</b> <span class="pill demo">DEMO</span>' + (camAllowed(p) ? ' <span class="pill clin" title="' + esc(t('camT')) + '">📷 ' + esc(t('camPill')) + '</span>' : '') + '</td><td>' + esc(tx(PROC[p.procedure].name)) + '</td><td>' + esc(p.surgeryDate) + '</td><td>' + esc(p.enteredBy ? p.enteredBy.name + (p.enteredBy.email ? ' <' + p.enteredBy.email + '>' : '') : '–') + '</td><td>' + ns + '</td><td class="' + (due ? 'warn' : 'ok') + '">' + due + '</td><td class="' + (over ? 'err' : 'ok') + '">' + over + '</td><td>' + (nx ? '<span class="sch ' + nx.status + '">' + esc(tpName(nx.tp)) + ' · ' + esc(stName(nx.status)) + '</span><br><span class="muted">' + esc(nx.from + ' → ' + nx.to) + '</span>' : '–') + '</td><td>' + mc + '</td></tr>';
+      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '"><td><b>' + esc(p.id) + '</b>' + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + (camAllowed(p) ? ' <span class="pill clin" title="' + esc(t('camT')) + '">📷 ' + esc(t('camPill')) + '</span>' : '') + '</td><td>' + esc(tx(PROC[p.procedure].name)) + '</td><td>' + esc(p.surgeryDate) + '</td><td>' + esc(p.enteredBy ? p.enteredBy.name + (p.enteredBy.email ? ' <' + p.enteredBy.email + '>' : '') : '–') + '</td><td>' + ns + '</td><td class="' + (due ? 'warn' : 'ok') + '">' + due + '</td><td class="' + (over ? 'err' : 'ok') + '">' + over + '</td><td>' + (nx ? '<span class="sch ' + nx.status + '">' + esc(tpName(nx.tp)) + ' · ' + esc(stName(nx.status)) + '</span><br><span class="muted">' + esc(nx.from + ' → ' + nx.to) + '</span>' : '–') + '</td><td>' + mc + '</td></tr>';
     }).join('') + '</table></div></div>';
     var sp = patientById(dsel.pid);
     if (sp && pts.indexOf(sp) >= 0) h += patientView(sp, td); else h += '<div class="card muted">' + esc(t('selectPt')) + '</div>';
@@ -4218,7 +4499,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       (fs.length ? fs.map(function (s) { return '<tr data-sub="' + esc(s.id) + '"><td>' + esc(s.date) + '</td><td>' + esc(s.patientId) + '</td><td>' + esc(tpName(s.timepoint)) + '</td><td>' + esc(I[s.instrument].short) + '</td><td><b>' + esc(fmtScore(s.instrument, s)) + '</b></td><td>' + subsInline(s) + '</td><td>' + esc(srcLab(s.source)) + '</td></tr>'; }).join('') : '<tr><td colspan="7">' + esc(t('noData')) + '</td></tr>') + '</table></div></div>';
     $('dashBody').innerHTML = h;
     $('dDemoMeas').onclick = function () { audit('demo-measurement'); openMeasure({ pid: null, procedure: null, mode: 'knee', demo: true }); };
-    $('dOut').onclick = function () { audit('sign-out'); auth.session = null; saveAuth(); renderDash(); };
+    $('dOut').onclick = function () { audit('sign-out'); if (CLOUD) return cloudLogout(); auth.session = null; saveAuth(); renderDash(); };
     $('fProc').onchange = function () { dsel.proc = this.value; dsel.pid = ''; renderDash(); };
     $('fInst').onchange = function () { dsel.inst = this.value; renderDash(); };
     $('dCsv').onclick = exportCsv;
@@ -4226,7 +4507,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if (sp && pts.indexOf(sp) >= 0) { bindCamera(sp); bindAssign(sp); }
     if (sp && pts.indexOf(sp) >= 0 && window.__xcmp) window.__xcmp.bind(sp);
     var dp = $('dashProto'); dp.ontoggle = function () { dashProtoOpen = dp.open; }; bindProtocol(dp, renderDash);
-    bindOwner();
+    if (CLOUD) bindCloudPanels(u); else bindOwner();
   }
   function srcLab(x) { return x === 'patient' ? t('patientSrc') : x === 'clinic' ? t('clinicSrc') : t('seedSrc'); }
   function tpName(id) { var x = TPS.filter(function (q) { return q.id === id; })[0]; return x ? tx(x.name) : id; }
@@ -4234,7 +4515,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function patientView(p, td) {
     var c = P.protocolStatus(p, store.submissions, td), rec = P.patientSet(p), prot = PR[p.procedure];
     var sym = { done: '✓', due: '●', overdue: '✗', upcoming: '◦', na: '–', off: '·' };
-    var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(p.id) + ' <span class="pill demo">DEMO</span></h2><div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate) + '</div>';
+    var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(p.id) + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</h2><div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate) + '</div>';
     h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to)) : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
       rec.map(function (i) { var opt = prot.optional.indexOf(i) >= 0; return '<tr><td><b>' + esc(I[i].short) + '</b>' + (opt ? ' <span class="muted">(' + esc(t('optional')) + ')</span>' : '') + '</td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + esc(stName(st)) + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend2')) + '</div>';
     h += assignHtml(p);
@@ -4265,7 +4546,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function bindAssign(p) {
     var now = currentTp(p), tp = dsel.tp || now || 'pre';
     if ($('dTp')) $('dTp').onchange = function () { dsel.tp = this.value; renderDash(); };
-    document.querySelectorAll('#assignTable [data-optsel]').forEach(function (b) { b.onchange = function () { var o = (p.optional || []).filter(function (x) { return x !== b.dataset.optsel; }); if (b.checked) o.push(b.dataset.optsel); p.optional = o; save(KEY, store); audit(b.checked ? 'assign' : 'unassign', p.id + ' ' + b.dataset.optsel); renderDash(); }; });
+    document.querySelectorAll('#assignTable [data-optsel]').forEach(function (b) { b.onchange = function () { var o = (p.optional || []).filter(function (x) { return x !== b.dataset.optsel; }); if (b.checked) o.push(b.dataset.optsel); p.optional = o; persist(); audit(b.checked ? 'assign' : 'unassign', p.id + ' ' + b.dataset.optsel); renderDash(); }; });
     document.querySelectorAll('#assignTable [data-dfill]').forEach(function (b) { b.onclick = function () { startRun(p.id, tp, [b.dataset.dfill]); }; });
   }
   var COLORS = ['#0b5f73', '#e8a317', '#d63031', '#1f9d55', '#9b59b6', '#3b82f6'];
@@ -4293,15 +4574,227 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if (auth.session) audit('export-csv', 'all PROM data');
     var cols = ['submission_id', 'patient_id', 'demo', 'procedure', 'surgery_date', 'entered_by', 'timepoint', 'date', 'instrument', 'total', 'primary', 'valid', 'subscales_json', 'answers_json', 'source'];
     var q = function (v) { v = v == null ? '' : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var rows = store.submissions.map(function (s) { var p = patientById(s.patientId) || {}; return [s.id, s.patientId, 'DEMO', s.procedure, p.surgeryDate, p.enteredBy ? (p.enteredBy.email || p.enteredBy.name) : '', s.timepoint, s.date, s.instrument, s.total, s.primary, s.valid, JSON.stringify(s.subscales || {}), JSON.stringify(s.answers || {}), s.source].map(q).join(','); });
-    var csv = '\ufeff# OrthoThessaly DEMO – synthetic data only\n' + cols.join(',') + '\n' + rows.join('\n') + '\n';
+    var rows = store.submissions.map(function (s) { var p = patientById(s.patientId) || {}; return [s.id, s.patientId, !CLOUD || p.demo ? 'DEMO' : '', s.procedure, p.surgeryDate, p.enteredBy ? (p.enteredBy.email || p.enteredBy.name) : '', s.timepoint, s.date, s.instrument, s.total, s.primary, s.valid, JSON.stringify(s.subscales || {}), JSON.stringify(s.answers || {}), s.source].map(q).join(','); });
+    var csv = '\ufeff' + (CLOUD ? '' : '# OrthoThessaly DEMO – synthetic data only\n') + cols.join(',') + '\n' + rows.join('\n') + '\n';
     window.__lastCsv = csv;
-    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'orthothessaly_proms_demo_' + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'orthothessaly_proms_' + (CLOUD ? '' : 'demo_') + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // ---------- Cloud mode (private Supabase database): doctor login, invite sign-up, owner invites, import, patient RPCs ----------
+  var S5 = {
+    el: { cLoading: 'Σύνδεση με τη βάση δεδομένων…', cGateT: 'Πρόσβαση ιατρού', cGateLead: 'Μόνο ιατροί με πρόσκληση έχουν πρόσβαση. Όλοι οι ιατροί της ομάδας βλέπουν όλους τους ασθενείς.',
+      cSignin: 'Σύνδεση', cSignup: 'Εγγραφή με πρόσκληση', cSignupLead: 'Κάθε σύνδεσμος πρόσκλησης ισχύει για έναν μόνο ιατρό.', cInvOk: '✓ Έγκυρη πρόσκληση – ολοκληρώστε την εγγραφή.', cInvOwner: ' (λογαριασμός ιδιοκτήτη)',
+      cInvBad: 'Η πρόσκληση δεν είναι έγκυρη, έχει λήξει ή έχει ήδη χρησιμοποιηθεί.', cDemoBtn: '🧪 Δοκιμή (demo)', cDemoHint: 'Δοκιμαστική λειτουργία με συνθετικούς ασθενείς· τα δεδομένα μένουν μόνο σε αυτόν τον browser.', cExitDemo: '☁️ Έξοδος από demo',
+      cErr_BAD_LOGIN: 'Λάθος email ή κωδικός.', cErr_NOT_DOCTOR: 'Ο λογαριασμός δεν έχει πρόσβαση ιατρού.', cErr_ORTHO_INVITE_REQUIRED: 'Χρειάζεται έγκυρη πρόσκληση για εγγραφή.',
+      cErr_ORTHO_INVITE_INVALID: 'Η πρόσκληση δεν είναι έγκυρη, έχει λήξει ή έχει ήδη χρησιμοποιηθεί. Χωρίς έγκυρη πρόσκληση δεν επιτρέπεται πρόσβαση.', cErr_ORTHO_INVITE_EMAIL: 'Η πρόσκληση έχει εκδοθεί για άλλο email.',
+      cErr_EXISTS: 'Υπάρχει ήδη λογαριασμός με αυτό το email – χρησιμοποιήστε «Σύνδεση».', cErr_WEAK_PASSWORD: 'Ο κωδικός είναι πολύ αδύναμος (τουλάχιστον 6 χαρακτήρες).', cErr_NETWORK: 'Δεν ήταν δυνατή η σύνδεση. Ελέγξτε το διαδίκτυο και δοκιμάστε ξανά.',
+      cErr_RATE_LIMIT: 'Πολλές προσπάθειες – δοκιμάστε ξανά σε λίγο.', cErr_NOT_CONFIRMED: 'Το email δεν έχει επιβεβαιωθεί.',
+      cErr_MAIL_NOT_AUTHORIZED: 'Η εγγραφή απέτυχε: η βάση προσπάθησε να στείλει email επιβεβαίωσης. Ο διαχειριστής πρέπει να απενεργοποιήσει το «Confirm email» στο Supabase (Authentication → Sign In / Providers → Email). Η πρόσκληση δεν χρησιμοποιήθηκε.',
+      cErr: 'Σφάλμα', cSendFail: 'Δεν ήταν δυνατή η αποστολή. Ελέγξτε τη σύνδεση στο διαδίκτυο και δοκιμάστε ξανά.', cBadCode: 'Ο κωδικός ασθενή μπορεί να έχει μόνο λατινικά γράμματα, αριθμούς, «-», «_» ή «.» (2–40 χαρακτήρες).',
+      cSaving: '⏳ Αποθήκευση…', cSaved: '☁️ Βάση δεδομένων · αποθηκεύτηκε', cSyncErr: '⚠️ Σφάλμα αποθήκευσης – θα ξαναδοκιμαστεί', cDbT: 'Ιδιωτική βάση δεδομένων (Supabase, ΕΕ – Παρίσι)', cRetry: 'Επανάληψη',
+      cInvT: 'Πρόσκληση ιατρού (μόνο ιδιοκτήτης)', cInvLead: 'Κάθε σύνδεσμος ισχύει για έναν ιατρό (μίας χρήσης) και λήγει σε 14 ημέρες.', cExpired: 'έληξε', cExp: 'Λήξη', cTeam: 'Ιατροί της ομάδας', cLogT: 'Αρχείο πρόσβασης',
+      cImpT: 'Εισαγωγή τοπικών εγγραφών', cImpLead: 'Μεταφέρει στη βάση τους ασθενείς, τα ερωτηματολόγια, τις μετρήσεις κίνησης και τις ακτινογραφίες (και τις εικόνες τους) που είναι αποθηκευμένα σε αυτόν τον browser. Ασθενείς με κωδικό που υπάρχει ήδη στη βάση παραλείπονται.',
+      cImpLocal: 'Σε αυτόν τον browser: {0} ασθενείς (από τους οποίους {1} συνθετικοί demo), {2} ερωτηματολόγια, {3} ακτινογραφίες.', cImpDemo: 'Να συμπεριληφθούν και οι συνθετικοί demo ασθενείς', cImpBtn: 'Εισαγωγή στη βάση', cImpNone: 'Δεν βρέθηκαν τοπικές εγγραφές για εισαγωγή.',
+      cImpDone: 'Εισήχθησαν: {0} ασθενείς, {1} ερωτηματολόγια, {2} μετρήσεις κίνησης, {3} ακτινογραφίες ({4} εικόνες).', cImpRun: 'Εισαγωγή…' },
+    en: { cLoading: 'Connecting to the database…', cGateT: 'Doctor access', cGateLead: 'Only invited doctors have access. Every doctor of the team sees all patients.',
+      cSignin: 'Sign in', cSignup: 'Sign up with invite', cSignupLead: 'Each invite link is valid for one doctor only.', cInvOk: '✓ Valid invite – complete the sign-up.', cInvOwner: ' (owner account)',
+      cInvBad: 'The invite is invalid, expired or already used.', cDemoBtn: '🧪 Demo', cDemoHint: 'Demo mode with synthetic patients; data stays in this browser only.', cExitDemo: '☁️ Leave demo',
+      cErr_BAD_LOGIN: 'Wrong email or password.', cErr_NOT_DOCTOR: 'This account has no doctor access.', cErr_ORTHO_INVITE_REQUIRED: 'A valid invite is required to sign up.',
+      cErr_ORTHO_INVITE_INVALID: 'The invite is invalid, expired or already used. Without a valid invite, access is not allowed.', cErr_ORTHO_INVITE_EMAIL: 'This invite was issued for a different email.',
+      cErr_EXISTS: 'An account with this email already exists – use “Sign in”.', cErr_WEAK_PASSWORD: 'Password too weak (at least 6 characters).', cErr_NETWORK: 'Could not connect. Check the internet connection and try again.',
+      cErr_RATE_LIMIT: 'Too many attempts – try again shortly.', cErr_NOT_CONFIRMED: 'Email not confirmed.',
+      cErr_MAIL_NOT_AUTHORIZED: 'Sign-up failed: the database tried to send a confirmation email. The administrator must turn off “Confirm email” in Supabase (Authentication → Sign In / Providers → Email). The invite was not used.',
+      cErr: 'Error', cSendFail: 'Could not send. Check the internet connection and try again.', cBadCode: 'Patient codes may only contain Latin letters, digits, “-”, “_” or “.” (2–40 characters).',
+      cSaving: '⏳ Saving…', cSaved: '☁️ Database · saved', cSyncErr: '⚠️ Save error – will retry', cDbT: 'Private database (Supabase, EU – Paris)', cRetry: 'Retry',
+      cInvT: 'Invite a doctor (owner only)', cInvLead: 'Each link is for one doctor (single use) and expires in 14 days.', cExpired: 'expired', cExp: 'Expires', cTeam: 'Team doctors', cLogT: 'Access log',
+      cImpT: 'Import local records', cImpLead: 'Copies the patients, questionnaires, movement measurements and X-ray studies (with their images) stored in this browser into the database. Patients whose code already exists in the database are skipped.',
+      cImpLocal: 'In this browser: {0} patients ({1} synthetic demo), {2} questionnaires, {3} X-ray studies.', cImpDemo: 'Also include the synthetic demo patients', cImpBtn: 'Import into the database', cImpNone: 'No local records to import.',
+      cImpDone: 'Imported: {0} patients, {1} questionnaires, {2} movement measurements, {3} X-ray studies ({4} images).', cImpRun: 'Importing…' }
+  };
+  Object.keys(S5).forEach(function (lg) { Object.keys(S5[lg]).forEach(function (k) { S[lg][k] = S5[lg][k]; }); });
+  var CODE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/;
+  function cErr(e) { var k = 'cErr_' + (e && e.code === 'MAIL_SEND' ? 'MAIL_NOT_AUTHORIZED' : e && e.code); return S[lang()][k] != null ? t(k) : t('cErr') + ': ' + (e && (e.message || e.code) || '?'); }
+  function syncLabel() { var s = CL ? CL.state.status : 'idle'; return s === 'saving' ? t('cSaving') : s === 'error' ? t('cSyncErr') : t('cSaved'); }
+  function siteBase() { return /^https?:$/.test(location.protocol) ? location.href.split('#')[0].split('?')[0] : 'https://orthothessaly.github.io/'; }
+  function cloudInviteLink(tok) { return siteBase() + '?invite=' + tok; }
+  function clearInviteUrl() { if (urlInvite) { urlInvite = null; try { history.replaceState(null, '', location.pathname); } catch (er) {} } }
+  function afterLogin(u) {
+    cloudUser = u; cloudBusy = true; renderDash();
+    return CL.loadAll().then(function (st) {
+      store = st; cloudBusy = false; dsel = { proc: '', inst: '', pid: '', tp: '' }; closeRun(); prun = null; if (ctx.pid && !patientById(ctx.pid)) { ctx.pid = ''; ctx.tp = ''; }
+      clearInviteUrl(); refresh(); return u;
+    }, function (e) { cloudBusy = false; cloudUser = null; CL.signOut(); renderDash(); throw e; });
+  }
+  function cloudLogout() {
+    var done = function () { cloudUser = null; CL.reset(); store = emptyStore(); ctx.pid = ''; ctx.tp = ''; prun = null; savePst(); closeRun(); dsel = { proc: '', inst: '', pid: '', tp: '' }; setMeasCtx(null); refresh(); };
+    return CL.idle().then(function () { return CL.signOut(); }).then(done, done);
+  }
+  function renderCloudGate() {
+    var tok = urlInvite || '';
+    $('dashGate').innerHTML = '<div class="card" id="cGate"><h2>🔒 ' + esc(t('cGateT')) + '</h2><p class="muted">' + esc(t('cGateLead')) + '</p>' +
+      '<div class="grid2" style="margin-top:10px"><div><h3>' + esc(t('cSignin')) + '</h3><label class="fld">' + esc(t('email')) + '<input id="cEmail" type="email" autocomplete="username"></label><label class="fld">' + esc(t('pw')) + '<input id="cPw" type="password" autocomplete="current-password"></label>' +
+      '<div class="row" style="margin-top:8px"><button class="primary" id="cIn">' + esc(t('doSignin')) + '</button></div><div id="cInMsg" class="err" role="alert"></div></div>' +
+      '<div><h3>' + esc(t('cSignup')) + '</h3><p class="muted">' + esc(t('cSignupLead')) + '</p><div id="cTokMsg"></div><label class="fld">' + esc(t('name')) + '<input id="cName" autocomplete="name"></label><label class="fld">' + esc(t('email')) + '<input id="cUEmail" type="email" autocomplete="email"></label><label class="fld">' + esc(t('pw')) + '<input id="cUPw" type="password" autocomplete="new-password"></label>' +
+      '<label class="fld">' + esc(t('token')) + '<input id="cTok" autocomplete="off" value="' + esc(tok) + '"></label><div class="row" style="margin-top:8px"><button class="go" id="cUp">' + esc(t('doSignup')) + '</button></div><div id="cUpMsg" class="err" role="alert"></div></div></div></div>' +
+      '<div class="card"><button id="cDemo">' + esc(t('cDemoBtn')) + '</button> <span class="muted">' + esc(t('cDemoHint')) + '</span></div>';
+    var busy = function (b, on) { b.disabled = on; };
+    $('cIn').onclick = function () {
+      var b = this; $('cInMsg').textContent = ''; busy(b, true);
+      CL.signIn($('cEmail').value, $('cPw').value).then(afterLogin).then(function () { audit('sign-in'); }, function (e) { busy(b, false); var m = $('cInMsg'); if (m) m.textContent = cErr(e); });
+    };
+    $('cPw').onkeydown = function (e) { if (e.key === 'Enter') $('cIn').click(); };
+    var checkTok = function () { var v = $('cTok').value.trim(), m = $('cTokMsg'); if (!v) { m.innerHTML = ''; return; } CL.inviteStatus(v).then(function (r) { if ($('cTok') && $('cTok').value.trim() === v) m.innerHTML = r && r.valid ? '<p class="ok" id="cTokOk">' + esc(t('cInvOk') + (r.owner ? t('cInvOwner') : '')) + '</p>' : '<p class="err" id="cTokBad">' + esc(t('cInvBad')) + '</p>'; }, function () {}); };
+    $('cTok').onchange = checkTok; if (tok) checkTok();
+    $('cUp').onclick = function () {
+      var b = this, nm = $('cName').value.trim(), e = $('cUEmail').value.trim(), pw = $('cUPw').value, tk = $('cTok').value.trim();
+      if (!nm || !e || pw.length < 6 || !tk) { $('cUpMsg').textContent = t('needAll'); return; }
+      $('cUpMsg').textContent = ''; busy(b, true);
+      CL.signUp(e, pw, nm, tk).then(afterLogin).then(function () { audit('sign-up', 'invite'); }, function (er) { busy(b, false); var m = $('cUpMsg'); if (m) m.textContent = cErr(er); });
+    };
+    $('cDemo').onclick = function () { setMode('demo'); };
+  }
+  function cloudPanels(u) {
+    var h = '';
+    if (u.role === 'owner') h += '<div class="card" id="cOwner"><h3>✉️ ' + esc(t('cInvT')) + '</h3><p class="muted">' + esc(t('cInvLead')) + '</p><div class="row"><label class="fld" style="flex:1 1 260px">' + esc(t('invEmail')) + '<input id="iEmail" type="email" autocomplete="off"></label><button class="primary" id="iGen" style="align-self:flex-end">' + esc(t('gen')) + '</button></div><div id="iOut"></div><div id="cOwnerBody" class="muted">⏳</div></div>';
+    var loc = load(KEY);
+    if (loc && loc.patients && loc.patients.length) {
+      var nd = loc.patients.filter(isSeedPt).length;
+      h += '<details class="card" id="cImport"><summary><b>⬆️ ' + esc(t('cImpT')) + '</b></summary><p class="muted">' + esc(t('cImpLead')) + '</p><p id="cImpLocal">' + esc(fmtT('cImpLocal', loc.patients.length, nd, (loc.submissions || []).length, (loc.xrays || []).length)) + '</p>' +
+        '<label class="optsel"><input type="checkbox" id="cImpDemo"> ' + esc(t('cImpDemo')) + '</label><div class="row" style="margin-top:8px"><button class="primary" id="cImpGo">' + esc(t('cImpBtn')) + '</button></div><p id="cImpMsg" role="status"></p></details>';
+    }
+    return h;
+  }
+  function isSeedPt(p) { return !!p.demo && DEMO_PTS.some(function (d) { return d.id === p.id; }); }
+  function bindCloudPanels(u) {
+    if ($('cImpGo')) $('cImpGo').onclick = function () {
+      var b = this; b.disabled = true; $('cImpMsg').textContent = t('cImpRun');
+      cloudImport({ includeDemo: $('cImpDemo').checked }).then(function (r) { renderDash(); var m = $('cImpMsg'); if (m) { var d = $('cImport'); if (d) d.open = true; m.textContent = r.patients ? fmtT('cImpDone', r.patients, r.submissions, r.rom, r.xrays, r.images) : t('cImpNone'); } },
+        function (e) { b.disabled = false; var m = $('cImpMsg'); if (m) m.textContent = cErr(e); });
+    };
+    if (u.role !== 'owner' || !$('cOwnerBody')) return;
+    var draw = function () {
+      Promise.all([CL.listInvites(), CL.listDoctors(), CL.listAudit(50)]).then(function (r) {
+        var el = $('cOwnerBody'); if (!el) return; var docs = {}; r[1].forEach(function (d) { docs[d.id] = d; }); var now = Date.now();
+        var h = '<div class="tblwrap"><table class="tbl" id="cInvTable"><tr><th>' + esc(t('invList')) + '</th><th>Email</th><th>' + esc(t('created')) + '</th><th>' + esc(t('cExp')) + '</th><th>' + esc(t('status')) + '</th><th></th></tr>' + r[0].map(function (i) {
+          var exp = new Date(i.expires_at).getTime() < now, st = i.revoked_at ? '⛔ ' + t('revoked') : i.used_by ? '✓ ' + t('used') + ' ' + (docs[i.used_by] ? docs[i.used_by].email : '') + ' · ' + fmtDT(i.used_at) : exp ? '⌛ ' + t('cExpired') : '🟢 ' + t('unused');
+          var open = !i.revoked_at && !i.used_by && !exp;
+          return '<tr data-inv="' + esc(i.id) + '"><td><code>' + esc(i.token.slice(0, 8)) + '…</code></td><td>' + esc(i.email || '–') + '</td><td>' + esc(fmtDT(i.created_at)) + '</td><td>' + esc(fmtDT(i.expires_at)) + '</td><td>' + esc(st) + '</td><td>' + (open ? '<button data-crev="' + esc(i.id) + '">' + esc(t('revoke')) + '</button> <button data-ccp="' + esc(i.token) + '">' + esc(t('copy')) + '</button>' : '') + '</td></tr>';
+        }).join('') + '</table></div>';
+        h += '<h3 style="margin-top:12px">👥 ' + esc(t('cTeam')) + '</h3><ul class="protolist" id="cTeam">' + r[1].map(function (d) { return '<li><b>' + esc(d.full_name || d.email) + '</b> · ' + esc(d.email) + (d.is_owner ? ' · <span class="pill">' + esc(t('owner')) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+        h += '<h3 style="margin-top:12px">🧾 ' + esc(t('cLogT')) + '</h3><div class="tblwrap" style="max-height:220px"><table class="tbl" id="logTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('email')) + '</th><th>' + esc(t('action')) + '</th><th></th></tr>' + r[2].map(function (l) { return '<tr><td>' + esc(fmtDT(l.at)) + '</td><td>' + esc(l.email || '–') + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.detail || '') + '</td></tr>'; }).join('') + '</table></div>';
+        el.classList.remove('muted'); el.innerHTML = h;
+        el.querySelectorAll('[data-crev]').forEach(function (b) { b.onclick = function () { b.disabled = true; CL.revokeInvite(b.dataset.crev).then(function () { audit('invite-revoke', b.dataset.crev); draw(); }, function (e) { b.disabled = false; alert(cErr(e)); }); }; });
+        el.querySelectorAll('[data-ccp]').forEach(function (b) { b.onclick = function () { copyText(cloudInviteLink(b.dataset.ccp), b); }; });
+      }, function (e) { var el = $('cOwnerBody'); if (el) el.textContent = cErr(e); });
+    };
+    draw();
+    $('iGen').onclick = function () {
+      var b = this; b.disabled = true;
+      CL.createInvite($('iEmail').value.trim() || null).then(function (inv) {
+        b.disabled = false; audit('invite-create', inv.id); var link = cloudInviteLink(inv.token);
+        $('iOut').innerHTML = '<div class="linkbox" id="iLink">' + esc(link) + '</div><div class="row" style="margin-top:6px"><button id="iCopy">' + esc(t('copy')) + '</button></div>';
+        $('iCopy').onclick = function () { copyText(link, this); }; $('iEmail').value = ''; draw();
+      }, function (e) { b.disabled = false; $('iOut').innerHTML = '<p class="err">' + esc(cErr(e)) + '</p>'; });
+    };
+  }
+  /** One-click import of this browser's localStorage/IndexedDB records into the database (signed-in doctor). */
+  function cloudImport(o) {
+    if (!CLOUD || !cloudUser) return Promise.reject(new Error('not signed in'));
+    var loc = load(KEY) || {}, have = {}, ids = {}, cnt = { patients: 0, submissions: 0, rom: 0, xrays: 0, images: 0 };
+    store.patients.forEach(function (p) { have[String(p.id).toUpperCase()] = 1; });
+    var taken = {}; ['submissions', 'rom', 'xrays'].forEach(function (c) { (store[c] || []).forEach(function (x) { taken[x.id] = 1; }); });
+    var clone = function (x) { return JSON.parse(JSON.stringify(x)); };
+    (loc.patients || []).forEach(function (p) {
+      if (!CODE_RE.test(String(p.id)) || have[String(p.id).toUpperCase()] || (!o.includeDemo && isSeedPt(p))) return;
+      var np = clone(p); np.demo = isSeedPt(p); if (!np.enteredBy) np.enteredBy = { name: cloudUser.name, email: cloudUser.email };
+      store.patients.push(np); ids[p.id] = 1; have[String(p.id).toUpperCase()] = 1; cnt.patients++;
+    });
+    var films = [];
+    ['submissions', 'rom', 'xrays'].forEach(function (c) {
+      store[c] = store[c] || [];
+      (loc[c] || []).forEach(function (x) { if (!ids[x.patientId]) return; var n = clone(x); if (taken[n.id]) n.id = n.id + '_' + Math.random().toString(36).slice(2, 6); taken[n.id] = 1; if (c === 'xrays') delete n.filmPath; store[c].push(n); cnt[c]++; if (c === 'xrays' && n.filmId && n.imgStored) films.push(n); });
+    });
+    if (!cnt.patients) return Promise.resolve(cnt);
+    audit('import-local', cnt.patients + ' patients');
+    return CL.sync(store).then(function () {
+      var getF = window.__xray && window.__xray.getFilm, seen = {};
+      return films.reduce(function (pr, x) {
+        return pr.then(function () {
+          if (!getF || seen[x.filmId]) return; seen[x.filmId] = 1;
+          return getF(x.filmId).then(function (rec) { if (!rec || !rec.blob) return; return uploadFilmFor(x.patientId, x.filmId, rec.blob).then(function () { cnt.images++; }); }).catch(function () {});
+        });
+      }, Promise.resolve());
+    }).then(function () { return CL.sync(store); }).then(function () { return cnt; });
+  }
+  function uploadFilmFor(pid, filmId, blob) {
+    var p = patientById(pid); if (!p || !CL) return Promise.reject(new Error('no patient'));
+    if (!p._uuid) CL._M.patients.toRow(p);
+    var path = CL.filmPath(p._uuid, filmId);
+    return CL.uploadFilm(path, blob).then(function () { (store.xrays || []).forEach(function (x) { if (x.filmId === filmId && x.patientId === pid) x.filmPath = path; }); });
+  }
+  /** Patient on their own device (no doctor signed in): look the code up through the patient RPC; keep only what the screen needs. */
+  function adoptPortal(r) {
+    var pt = { id: r.code, procedure: r.procedure, surgeryDate: r.surgeryDate, optional: r.optional || [], camera: !!r.camera, demo: false };
+    store = { version: 4, portal: true, patients: [pt], submissions: (r.done || []).map(function (d, i) { return { id: 'p' + i, patientId: r.code, instrument: d.instrument, timepoint: d.timepoint, date: d.date, source: 'patient' }; }), rom: [], xrays: [] };
+    return pt;
+  }
+  function cloudPatient(el, pt) {
+    if (cloudUser) { // doctor's device: the normal flow (incl. creating a new patient code) writes through the database sync
+      var sb = $('pStart'); if (sb && !pt) { var orig = sb.onclick; sb.onclick = function () { var v = $('pPid').value.trim(); if (v && !findPatient(v) && $('pNewOk') && $('pNewOk').checked && !CODE_RE.test(v)) { $('pMsg').textContent = t('cBadCode'); return; } var n = store.patients.length; orig.call(sb); if (store.patients.length > n) { store.patients[store.patients.length - 1].demo = false; persist(); } }; }
+      return;
+    }
+    if (!pt && $('pStart')) {
+      var nw = $('ptNew'); if (nw) nw.remove();
+      var dl = $('pPidList'); if (dl) dl.innerHTML = '';
+      $('pPid').oninput = function () { $('pMsg').textContent = ''; };
+      $('pStart').onclick = function () {
+        var b = this, id = $('pPid').value.trim(); if (!id) { $('pMsg').textContent = t('ptNeedCode'); $('pPid').focus(); return; }
+        b.disabled = true;
+        CL.portal(id).then(function (r) {
+          b.disabled = false; if (!r) { $('pMsg').textContent = fmtT('ptUnknown', id); return; }
+          var p = adoptPortal(r); ctx.pid = p.id; ctx.procedure = p.procedure; ctx.tp = currentTp(p) || ''; prun = null; savePst(); syncPatientMeasure(p); renderProms(); ptFocus(el);
+        }, function () { b.disabled = false; $('pMsg').textContent = t('cSendFail'); });
+      };
+      return;
+    }
+    var dm = el.querySelector('.ptdemo'); if (dm) dm.remove();
+    var sub = $('ptSubmit');
+    if (sub && prun && prun.screen === 'review') {
+      var origS = sub.onclick;
+      sub.onclick = function () {
+        if (sub.getAttribute('aria-disabled') === 'true') return origS.call(sub);
+        var id = prun.inst, items = ptItems(id, prun.ans), ans = JSON.parse(JSON.stringify(prun.ans)); pruneHidden(ans, items);
+        var s = makeSub(pt, id, ctx.tp, ans, today(), 'patient'); s.demo = false; sub.disabled = true; $('ptMsg').textContent = '';
+        CL.submit(pt.id, s).then(function (sid) {
+          s.id = sid || s.id; store.submissions.push(s); delete drafts[dkey(id)]; save(DKEY, drafts); prun = { inst: id, screen: 'thanks' }; renderProms(); ptFocus(el);
+        }, function (e) { sub.disabled = false; var m = $('ptMsg'); if (m) m.textContent = t('cSendFail'); });
+      };
+    }
+  }
+  function cloudInit() {
+    var bar = $('demoBar');
+    if (!CLOUD) {
+      if (CL && bar && /^https?:$/.test(location.protocol)) { var x = document.createElement('button'); x.id = 'cExitDemo'; x.textContent = t('cExitDemo'); x.onclick = function () { setMode('cloud'); }; bar.appendChild(x); }
+      return;
+    }
+    if (bar) bar.classList.add('hidden');
+    window.__orthoFilms = {
+      put: function (pid, filmId, blob) { if (!cloudUser || !blob) return; uploadFilmFor(pid, filmId, blob).then(persist, function (e) { console.warn('film upload failed', e && e.code); }); },
+      get: function (filmId) { var x = (store.xrays || []).filter(function (s) { return s.filmId === filmId && s.filmPath; })[0]; if (!x || !cloudUser) return Promise.reject(new Error('no film')); return CL.downloadFilm(x.filmPath).then(function (b) { return { blob: b }; }); }
+    };
+    CL.onState(function () { var e = $('cSync'); if (e) e.textContent = syncLabel(); });
+    if (CL.session) {
+      cloudBusy = true; if (curTab === 'dash') renderDash();
+      CL.restore().then(afterLogin).catch(function () { cloudBusy = false; cloudUser = null; refresh(); });
+    } else if (pst.pid) {
+      CL.portal(pst.pid).then(function (r) { if (!r || cloudUser) return; var p = adoptPortal(r); ctx.pid = p.id; ctx.procedure = p.procedure; ctx.tp = currentTp(p) || ''; syncPatientMeasure(p); if (curTab === 'proms') renderProms(); }, function () {});
+    }
   }
 
   // ---------- global ----------
   $('resetDemo').onclick = function () {
+    if (CLOUD) return;
     if (!window.confirm(t('resetQ'))) return;
     setMeasCtx(null); if (window.__xray && window.__xray.clearFilms) window.__xray.clearFilms(); localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); closeRun(); dsel = { proc: '', inst: '', pid: '', tp: '' }; ctx.pid = ''; ctx.tp = ''; prun = null; drafts = {}; localStorage.removeItem(DKEY); pst = { large: pst.large }; savePst();
     showTab(curTab);
@@ -4311,7 +4804,8 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   i18nStatic();
   showTab(urlInvite ? 'dash' : 'proms');
-  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { save(KEY, store); }, audit: audit, currentUser: function () { return currentUser(); },
+  cloudInit();
+  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
     patient: { get ctx() { return ctx; }, get run() { return prun; }, get drafts() { return drafts; }, title: ptTitle, items: function (id) { return ptItems(id, prun && prun.inst === id ? prun.ans : {}); }, open: ptOpen, currentTp: currentTp,
       preview: function (id, itemId) { var its = I[id].items.filter(function (it) { return !it.clinician; }), k = its.map(function (x) { return x.id; }).indexOf(itemId); var ans = {}; its.forEach(function (x) { if (x.showIf && x.id === itemId) { I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[y.options.length - 1].v; }); } }); var vis = ptItems(id, ans), vi = vis.map(function (x) { return x.id; }).indexOf(itemId); if (vi < 0) { ans = {}; I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[0].v; }); vis = ptItems(id, ans); vi = vis.map(function (x) { return x.id; }).indexOf(itemId); } if (vi < 0) return false; prun = { inst: id, screen: 'q', idx: vi, ans: ans, preview: true }; renderProms(); return k >= 0; } } };
 })();
@@ -4536,7 +5030,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function idbGet(k) { return idbReq('readonly', function (os) { return os.get(k); }); }
   function storeFilm(pid, filmId, img, blob, name, dicom) {
     if (!filmId || !img) return;
-    var put = function (b) { if (b) idbPut(filmId, { blob: b, w: img.width, h: img.height, name: name, pid: pid, dicom: dicom || null, at: new Date().toISOString() }).catch(function () {}); };
+    var put = function (b) { if (b) { idbPut(filmId, { blob: b, w: img.width, h: img.height, name: name, pid: pid, dicom: dicom || null, at: new Date().toISOString() }).catch(function () {}); if (window.__orthoFilms && window.__orthoFilms.put) window.__orthoFilms.put(pid, filmId, b); } }; // + private database bucket in cloud mode
     if (blob) put(blob); else if (img.toBlob) { var done = null, pr = new Promise(function (r) { done = r; }); idbPending.push(pr); img.toBlob(function (b) { put(b); done(); }, 'image/png'); }
   }
   function blobCanvas(blob) { return new Promise(function (res, rej) { var u = URL.createObjectURL(blob), im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u); res(c); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('image')); }; im.src = u; }); }
@@ -4550,7 +5044,11 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       var th = x.thumb, im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = Math.ceil(th.x0 + th.w / th.s); c.height = Math.ceil(th.y0 + th.h / th.s); var cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(im, th.x0, th.y0, th.w / th.s, th.h / th.s); assign(c, 'imgThumb'); }; im.src = th.url;
     };
     if (sl.synthName && SY && SY.VARIANTS[sl.synthName]) { var c = drawDemo(sl.synthName); assign(c, '', { synth: c.__synth, demo: true, variant: sl.synthName }); return; }
-    if (sl.filmId) { tgt().imgNote = 'imgLoading'; idbGet(sl.filmId).then(function (rec) { if (!rec || !rec.blob) return thumb(); return blobCanvas(rec.blob).then(function (c) { assign(c, '', { dicom: rec.dicom || null }); }); }).catch(thumb); return; }
+    if (sl.filmId) {
+      tgt().imgNote = 'imgLoading';
+      var fromCloud = function () { var h = window.__orthoFilms; if (!h || !h.get) return thumb(); return h.get(sl.filmId).then(function (rec) { if (!rec || !rec.blob) return thumb(); return blobCanvas(rec.blob).then(function (c) { assign(c, ''); }); }).catch(thumb); };
+      idbGet(sl.filmId).then(function (rec) { if (!rec || !rec.blob) return fromCloud(); return blobCanvas(rec.blob).then(function (c) { assign(c, '', { dicom: rec.dicom || null }); }); }).catch(fromCloud); return;
+    }
     thumb();
   }
 
@@ -5038,7 +5536,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
 
   window.__xray = { tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
-    activateTab: activateTab, newPostTab: newPostTab, selectPatient: selectPatient, idbIdle: function () { return Promise.all(idbPending); },
+    activateTab: activateTab, newPostTab: newPostTab, getFilm: function (k) { return idbGet(k); }, selectPatient: selectPatient, idbIdle: function () { return Promise.all(idbPending); },
     clearFilms: function () { WS = {}; stored = {}; var s0 = newSlot('', 'pre', today()); loadSlot(s0); st.pid = ''; idbReq('readwrite', function (os) { return os.clear(); }).catch(function () {}); }, tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
     fit: fit, centreOn: centreOn, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile };
 })();
