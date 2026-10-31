@@ -2157,8 +2157,10 @@ button.small{padding:6px 10px;font-size:.82rem}
   function stageList(ctx) {
     var s = [prep, limbs]; ctx.halves.forEach(function (h) { s.push(function (c) { trace(c, h); }); });
     ctx.halves.forEach(function (h) { s.push(function (c) { headCands(c, h); }); }); s.push(headPick);
-    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'knee'); }); });
-    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'ankle'); }); });
+    if (ctx.opts.mlKneeHook) s.push(kneeGuess); // pause: the driver runs the ml-1.1 knee model on ctx.kneeGuess, sets opts.mlKnees
+    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'knee'); mlKnee(c, h); }); });
+    if (ctx.opts.mlAnkleHook) s.push(ankleGuess); // pause: the driver runs the ml-1.1 ankle model on ctx.ankleGuess, sets opts.mlAnkles
+    ctx.halves.forEach(function (h) { s.push(function (c) { joint(c, h, 'ankle'); mlAnkle(c, h); }); });
     s.push(assemble); return s;
   }
   function step(ctx) {
@@ -2170,6 +2172,65 @@ button.small{padding:6px 10px;font-size:.82rem}
   /** Run only the film pre-processing (content box, ruler masking, inversion) – used to place the ML search windows. */
   function prepOnly(input) { var c = start(input, {}); prep(c); return { box: { x0: c.boxN0.x0, x1: c.boxN0.x1, y0: c.boxN.y0, y1: c.boxN.y1 }, gray: c.gray, inverted: !!c.inv, W: c.W, H: c.H }; }
   function detect(input, opts) { var c = start(input, opts); while (!c.done) step(c); return c.res; }
+  /** Same as detect, with the ml-1.1 knee / ankle stages: kneeFn(guesses, ctx), ankleFn(guesses, ctx) → Promise<{left, right}>. */
+  async function detectAsync(input, opts, kneeFn, ankleFn) {
+    opts = Object.assign({}, opts, { mlKneeHook: !!kneeFn, mlAnkleHook: !!ankleFn }); var c = start(input, opts);
+    while (!c.done) { step(c); if (c.pause) { var kind = c.pause; c.pause = false;
+      try { if (kind === 'knee') opts.mlKnees = await kneeFn(c.kneeGuess, c); else opts.mlAnkles = await ankleFn(c.ankleGuess, c); } catch (e) { c.res.info.push(kind === 'knee' ? 'mlKneeUnavailable' : 'mlAnkleUnavailable'); } } }
+    return c.res;
+  }
+  /** Ankle search window (native px): tibia ≈ 0.83 × femur along the hip→knee direction (HKA ≈ 180 ± 10° covered by the window),
+   *  the traced tibia when it agrees, side ≈ 0.32 × femoral length; kept inside the film (feet are often cut off). */
+  function ankleGuess(ctx) {
+    var g = ctx.gs, B = ctx.boxN, out = {};
+    ctx.halves.forEach(function (hf) {
+      var L = ctx.limb[hf]; if (!L || !L.found || !L.kneeRes || !L.kneeRes.found) return; var hr = L.headRes, kr = L.kneeRes; if (!hr || !hr.found) return;
+      var KF = V((kr.FC1.x + kr.FC2.x) / 2, (kr.FC1.y + kr.FC2.y) / 2), KT = V((kr.TP1.x + kr.TP2.x) / 2, (kr.TP1.y + kr.TP2.y) / 2), H = hr.c, fl = Math.hypot(KF.x - H.x, KF.y - H.y);
+      var dir = V((KF.x - H.x) / fl, (KF.y - H.y) / fl), A = V(KT.x + 0.83 * fl * dir.x, KT.y + 0.83 * fl * dir.y), ymax = B.y1 - 0.04 * fl;
+      if (A.y > ymax) A = V(A.x, ymax);
+      var tx = toNat(g, V(L.xAt(toCrop(g, A).y), 0)).x; if (Math.abs(tx - A.x) < 0.12 * fl) A = V(0.5 * (A.x + tx), A.y);
+      var alt = [-0.1, 0.1].map(function (f) { return { x: A.x + f * fl * dir.x, y: Math.min(ymax, A.y + f * fl * dir.y), S: 0.32 * fl, fl: fl }; });
+      out[hf] = { x: A.x, y: A.y, S: 0.32 * fl, fl: fl, alt: alt, half: hf };
+    });
+    ctx.ankleGuess = out; ctx.pause = 'ankle';
+  }
+  /** ml-1.1: learned plafond end points replace the classical ankle when plausible and confident enough. */
+  function mlAnkle(ctx, half) {
+    var MA = ctx.opts.mlAnkles, a = MA && MA[half], L = ctx.limb[half]; if (!a || !L || !L.found) return false;
+    if (!a.plausible || a.peak < 0.25) { L.mlAnkleDeclined = true; return false; }
+    var cl = L.ankleRes || {}, metalF = cl.metal > 0.004 ? 0.5 : 1, c = sstep(0.25, 0.65, a.peak) * metalF * 0.9; // small training set: never fully certain
+    var ac = V((a.AN[0].x + a.AN[1].x) / 2, (a.AN[0].y + a.AN[1].y) / 2);
+    L.ankleRes = { found: true, ml: true, metal: cl.metal || 0, AN1: V(a.AN[0].x, a.AN[0].y), AN2: V(a.AN[1].x, a.AN[1].y), conf: c, reasons: (cl.metal > 0.004 ? ['metal'] : []).concat(c < LOW && metalF === 1 ? ['mlUncertain'] : []), classical: cl.found ? { AN1: cl.AN1, AN2: cl.AN2 } : null };
+    L.ankle = { y: toCrop(ctx.gs, ac).y, sc: (L.ankle && L.ankle.sc) || 0, ml: true };
+    if (ctx.res.info.indexOf('mlAnkles') < 0) ctx.res.info.push('mlAnkles');
+    return true;
+  }
+  /** Knee search window for the learned model, per half (native px): the classical knee level on the traced limb, the head
+   *  column when the trace wandered (e.g. onto a central ruler), side ≈ 0.5 × femoral length; alternates along the limb. */
+  function kneeGuess(ctx) {
+    var g = ctx.gs, B = ctx.boxN, hc = B.y1 - B.y0, out = {};
+    ctx.halves.forEach(function (hf) {
+      var L = ctx.limb[hf]; if (!L || !L.found) return; var hr = L.headRes, H = hr && hr.found ? hr.c : null, kn = L.knee ? toNat(g, V(L.xAt(L.knee.y), L.knee.y)) : null;
+      var fl = H && kn ? kn.y - H.y : 0, okK = H && kn && fl > 0.28 * hc && fl < 0.62 * hc, alt = [];
+      if (!okK) { fl = H ? 0.47 * (B.y1 - H.y) : 0.45 * hc; kn = V(H ? H.x : toNat(g, V(L.xAt(B.y0 + 0.5 * hc), 0)).x, (H ? H.y : B.y0 + 0.05 * hc) + fl); }
+      if (H && Math.abs(kn.x - H.x) > 0.25 * fl) kn = V(H.x, kn.y);
+      [-0.16, 0.16, -0.3, 0.3].forEach(function (f) { var y = kn.y + f * fl; if (y > B.y0 + 0.25 * hc && y < B.y1 - 0.15 * hc) { var tx = toNat(g, V(L.xAt(toCrop(g, V(0, y)).y), 0)).x; alt.push({ x: H && Math.abs(tx - H.x) > 0.25 * fl ? H.x : tx, y: y, S: 0.5 * fl }); } });
+      out[hf] = { x: kn.x, y: kn.y, S: 0.5 * fl, alt: alt, half: hf };
+    });
+    ctx.kneeGuess = out; ctx.pause = 'knee';
+  }
+  /** ml-1.1: learned knee points replace the classical knee stage (classical result kept for the metal check / fallback). */
+  function mlKnee(ctx, half) {
+    var MK = ctx.opts.mlKnees, k = MK && MK[half], L = ctx.limb[half]; if (!k || !L || !L.found) return false;
+    if (!k.plausible || Math.min(k.peakF, k.peakT) < 0.25) { L.mlKneeDeclined = true; return false; }
+    var g = ctx.gs, cl = L.kneeRes || {}, metalF = cl.metal > 0.004 ? 0.5 : 1, rs = cl.metal > 0.004 ? ['metal'] : [];
+    var cF = sstep(0.25, 0.6, k.peakF) * metalF, cT = sstep(0.25, 0.6, k.peakT) * metalF;
+    L.kneeRes = { found: true, ml: true, metal: cl.metal || 0, FC1: V(k.FC[0].x, k.FC[0].y), FC2: V(k.FC[1].x, k.FC[1].y), TP1: V(k.TP[0].x, k.TP[0].y), TP2: V(k.TP[1].x, k.TP[1].y),
+      confF: cF, confT: cT, reasonsF: rs.concat(cF < LOW && metalF === 1 ? ['mlUncertain'] : []), reasonsT: rs.concat(cT < LOW && metalF === 1 ? ['mlUncertain'] : []), classical: cl.found ? { FC1: cl.FC1, FC2: cl.FC2, TP1: cl.TP1, TP2: cl.TP2 } : null };
+    var kc = V((k.TP[0].x + k.TP[1].x) / 2, (k.TP[0].y + k.TP[1].y) / 2); L.kneeN = kc; L.knee = { y: toCrop(g, kc).y, sc: (L.knee && L.knee.sc) || 0, ml: true };
+    if (ctx.res.version !== 'ml-1.1') { ctx.res.version = 'ml-1.1'; ctx.res.info.push('mlKnees'); }
+    return true;
+  }
 
   /** Pre-processing. Besides stretch/inversion this isolates the actual film: constant (black/white) padding is cut off, and
    *  border structures that are not anatomy – cm rulers (dense horizontal ticks), cassette/stitching strips (straight vertical
@@ -2204,6 +2265,20 @@ button.small{padding:6px 10px;font-size:.82rem}
     if (mL >= 0) { var srcL = Math.min(bx1, mL + 2 + Math.round(2 * U0)); fillCols(bx0, srcL - 1, srcL); info.push('borderMaskedLeft'); bx0 = srcL; }
     if (mR >= 0) { var srcR = Math.max(bx0, mR - 2 - Math.round(2 * U0)); fillCols(srcR + 1, bx1, srcR); info.push('borderMaskedRight'); bx1 = srcR; }
     cw = bx1 - bx0 + 1;
+    // 2b) radiopaque ruler BETWEEN the legs (long-leg stitching rulers): a narrow strip in the central 50 % of the width bounded
+    //     by two straight vertical edges running most of the film height → filled row-wise by interpolating its neighbours
+    (function () {
+      var xa0 = Math.round(bx0 + 0.25 * cw), xb0 = Math.round(bx1 - 0.25 * cw), maxW = Math.max(4, Math.round(0.06 * cw)), thrE = Math.max(0.55, PeC + 0.4), E = [];
+      for (var x2 = xa0; x2 <= xb0; x2++) if (Pe[x2] > thrE) E.push(x2);
+      if (E.length < 2) return; var best = null;
+      for (var a = 0; a < E.length; a++) for (var b = a + 1; b < E.length; b++) { var wd = E[b] - E[a]; if (wd < 2 || wd > maxW) continue; var sc2 = Pe[E[a]] + Pe[E[b]]; if (!best || sc2 > best.sc || (sc2 === best.sc && wd > best.b - best.a)) best = { a: E[a], b: E[b], sc: sc2 }; }
+      if (!best) return; var L0 = Math.max(bx0, best.a - 2 - Math.round(U0)), R0 = Math.min(bx1, best.b + 2 + Math.round(U0));
+      var cl = colMed(g.d, w, h, L0, Math.round(4 * U0)), cr = colMed(g.d, w, h, R0, Math.round(4 * U0));
+      for (var y2 = 0; y2 < h; y2++) for (var x3 = L0 + 1; x3 < R0; x3++) { var tq = (x3 - L0) / (R0 - L0); g.d[y2 * w + x3] = cl[y2] * (1 - tq) + cr[y2] * tq; }
+      var nL = Math.max(0, Math.floor(natX(L0))), nR = Math.min(W - 1, Math.ceil(natX(R0))), rad = Math.round(4 * H / 1000), ncl = colMed(gray, W, H, nL, rad), ncr = colMed(gray, W, H, nR, rad);
+      for (var y3 = 0; y3 < H; y3++) for (var x4 = nL + 1; x4 < nR; x4++) { var tn = (x4 - nL) / (nR - nL); gray[y3 * W + x4] = Math.round(ncl[y3] * (1 - tn) + ncr[y3] * tn); }
+      info.push('centralRulerMasked'); ctx.centralRuler = { x0: natX(L0), x1: natX(R0) };
+    })();
     // 3) inversion check from the film's own edge bands (bright air ⇒ negative display)
     var bgb = []; for (y = Math.round(by0 + hc * 0.1); y < by0 + hc * 0.9; y += 2) for (x = 0; x < Math.max(2, cw * 0.03); x++) { bgb.push(g.d[y * w + bx0 + x]); bgb.push(g.d[y * w + bx1 - x]); }
     var inv = median(bgb) > 0.55; if (inv) for (i = 0; i < n; i++) g.d[i] = 1 - g.d[i];
@@ -2525,7 +2600,7 @@ button.small{padding:6px 10px;font-size:.82rem}
   /** Coarse ankle level on a near-native strip along the distal tibia (the tibiotalar gap is only a few px wide at working scale).
    *  Window from the femoral length (head → knee): tibia/femur ≈ 0.65–1.15. Falls back to the distal 40 % of the film. */
   function ankleCoarse(ctx, L) {
-    var g = ctx.gs, U = ctx.U, kn = toNat(g, V(L.xAt(L.knee.y), L.knee.y)), hr = L.headRes, fl = hr && hr.found && hr.conf >= 0.15 ? kn.y - hr.c.y : 0;
+    var g = ctx.gs, U = ctx.U, kn = L.kneeN || toNat(g, V(L.xAt(L.knee.y), L.knee.y)), hr = L.headRes, fl = hr && hr.found && hr.conf >= 0.15 ? kn.y - hr.c.y : 0;
     // femur/tibia length ≈ 0.95–1.5 ⇒ ankle between kn + fl/1.5 and kn + fl/0.95, and never beyond the film content
     var ya = fl ? kn.y + fl / 1.5 : kn.y + 0.22 * (ctx.boxN.y1 - ctx.boxN.y0), yb = Math.min(ctx.boxN.y1 - 4 * U, fl ? kn.y + fl / 0.95 : Infinity), f = Math.min(1, 2 / U), hw = 10 * U, prof = [], ys = [];
     for (var y = ya; y < yb; y += 1 / f) { var yw = toCrop(g, V(0, y)).y, x = toNat(g, V(L.xAt(yw), yw)).x, s = 0, n = 0; for (var k = -hw; k <= hw; k += 1 / f) { var xx = Math.round(x + k), yy = Math.round(y); if (xx < 0 || xx >= ctx.W) continue; s += ctx.gray[yy * ctx.W + xx]; n++; } prof.push(n ? s / n / 255 : 0); ys.push(y); }
@@ -2558,7 +2633,8 @@ button.small{padding:6px 10px;font-size:.82rem}
       var boneLv = median((L.trace || []).map(function (p) { return p.v; })), Tb = ctx.bg + 0.3 * (boneLv - ctx.bg);
       // 1) inside the film, away from its borders
       if (has('head')) { var bmh = 0.5 * hr.r + Ub, B0n = ctx.boxN0; if (hr.c.x < BN.x0 || hr.c.x > BN.x1 || hr.c.x < B0n.x0 + bmh || hr.c.x > B0n.x1 - bmh || hr.c.y - hr.r < BN.y0 + Ub) drop('head', 'border'); } // head rim may lie under a ruler
-      ['knee', 'ankle'].forEach(function (c) { if (has(c) && COMP[c].some(function (k) { var p = o.lm[k]; return p.x < ctx.boxN0.x0 + Ub || p.x > ctx.boxN0.x1 - Ub || p.y < BN.y0 + Ub || p.y > BN.y1 - Ub; })) drop(c, 'border'); });
+      // (an ankle whose plafond/talar dome was found close to the lower film edge – feet cut off – is still valid: only outside the film counts there)
+      ['knee', 'ankle'].forEach(function (c) { var Ubot = c === 'ankle' ? 0.5 * ctx.U : Ub; if (has(c) && COMP[c].some(function (k) { var p = o.lm[k]; return p.x < ctx.boxN0.x0 + Ub || p.x > ctx.boxN0.x1 - Ub || p.y < BN.y0 + Ub || p.y > BN.y1 - Ubot; })) drop(c, 'border'); });
       // 2) inside bone: head centre, distal femur just above the knee line, distal tibia just above the plafond
       if (has('head') && lvl(hr.c, 0.4 * hr.r) < Tb) drop('head', 'outsideBone');
       if (has('knee') && lvl(V(ctr('knee').x, ctr('knee').y - 14 * ctx.U), 4 * ctx.U) < Tb) drop('knee', 'outsideBone');
@@ -2603,10 +2679,10 @@ button.small{padding:6px 10px;font-size:.82rem}
   /** RGBA (canvas ImageData) → 8-bit luminance. */
   function grayFromRGBA(d, n) { var g = new Uint8ClampedArray(n); for (var i = 0; i < n; i++) g[i] = (d[4 * i] * 77 + d[4 * i + 1] * 150 + d[4 * i + 2] * 29) >> 8; return g; }
 
-  root.OrthoXrayAuto = { VERSION: VERSION, LOW: LOW, detect: detect, start: start, prepOnly: prepOnly, step: step, grayFromRGBA: grayFromRGBA, _ransacLine: ransacLine, _bitangent: bitangent, _circleFit: circleFit };
+  root.OrthoXrayAuto = { VERSION: VERSION, LOW: LOW, detect: detect, detectAsync: detectAsync, start: start, prepOnly: prepOnly, step: step, grayFromRGBA: grayFromRGBA, _ransacLine: ransacLine, _bitangent: bitangent, _circleFit: circleFit };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
-<!-- ===== Learned femoral-head localiser ml-1.0 (runtime + model loaded lazily; model file hip-ml-1.0.model.js next to this page) ===== -->
+<!-- ===== Learned landmark localisers ml-1.0 (femoral head) / ml-1.1 (knee, ankle): runtime + models loaded lazily; model files hip-ml-1.0.model.js, knee-ml-1.1.model.js, ankle-ml-1.1.model.js next to this page ===== -->
 <script id="ortho-xray-ml">
 /* OrthoXrayML – learned femoral-head localiser (detector 'ml-1.0').
  * Tiny U-Net (0.9 M params, ONNX) trained on the CGMH Pelvis X-ray Segmentation Database (400 adult AP pelvis radiographs,
@@ -2618,7 +2694,12 @@ button.small{padding:6px 10px;font-size:.82rem}
  * browser, lazily from the CDN; onnxruntime-node in tests). */
 (function (root) {
   'use strict';
-  var VERSION = 'ml-1.0', IN = 256, OUT = 128, ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.wasm.min.js', MODEL_JS = 'hip-ml-1.0.model.js';
+  var VERSION = 'ml-1.0', KNEE_VERSION = 'ml-1.1', IN = 256, OUT = 128, ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.wasm.min.js', MODEL_JS = 'hip-ml-1.0.model.js';
+  // ml-1.1 knee localiser: same tiny U-Net, 4 heat-maps (condylar bitangent points FC, plateau end points TP; image-left/right)
+  // + femur/tibia masks. Trained on the CGMH Knee Segmentation Database (400 AP knee radiographs, MIT; labels from the masks).
+  var MODELS = { hip: { js: MODEL_JS, g: 'OrthoHipModelB64' }, knee: { js: 'knee-ml-1.1.model.js', g: 'OrthoKneeModelB64' }, ankle: { js: 'ankle-ml-1.1.model.js', g: 'OrthoAnkleModelB64' } };
+  // ml-1.1 ankle localiser: 2 heat-maps (tibial plafond end points, image-left/right); trained on 33 FracAtlas ankle/leg AP films
+  // (CC BY 4.0) with visually annotated plafond end points – a small set: proposals carry lower confidence, the surgeon confirms.
   function cropSq(g, W, H, cx, cy, S, inv) { // bilinear, outside = 0 (same convention as cv2.warpAffine)
     var sc = IN / S, tx = IN / 2 - sc * cx, ty = IN / 2 - sc * cy, o = new Float32Array(IN * IN);
     for (var v = 0; v < IN; v++) { var sy = (v - ty) / sc, y0 = Math.floor(sy), fy = sy - y0;
@@ -2635,8 +2716,8 @@ button.small{padding:6px 10px;font-size:.82rem}
     for (i = 0; i < n; i++) o[i] = (o[i] - m) / s; return o;
   }
   function sig(x) { return 1 / (1 + Math.exp(-x)); }
-  function peaks(y) { var out = [];
-    for (var c = 0; c < 2; c++) { var off = c * OUT * OUT, bj = 0, bv = -1e9; for (var j = 0; j < OUT * OUT; j++) if (y[off + j] > bv) { bv = y[off + j]; bj = j; }
+  function peaks(y, n) { var out = [];
+    for (var c = 0; c < (n || 2); c++) { var off = c * OUT * OUT, bj = 0, bv = -1e9; for (var j = 0; j < OUT * OUT; j++) if (y[off + j] > bv) { bv = y[off + j]; bj = j; }
       var py = Math.floor(bj / OUT), px = bj % OUT, sw = 0, sx = 0, sy = 0;
       for (var yy = Math.max(0, py - 3); yy < Math.min(OUT, py + 4); yy++) for (var xx = Math.max(0, px - 3); xx < Math.min(OUT, px + 4); xx++) { var w = Math.max(0, sig(y[off + yy * OUT + xx])); sw += w; sx += xx * w; sy += yy * w; }
       out.push({ x: sx / (sw + 1e-9) * 2 + 0.5, y: sy / (sw + 1e-9) * 2 + 0.5, peak: sig(bv) }); }
@@ -2652,36 +2733,102 @@ button.small{padding:6px 10px;font-size:.82rem}
     var o = await sess.run({ x: t }), y = o[sess.outputNames[0]].data, P = peaks(y);
     return P.map(function (p) { return { x: (p.x - IN / 2) / c.sc + cx, y: (p.y - IN / 2) / c.sc + cy, peak: p.peak, r: radiusFromMask(y, p.x, p.y) / c.sc }; });
   }
+  async function runCropN(sess, ort, g, W, H, cx, cy, S, inv, n) {
+    var c = cropSq(g, W, H, cx, cy, S, inv), x = prepInput(c.d), t = new ort.Tensor('float32', x, [1, 1, IN, IN]);
+    var o = await sess.run({ x: t }), y = o[sess.outputNames[0]].data, P = peaks(y, n);
+    return P.map(function (p) { return { x: (p.x - IN / 2) / c.sc + cx, y: (p.y - IN / 2) / c.sc + cy, peak: p.peak }; });
+  }
+  /** Knee landmarks (mirrors ml/infer_knee.py): coarse crop at the guess (x, y, side S0 ≈ 0.5 × femoral length) → refine crop
+   *  centred on the predicted knee at 2.4 × plateau width. Returns image-left/right condylar (FC) and plateau (TP) points. */
+  async function findKnee(M, g, W, H, guess, opt) {
+    opt = opt || {}; var t0 = Date.now(), inv = !!opt.inverted, S0 = guess.S;
+    var r1 = await runCropN(M.sess, M.ort, g, W, H, guess.x, guess.y, S0, inv, 4), W1 = Math.abs(r1[3].x - r1[2].x);
+    var c1 = { x: (r1[0].x + r1[1].x + r1[2].x + r1[3].x) / 4, y: (r1[0].y + r1[1].y + r1[2].y + r1[3].y) / 4 };
+    var S = W1 > 0.15 * S0 ? Math.min(1.3 * S0, Math.max(0.55 * S0, 2.4 * W1)) : S0;
+    var r = await runCropN(M.sess, M.ort, g, W, H, c1.x, c1.y, S, inv, 4);
+    var pF = Math.min(r[0].peak, r[1].peak), pT = Math.min(r[2].peak, r[3].peak), wF = Math.abs(r[1].x - r[0].x), wT = Math.abs(r[3].x - r[2].x);
+    var aF = Math.atan2(r[1].y - r[0].y, r[1].x - r[0].x), aT = Math.atan2(r[3].y - r[2].y, r[3].x - r[2].x), cy = (r[0].y + r[1].y) / 2, ty = (r[2].y + r[3].y) / 2;
+    // plausible knee: condylar width ≈ 0.75–1.1 × plateau width, lines within 8° and tilted < 20°, plateau just distal to the condyles
+    var plaus = wT > 0.2 * S && wT < 0.75 * S && wF > 0.6 * wT && wF < 1.15 * wT && Math.abs(aF - aT) < 8 * Math.PI / 180 && Math.abs(aF) < 20 * Math.PI / 180 && ty - cy > -0.04 * wT && ty - cy < 0.2 * wT;
+    return { version: KNEE_VERSION, FC: [r[0], r[1]], TP: [r[2], r[3]], peakF: pF, peakT: pT, plausible: plaus, S: S, coarse: r1, ms: Date.now() - t0 };
+  }
+  /** Ankle (mirrors ml/infer_knee.py ankle): coarse crop at the guess (side ≈ 0.32 × femoral length) → refine at 3.5 × plafond width. */
+  /** Knee over several search windows (guess + alternates along the limb): consensus of the windows, peak-weighted mean of the
+   *  agreeing results – reduces the window-placement jitter of the condylar/plateau lines on small (≈60 px) knees. */
+  async function findKneeMulti(M, g, W, H, guesses, opt) {
+    var R = [];
+    for (var i = 0; i < guesses.length; i++) R.push(await findKnee(M, g, W, H, guesses[i], opt));
+    var sc = R.map(function (r) { return (r.plausible ? 1 : 0.3) * Math.min(r.peakF, r.peakT); }), pts = function (r) { return r.FC.concat(r.TP); };
+    var cen = R.map(function (r) { var q = pts(r); return { x: q.reduce(function (a, p) { return a + p.x; }, 0) / 4, y: q.reduce(function (a, p) { return a + p.y; }, 0) / 4, w: Math.abs(r.TP[1].x - r.TP[0].x) }; });
+    var sup = R.map(function (r, i) { var tol = 0.15 * cen[i].w + 1; return R.reduce(function (s, q, j) { var d = Math.hypot(cen[i].x - cen[j].x, cen[i].y - cen[j].y) / tol; return s + sc[j] * Math.exp(-d * d); }, 0); });
+    var b = sup.indexOf(Math.max.apply(null, sup)), tolb = 0.15 * cen[b].w + 1, grp = R.map(function (r, j) { return j; }).filter(function (j) { return Math.hypot(cen[j].x - cen[b].x, cen[j].y - cen[b].y) < tolb && R[j].plausible === R[b].plausible; });
+    var ws = grp.reduce(function (s, j) { return s + sc[j]; }, 0) || 1, P = [0, 1, 2, 3].map(function (k) { var o = { x: 0, y: 0, peak: 0 }; grp.forEach(function (j) { var p = pts(R[j])[k]; o.x += p.x * sc[j] / ws; o.y += p.y * sc[j] / ws; o.peak += p.peak * sc[j] / ws; }); return o; });
+    var out = Object.assign({}, R[b]); out.FC = [P[0], P[1]]; out.TP = [P[2], P[3]]; out.peakF = Math.min(P[0].peak, P[1].peak); out.peakT = Math.min(P[2].peak, P[3].peak); out.support = grp.length; out.windows = R.length; return out;
+  }
+  /** Ankle over several search windows: the result supported by the most other windows (consensus, weighted by peak), then the
+   *  peak-weighted mean of the agreeing results. A single confident outlier (e.g. the malleolar tips of a window placed too low) loses. */
+  async function findAnkleMulti(M, g, W, H, guesses, opt) {
+    var R = [];
+    for (var i = 0; i < guesses.length; i++) R.push(await findAnkle(M, g, W, H, guesses[i], opt));
+    var lf = guesses[0].fl || guesses[0].S / 0.32, tol = 0.03 * lf, sc = R.map(function (r) { return (r.plausible ? 1 : 0.3) * r.peak; });
+    var cen = R.map(function (r) { return { x: (r.AN[0].x + r.AN[1].x) / 2, y: (r.AN[0].y + r.AN[1].y) / 2 }; });
+    var sup = R.map(function (r, i) { return R.reduce(function (s, q, j) { var d = Math.hypot(cen[i].x - cen[j].x, cen[i].y - cen[j].y) / tol; return s + sc[j] * Math.exp(-d * d); }, 0); });
+    var b = sup.indexOf(Math.max.apply(null, sup)), grp = R.map(function (r, j) { return j; }).filter(function (j) { return Math.hypot(cen[j].x - cen[b].x, cen[j].y - cen[b].y) < tol && R[j].plausible === R[b].plausible; });
+    var ws = grp.reduce(function (s, j) { return s + sc[j]; }, 0) || 1, avg = function (k, c) { return grp.reduce(function (s, j) { return s + R[j].AN[k][c] * sc[j]; }, 0) / ws; };
+    var out = Object.assign({}, R[b]); out.AN = [0, 1].map(function (k) { return { x: avg(k, 'x'), y: avg(k, 'y'), peak: grp.reduce(function (s, j) { return s + R[j].AN[k].peak * sc[j]; }, 0) / ws }; });
+    out.peak = Math.min(out.AN[0].peak, out.AN[1].peak); out.support = grp.length; out.windows = R.length; return out;
+  }
+  async function findAnkle(M, g, W, H, guess, opt) {
+    opt = opt || {}; var t0 = Date.now(), inv = !!opt.inverted, S0 = guess.S;
+    var r1 = await runCropN(M.sess, M.ort, g, W, H, guess.x, guess.y, S0, inv, 2), W1 = Math.abs(r1[1].x - r1[0].x), c1 = { x: (r1[0].x + r1[1].x) / 2, y: (r1[0].y + r1[1].y) / 2 };
+    var S = W1 > 0.08 * S0 ? Math.min(1.25 * S0, Math.max(0.45 * S0, 3.5 * W1)) : S0;
+    var r = await runCropN(M.sess, M.ort, g, W, H, c1.x, c1.y, S, inv, 2), w = Math.abs(r[1].x - r[0].x), a = Math.atan2(r[1].y - r[0].y, r[1].x - r[0].x), lf = guess.fl || S0 / 0.32;
+    var plaus = w > 0.035 * lf && w < 0.17 * lf && Math.abs(a) < 20 * Math.PI / 180; // up to the malleolar span on low-contrast films
+    return { version: KNEE_VERSION, AN: [r[0], r[1]], peak: Math.min(r[0].peak, r[1].peak), plausible: plaus, S: S, coarse: r1, ms: Date.now() - t0 };
+  }
   /** Femoral heads on a long-leg (or pelvis) film. g: Uint8 gray W x H (native), box: film content {x0,x1,y0,y1}. */
   async function findHeads(M, g, W, H, box, opt) {
     opt = opt || {}; var t0 = Date.now(), b = box || { x0: 0, x1: W - 1, y0: 0, y1: H - 1 }, wc = b.x1 - b.x0 + 1, hc = b.y1 - b.y0 + 1, inv = !!opt.inverted;
-    var wins = opt.mode === 'pelvis' ? [[(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, Math.max(wc, hc)]] : [0.5, 0.65, 0.8].map(function (f) { return [(b.x0 + b.x1) / 2, b.y0 + f * wc, wc]; });
-    var best = null;
+    var pel = opt.mode === 'pelvis', wins = pel ? [[(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, Math.max(wc, hc)]] : [0.5, 0.65, 0.8].map(function (f) { return [(b.x0 + b.x1) / 2, b.y0 + f * wc, wc]; }).concat([0.3, 0.42].map(function (f) { return [(b.x0 + b.x1) / 2, b.y0 + f * wc, 0.7 * wc]; }));
+    var cand = [];
     for (var i = 0; i < wins.length; i++) { var r = await runCrop(M.sess, M.ort, g, W, H, wins[i][0], wins[i][1], wins[i][2], inv), sc = r[0].peak * r[1].peak, span = Math.abs(r[1].x - r[0].x), dy = Math.abs(r[1].y - r[0].y);
-      if (span < 0.2 * wins[i][2]) sc *= 0.1; if (dy > 0.15 * span) sc *= 0.3; if (!best || sc > best.sc) best = { sc: sc, r: r, S: wins[i][2] }; }
-    var r1 = best.r, sp = Math.abs(r1[1].x - r1[0].x), r2 = await runCrop(M.sess, M.ort, g, W, H, (r1[0].x + r1[1].x) / 2, (r1[0].y + r1[1].y) / 2, Math.max(2 * sp, 0.3 * best.S), inv);
-    r2.sort(function (p, q) { return p.x - q.x; });
-    var span2 = Math.abs(r2[1].x - r2[0].x), dy2 = Math.abs(r2[1].y - r2[0].y), pairOk = span2 > 0.25 * wc && span2 < 0.95 * wc && dy2 < 0.12 * span2;
+      if (span < 0.2 * wins[i][2]) sc *= 0.1; if (dy > 0.15 * span) sc *= 0.3; cand.push({ sc: sc, r: r, S: wins[i][2] }); }
+    cand.sort(function (p, q) { return q.sc - p.sc; });
+    // long-leg films: refine the best coarse candidates (a strong distractor such as the knees, a ruler or overlay text can win the
+    // coarse pass) and keep the refined pair with the best peaks; heads lie in the upper part of a long film
+    var best = null, nTry = pel ? 1 : Math.min(3, cand.length), seen = [];
+    for (var k = 0; k < nTry; k++) { var r1 = cand[k].r, cx = (r1[0].x + r1[1].x) / 2, cy = (r1[0].y + r1[1].y) / 2;
+      if (seen.some(function (q) { return Math.hypot(q[0] - cx, q[1] - cy) < 0.05 * wc; })) continue; seen.push([cx, cy]);
+      var sp = Math.abs(r1[1].x - r1[0].x), r2 = await runCrop(M.sess, M.ort, g, W, H, cx, cy, Math.max(2 * sp, 0.3 * cand[k].S), inv);
+      r2.sort(function (p, q) { return p.x - q.x; });
+      var span2 = Math.abs(r2[1].x - r2[0].x), dy2 = Math.abs(r2[1].y - r2[0].y), pairOk = span2 > 0.25 * wc && span2 < 0.95 * wc && dy2 < 0.12 * span2;
+      var sc2 = r2[0].peak * r2[1].peak * (pairOk ? 1 : 0.2) * (!pel && hc > 1.6 * wc && (r2[0].y + r2[1].y) / 2 > b.y0 + 0.4 * hc ? 0.2 : 1);
+      if (!best || sc2 > best.sc) best = { sc: sc2, r2: r2, r1: r1, pairOk: pairOk, span: span2, dy: dy2 }; }
+    var r2 = best.r2, r1 = best.r1, pairOk = best.pairOk, span2 = best.span, dy2 = best.dy;
     return { version: VERSION, left: r2[0], right: r2[1], coarse: r1, pairOk: pairOk, span: span2, dy: dy2, ms: Date.now() - t0 };
   }
   function b64ToBytes(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
   function loadScript(src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = function () { rej(new Error('load ' + src)); }; document.head.appendChild(s); }); }
-  var cached = null;
-  /** Browser: lazily load onnxruntime-web (CDN) + the model (hip-ml-1.0.model.js next to the HTML). Node: pass {ort, model}. */
+  var cached = {}, ortP = null;
+  function loadOrt(o) {
+    if (o.ort || root.ort) return Promise.resolve(o.ort || root.ort);
+    if (!ortP) { ortP = loadScript(o.ortUrl || ORT_URL).then(function () { var ort = root.ort; ort.env.wasm.numThreads = 1; ort.env.wasm.wasmPaths = (o.ortUrl || ORT_URL).replace(/[^/]+$/, ''); return ort; }); ortP.catch(function () { ortP = null; }); }
+    return ortP;
+  }
+  /** Browser: lazily load onnxruntime-web (CDN) + a model file next to the HTML (o.which: 'hip' → hip-ml-1.0.model.js,
+   *  'knee' → knee-ml-1.1.model.js, 'ankle' → ankle-ml-1.1.model.js). Node: pass {ort, model}. */
   function load(o) {
-    o = o || {}; if (cached && !o.ort) return cached;
+    o = o || {}; var which = o.which || 'hip', md = MODELS[which]; if (cached[which] && !o.ort) return cached[which];
     var p = (async function () {
-      var ort = o.ort || root.ort;
-      if (!ort) { await loadScript(o.ortUrl || ORT_URL); ort = root.ort; ort.env.wasm.numThreads = 1; ort.env.wasm.wasmPaths = (o.ortUrl || ORT_URL).replace(/[^/]+$/, ''); }
-      var bytes = o.model;
-      if (!bytes) { if (!root.OrthoHipModelB64) await loadScript(o.modelUrl || MODEL_JS); bytes = b64ToBytes(root.OrthoHipModelB64); }
+      var ort = await loadOrt(o), bytes = o.model;
+      if (!bytes) { if (!root[md.g]) await loadScript(o.modelUrl || md.js); bytes = b64ToBytes(root[md.g]); }
       var sess = await ort.InferenceSession.create(bytes, o.ort ? {} : { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-      return { ort: ort, sess: sess, version: VERSION };
+      return { ort: ort, sess: sess, version: which === 'hip' ? VERSION : KNEE_VERSION, which: which };
     })();
-    if (!o.ort) { cached = p; p.catch(function () { cached = null; }); }
+    if (!o.ort) { cached[which] = p; p.catch(function () { cached[which] = null; }); }
     return p;
   }
-  root.OrthoXrayML = { VERSION: VERSION, load: load, findHeads: findHeads, _cropSq: cropSq, _prepInput: prepInput, MODEL_JS: MODEL_JS };
+  root.OrthoXrayML = { VERSION: VERSION, KNEE_VERSION: KNEE_VERSION, load: load, findHeads: findHeads, findKnee: findKnee, findAnkle: findAnkle, findAnkleMulti: findAnkleMulti, findKneeMulti: findKneeMulti, _cropSq: cropSq, _prepInput: prepInput, MODEL_JS: MODEL_JS, KNEE_MODEL_JS: MODELS.knee.js, ANKLE_MODEL_JS: MODELS.ankle.js };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== PROMs + doctor dashboard UI (DEMO, localStorage) ===== -->
@@ -3622,7 +3769,8 @@ button.small{padding:6px 10px;font-size:.82rem}
     st.autoRun = { p: 0.02, ml: true, img: img }; updAuto();
     var tick = function () {
       if (st.img !== img) { if (st.autoRun && st.autoRun.img === img) st.autoRun = null; return; }
-      var t1 = performance.now(); while (!ctx.done && performance.now() - t1 < 35) XA.step(ctx);
+      var t1 = performance.now(); while (!ctx.done && !ctx.pause && performance.now() - t1 < 35) XA.step(ctx);
+      if (ctx.pause) { mlJoint(ctx).then(function () { setTimeout(tick, 0); }); return; }
       st.autoRun.p = 0.05 + 0.95 * ctx.progress; updAuto();
       if (!ctx.done) { setTimeout(tick, 0); return; }
       var ms = Math.round(performance.now() - t0), res = ctx.res;
@@ -3644,6 +3792,15 @@ button.small{padding:6px 10px;font-size:.82rem}
     // classical stages (knee, ankle, gates). Any failure → classical head detection (info 'mlUnavailable' / 'mlFallback').
     var ML = window.OrthoXrayML, input = { gray: gray, W: c.width, H: c.height };
     var go = function () { if (st.img !== img) return; ctx = XA.start(input, opts); st.autoRun = { p: 0.1, img: img }; updAuto(); setTimeout(tick, 0); };
+    // ml-1.1: learned knee / ankle points (models loaded lazily next to the page); the detector pauses for them after the head stage
+    var mlJoint = function (c2) {
+      var kind = c2.pause, tm2 = performance.now(), pr = { gray: c2.gray, W: c2.W, H: c2.H, inverted: !!c2.inv }; c2.pause = false;
+      return ML.load({ which: kind }).then(function (M) {
+        var multi = function (fn, G0, key) { opts[key] = {}; return Object.keys(G0).reduce(function (pp, hf) { var G = G0[hf]; return pp.then(function () { return fn(M, pr.gray, pr.W, pr.H, [G].concat(G.alt || []), { inverted: pr.inverted }).then(function (r) { opts[key][hf] = r; }); }); }, Promise.resolve()); };
+        return kind === 'knee' ? multi(ML.findKneeMulti, c2.kneeGuess, 'mlKnees')
+          : multi(ML.findAnkleMulti, c2.ankleGuess, 'mlAnkles');
+      }).then(function () { if (mlInfo) mlInfo[kind + 'Ms'] = Math.round(performance.now() - tm2); }).catch(function (e) { c2.res.info.push(kind === 'knee' ? 'mlKneeUnavailable' : 'mlAnkleUnavailable'); if (mlInfo) mlInfo[kind + 'Error'] = String(e && e.message || e); });
+    };
     // built-in synthetic DEMO films are drawn for the classical detector; the learned model is for real radiographs (uploads)
     if (!ML || st.mlOff || (st.demo && !st.mlForce)) { go(); return; }
     var tm = performance.now();
@@ -3651,7 +3808,8 @@ button.small{padding:6px 10px;font-size:.82rem}
       if (st.img !== img) return;
       var ok = hd.pairOk && Math.min(hd.left.peak, hd.right.peak) > 0.3;
       mlInfo = { version: hd.version, ms: Math.round(performance.now() - tm), peaks: [hd.left.peak, hd.right.peak].map(function (v) { return Math.round(v * 100) / 100; }), fallback: !ok };
-      opts.mlHeads = ok ? hd : { declined: true }; go(); // declined: no head proposal rather than a classical guess (the surgeon places it)
+      opts.mlHeads = ok ? hd : { declined: true }; if (!st.mlJointsOff) { opts.mlKneeHook = true; opts.mlAnkleHook = true; ML.load({ which: 'knee' }).catch(function () {}); ML.load({ which: 'ankle' }).catch(function () {}); }
+      go(); // declined: no head proposal rather than a classical guess (the surgeon places it)
     }).catch(function (e) { mlInfo = { error: String(e && e.message || e) }; go(); });
   }
   function reasonText(sd, k) { var d = st.det[sd], r = d && d.reasons[k] || []; return r.map(function (x) { return t('r_' + x); }).join(', '); }
