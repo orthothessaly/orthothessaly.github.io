@@ -209,6 +209,106 @@ button.small{padding:6px 10px;font-size:.82rem}
   .tabs{flex-wrap:wrap;overflow:visible;gap:5px;padding:0 8px}
   .tabs button{flex:1 1 auto;border-radius:10px;padding:9px 10px;font-size:.86rem;line-height:1.2;text-align:center;min-width:0}
 }
+/* ===== Patient-facing questionnaires: large, calm, high-contrast, one question per screen ===== */
+.ptapp{font-size:18px;line-height:1.5;color:#14232b;display:flex;flex-direction:column;gap:14px;padding:18px 16px 0}
+.ptapp.large{font-size:22px}
+.ptapp button{font-family:inherit}
+.ptapp .hidden{display:none!important}
+.pttop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ptsize{min-height:48px;padding:8px 14px;border-radius:12px;border:2px solid #0b5f73;background:#fff;color:#0b5f73;font-weight:800;font-size:.9em;display:inline-flex;align-items:center;gap:6px}
+.ptsize[aria-pressed=true]{background:#0b5f73;color:#fff}
+.ptsize .aa{font-size:.85em;letter-spacing:-1px}.ptsize .aa span{font-size:1.35em}
+.ptlink{min-height:48px;padding:8px 14px;border-radius:12px;border:2px solid #b9cdd5;background:#fff;color:#0b4a5a;font-weight:700;font-size:.95em}
+.ptapp .pth1{font-size:1.55em;line-height:1.25;margin:0;color:#0b4a5a;font-weight:800}
+.pth1:focus,.ptqtext:focus{outline:none}
+.ptapp [data-focus]:focus,.ptapp [data-focus]:focus-visible{outline:none}
+.ptlead{font-size:1.05em;margin:0;color:#24343b}
+.pthow,.pthint{margin:0;color:#3d4f57;font-size:.92em}
+.ptoverall{display:flex;flex-direction:column;gap:6px;background:#eef6f8;border-radius:14px;padding:12px 14px}
+.ptprogtxt{font-weight:800;font-size:1.05em;color:#0b4a5a}
+.ptbar{height:14px;background:#d6e4e9;border-radius:999px;overflow:hidden}
+.ptbar i{display:block;height:100%;background:#1f7a4d;border-radius:999px;transition:width .25s}
+.ptcards{display:flex;flex-direction:column;gap:16px}
+.ptcard{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;align-items:start;border:2px solid #c9d8de;border-radius:18px;padding:16px;background:#fff;box-shadow:0 2px 6px rgba(11,95,115,.06)}
+.ptcard.next{border-color:#0b5f73;box-shadow:0 3px 12px rgba(11,95,115,.18)}
+.ptcard.st-done{background:#f1faf4;border-color:#a8d9bb}
+.ptcard > .ptbig{grid-column:1 / -1}
+.ptcnum{width:2.2em;height:2.2em;border-radius:50%;background:#0b5f73;color:#fff;font-weight:800;display:grid;place-items:center;font-size:1em}
+.ptcard.st-done .ptcnum{background:#1f7a4d}.ptcard.meas .ptcnum{background:#e6eef1}
+.ptcbody{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ptapp .ptctitle{font-size:1.2em;line-height:1.3;margin:0;color:#14232b;font-weight:800}
+.ptcmeta{color:#3d4f57;font-size:.95em}
+.ptcstatus{display:inline-block;align-self:flex-start;border-radius:999px;padding:3px 12px;font-weight:800;font-size:.9em}
+.ptcstatus.todo{background:#fff1cc;color:#5c4300}.ptcstatus.prog{background:#dbeafe;color:#1e3a8a}.ptcstatus.done{background:#d3f0de;color:#0f5132}
+.ptbig{display:block;width:100%;min-height:60px;padding:14px 18px;border-radius:16px;border:0;background:#0b5f73;color:#fff;font-weight:800;font-size:1.1em;line-height:1.25;cursor:pointer;text-align:center}
+.ptbig.alt{background:#fff;color:#0b5f73;border:3px solid #0b5f73}
+.ptbig.go{background:#1f7a4d}
+.ptbig[aria-disabled=true]{background:#5f7078;color:#fff}
+.ptbig:focus-visible,.ptsecbtn:focus-visible,.ptans button:focus-visible,.ptjump:focus-visible,.ptlink:focus-visible,.ptsize:focus-visible,.ptpmb:focus-visible{outline:4px solid #f0b429;outline-offset:2px}
+.ptbig .ptsmall{display:block;font-weight:600;font-size:.82em;opacity:.95}
+.ptsecbtn{min-height:60px;padding:12px 16px;border-radius:16px;border:2px solid #9fb6bf;background:#fff;color:#14232b;font-weight:800;font-size:1em;cursor:pointer}
+.ptsecbtn.wide{width:100%}
+.ptnav{display:flex;gap:10px;position:sticky;bottom:0;background:linear-gradient(rgba(255,255,255,.85),#fff 30%);padding:12px 0 14px;margin-top:auto;z-index:5}
+.ptnav .ptbig{flex:2 1 0}.ptnav .ptsecbtn{flex:1 1 0}
+.ptfld{font-weight:700;color:#24343b;margin-bottom:-8px}
+.ptinput{font-size:1.1em!important;min-height:56px;padding:10px 14px!important;border-radius:12px!important;border:2px solid #9fb6bf!important;width:100%;max-width:none!important;background:#fff;color:#14232b}
+.ptmsg{margin:0;min-height:1.2em;color:#a1161b;font-weight:800}
+.ptnew{display:flex;flex-direction:column;gap:12px;background:#f6fafb;border-radius:14px;padding:12px}
+.ptnewt{font-weight:800;color:#0b4a5a}
+.ptfoot{display:flex;flex-direction:column;gap:12px;border-top:1px solid #dbe6ea;padding:14px 0 18px;margin-top:6px}
+.ptdemo{color:#3d4f57;font-size:.9em}.ptdemo summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.ptdemo[open]{display:flex;flex-direction:column;gap:12px}
+.ptdonemsg{margin:0;background:#e9f7ef;border-radius:14px;padding:14px;font-weight:700;color:#0f5132}
+.ptqhead{display:flex;flex-direction:column;gap:6px}
+.ptqinst{font-weight:700;color:#3d4f57;font-size:.95em}
+.ptqof{font-weight:800;color:#0b4a5a;font-size:1.05em}
+.ptsec{font-weight:800;color:#0b4a5a;border-left:5px solid #12a3b4;padding-left:10px}
+.ptintro,.ptinstr{background:#f3f8fa;border-radius:12px;padding:12px 14px;color:#24343b}
+.ptinstr{font-size:1.02em;line-height:1.6}
+.ptpre{color:#3d4f57;font-style:italic}
+.ptapp .ptqtext{font-size:1.3em;line-height:1.4;margin:0;font-weight:800;color:#14232b}
+.ptopt{font-size:.7em;font-weight:700;color:#3d4f57}
+.ptans{display:flex;flex-direction:column;gap:12px}
+.ptans button{display:flex;align-items:center;gap:12px;min-height:60px;width:100%;text-align:left;padding:12px 16px;border:2px solid #9fb6bf;border-radius:16px;background:#fff;color:#14232b;font-size:1.05em;font-weight:700;line-height:1.3;cursor:pointer}
+.ptans button:hover{border-color:#0b5f73}
+.ptans button.sel{background:#0b5f73;border-color:#0b5f73;color:#fff}
+.ptchk{flex:none;width:1.5em;height:1.5em;border-radius:50%;border:2px solid #6f878f;display:grid;place-items:center;font-weight:900;background:#fff;color:#0b5f73}
+.ptchk.box{border-radius:6px}
+.ptans button.sel .ptchk{border-color:#fff}
+.ptans.compact{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px}
+.ptans.compact button{flex-direction:column;justify-content:center;gap:4px;text-align:center;padding:8px 4px;min-height:64px}
+.ptans.compact .ptchk{width:1.1em;height:1.1em;font-size:.8em}
+.ptancs{display:flex;justify-content:space-between;gap:14px;color:#3d4f57;font-size:.9em;font-weight:600}
+.ptancs span:last-child{text-align:right}
+.ptslider{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.ptval{display:flex;flex-direction:column;align-items:center;background:#eef6f8;border-radius:14px;padding:8px}
+.ptvallab{font-size:.85em;color:#3d4f57;font-weight:700}
+.ptval b{font-size:2.6em;line-height:1.1;color:#0b4a5a}
+.ptvalnone{font-size:.85em;color:#5c4300;font-weight:700}
+.ptslider input[type=range]{width:100%;height:56px;accent-color:#0b5f73;cursor:pointer}
+.ptslider input.untouched{opacity:.55}
+.ptslider input[type=range]::-webkit-slider-thumb{width:40px;height:40px}
+.ptslider input[type=range]::-moz-range-thumb{width:40px;height:40px}
+.ptvcol{display:flex;flex-direction:column;align-items:center;gap:8px}
+.ptvcol input[type=range]{writing-mode:vertical-lr;direction:rtl;width:72px;height:min(46vh,360px)}
+.ptanc{font-weight:700;color:#24343b;text-align:center;max-width:280px;font-size:.92em}
+.ptpm{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.ptpmb{min-width:64px;min-height:56px;border-radius:14px;border:2px solid #0b5f73;background:#fff;color:#0b5f73;font-weight:900;font-size:1.25em;cursor:pointer}
+.ptnumrow{display:flex;align-items:center;gap:10px}.ptnum{max-width:220px!important}
+.ptwarn{margin:0;font-weight:800;color:#7a2e00;background:#fff1e0;border-radius:12px;padding:10px 12px}
+.ptjumps{display:flex;flex-direction:column;gap:10px}
+.ptjump{display:flex;flex-direction:column;gap:2px;text-align:left;min-height:60px;padding:12px 14px;border-radius:14px;border:2px solid #d9822b;background:#fff;color:#14232b;font-size:1em;cursor:pointer}
+.ptjumps.opt .ptjump{border-color:#9fb6bf}
+.ptjump b{color:#0b4a5a}
+.ptthanks{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:10px 0}
+.ptthanks .ptoverall{width:100%;text-align:left}
+.ptok{width:84px;height:84px;border-radius:50%;background:#1f7a4d;color:#fff;font-size:48px;font-weight:900;display:grid;place-items:center}
+@media (max-width:700px){
+  .demobar{position:static;font-size:.82rem;padding:6px 10px}
+  .ptapp{padding:14px 12px 0;border-radius:12px}
+  #tab-proms{padding:8px}
+  .ptcard{padding:14px}
+}
 /* ---- X-rays tab ---- */
 .xgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:12px;max-width:1200px;margin:0 auto}
 @media (max-width:900px){.xgrid{grid-template-columns:1fr}}
@@ -328,7 +428,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   <button id="resetDemo" data-pi="reset">Επαναφορά demo δεδομένων</button>
 </div>
 <nav class="tabs" id="tabs" role="tablist">
-  <button role="tab" data-tab="proms" class="active" data-pi="tabProms">Ερωτηματολόγια (PROMs)</button>
+  <button role="tab" data-tab="proms" class="active" data-pi="tabProms">Ερωτηματολόγια</button>
   <button role="tab" data-tab="dash" data-pi="tabDash">Dashboard ιατρού</button>
   <button role="tab" data-tab="xray" data-pi="tabXray">Ακτινογραφίες</button>
   <button role="tab" data-tab="measure" class="hidden" id="tabMeasureBtn">Μέτρηση</button>
@@ -438,15 +538,13 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     </div>
   </aside>
 </main>
-<section class="pane hidden" id="tab-proms" aria-label="PROMs">
-  <div class="card" id="promSetup"></div>
-  <div class="card hidden" id="promList"></div>
-  <div class="card hidden" id="promRun"></div>
-  <div class="card" id="protoCard"></div>
+<section class="pane hidden" id="tab-proms" aria-label="Ερωτηματολόγια / Questionnaires">
+  <div class="card ptapp" id="ptApp"></div>
 </section>
 <section class="pane hidden" id="tab-dash" aria-label="Dashboard">
   <div id="dashGate"></div>
   <div id="dashBody" class="hidden"></div>
+  <div class="card hidden" id="dRun"></div>
 </section>
 <section class="pane hidden" id="tab-xray" aria-label="X-rays"></section>
 
@@ -3281,7 +3379,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
 
   var S = {
     el: { bannerEl: 'Δοκιμαστική έκδοση: μην εισάγετε πραγματικά δεδομένα ασθενών', bannerEn: 'Demo version: do not enter real patient data', reset: 'Επαναφορά demo δεδομένων',
-      resetQ: 'Διαγραφή όλων των τοπικών demo δεδομένων (υποβολές, προσκλήσεις, λογαριασμοί προσομοίωσης) και επαναφορά των 8 συνθετικών ασθενών;', tabMeasure: 'Μέτρηση', tabProms: 'Ερωτηματολόγια (PROMs)', tabDash: 'Dashboard ιατρού', tabXray: 'Ακτινογραφίες',
+      resetQ: 'Διαγραφή όλων των τοπικών demo δεδομένων (υποβολές, προσκλήσεις, λογαριασμοί προσομοίωσης) και επαναφορά των 8 συνθετικών ασθενών;', tabMeasure: 'Μέτρηση', tabProms: 'Ερωτηματολόγια', tabDash: 'Dashboard ιατρού', tabXray: 'Ακτινογραφίες',
       setupT: 'Ερωτηματολόγια ασθενή (PROMs)', pid: 'Κωδικός ασθενή (demo)', pidPh: 'π.χ. DEMO-ACL-01 ή νέος κωδικός', proc: 'Επέμβαση', tp: 'Χρονικό σημείο', surg: 'Ημ/νία επέμβασης (νέος ασθενής)', start: 'Συνέχεια', newPt: 'νέος demo ασθενής',
       recT: 'Προτεινόμενα ερωτηματολόγια', otherT: 'Επιπλέον διαθέσιμα', fillAll: 'Συμπλήρωση όλων με τη σειρά', fill: 'Συμπλήρωση', refill: 'Ξανά', doneAt: 'Συμπληρώθηκε',
       srcOfficial: 'Επίσημη ελληνική έκδοση', srcRendering: 'Ελληνική απόδοση βάσει του πρωτοτύπου', srcOwn: 'Γενική κλίμακα – δική μας διατύπωση', qs: 'ερωτήσεις', clinQs: 'πεδία ιατρού', naTp: 'δεν εφαρμόζεται σε αυτό το χρονικό σημείο', begin: 'Έναρξη ερωτηματολογίου →', pts: 'β.', activity: 'Δραστηριότητα', needAct: 'Επιλέξτε πρώτα τη δραστηριότητα από τη λίστα.', needAns: 'Παρακαλώ επιλέξτε μία απάντηση για να συνεχίσετε.', needVas: 'Μετακινήστε τον δείκτη στο σημείο που σας περιγράφει (ή χρησιμοποιήστε τα κουμπιά ±) για να συνεχίσετε.', needNum: 'Συμπληρώστε μια τιμή για να συνεχίσετε.', vasHint: 'Σύρετε τον δείκτη ή χρησιμοποιήστε τα κουμπιά για ακριβή τιμή.',
@@ -3296,9 +3394,9 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       invList: 'Προσκλήσεις', status: 'Κατάσταση', created: 'Δημιουργία', unused: 'αχρησιμοποίητη (μίας χρήσης)', used: 'χρησιμοποιήθηκε από', revoked: 'ανακλήθηκε', revoke: 'Ανάκληση', sameBrowser: 'Στο demo ο σύνδεσμος λειτουργεί μόνο στον ίδιο browser (localStorage).',
       patients: 'Ασθενείς', filterProc: 'Επέμβαση', filterInst: 'Ερωτηματολόγιο', all: 'Όλα', subsN: 'Υποβολές', missingN: 'Ελλείπουσες', surgery: 'Επέμβαση στις', csv: 'Εξαγωγή CSV (όλα τα PROM δεδομένα)',
       ptView: 'Ασθενής', recSet: 'Προτεινόμενο σετ & ελλείπουσες χρονικές στιγμές', legend: '✓ συμπληρώθηκε · ✗ λείπει · ◦ μελλοντικό · – δεν εφαρμόζεται', charts: 'Εξέλιξη βαθμολογιών', allSubs: 'Όλες οι υποβολές', date: 'Ημ/νία', patient: 'Ασθενής',
-      noData: 'Δεν υπάρχουν δεδομένα.', selectPt: 'Επιλέξτε ασθενή από τη λίστα για γραφήματα και ελλείψεις.', better: 'καλύτερο', higher: '↑ υψηλότερο = καλύτερο', lower: '↓ χαμηλότερο = καλύτερο', source: 'Πηγή', patientSrc: 'ασθενής', seedSrc: 'demo seed', enteredBy: 'Καταχώριση / υπεύθυνος ιατρός', shared: 'Κοινό μητρώο ομάδας: κάθε προσκεκλημένος ιατρός έχει πρόσβαση σε ΟΛΟΥΣ τους ασθενείς (χωρίς περιορισμό ανά ιατρό).', logT: 'Αρχείο πρόσβασης (demo)', logNote: 'Τοπική προσομοίωση μόνο. Στο backend απαιτείται αμετάβλητο audit log στον server (GDPR).', action: 'Ενέργεια' },
+      noData: 'Δεν υπάρχουν δεδομένα.', selectPt: 'Επιλέξτε ασθενή από τη λίστα για γραφήματα και ελλείψεις.', better: 'καλύτερο', higher: '↑ υψηλότερο = καλύτερο', lower: '↓ χαμηλότερο = καλύτερο', source: 'Πηγή', patientSrc: 'ασθενής', seedSrc: 'demo seed', enteredBy: 'Καταχώριση / υπεύθυνος ιατρός', shared: 'Κοινό μητρώο ομάδας: κάθε προσκεκλημένος ιατρός έχει πρόσβαση σε ΟΛΟΥΣ τους ασθενείς (χωρίς περιορισμό ανά ιατρό).', logT: 'Αρχείο πρόσβασης (demo)', logNote: 'Τοπική προσομοίωση μόνο. Στο backend απαιτείται αμετάβλητο audit log στον server (GDPR).', action: 'Ενέργεια', clinFill: 'Συμπλήρωση στο ιατρείο', clinicSrc: 'ιατρείο', assignT: 'Ερωτηματολόγια ασθενή: ανάθεση & συμπλήρωση στο ιατρείο', assignLead: 'Ο ασθενής βλέπει στην καρτέλα «Ερωτηματολόγια» μόνο τα ανατεθειμένα ερωτηματολόγια (βασικό σετ + επιλεγμένα προαιρετικά) για το τρέχον χρονικό σημείο, με απλούς τίτλους, χωρίς αναφορές σε πρωτόκολλα, χωρίς βαθμολογίες και χωρίς πεδία ιατρού. Τα πεδία ιατρού συμπληρώνονται εδώ («Συμπλήρωση στο ιατρείο»).', assignTp: 'Χρονικό σημείο', ptNowTp: 'τρέχον για τον ασθενή', assignCol: 'Ανάθεση', ptTitleCol: 'Τίτλος που βλέπει ο ασθενής', coreAuto: 'βασικό (αυτόματα)', atTp: 'Σε αυτό το σημείο', draftPt: 'σε εξέλιξη από τον ασθενή' },
     en: { bannerEl: 'Δοκιμαστική έκδοση: μην εισάγετε πραγματικά δεδομένα ασθενών', bannerEn: 'Demo version: do not enter real patient data', reset: 'Reset demo data',
-      resetQ: 'Delete all local demo data (submissions, invites, simulated accounts) and restore the 8 synthetic patients?', tabMeasure: 'Measurement', tabProms: 'Questionnaires (PROMs)', tabDash: 'Doctor dashboard', tabXray: 'X-rays',
+      resetQ: 'Delete all local demo data (submissions, invites, simulated accounts) and restore the 8 synthetic patients?', tabMeasure: 'Measurement', tabProms: 'Questionnaires', tabDash: 'Doctor dashboard', tabXray: 'X-rays',
       setupT: 'Patient questionnaires (PROMs)', pid: 'Patient ID (demo)', pidPh: 'e.g. DEMO-ACL-01 or a new ID', proc: 'Procedure', tp: 'Timepoint', surg: 'Surgery date (new patient)', start: 'Continue', newPt: 'new demo patient',
       recT: 'Recommended questionnaires', otherT: 'Also available', fillAll: 'Fill all in sequence', fill: 'Fill in', refill: 'Again', doneAt: 'Completed',
       srcOfficial: 'Official Greek version', srcRendering: 'Greek rendering based on the original', srcOwn: 'Generic scale – own wording', qs: 'questions', clinQs: 'clinician fields', naTp: 'not used at this timepoint', begin: 'Start questionnaire →', pts: 'pts', activity: 'Activity', needAct: 'Please select the activity from the list first.', needAns: 'Please select an answer to continue.', needVas: 'Move the marker to the point that describes you (or use the ± buttons) to continue.', needNum: 'Please enter a value to continue.', vasHint: 'Drag the marker or use the buttons for an exact value.',
@@ -3313,7 +3411,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       invList: 'Invites', status: 'Status', created: 'Created', unused: 'unused (single-use)', used: 'used by', revoked: 'revoked', revoke: 'Revoke', sameBrowser: 'In the demo the link only works in the same browser (localStorage).',
       patients: 'Patients', filterProc: 'Procedure', filterInst: 'Questionnaire', all: 'All', subsN: 'Submissions', missingN: 'Missing', surgery: 'Surgery on', csv: 'Export CSV (all PROM data)',
       ptView: 'Patient', recSet: 'Recommended set & missing timepoints', legend: '✓ done · ✗ missing · ◦ future · – n/a', charts: 'Score trends', allSubs: 'All submissions', date: 'Date', patient: 'Patient',
-      noData: 'No data.', selectPt: 'Select a patient in the list for charts and gaps.', better: 'better', higher: '↑ higher = better', lower: '↓ lower = better', source: 'Source', patientSrc: 'patient', seedSrc: 'demo seed', enteredBy: 'Entered by / responsible doctor', shared: 'Shared team registry: every invited doctor sees ALL patients (no per-doctor restriction).', logT: 'Access log (demo)', logNote: 'Local simulation only. The backend needs a tamper-evident server-side audit log (GDPR).', action: 'Action' }
+      noData: 'No data.', selectPt: 'Select a patient in the list for charts and gaps.', better: 'better', higher: '↑ higher = better', lower: '↓ lower = better', source: 'Source', patientSrc: 'patient', seedSrc: 'demo seed', enteredBy: 'Entered by / responsible doctor', shared: 'Shared team registry: every invited doctor sees ALL patients (no per-doctor restriction).', logT: 'Access log (demo)', logNote: 'Local simulation only. The backend needs a tamper-evident server-side audit log (GDPR).', action: 'Action', clinFill: 'Clinic entry', clinicSrc: 'clinic', assignT: 'Patient questionnaires: assignment & clinic entry', assignLead: 'In the “Questionnaires” tab the patient sees only the assigned questionnaires (core set + selected optional ones) for the current timepoint, with plain titles, no protocol references, no scores and no clinician fields. Clinician fields are entered here (“Clinic entry”).', assignTp: 'Timepoint', ptNowTp: 'current for the patient', assignCol: 'Assign', ptTitleCol: 'Title shown to the patient', coreAuto: 'core (automatic)', atTp: 'At this timepoint', draftPt: 'in progress by the patient' }
   };
   var t = function (k) { return S[lang()][k] != null ? S[lang()][k] : k; };
   // ---------- European-standard protocol: texts, schedule, MCID/PASS ----------
@@ -3610,80 +3708,46 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     return '<span class="srcnote ' + esc(k) + '">' + esc(lab) + (s.ref ? ' · ' + (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">' + esc(s.ref) + ' ↗</a>' : esc(s.ref)) : '') + '</span>';
   }
   // ---------- joint wording (WOMAC, FJS-12 are used for knee and hip) ----------
-  function jointOf() { var pt = patientById(ctx.pid); return pt && pt.procedure === 'THA' ? 'hip' : 'knee'; }
+  function jointOf() { var pt = patientById(JP || ctx.pid); return pt && pt.procedure === 'THA' ? 'hip' : 'knee'; }
   var JW = { knee: { '{JS}': 'στο γόνατό σας', '{JG}': 'του γονάτου σας', '{J}': 'γόνατο', '{JE}': 'knee' }, hip: { '{JS}': 'στο ισχίο σας', '{JG}': 'του ισχίου σας', '{J}': 'ισχίο', '{JE}': 'hip' } };
   function jt(s) { if (!s || s.indexOf('{J') < 0) return s; var m = JW[jointOf()]; return s.replace(/\{J[SGE]?\}/g, function (k) { return m[k] || k; }); }
   var tj = function (o) { return jt(tx(o)); };
 
-  // ---------- PROMs tab ----------
-  var ctx = { pid: '', procedure: 'ACL', tp: 'pre', surgery: today() }, run = null;
+  // ---------- PROMs: shared helpers ----------
+  var ctx = { pid: '', procedure: 'ACL', tp: '', surgery: today() }, run = null, JP = '';
   function patientById(id) { return store.patients.filter(function (p) { return p.id === id; })[0]; }
   function opt(v, label, sel) { return '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(label) + '</option>'; }
-  function renderProms() {
-    var pt = patientById(ctx.pid);
-    var h = '<h2>' + esc(t('setupT')) + ' <span class="pill demo">DEMO</span></h2><div class="grid2">';
-    h += '<label class="fld">' + esc(t('pid')) + '<input id="pPid" list="pPidList" autocomplete="off" placeholder="' + esc(t('pidPh')) + '" value="' + esc(ctx.pid) + '"><datalist id="pPidList">' + store.patients.map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(tx(PROC[p.procedure].name)) + '</option>'; }).join('') + '</datalist></label>';
-    h += '<label class="fld">' + esc(t('proc')) + '<select id="pProc"' + (pt ? ' disabled' : '') + '>' + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), (pt ? pt.procedure : ctx.procedure) === k); }).join('') + '</select></label>';
-    h += '<label class="fld">' + esc(t('tp')) + '<select id="pTp">' + TPS.map(function (x) { return opt(x.id, tx(x.name), ctx.tp === x.id); }).join('') + '</select></label>';
-    h += '<label class="fld' + (pt ? ' hidden' : '') + '" id="pSurgWrap">' + esc(t('surg')) + '<input type="date" id="pSurg" value="' + esc(ctx.surgery) + '"></label>';
-    h += '</div><div class="row" style="margin-top:10px"><button class="primary" id="pStart">' + esc(t('start')) + '</button><span class="muted" id="pMsg">' + (pt ? esc(t('surgery') + ' ' + pt.surgeryDate) : (ctx.pid ? esc(t('newPt')) : '')) + '</span></div>';
-    $('promSetup').innerHTML = h;
-    $('pPid').oninput = function () { ctx.pid = this.value.trim(); var p = patientById(ctx.pid); $('pProc').disabled = !!p; if (p) $('pProc').value = p.procedure; $('pSurgWrap').classList.toggle('hidden', !!p); $('pMsg').textContent = p ? t('surgery') + ' ' + p.surgeryDate : (ctx.pid ? t('newPt') : ''); if (p) syncPatientMeasure(p); };
-    $('pProc').onchange = function () { ctx.procedure = this.value; protoSel = ''; renderProtoCard(); };
-    $('pTp').onchange = function () { ctx.tp = this.value; if (!$('promList').classList.contains('hidden')) renderList(); };
-    $('pSurg').onchange = function () { ctx.surgery = this.value; };
-    $('pStart').onclick = function () {
-      ctx.pid = $('pPid').value.trim(); if (!ctx.pid) { $('pMsg').textContent = t('choosePid'); return; }
-      if (!patientById(ctx.pid)) { var cu = currentUser(); store.patients.push({ id: ctx.pid, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); save(KEY, store); }
-      ctx.procedure = patientById(ctx.pid).procedure; syncPatientMeasure(patientById(ctx.pid)); run = null; renderList(); $('promRun').classList.add('hidden');
-    };
-    if (ctx.pid && patientById(ctx.pid) && !$('promList').classList.contains('hidden')) renderList();
-    renderProtoCard();
-    if (run) renderRun();
-  }
   function doneAt(pid, inst, tp) { return store.submissions.filter(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0]; }
-  function nPatientItems(id) { return I[id].items.filter(function (it) { return !it.clinician && !it.showIf && !(it.notPre && ctx.tp === 'pre'); }).length; }
+  function nPatientItems(id, tp) { return I[id].items.filter(function (it) { return !it.clinician && !it.showIf && !(it.notPre && tp === 'pre'); }).length; }
   function nClinItems(id) { return I[id].items.filter(function (it) { return it.clinician; }).length; }
-  function countLabel(id) { var c = nClinItems(id); return nPatientItems(id) + ' ' + t('qs') + (c ? ' + ' + c + ' ' + t('clinQs') : ''); }
-  function instRow(id, pt) {
-    var d = doneAt(pt.id, id, ctx.tp), na = !P.appliesAt(id, ctx.tp, pt.procedure), isOpt = PROC[pt.procedure].other.indexOf(id) >= 0, tracked = (pt.optional || []).indexOf(id) >= 0;
-    return '<div class="inst" data-inst="' + id + '"><div class="insthead"><span class="nm">' + esc(tx(I[id].name)) + '</span>' +
-      (d ? ' <span class="pill done">✓ ' + esc(t('doneAt')) + ' ' + esc(d.date) + ' · ' + esc(fmtScore(id, d)) + '</span>' : '') +
-      (na ? ' <span class="pill" title="' + esc(t('naTp')) + '">– ' + esc(t('naTp')) + '</span>' : ' <button data-fill="' + id + '"' + (d ? '' : ' class="primary"') + '>' + esc(d ? t('refill') : t('fill')) + '</button>') +
-      '</div><div class="links"><span class="muted">' + esc(countLabel(id)) + '</span> · ' + srcNote(id) + (isOpt ? ' · <label class="optsel"><input type="checkbox" data-optsel="' + id + '"' + (tracked ? ' checked' : '') + '> ' + esc(t('track')) + '</label>' : '') + '</div></div>';
+  function countLabel(id, tp) { var c = nClinItems(id); return nPatientItems(id, tp) + ' ' + t('qs') + (c ? ' + ' + c + ' ' + t('clinQs') : ''); }
+  function variant(it, tp) { if (it.early && ['6w', '3m', '6m'].indexOf(tp) >= 0) return { text: it.early.text, options: it.options, intro: it.intro }; return tp === 'pre' && it.preop ? { text: it.preop.text, options: it.preop.options || it.options, intro: it.preop.intro || it.intro } : { text: it.text, options: it.options, intro: it.intro }; }
+  function isAnsweredIn(ans, it) { var v = ans[it.id]; return it.type === 'multi' ? Array.isArray(v) : typeof v === 'number' && isFinite(v); }
+  /** Timepoint the patient should answer now: open window first, then the most recent missed one; null = nothing to do now. */
+  function currentTp(pt) {
+    var ss = P.scheduleSummary(pt, store.submissions, today());
+    var due = ss.filter(function (x) { return x.status === 'due'; })[0]; if (due) return due.tp;
+    var late = ss.filter(function (x) { return x.status === 'partial' || x.status === 'overdue'; }).pop(); return late ? late.tp : null;
   }
-  function renderList() {
-    var pt = patientById(ctx.pid), pr = PROC[pt.procedure], el = $('promList'), prot = PR[pt.procedure];
-    var inProt = prot.tps.some(function (x) { return x.id === ctx.tp; });
-    var h = '<h3>' + esc(t('coreT')) + ' – ' + esc(tx(pr.name)) + ' · ' + esc(tpName(ctx.tp)) + ' · ' + esc(pt.id) + '</h3>';
-    if (camAllowed(pt)) h += '<div class="row"><button class="primary" id="pMeasure">' + esc(t('openMeas')) + '</button></div>';
-    h += '<div class="muted">' + esc(t('schedT')) + ':</div>' + schedStrip(pt, today());
-    if (!inProt) h += '<p class="qmsg offtp" id="offTp">' + esc(t('offTp')) + '</p>';
-    h += '<div class="row"><button class="go" id="pAll">' + esc(t('fillAll')) + '</button></div><div class="instlist" id="coreList">' + pr.recommended.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
-    if (pr.other.length) h += '<h3 style="margin-top:12px">' + esc(t('optT')) + '</h3><div class="instlist" id="optList">' + pr.other.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
-    el.innerHTML = h; el.classList.remove('hidden');
-    el.querySelectorAll('[data-fill]').forEach(function (b) { b.onclick = function () { startRun([b.dataset.fill]); }; });
-    el.querySelectorAll('[data-optsel]').forEach(function (b) { b.onchange = function () { var o = (pt.optional || []).filter(function (x) { return x !== b.dataset.optsel; }); if (b.checked) o.push(b.dataset.optsel); pt.optional = o; save(KEY, store); renderList(); }; });
-    $('pAll').onclick = function () { startRun(P.patientSet(pt).filter(function (id) { return P.appliesAt(id, ctx.tp, pt.procedure) && !doneAt(pt.id, id, ctx.tp); })); };
-    if ($('pMeasure')) $('pMeasure').onclick = function () { syncPatientMeasure(pt); openMeasure(measCtx); };
-    renderProtoCard();
-  }
-  function startRun(queue) {
-    if (!queue.length) { var qp = patientById(ctx.pid); queue = P.patientSet(qp).filter(function (id) { return P.appliesAt(id, ctx.tp, qp.procedure); }); }
-    run = { queue: queue, qi: 0, idx: -1, ans: {}, result: null, msg: '' }; renderRun(); $('promRun').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  function assignedNow(pt, tp) { return tp ? P.patientSet(pt).filter(function (id) { return P.appliesAt(id, tp, pt.procedure); }) : []; }
+
+  // ---------- Clinic entry by the doctor (full instrument incl. clinician fields, score shown) – doctor side only ----------
+  function actLabel(a) { return Array.isArray(a) ? (lang() === 'en' ? a[1] : a[0]) : tx(a); }
   function curInst() { return I[run.queue[run.qi]]; }
-  function visItems() { return P.visibleItems(curInst().id, run.ans, { clinician: true, tp: ctx.tp }); }
-  function isAnswered(it) { var v = run.ans[it.id]; return it.type === 'multi' ? Array.isArray(v) : typeof v === 'number' && isFinite(v); }
+  function visItems() { return P.visibleItems(curInst().id, run.ans, { clinician: true, tp: run.tp }); }
+  function isAnswered(it) { return isAnsweredIn(run.ans, it); }
   function itemLabelFlags(it) { return (it.clinician ? ' <span class="pill clin">🩺 ' + esc(t('clin')) + '</span>' : '') + (it.optional && !it.clinician ? ' <span class="pill">' + esc(t('optional')) + '</span>' : ''); }
-  function variant(it) { if (it.early && ['6w', '3m', '6m'].indexOf(ctx.tp) >= 0) return { text: it.early.text, options: it.options, intro: it.intro }; return ctx.tp === 'pre' && it.preop ? { text: it.preop.text, options: it.preop.options || it.options, intro: it.preop.intro || it.intro } : { text: it.text, options: it.options, intro: it.intro }; }
   function anchorsHtml(it) { return it.anchors ? '<div class="anchors"><span>' + esc(tj(it.anchors[0])) + '</span><span>' + esc(tj(it.anchors[1])) + '</span></div>' : ''; }
   function optLabel(it, o) { var l = tj(o.label); if (it.clinician && !/\(−|\(-|\(\d/.test(l)) l += ' — ' + o.v + ' ' + t('pts'); return l; }
   function bandHtml(id, r) { var b = P.interpret(id, r); return b ? '<span class="band ' + esc(b.cls) + '">' + esc(tx(b.label)) + '</span>' : ''; }
+  function startRun(pid, tp, queue) {
+    run = { pid: pid, tp: tp, queue: queue, qi: 0, idx: -1, ans: {}, result: null, msg: '' }; renderRun(); $('dRun').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function closeRun() { run = null; var el = $('dRun'); if (el) { el.classList.add('hidden'); el.innerHTML = ''; } }
   function renderRun() {
-    var el = $('promRun'); el.classList.remove('hidden');
+    var el = $('dRun'); if (!el || !run) return; el.classList.remove('hidden'); JP = run.pid;
     var inst = curInst();
-    var head = '<div class="qhead"><div class="qtitle">' + esc(tx(inst.name)) + '</div><div class="qmeta"><span>' + esc(t('inst')) + ' ' + (run.qi + 1) + ' ' + esc(t('of')) + ' ' + run.queue.length + '</span><span>' + esc(ctx.pid) + ' · ' + esc(tpName(ctx.tp)) + '</span></div></div>';
+    var head = '<div class="qhead"><div class="qtitle">🩺 ' + esc(t('clinFill')) + ': ' + esc(tx(inst.name)) + '</div><div class="qmeta"><span>' + esc(t('inst')) + ' ' + (run.qi + 1) + ' ' + esc(t('of')) + ' ' + run.queue.length + '</span><span>' + esc(run.pid) + ' · ' + esc(tpName(run.tp)) + '</span></div></div>';
     if (run.result) {
       var r = run.result, h = head + '<div class="result"><div>' + esc(t('score')) + '</div><div class="big" id="rScore">' + esc(fmtScore(inst.id, r)) + '</div>' + bandHtml(inst.id, r) + subsHtml(inst.id, r.subscales) +
         (r.notes && r.notes.length ? '<ul class="notes">' + r.notes.map(function (x) { return '<li>' + esc(tx(x)) + '</li>'; }).join('') + '</ul>' : '') +
@@ -3692,28 +3756,27 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       h += '<button id="rClose">' + esc(t('finish')) + '</button></div>';
       el.innerHTML = '<div class="qwrap">' + h + '</div>';
       if ($('rNext')) $('rNext').onclick = function () { run.qi++; run.idx = -1; run.ans = {}; run.result = null; run.msg = ''; renderRun(); };
-      $('rClose').onclick = function () { run = null; el.classList.add('hidden'); renderList(); };
+      $('rClose').onclick = function () { closeRun(); renderDash(); };
       return;
     }
     if (run.idx < 0) { // instrument intro screen
       var hi = head + '<div class="introcard"><div class="srcline">' + srcNote(inst.id) + '</div>' + (inst.instructions ? '<div class="qintro">' + esc(tj(inst.instructions)) + '</div>' : '') +
-        '<div class="muted">' + esc(countLabel(inst.id)) + '</div></div><div class="qnav"><button class="go" id="qBegin">' + esc(t('begin')) + '</button><button id="qCancel">' + esc(t('cancel')) + '</button></div>' +
+        '<div class="muted">' + esc(countLabel(inst.id, run.tp)) + '</div></div><div class="qnav"><button class="go" id="qBegin">' + esc(t('begin')) + '</button><button id="qCancel">' + esc(t('cancel')) + '</button></div>' +
         (inst.copyright ? '<div class="copyright">' + esc(inst.copyright) + '</div>' : '');
       el.innerHTML = '<div class="qwrap">' + hi + '</div>';
       $('qBegin').onclick = function () { run.idx = 0; renderRun(); };
-      $('qCancel').onclick = function () { run = null; el.classList.add('hidden'); };
+      $('qCancel').onclick = closeRun;
       return;
     }
     var items = visItems(), n = items.length; if (run.idx >= n) run.idx = n - 1;
-    var it = items[run.idx], vr = variant(it), pct = Math.round(run.idx / n * 100), v = run.ans[it.id];
+    var it = items[run.idx], vr = variant(it, run.tp), pct = Math.round(run.idx / n * 100), v = run.ans[it.id];
     var h2 = head + '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
       '<div class="qprog" id="qProg"><span>' + esc(t('q')) + ' ' + (run.idx + 1) + ' ' + esc(t('of')) + ' ' + n + (it.sec ? ' · ' + esc(tj(it.sec)) : '') + '</span><span>' + pct + '%</span></div>';
-    // one question per screen: the section heading and its stem are repeated on every screen of the section
     if (it.sec && tx(it.sec) !== tx(vr.text)) h2 += '<h3 class="qsec">' + esc(tj(it.sec)) + '</h3>';
     if (vr.intro) h2 += '<div class="qintro">' + esc(tj(vr.intro)) + '</div>';
     if (it.pre) h2 += '<div class="qpre">' + esc(tj(it.pre)) + '</div>';
     h2 += '<div class="qtext" id="qText">' + esc(tj(vr.text)) + itemLabelFlags(it) + '</div>';
-    if (it.activities) { var act = run.ans[it.id + 'a']; h2 += '<label class="fld actpick">' + esc(t('activity')) + '<select id="qAct">' + opt('', '—', act == null) + it.activities.map(function (a, k) { return opt(k, lang() === 'en' ? a[1] : a[0], act === k); }).join('') + '</select></label>'; }
+    if (it.activities) { var act = run.ans[it.id + 'a']; h2 += '<label class="fld actpick">' + esc(t('activity')) + '<select id="qAct">' + opt('', '—', act == null) + it.activities.map(function (a, k) { return opt(k, actLabel(a), act === k); }).join('') + '</select></label>'; }
     if (it.type === 'choice') h2 += '<div class="answers' + (it.compact ? ' compact' : '') + '" role="radiogroup">' + vr.options.map(function (o, k) { return '<button role="radio" aria-checked="' + (v === o.v) + '" data-k="' + k + '"' + (v === o.v ? ' class="sel"' : '') + '>' + esc(optLabel(it, o)) + '</button>'; }).join('') + '</div>' + anchorsHtml(it);
     else if (it.type === 'nrs') { var b = ''; for (var x = it.min; x <= it.max; x++) b += '<button data-n="' + x + '"' + (v === x ? ' class="sel"' : '') + '>' + x + '</button>'; h2 += '<div class="answers compact nrs">' + b + '</div>' + anchorsHtml(it); }
     else if (it.type === 'vas') {
@@ -3732,7 +3795,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if (inst.copyright) h2 += '<div class="copyright">' + esc(inst.copyright) + '</div>';
     el.innerHTML = '<div class="qwrap">' + h2 + '</div>';
     run.msg = '';
-    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start' }); // keep the question in view on small screens
+    if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start' });
     function readInputs() {
       var ni = $('qNum'); if (ni) { var val = parseFloat(ni.value); if (isFinite(val)) run.ans[it.id] = Math.max(it.min, Math.min(it.max, val)); else delete run.ans[it.id]; }
       var ap = $('qAct'); if (ap) { if (ap.value === '') delete run.ans[it.id + 'a']; else run.ans[it.id + 'a'] = +ap.value; }
@@ -3758,18 +3821,238 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if ($('qSkip')) $('qSkip').onclick = function () { delete run.ans[it.id]; delete run.ans[it.id + 'a']; if (last) submitRun(); else { run.idx++; renderRun(); } };
     if ($('qNext')) $('qNext').onclick = next;
     if ($('qSubmit')) $('qSubmit').onclick = next;
-    $('qCancel').onclick = function () { run = null; el.classList.add('hidden'); };
+    $('qCancel').onclick = closeRun;
     var ni = $('qNum'); if (ni) ni.onkeydown = function (e) { if (e.key === 'Enter') next(); };
   }
+  /** Drop answers of items hidden by a skip rule (same rule for clinic and patient entry). */
+  function pruneHidden(ans, items) { Object.keys(ans).forEach(function (k) { var base = k.replace(/a$/, ''); if (!items.some(function (it) { return it.id === k || (it.activities && it.id === base); })) delete ans[k]; }); }
   function submitRun() {
     var items = visItems();
-    // drop answers of items hidden by a skip rule
-    Object.keys(run.ans).forEach(function (k) { var base = k.replace(/a$/, ''); if (!items.some(function (it) { return it.id === k || (it.activities && it.id === base); })) delete run.ans[k]; });
+    pruneHidden(run.ans, items);
     var miss = -1; items.some(function (it, i) { if (!it.optional && !isAnswered(it)) { miss = i; return true; } return false; });
     if (miss >= 0) { run.idx = miss; run.msg = t('needAns'); return renderRun(); }
-    var inst = curInst(), pt = patientById(ctx.pid);
-    var s = makeSub(pt, inst.id, ctx.tp, JSON.parse(JSON.stringify(run.ans)), today(), 'patient');
-    s.demo = true; store.submissions.push(s); save(KEY, store); run.result = s; renderRun();
+    var inst = curInst(), pt = patientById(run.pid);
+    var s = makeSub(pt, inst.id, run.tp, JSON.parse(JSON.stringify(run.ans)), today(), 'clinic');
+    s.demo = true; store.submissions.push(s); save(KEY, store); if (auth.session) audit('clinic-entry', pt.id + ' ' + inst.id + ' ' + run.tp); run.result = s; renderRun();
+  }
+
+  // ---------- Patient-facing questionnaires: plain language only (no protocol, guideline, scoring or licence details) ----------
+  var S4 = {
+    el: { ptMorning: 'Καλημέρα', ptEvening: 'Καλησπέρα', ptWelcome: 'Καλώς ήρθατε', ptWhy: 'Οι απαντήσεις σας βοηθούν τον γιατρό σας να παρακολουθεί την πρόοδό σας.',
+      ptHow: 'Πατήστε το μεγάλο κουμπί σε κάθε ερωτηματολόγιο. Οι απαντήσεις σας φυλάγονται αυτόματα, οπότε μπορείτε να σταματήσετε και να συνεχίσετε όποτε θέλετε.',
+      ptProgress: '{0} από {1} ολοκληρώθηκαν', ptTodo: 'Να συμπληρωθεί', ptInProg: 'Σε εξέλιξη', ptDone: '✓ Ολοκληρώθηκε', ptStart: 'Ξεκινήστε', ptCont: 'Συνέχεια',
+      ptQ1: 'ερώτηση', ptQn: 'ερωτήσεις', ptAbout: 'περίπου', ptMin1: 'λεπτό', ptMinN: 'λεπτά', ptAnswered: 'απαντήσατε {0} από {1}',
+      ptNone: 'Δεν έχετε ερωτηματολόγια να συμπληρώσετε αυτή τη στιγμή. Θα σας ενημερώσουμε όταν έρθει η ώρα για τα επόμενα.', ptAllHome: 'Ολοκληρώσατε όλα τα ερωτηματολόγια. Ευχαριστούμε πολύ!',
+      ptLoginLead: 'Γράψτε τον κωδικό που σας έδωσε το ιατρείο και πατήστε «Συνέχεια».', ptCode: 'Ο κωδικός σας', ptNeedCode: 'Γράψτε πρώτα τον κωδικό σας.',
+      ptNewT: 'Πρώτη φορά εδώ; (δοκιμαστική έκδοση)', ptProc: 'Για ποια επέμβαση;', ptSurg: 'Ημερομηνία της επέμβασης', ptNotYou: 'Δεν είστε εσείς; Αλλαγή κωδικού',
+      ptBigger: 'Μεγαλύτερα γράμματα', ptNormal: 'Κανονικά γράμματα', ptSizeL: 'Μέγεθος γραμμάτων', ptDemoT: 'Ρυθμίσεις δοκιμής (μόνο για την παρουσίαση)', ptDemoTp: 'Ποια ερωτηματολόγια να εμφανιστούν',
+      ptHome: '← Αρχική', ptGo: 'Ξεκινήστε την 1η ερώτηση →', ptQof: 'Ερώτηση {0} από {1}', ptBack: '← Πίσω', ptNext: 'Επόμενο →', ptSkip: 'Παράλειψη', ptOptional: 'προαιρετική ερώτηση',
+      ptTapHint: 'Πατήστε την απάντηση που σας ταιριάζει.', ptMultiHint: 'Μπορείτε να διαλέξετε περισσότερες από μία απαντήσεις.', ptSlideHint: 'Σύρετε τον κύκλο ή πατήστε − και +.', ptNotYet: 'Δεν έχετε διαλέξει ακόμη',
+      ptNumHint: 'Γράψτε τον αριθμό.', ptAct: 'Δραστηριότητα', ptNeedAct: 'Διαλέξτε και τη δραστηριότητα από τη λίστα.', ptMinus: 'Λιγότερο', ptPlus: 'Περισσότερο', ptValue: 'Η επιλογή σας',
+      ptReviewT: 'Έλεγχος πριν από την αποστολή', ptRevCount: 'Απαντήσατε {0} από {1} ερωτήσεις.', ptRevCount1: 'Δεν έχετε απαντήσει ακόμη την ερώτηση.', ptRevCount1d: 'Απαντήσατε την ερώτηση.', ptRevAll: '✓ Απαντήσατε όλες τις ερωτήσεις.', ptRevMissing: 'Λείπουν απαντήσεις. Πατήστε μια ερώτηση για να την απαντήσετε:',
+      ptRevOpt: 'Αυτές οι ερωτήσεις δεν είναι υποχρεωτικές:', ptQn1: 'Ερώτηση {0}', ptSubmit: 'Υποβολή ✓', ptBlocked: 'Για να γίνει η υποβολή, απαντήστε πρώτα τις ερωτήσεις που λείπουν.', ptToQs: '← Πίσω',
+      ptThanksT: 'Ευχαριστούμε!', ptThanks: 'Οι απαντήσεις σας στάλθηκαν στον γιατρό σας.', ptNextInst: 'Επόμενο ερωτηματολόγιο:', ptToHome: 'Επιστροφή στην αρχική', ptAllDone: 'Ολοκληρώσατε όλα τα ερωτηματολόγια για αυτή τη φορά. Καλή συνέχεια!',
+      ptMeasT: 'Μέτρηση κίνησης με την κάμερα', ptMeasLead: 'Ο γιατρός σας ζήτησε να μετρήσετε πόσο λυγίζει η άρθρωσή σας.', ptMeasBtn: 'Άνοιγμα μέτρησης', ptAppL: 'Ερωτηματολόγια ασθενή' },
+    en: { ptMorning: 'Good morning', ptEvening: 'Good evening', ptWelcome: 'Welcome', ptWhy: 'Your answers help your doctor follow your progress.',
+      ptHow: 'Tap the big button on each questionnaire. Your answers are kept automatically, so you can stop and continue whenever you like.',
+      ptProgress: '{0} of {1} completed', ptTodo: 'To do', ptInProg: 'In progress', ptDone: '✓ Completed', ptStart: 'Start', ptCont: 'Continue',
+      ptQ1: 'question', ptQn: 'questions', ptAbout: 'about', ptMin1: 'minute', ptMinN: 'minutes', ptAnswered: 'you answered {0} of {1}',
+      ptNone: 'You have no questionnaires to fill in right now. We will let you know when the next ones are due.', ptAllHome: 'You have completed all questionnaires. Thank you very much!',
+      ptLoginLead: 'Type the code your clinic gave you and tap “Continue”.', ptCode: 'Your code', ptNeedCode: 'Please type your code first.',
+      ptNewT: 'First time here? (demo version)', ptProc: 'Which operation?', ptSurg: 'Date of the operation', ptNotYou: 'Not you? Change code',
+      ptBigger: 'Larger text', ptNormal: 'Normal text', ptSizeL: 'Text size', ptDemoT: 'Demo settings (for the presentation only)', ptDemoTp: 'Which questionnaires to show',
+      ptHome: '← Home', ptGo: 'Start question 1 →', ptQof: 'Question {0} of {1}', ptBack: '← Back', ptNext: 'Next →', ptSkip: 'Skip', ptOptional: 'optional question',
+      ptTapHint: 'Tap the answer that fits you.', ptMultiHint: 'You can choose more than one answer.', ptSlideHint: 'Drag the circle or tap − and +.', ptNotYet: 'Not chosen yet',
+      ptNumHint: 'Type the number.', ptAct: 'Activity', ptNeedAct: 'Please also choose the activity from the list.', ptMinus: 'Less', ptPlus: 'More', ptValue: 'Your choice',
+      ptReviewT: 'Check before sending', ptRevCount: 'You answered {0} of {1} questions.', ptRevCount1: 'You have not answered the question yet.', ptRevCount1d: 'You answered the question.', ptRevAll: '✓ You answered all questions.', ptRevMissing: 'Some answers are missing. Tap a question to answer it:',
+      ptRevOpt: 'These questions are not required:', ptQn1: 'Question {0}', ptSubmit: 'Submit ✓', ptBlocked: 'To submit, please answer the missing questions first.', ptToQs: '← Back',
+      ptThanksT: 'Thank you!', ptThanks: 'Your answers have been sent to your doctor.', ptNextInst: 'Next questionnaire:', ptToHome: 'Back to home', ptAllDone: 'You have completed all questionnaires for now. All the best!',
+      ptMeasT: 'Movement measurement with the camera', ptMeasLead: 'Your doctor asked you to measure how far your joint bends.', ptMeasBtn: 'Open the measurement', ptAppL: 'Patient questionnaires' }
+  };
+  Object.keys(S4).forEach(function (lg) { Object.keys(S4[lg]).forEach(function (k) { S[lg][k] = S4[lg][k]; }); });
+  function fmtT(k) { var a = arguments; return t(k).replace(/\{(\d)\}/g, function (m, i) { return a[+i + 1]; }); }
+  // Friendly plain-language titles shown to patients (the instrument acronyms stay on the doctor side).
+  var PT_TITLE = {
+    OKS: L2('Ερωτηματολόγιο για το γόνατο', 'Knee questionnaire'), OHS: L2('Ερωτηματολόγιο για το ισχίο', 'Hip questionnaire'), OSS: L2('Ερωτηματολόγιο για τον ώμο', 'Shoulder questionnaire'), OES: L2('Ερωτηματολόγιο για τον αγκώνα', 'Elbow questionnaire'),
+    KOOS: L2('Αναλυτικό ερωτηματολόγιο για το γόνατο', 'Detailed knee questionnaire'), HOOS: L2('Αναλυτικό ερωτηματολόγιο για το ισχίο', 'Detailed hip questionnaire'),
+    KOOSJR: L2('Σύντομο ερωτηματολόγιο για το γόνατο', 'Short knee questionnaire'), HOOSJR: L2('Σύντομο ερωτηματολόγιο για το ισχίο', 'Short hip questionnaire'),
+    WOMAC: L2('Πόνος, δυσκαμψία και καθημερινές κινήσεις', 'Pain, stiffness and daily movements'), KSS2011: L2('Το γόνατό σας και οι δραστηριότητές σας', 'Your knee and your activities'),
+    EQ5D5L: L2('Η υγεία σας σήμερα', 'Your health today'), IKDC: L2('Ερωτηματολόγιο για το γόνατο', 'Knee questionnaire'), FJS12: L2('Η άρθρωσή σας στην καθημερινή ζωή', 'Your joint in everyday life'),
+    TEGNER: L2('Πόσο δραστήριος/α είστε', 'How active you are'), LYSHOLM: L2('Συμπτώματα του γονάτου', 'Knee symptoms'), HHS: L2('Το ισχίο σας: πόνος και κίνηση', 'Your hip: pain and movement'),
+    CONSTANT: L2('Ο ώμος σας: πόνος και καθημερινές δραστηριότητες', 'Your shoulder: pain and daily activities'), ACLRSI: L2('Επιστροφή στον αθλητισμό', 'Returning to sport'),
+    IHOT12: L2('Το ισχίο σας στην καθημερινή ζωή και στον αθλητισμό', 'Your hip in daily life and sport'), VAS: L2('Ο πόνος σας', 'Your pain'),
+    DASH: L2('Χέρι, βραχίονας και ώμος στην καθημερινότητα', 'Hand, arm and shoulder in daily life'), QDASH: L2('Σύντομο ερωτηματολόγιο για χέρι, βραχίονα και ώμο', 'Short hand, arm and shoulder questionnaire'),
+    ISAR: L2('Πόνος και ικανοποίηση', 'Pain and satisfaction'), PASS: L2('Πώς νιώθετε για το γόνατό σας', 'How you feel about your knee'), MARX: L2('Οι αθλητικές σας κινήσεις', 'Your sports movements'),
+    ANCHOR: L2('Πώς είστε μετά την επέμβαση', 'How you are since the operation') };
+  // Patient-facing instruction text where the stored instruction speaks to clinicians (registries); all item wording is unchanged.
+  var PT_INSTR = { ISAR: L2('Δύο σύντομες ερωτήσεις: για τον πόνο σας και για το πόσο ικανοποιημένος/η είστε. Η ερώτηση για την ικανοποίηση γίνεται μόνο μετά την επέμβαση.', 'Two short questions: about your pain and about how satisfied you are. The satisfaction question is asked only after the operation.') };
+  var PT_NOSEC = { 'EQ5D5L.VAS': 1 }; // the heading only repeats the scale's technical name; the question itself says "YOUR HEALTH TODAY"
+  function ptTitle(id) { return jt(tx(PT_TITLE[id] || L2('Ερωτηματολόγιο', 'Questionnaire'))); }
+  var PSKEY = 'orthothessaly.demo.patient.v1', DKEY = 'orthothessaly.demo.drafts.v1';
+  var pst = load(PSKEY) || {}, drafts = load(DKEY) || {}, prun = null;
+  if (pst.pid && patientById(pst.pid)) { ctx.pid = pst.pid; ctx.tp = pst.tp || ''; }
+  function savePst() { pst.pid = ctx.pid; pst.tp = ctx.tp; save(PSKEY, pst); }
+  function dkey(id) { return ctx.pid + '|' + ctx.tp + '|' + id; }
+  function saveDraft() { if (!prun) return; drafts[dkey(prun.inst)] = { ans: prun.ans, idx: prun.idx, at: new Date().toISOString() }; save(DKEY, drafts); }
+  function ptItems(id, ans) { return P.visibleItems(id, ans || {}, { tp: ctx.tp }); } // clinician fields are never shown to the patient
+  function ptAnswered(it, ans) { return isAnsweredIn(ans, it) && !(it.activities && ans[it.id + 'a'] == null); }
+  function ptMinutes(id) { var s = ptItems(id, {}).reduce(function (a, it) { return a + (it.type === 'choice' ? 10 : 18); }, 0); return Math.max(1, Math.round(s / 60)); }
+  function ptMeta(id) { var n = ptItems(id, (drafts[dkey(id)] || {}).ans).length, m = ptMinutes(id); return n + ' ' + (n === 1 ? t('ptQ1') : t('ptQn')) + ' · ' + t('ptAbout') + ' ' + m + ' ' + (m === 1 ? t('ptMin1') : t('ptMinN')); }
+  function ptTop(home) {
+    return '<div class="pttop">' + (home ? '<button class="ptlink" id="ptHomeBtn">' + esc(t('ptHome')) + '</button>' : '<span></span>') +
+      '<button class="ptsize" id="ptSize" aria-pressed="' + (pst.large ? 'true' : 'false') + '" aria-label="' + esc(t('ptSizeL') + ': ' + (pst.large ? t('ptNormal') : t('ptBigger'))) + '"><span class="aa" aria-hidden="true">Α<span>Α</span></span> ' + esc(pst.large ? t('ptNormal') : t('ptBigger')) + '</button></div>';
+  }
+  function ptFocus(el) { var f = el.querySelector('[data-focus]'); if (f) { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } } var hd = document.querySelector('header'), off = (hd ? hd.getBoundingClientRect().height : 56) + 8, r = el.getBoundingClientRect(); window.scrollTo(0, Math.max(0, window.scrollY + r.top - off)); }
+  function renderProms() {
+    var el = $('ptApp'); if (!el) return;
+    JP = ctx.pid; el.classList.toggle('large', !!pst.large); document.documentElement.classList.toggle('pt-large', !!pst.large);
+    var pt = patientById(ctx.pid);
+    if (!pt) { prun = null; ptLogin(el); }
+    else if (!prun) ptHome(el, pt);
+    else if (prun.screen === 'intro') ptIntro(el);
+    else if (prun.screen === 'q') ptQuestion(el);
+    else if (prun.screen === 'review') ptReview(el, pt);
+    else ptThanks(el, pt);
+    var sz = $('ptSize'); if (sz) sz.onclick = function () { pst.large = !pst.large; save(PSKEY, pst); renderProms(); var b = $('ptSize'); if (b) b.focus(); };
+    var hb = $('ptHomeBtn'); if (hb) hb.onclick = function () { if (prun && prun.screen !== 'thanks') saveDraft(); prun = null; renderProms(); ptFocus(el); };
+  }
+  function ptLogin(el) {
+    var h = ptTop(false) + '<h1 class="pth1" data-focus tabindex="-1">👋 ' + esc(t('ptWelcome')) + '</h1><p class="ptlead">' + esc(t('ptLoginLead')) + '</p>' +
+      '<label class="ptfld" for="pPid">' + esc(t('ptCode')) + '</label><input id="pPid" class="ptinput" list="pPidList" autocomplete="off" autocapitalize="characters" value="' + esc(ctx.pid) + '"><datalist id="pPidList">' + store.patients.map(function (p) { return '<option value="' + esc(p.id) + '"></option>'; }).join('') + '</datalist>' +
+      '<div id="ptNew" class="ptnew hidden"><div class="ptnewt">' + esc(t('ptNewT')) + '</div><label class="ptfld" for="pProc">' + esc(t('ptProc')) + '</label><select id="pProc" class="ptinput">' + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), ctx.procedure === k); }).join('') + '</select>' +
+      '<label class="ptfld" for="pSurg">' + esc(t('ptSurg')) + '</label><input type="date" id="pSurg" class="ptinput" value="' + esc(ctx.surgery) + '"></div>' +
+      '<p class="ptmsg" id="pMsg" role="alert"></p><button class="ptbig" id="pStart">' + esc(t('ptCont')) + ' →</button>';
+    el.innerHTML = h;
+    var upd = function () { var v = $('pPid').value.trim(); $('ptNew').classList.toggle('hidden', !v || !!patientById(v)); };
+    $('pPid').oninput = upd; upd();
+    $('pPid').onkeydown = function (e) { if (e.key === 'Enter') $('pStart').click(); };
+    $('pStart').onclick = function () {
+      var id = $('pPid').value.trim(); if (!id) { $('pMsg').textContent = t('ptNeedCode'); $('pPid').focus(); return; }
+      if (!patientById(id)) { var cu = currentUser(); store.patients.push({ id: id, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); save(KEY, store); }
+      var pt = patientById(id); ctx.pid = id; ctx.procedure = pt.procedure; ctx.tp = currentTp(pt) || ''; prun = null; savePst(); syncPatientMeasure(pt); renderProms(); ptFocus(el);
+    };
+  }
+  function ptHome(el, pt) {
+    var list = assignedNow(pt, ctx.tp), nDone = list.filter(function (id) { return doneAt(pt.id, id, ctx.tp); }).length, firstTodo = true, hr = new Date().getHours();
+    var h = ptTop(false) + '<h1 class="pth1" id="ptHello" data-focus tabindex="-1">' + esc(hr < 12 ? t('ptMorning') : t('ptEvening')) + '! ' + esc(t('ptWelcome')) + '</h1><p class="ptlead">' + esc(t('ptWhy')) + '</p>';
+    if (list.length) {
+      var pc = Math.round(nDone / list.length * 100);
+      h += '<div class="ptoverall"><div class="ptprogtxt" id="ptProgress">' + esc(fmtT('ptProgress', nDone, list.length)) + '</div><div class="ptbar" role="progressbar" aria-label="' + esc(fmtT('ptProgress', nDone, list.length)) + '" aria-valuemin="0" aria-valuemax="' + list.length + '" aria-valuenow="' + nDone + '"><i style="width:' + pc + '%"></i></div></div>';
+      if (nDone === list.length) h += '<p class="ptdonemsg" id="ptAllDone">🎉 ' + esc(t('ptAllHome')) + '</p>';
+      h += '<div class="ptcards" id="ptCards">' + list.map(function (id, k) {
+        var d = doneAt(pt.id, id, ctx.tp), dr = !d && drafts[dkey(id)], st = d ? 'done' : dr ? 'prog' : 'todo', primary = !d && firstTodo; if (primary) firstTodo = false;
+        var nAns = dr ? ptItems(id, dr.ans).filter(function (it) { return ptAnswered(it, dr.ans); }).length : 0, nAll = dr ? ptItems(id, dr.ans).length : 0;
+        return '<article class="ptcard st-' + st + (primary ? ' next' : '') + '" data-inst="' + id + '" aria-labelledby="ptc-' + id + '"><div class="ptcnum" aria-hidden="true">' + (d ? '✓' : k + 1) + '</div><div class="ptcbody">' +
+          '<h2 class="ptctitle" id="ptc-' + id + '">' + esc(ptTitle(id)) + '</h2><div class="ptcmeta">' + esc(ptMeta(id)) + '</div>' +
+          '<div class="ptcstatus ' + st + '" id="pts-' + id + '">' + esc(d ? t('ptDone') : dr ? t('ptInProg') + ' · ' + fmtT('ptAnswered', nAns, nAll) : t('ptTodo')) + '</div></div>' +
+          (d ? '' : '<button class="ptbig' + (primary ? '' : ' alt') + '" data-start="' + id + '" aria-describedby="ptc-' + id + ' pts-' + id + '">' + esc(dr ? t('ptCont') : t('ptStart')) + ' →</button>') + '</article>';
+      }).join('') + '</div>';
+      if (nDone < list.length) h += '<p class="pthow">ℹ️ ' + esc(t('ptHow')) + '</p>';
+    } else h += '<p class="ptdonemsg" id="ptNone">' + esc(t('ptNone')) + '</p>';
+    if (camAllowed(pt)) h += '<article class="ptcard meas"><div class="ptcnum" aria-hidden="true">📷</div><div class="ptcbody"><h2 class="ptctitle">' + esc(t('ptMeasT')) + '</h2><div class="ptcmeta">' + esc(t('ptMeasLead')) + '</div></div><button class="ptbig alt" id="pMeasure">' + esc(t('ptMeasBtn')) + ' →</button></article>';
+    h += '<div class="ptfoot"><button class="ptlink" id="ptSwitch">' + esc(t('ptNotYou')) + '</button>' +
+      '<details class="ptdemo"><summary>' + esc(t('ptDemoT')) + '</summary><label class="ptfld" for="pTp">' + esc(t('ptDemoTp')) + '</label><select id="pTp" class="ptinput">' + opt('', '—', !ctx.tp) + TPS.map(function (x) { return opt(x.id, tpName(x.id), ctx.tp === x.id); }).join('') + '</select></details></div>';
+    el.innerHTML = h;
+    el.querySelectorAll('[data-start]').forEach(function (b) { b.onclick = function () { ptOpen(b.dataset.start); }; });
+    $('ptSwitch').onclick = function () { ctx.pid = ''; ctx.tp = ''; prun = null; savePst(); renderProms(); ptFocus(el); };
+    $('pTp').onchange = function () { ctx.tp = this.value; prun = null; savePst(); renderProms(); };
+    if ($('pMeasure')) $('pMeasure').onclick = function () { syncPatientMeasure(pt); openMeasure(measCtx); };
+  }
+  function ptOpen(id) {
+    var dr = drafts[dkey(id)];
+    prun = dr ? { inst: id, screen: 'q', idx: dr.idx || 0, ans: JSON.parse(JSON.stringify(dr.ans || {})) } : { inst: id, screen: 'intro', idx: 0, ans: {} };
+    renderProms(); ptFocus($('ptApp'));
+  }
+  function ptIntro(el) {
+    var id = prun.inst, ins = PT_INSTR[id] || I[id].instructions;
+    el.innerHTML = ptTop(true) + '<h1 class="pth1" data-focus tabindex="-1" id="ptInstTitle">' + esc(ptTitle(id)) + '</h1><div class="ptcmeta">' + esc(ptMeta(id)) + '</div>' +
+      (ins ? '<div class="ptinstr" id="ptInstr">' + esc(jt(tx(ins))) + '</div>' : '') + '<div class="ptnav"><button class="ptbig" id="ptGo">' + esc(t('ptGo')) + '</button></div>';
+    $('ptGo').onclick = function () { prun.screen = 'q'; prun.idx = 0; saveDraft(); renderProms(); ptFocus(el); };
+  }
+  function ptSlider(it, v, label) {
+    var has = typeof v === 'number', big = it.max - it.min > 20, val = has ? v : Math.round((it.min + it.max) / 2);
+    var lo = it.anchors ? jt(tx(it.anchors[0])) : '', hi = it.anchors ? jt(tx(it.anchors[1])) : '';
+    var rng = '<input type="range" id="ptRange" min="' + it.min + '" max="' + it.max + '" step="1" value="' + val + '"' + (has ? '' : ' class="untouched"') + ' aria-label="' + esc(label) + '" aria-valuetext="' + esc(has ? String(v) : t('ptNotYet')) + '">';
+    var pm = function (d) { return '<button class="ptpmb" data-d="' + d + '" aria-label="' + esc((d < 0 ? t('ptMinus') : t('ptPlus')) + ' ' + Math.abs(d)) + '">' + (d < 0 ? '−' : '+') + (Math.abs(d) > 1 ? Math.abs(d) : '') + '</button>'; };
+    var h = '<div class="ptslider' + (it.vertical ? ' vertical' : '') + '"><div class="ptval"><span class="ptvallab">' + esc(t('ptValue')) + '</span><b id="ptVal" aria-live="polite">' + (has ? v : '–') + '</b>' + (has ? '' : '<span class="ptvalnone" id="ptValNone">' + esc(t('ptNotYet')) + '</span>') + '</div>';
+    if (it.vertical) h += '<div class="ptvcol"><span class="ptanc top">' + esc(hi) + ' (' + it.max + ')</span>' + rng + '<span class="ptanc bot">' + esc(lo) + ' (' + it.min + ')</span></div>';
+    else h += rng + (it.anchors ? '<div class="ptancs"><span>' + it.min + ' – ' + esc(lo) + '</span><span>' + it.max + ' – ' + esc(hi) + '</span></div>' : '');
+    return h + '<div class="ptpm">' + (big ? pm(-10) : '') + pm(-1) + pm(1) + (big ? pm(10) : '') + '</div><p class="pthint">' + esc(t('ptSlideHint')) + '</p></div>';
+  }
+  function ptQuestion(el) {
+    var id = prun.inst, items = ptItems(id, prun.ans), n = items.length; if (prun.idx >= n) prun.idx = n - 1; if (prun.idx < 0) prun.idx = 0;
+    var it = items[prun.idx], vr = variant(it, ctx.tp), v = prun.ans[it.id], qtext = jt(tx(vr.text)), pc = Math.round((prun.idx + 1) / n * 100);
+    var h = ptTop(true) + '<div class="ptqhead"><div class="ptqinst">' + esc(ptTitle(id)) + '</div><div class="ptqof" id="ptOf">' + esc(fmtT('ptQof', prun.idx + 1, n)) + '</div>' +
+      '<div class="ptbar" role="progressbar" aria-label="' + esc(fmtT('ptQof', prun.idx + 1, n)) + '" aria-valuemin="1" aria-valuemax="' + n + '" aria-valuenow="' + (prun.idx + 1) + '"><i style="width:' + pc + '%"></i></div></div>';
+    if (it.sec && tx(it.sec) !== tx(vr.text) && !PT_NOSEC[id + '.' + it.id]) h += '<div class="ptsec" id="ptSec">' + esc(jt(tx(it.sec))) + '</div>';
+    if (vr.intro) h += '<div class="ptintro" id="ptIntro">' + esc(jt(tx(vr.intro))) + '</div>';
+    if (it.pre) h += '<div class="ptpre" id="ptPre">' + esc(jt(tx(it.pre))) + '</div>';
+    h += '<h2 class="ptqtext" data-focus tabindex="-1"><span id="ptText">' + esc(qtext) + '</span>' + (it.optional ? ' <span class="ptopt">(' + esc(t('ptOptional')) + ')</span>' : '') + '</h2>';
+    if (it.activities) { var act = prun.ans[it.id + 'a']; h += '<label class="ptfld" for="ptAct">' + esc(t('ptAct')) + '</label><select id="ptAct" class="ptinput">' + opt('', '—', act == null) + it.activities.map(function (a, k) { return opt(k, actLabel(a), act === k); }).join('') + '</select>'; }
+    if (it.type === 'choice') {
+      h += '<p class="pthint">' + esc(t('ptTapHint')) + '</p>' + (it.compact && it.anchors ? '<div class="ptancs"><span>' + esc(jt(tx(it.anchors[0]))) + '</span><span>' + esc(jt(tx(it.anchors[1]))) + '</span></div>' : '') +
+        '<div class="ptans' + (it.compact ? ' compact' : '') + '" role="radiogroup" aria-labelledby="ptText">' + vr.options.map(function (o, k) { var s = v === o.v; return '<button role="radio" aria-checked="' + s + '" data-k="' + k + '"' + (s ? ' class="sel"' : '') + '><span class="ptchk" aria-hidden="true">' + (s ? '✓' : '') + '</span><span class="ptlab">' + esc(jt(tx(o.label))) + '</span></button>'; }).join('') + '</div>';
+      if (!it.compact && it.anchors) h += '<div class="ptancs"><span>' + esc(jt(tx(it.anchors[0]))) + '</span><span>' + esc(jt(tx(it.anchors[1]))) + '</span></div>';
+    } else if (it.type === 'nrs' || it.type === 'vas') h += ptSlider(it, v, qtext);
+    else if (it.type === 'multi') h += '<p class="pthint">' + esc(t('ptMultiHint')) + '</p><div class="ptans" role="group" aria-labelledby="ptText">' + vr.options.map(function (o) { var s = Array.isArray(v) && v.indexOf(o.v) >= 0; return '<button role="checkbox" aria-checked="' + s + '" data-m="' + o.v + '"' + (s ? ' class="sel"' : '') + '><span class="ptchk box" aria-hidden="true">' + (s ? '✓' : '') + '</span><span class="ptlab">' + esc(jt(tx(o.label))) + '</span></button>'; }).join('') + '</div>';
+    else if (it.type === 'number') h += '<label class="ptfld" for="ptNum">' + esc(t('ptNumHint')) + '</label><div class="ptnumrow"><input type="number" class="ptinput ptnum" id="ptNum" inputmode="decimal" min="' + it.min + '" max="' + it.max + '" step="' + (it.step || 1) + '" value="' + (v != null ? v : '') + '"> <span>' + esc(it.unit || '') + '</span></div>';
+    h += '<p class="ptmsg" id="ptMsg" role="status"></p><div class="ptnav"><button class="ptsecbtn" id="ptBack">' + esc(t('ptBack')) + '</button>' + (it.optional && !ptAnswered(it, prun.ans) ? '<button class="ptsecbtn" id="ptSkip">' + esc(t('ptSkip')) + '</button>' : '') + '<button class="ptbig" id="ptNext">' + esc(t('ptNext')) + '</button></div>';
+    el.innerHTML = h;
+    var token = {}; prun.token = token;
+    function readInputs() {
+      var ni = $('ptNum'); if (ni) { var x = parseFloat(ni.value); if (isFinite(x)) prun.ans[it.id] = Math.max(it.min, Math.min(it.max, x)); else delete prun.ans[it.id]; }
+      var ap = $('ptAct'); if (ap) { if (ap.value === '') delete prun.ans[it.id + 'a']; else prun.ans[it.id + 'a'] = +ap.value; }
+    }
+    function go(d) { readInputs(); var its = ptItems(id, prun.ans); if (d < 0) { if (prun.idx === 0) prun.screen = 'intro'; else prun.idx--; } else if (prun.idx >= its.length - 1) prun.screen = 'review'; else prun.idx++; saveDraft(); renderProms(); ptFocus(el); }
+    el.querySelectorAll('[data-k]').forEach(function (b) { b.onclick = function () {
+      readInputs(); prun.ans[it.id] = vr.options[+b.dataset.k].v; saveDraft();
+      el.querySelectorAll('[data-k]').forEach(function (o) { var s = o === b; o.classList.toggle('sel', s); o.setAttribute('aria-checked', s); o.querySelector('.ptchk').textContent = s ? '✓' : ''; });
+      if (it.activities && prun.ans[it.id + 'a'] == null) { $('ptMsg').textContent = t('ptNeedAct'); return; }
+      setTimeout(function () { if (prun && prun.token === token) go(1); }, 450);
+    }; });
+    el.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { var a = Array.isArray(prun.ans[it.id]) ? prun.ans[it.id] : []; var mv = +b.dataset.m, p = a.indexOf(mv); if (p >= 0) a.splice(p, 1); else a.push(mv); prun.ans[it.id] = a; saveDraft(); var s = a.indexOf(mv) >= 0; b.classList.toggle('sel', s); b.setAttribute('aria-checked', s); b.querySelector('.ptchk').textContent = s ? '✓' : ''; }; });
+    var rg = $('ptRange');
+    if (rg) {
+      var setV = function (x) { x = Math.max(it.min, Math.min(it.max, Math.round(x))); prun.ans[it.id] = x; rg.value = x; rg.classList.remove('untouched'); rg.setAttribute('aria-valuetext', String(x)); $('ptVal').textContent = x; var nn = $('ptValNone'); if (nn) nn.remove(); saveDraft(); };
+      rg.oninput = function () { setV(+rg.value); }; rg.onchange = rg.oninput;
+      el.querySelectorAll('[data-d]').forEach(function (b) { b.onclick = function () { setV((typeof prun.ans[it.id] === 'number' ? prun.ans[it.id] : +rg.value) + (+b.dataset.d)); }; });
+    }
+    var ap = $('ptAct'); if (ap) ap.onchange = function () { readInputs(); saveDraft(); $('ptMsg').textContent = ''; };
+    var ni = $('ptNum'); if (ni) { ni.oninput = function () { readInputs(); saveDraft(); }; ni.onkeydown = function (e) { if (e.key === 'Enter') go(1); }; }
+    $('ptBack').onclick = function () { go(-1); };
+    $('ptNext').onclick = function () { if (it.activities && isAnsweredIn(prun.ans, it) && $('ptAct') && $('ptAct').value === '') { $('ptMsg').textContent = t('ptNeedAct'); return; } go(1); };
+    if ($('ptSkip')) $('ptSkip').onclick = function () { delete prun.ans[it.id]; delete prun.ans[it.id + 'a']; go(1); };
+  }
+  function ptReview(el, pt) {
+    var id = prun.inst, items = ptItems(id, prun.ans), miss = [], optMiss = [];
+    items.forEach(function (it, i) { if (!ptAnswered(it, prun.ans)) (it.optional ? optMiss : miss).push(i); });
+    var nAns = items.length - miss.length - optMiss.length;
+    var li = function (i) { var it = items[i]; return '<button class="ptjump" data-jump="' + i + '"><b>' + esc(fmtT('ptQn1', i + 1)) + '</b><span>' + esc(jt(tx(variant(it, ctx.tp).text))) + '</span></button>'; };
+    var h = ptTop(true) + '<h1 class="pth1" data-focus tabindex="-1" id="ptRevT">' + esc(t('ptReviewT')) + '</h1><div class="ptqinst">' + esc(ptTitle(id)) + '</div><p class="ptlead" id="ptRevCount">' + esc(items.length === 1 ? t(nAns ? 'ptRevCount1d' : 'ptRevCount1') : fmtT('ptRevCount', nAns, items.length)) + '</p>';
+    if (miss.length) h += '<p class="ptwarn">' + esc(t('ptRevMissing')) + '</p><div class="ptjumps" id="ptMissing">' + miss.map(li).join('') + '</div>';
+    else h += '<p class="ptdonemsg" id="ptRevAll">' + esc(t('ptRevAll')) + '</p>';
+    if (optMiss.length) h += '<p class="pthint">' + esc(t('ptRevOpt')) + '</p><div class="ptjumps opt" id="ptOptMissing">' + optMiss.map(li).join('') + '</div>';
+    h += '<p class="ptmsg" id="ptMsg" role="alert"></p><div class="ptnav"><button class="ptsecbtn" id="ptToQs">' + esc(t('ptToQs')) + '</button><button class="ptbig go" id="ptSubmit"' + (miss.length ? ' aria-disabled="true"' : '') + '>' + esc(t('ptSubmit')) + '</button></div>';
+    el.innerHTML = h;
+    el.querySelectorAll('[data-jump]').forEach(function (b) { b.onclick = function () { prun.screen = 'q'; prun.idx = +b.dataset.jump; saveDraft(); renderProms(); ptFocus(el); }; });
+    $('ptToQs').onclick = function () { prun.screen = 'q'; prun.idx = items.length - 1; saveDraft(); renderProms(); ptFocus(el); };
+    $('ptSubmit').onclick = function () {
+      if (miss.length) { $('ptMsg').textContent = t('ptBlocked'); var f = el.querySelector('#ptMissing [data-jump]'); if (f) f.focus(); return; }
+      var ans = JSON.parse(JSON.stringify(prun.ans)); pruneHidden(ans, items);
+      var s = makeSub(pt, id, ctx.tp, ans, today(), 'patient'); s.demo = true; store.submissions.push(s); save(KEY, store);
+      delete drafts[dkey(id)]; save(DKEY, drafts); prun = { inst: id, screen: 'thanks' }; renderProms(); ptFocus(el);
+    };
+  }
+  function ptThanks(el, pt) {
+    var list = assignedNow(pt, ctx.tp), nDone = list.filter(function (x) { return doneAt(pt.id, x, ctx.tp); }).length, k = list.indexOf(prun.inst);
+    var rest = list.slice(k + 1).concat(list.slice(0, Math.max(0, k))).filter(function (x) { return !doneAt(pt.id, x, ctx.tp); }), nx = rest[0];
+    var h = ptTop(true) + '<div class="ptthanks"><div class="ptok" aria-hidden="true">✓</div><h1 class="pth1" data-focus tabindex="-1" id="ptThanksT">' + esc(t('ptThanksT')) + '</h1><p class="ptlead" id="ptThanks">' + esc(t('ptThanks')) + '</p>' +
+      '<div class="ptoverall"><div class="ptprogtxt" id="ptProgress">' + esc(fmtT('ptProgress', nDone, list.length)) + '</div><div class="ptbar" role="progressbar" aria-label="' + esc(fmtT('ptProgress', nDone, list.length)) + '" aria-valuemin="0" aria-valuemax="' + list.length + '" aria-valuenow="' + nDone + '"><i style="width:' + Math.round(nDone / Math.max(1, list.length) * 100) + '%"></i></div></div></div>';
+    h += nx ? '<button class="ptbig" id="ptNextInst" data-start="' + nx + '"><span class="ptsmall">' + esc(t('ptNextInst')) + '</span> ' + esc(ptTitle(nx)) + ' →</button>' : '<p class="ptdonemsg" id="ptAllDone">🎉 ' + esc(t('ptAllDone')) + '</p>';
+    h += '<button class="ptsecbtn wide" id="ptToHome">' + esc(t('ptToHome')) + '</button>';
+    el.innerHTML = h;
+    if ($('ptNextInst')) $('ptNextInst').onclick = function () { ptOpen(nx); };
+    $('ptToHome').onclick = function () { prun = null; renderProms(); ptFocus(el); };
   }
   function fmtNum(x) { return x == null ? '–' : (Math.round(x * 10) / 10).toString(); }
   function fmtScore(id, r) {
@@ -3858,11 +4141,11 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
 
   // ---------- Dashboard ----------
-  var dsel = { proc: '', inst: '', pid: '' }, dashProtoOpen = false;
+  var dsel = { proc: '', inst: '', pid: '', tp: '' }, dashProtoOpen = false;
   function renderDash() {
     var u = currentUser();
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
-    if (!u) { $('dashBody').innerHTML = ''; renderGate(); return; }
+    if (!u) { $('dashBody').innerHTML = ''; closeRun(); renderGate(); return; }
     $('dashGate').innerHTML = '';
     var td = today(), subs = store.submissions;
     var pts = store.patients.filter(function (p) { return !dsel.proc || p.procedure === dsel.proc; });
@@ -3886,19 +4169,20 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     h += '<details class="card" id="dashProto"' + (dashProtoOpen ? ' open' : '') + '><summary><b>📋 ' + esc(t('protoOpen')) + '</b></summary><p class="muted">' + esc(t('protoWhy')) + '</p>' + protocolHtml(protoSel || dsel.proc || (sp ? sp.procedure : 'TKA'), 'dproto') + '</details>';
     var fs = subs.filter(function (s) { return (!dsel.proc || s.procedure === dsel.proc) && (!dsel.inst || s.instrument === dsel.inst) && (!dsel.pid || s.patientId === dsel.pid); }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
     h += '<div class="card"><h3>' + esc(t('allSubs')) + ' (' + fs.length + ')</h3><div class="tblwrap"><table class="tbl" id="subTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('patient')) + '</th><th>' + esc(t('tp')) + '</th><th>' + esc(t('filterInst')) + '</th><th>' + esc(t('score')) + '</th><th>' + esc(t('subs')) + '</th><th>' + esc(t('source')) + '</th></tr>' +
-      (fs.length ? fs.map(function (s) { return '<tr data-sub="' + esc(s.id) + '"><td>' + esc(s.date) + '</td><td>' + esc(s.patientId) + '</td><td>' + esc(tpName(s.timepoint)) + '</td><td>' + esc(I[s.instrument].short) + '</td><td><b>' + esc(fmtScore(s.instrument, s)) + '</b></td><td>' + subsInline(s) + '</td><td>' + esc(s.source === 'patient' ? t('patientSrc') : t('seedSrc')) + '</td></tr>'; }).join('') : '<tr><td colspan="7">' + esc(t('noData')) + '</td></tr>') + '</table></div></div>';
+      (fs.length ? fs.map(function (s) { return '<tr data-sub="' + esc(s.id) + '"><td>' + esc(s.date) + '</td><td>' + esc(s.patientId) + '</td><td>' + esc(tpName(s.timepoint)) + '</td><td>' + esc(I[s.instrument].short) + '</td><td><b>' + esc(fmtScore(s.instrument, s)) + '</b></td><td>' + subsInline(s) + '</td><td>' + esc(srcLab(s.source)) + '</td></tr>'; }).join('') : '<tr><td colspan="7">' + esc(t('noData')) + '</td></tr>') + '</table></div></div>';
     $('dashBody').innerHTML = h;
     $('dDemoMeas').onclick = function () { audit('demo-measurement'); openMeasure({ pid: null, procedure: null, mode: 'knee', demo: true }); };
     $('dOut').onclick = function () { audit('sign-out'); auth.session = null; saveAuth(); renderDash(); };
     $('fProc').onchange = function () { dsel.proc = this.value; dsel.pid = ''; renderDash(); };
     $('fInst').onchange = function () { dsel.inst = this.value; renderDash(); };
     $('dCsv').onclick = exportCsv;
-    document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
-    if (sp && pts.indexOf(sp) >= 0) bindCamera(sp);
+    document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; dsel.tp = ''; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
+    if (sp && pts.indexOf(sp) >= 0) { bindCamera(sp); bindAssign(sp); }
     if (sp && pts.indexOf(sp) >= 0 && window.__xcmp) window.__xcmp.bind(sp);
     var dp = $('dashProto'); dp.ontoggle = function () { dashProtoOpen = dp.open; }; bindProtocol(dp, renderDash);
     bindOwner();
   }
+  function srcLab(x) { return x === 'patient' ? t('patientSrc') : x === 'clinic' ? t('clinicSrc') : t('seedSrc'); }
   function tpName(id) { var x = TPS.filter(function (q) { return q.id === id; })[0]; return x ? tx(x.name) : id; }
   function subsInline(s) { return subKeys(s.instrument, s.subscales).map(function (k) { return esc(subName(s.instrument, k)) + ': ' + esc(subVal(k, s.subscales[k])); }).join('<br>'); }
   function patientView(p, td) {
@@ -3907,6 +4191,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(p.id) + ' <span class="pill demo">DEMO</span></h2><div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate) + '</div>';
     h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to)) : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
       rec.map(function (i) { var opt = prot.optional.indexOf(i) >= 0; return '<tr><td><b>' + esc(I[i].short) + '</b>' + (opt ? ' <span class="muted">(' + esc(t('optional')) + ')</span>' : '') + '</td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + esc(stName(st)) + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend2')) + '</div>';
+    h += assignHtml(p);
     h += cameraHtml(p);
     if (window.__xray) h += window.__xray.dashHtml(p);
     h += mcidHtml(p);
@@ -3914,6 +4199,28 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var list = rec.concat(PROC[p.procedure].other).filter(function (i, k, a) { return a.indexOf(i) === k && used[i] && (!dsel.inst || dsel.inst === i); });
     h += '<h3 style="margin-top:12px">' + esc(t('charts')) + '</h3><div class="charts">' + list.map(function (i) { return chartSvg(p, i); }).join('') + '</div></div>';
     return h;
+  }
+  function assignHtml(p) {
+    var prot = PR[p.procedure], now = currentTp(p), tp = dsel.tp || now || 'pre', inProt = prot.tps.some(function (x) { return x.id === tp; });
+    var h = '<h3 style="margin-top:12px" id="assignH">📝 ' + esc(t('assignT')) + '</h3><p class="muted">' + esc(t('assignLead')) + '</p>';
+    h += '<div class="row"><label class="fld">' + esc(t('assignTp')) + '<select id="dTp">' + TPS.map(function (x) { return opt(x.id, tpName(x.id) + (x.id === now ? ' (' + t('ptNowTp') + ')' : ''), tp === x.id); }).join('') + '</select></label></div>';
+    if (!inProt) h += '<p class="qmsg offtp" id="offTp">' + esc(t('offTp')) + '</p>';
+    var row = function (id, core) {
+      var on = core || (p.optional || []).indexOf(id) >= 0, ap = P.appliesAt(id, tp, p.procedure), d = doneAt(p.id, id, tp), dr = drafts[p.id + '|' + tp + '|' + id];
+      return '<tr data-assign="' + id + '"><td><b>' + esc(I[id].short) + '</b><br><span class="muted">' + esc(tx(I[id].name)) + '</span></td><td>' + esc(tx(PT_TITLE[id] || '')) + '</td><td>' +
+        (core ? '✓ <span class="muted">' + esc(t('coreAuto')) + '</span>' : '<label class="optsel"><input type="checkbox" data-optsel="' + id + '"' + (on ? ' checked' : '') + '> ' + esc(t('track')) + '</label>') + '</td><td>' +
+        (!ap ? '– <span class="muted">' + esc(t('naTp')) + '</span>' : d ? '<span class="ok">✓</span> ' + esc(d.date) + ' · ' + esc(fmtScore(id, d)) : dr ? '<span class="warn">' + esc(t('draftPt')) + '</span>' : '') + '</td><td>' +
+        (ap ? '<button class="small" data-dfill="' + id + '">🩺 ' + esc(t('clinFill')) + '</button>' : '') + '</td></tr>';
+    };
+    h += '<div class="tblwrap"><table class="tbl" id="assignTable"><tr><th>' + esc(t('inst')) + '</th><th>' + esc(t('ptTitleCol')) + '</th><th>' + esc(t('assignCol')) + '</th><th>' + esc(t('atTp')) + ' (' + esc(tpName(tp)) + ')</th><th></th></tr>' +
+      prot.core.map(function (id) { return row(id, true); }).join('') + prot.optional.map(function (id) { return row(id, false); }).join('') + '</table></div>';
+    return h;
+  }
+  function bindAssign(p) {
+    var now = currentTp(p), tp = dsel.tp || now || 'pre';
+    if ($('dTp')) $('dTp').onchange = function () { dsel.tp = this.value; renderDash(); };
+    document.querySelectorAll('#assignTable [data-optsel]').forEach(function (b) { b.onchange = function () { var o = (p.optional || []).filter(function (x) { return x !== b.dataset.optsel; }); if (b.checked) o.push(b.dataset.optsel); p.optional = o; save(KEY, store); audit(b.checked ? 'assign' : 'unassign', p.id + ' ' + b.dataset.optsel); renderDash(); }; });
+    document.querySelectorAll('#assignTable [data-dfill]').forEach(function (b) { b.onclick = function () { startRun(p.id, tp, [b.dataset.dfill]); }; });
   }
   var COLORS = ['#0b5f73', '#e8a317', '#d63031', '#1f9d55', '#9b59b6', '#3b82f6'];
   function chartSvg(p, id) {
@@ -3950,15 +4257,17 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   // ---------- global ----------
   $('resetDemo').onclick = function () {
     if (!window.confirm(t('resetQ'))) return;
-    setMeasCtx(null); if (window.__xray && window.__xray.clearFilms) window.__xray.clearFilms(); localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); run = null; dsel = { proc: '', inst: '', pid: '' }; ctx.pid = '';
-    $('promList').classList.add('hidden'); $('promRun').classList.add('hidden'); showTab(curTab);
+    setMeasCtx(null); if (window.__xray && window.__xray.clearFilms) window.__xray.clearFilms(); localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); closeRun(); dsel = { proc: '', inst: '', pid: '', tp: '' }; ctx.pid = ''; ctx.tp = ''; prun = null; drafts = {}; localStorage.removeItem(DKEY); pst = { large: pst.large }; savePst();
+    showTab(curTab);
   };
   function refresh() { i18nStatic(); updateMeasureTab(); if (curTab === 'xray' && window.__xray) window.__xray.render(); if (curTab === 'proms') renderProms(); if (curTab === 'dash') renderDash(); }
   window.addEventListener('ortho-lang', refresh);
   new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   i18nStatic();
   showTab(urlInvite ? 'dash' : 'proms');
-  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { save(KEY, store); }, audit: audit, currentUser: function () { return currentUser(); } };
+  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { save(KEY, store); }, audit: audit, currentUser: function () { return currentUser(); },
+    patient: { get ctx() { return ctx; }, get run() { return prun; }, get drafts() { return drafts; }, title: ptTitle, items: function (id) { return ptItems(id, prun && prun.inst === id ? prun.ans : {}); }, open: ptOpen, currentTp: currentTp,
+      preview: function (id, itemId) { var its = I[id].items.filter(function (it) { return !it.clinician; }), k = its.map(function (x) { return x.id; }).indexOf(itemId); var ans = {}; its.forEach(function (x) { if (x.showIf && x.id === itemId) { I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[y.options.length - 1].v; }); } }); var vis = ptItems(id, ans), vi = vis.map(function (x) { return x.id; }).indexOf(itemId); if (vi < 0) { ans = {}; I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[0].v; }); vis = ptItems(id, ans); vi = vis.map(function (x) { return x.id; }).indexOf(itemId); } if (vi < 0) return false; prun = { inst: id, screen: 'q', idx: vi, ans: ans, preview: true }; renderProms(); return k >= 0; } } };
 })();
 </script>
 <!-- ===== X-rays tab UI ===== -->
