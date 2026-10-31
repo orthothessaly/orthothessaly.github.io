@@ -290,6 +290,28 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   .xcr-page{max-width:none;page-break-inside:avoid;break-inside:avoid}
   .xcreport *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+/* ===== pre-op / post-op film tabs (X-ray tab) ===== */
+.xptrow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 14px;margin:4px 0 8px}.xptrow>.fld{margin:0}
+.xtabswrap{flex:1 1 380px;min-width:0}
+.xtabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;border-bottom:2px solid #d6e3e8;padding-bottom:0}
+.xtab{flex:0 0 auto;border:1px solid #c9d8de;border-bottom:none;border-radius:10px 10px 0 0;background:#f1f6f8;color:#0b3d4a;padding:8px 12px;font-weight:600;min-height:40px;white-space:nowrap;cursor:pointer;margin-bottom:-2px}
+.xtab.pre{border-top:3px solid #b45309}.xtab.post{border-top:3px solid #059669}
+.xtab.active{background:#fff;border-color:#9fb8c1;border-bottom:2px solid #fff;color:#062a33}
+.xtab:focus-visible{outline:3px solid #0891b2;outline-offset:1px}
+.xtab.add{background:none;border:1px dashed #9fb8c1;border-bottom:none;color:#0e7490;font-weight:600}
+.tdot{font-size:.7rem;margin-left:2px}.tdot.dirty{color:#d97706}.tdot.ok{color:#15803d}
+.xother{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.82rem;background:#f7fafb;border:1px solid #e3eaee;border-top:none;border-radius:0 0 8px 8px;padding:6px 10px;color:#24424c}
+.xotherlab{font-weight:600}.xotherbtns{margin-left:auto;display:flex;gap:8px;align-items:center}.xotherbtns button{min-height:32px;padding:4px 10px}
+.xotherbtns .chk{display:flex;align-items:center;gap:4px}.xotherbtns .chk input{width:auto;min-height:0}
+.xviewpair{display:block}.xview2{display:none}
+.xviewcard.sbs .xviewpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.xviewcard.sbs .xview2{display:block}
+.xv2lab{position:absolute;top:6px;left:8px;background:rgba(0,0,0,.65);color:#fff;font-size:.78rem;padding:2px 8px;border-radius:6px}
+.xview2 canvas{position:absolute;inset:0;width:100%;height:100%}
+@media (max-width:1099px){.sbsopt{display:none!important}.xviewcard.sbs .xviewpair{display:block}.xviewcard.sbs .xview2{display:none}}
+.xemptybox{max-width:340px}.xemptybox p{margin:0 0 10px}.xemptybox .btn{display:inline-block;cursor:pointer;padding:10px 16px;border-radius:10px;background:#0e7490;color:#fff;font-weight:700}
+.xemptybox .btn:focus-visible{outline:3px solid #67e8f9}
+.ximgnote{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(180,83,9,.9);color:#fff;font-size:.78rem;padding:6px 10px;border-radius:8px;pointer-events:none}
+@media (max-width:600px){.xtopcard h2{font-size:1.02rem}.xtopcard>p.muted{font-size:.8rem}.xtab{padding:7px 10px;font-size:.86rem}.xptrow>.fld{width:100%}.xptrow>.fld select{flex:1}}
 </style>
 </head>
 <body>
@@ -3928,7 +3950,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   // ---------- global ----------
   $('resetDemo').onclick = function () {
     if (!window.confirm(t('resetQ'))) return;
-    setMeasCtx(null); localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); run = null; dsel = { proc: '', inst: '', pid: '' }; ctx.pid = '';
+    setMeasCtx(null); if (window.__xray && window.__xray.clearFilms) window.__xray.clearFilms(); localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); run = null; dsel = { proc: '', inst: '', pid: '' }; ctx.pid = '';
     $('promList').classList.add('hidden'); $('promRun').classList.add('hidden'); showTab(curTab);
   };
   function refresh() { i18nStatic(); updateMeasureTab(); if (curTab === 'xray' && window.__xray) window.__xray.render(); if (curTab === 'proms') renderProms(); if (curTab === 'dash') renderDash(); }
@@ -3936,7 +3958,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   i18nStatic();
   showTab(urlInvite ? 'dash' : 'proms');
-  window.__orthoProms = { get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { save(KEY, store); }, audit: audit, currentUser: function () { return currentUser(); } };
+  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { save(KEY, store); }, audit: audit, currentUser: function () { return currentUser(); } };
 })();
 </script>
 <!-- ===== X-rays tab UI ===== -->
@@ -3967,7 +3989,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       srcAuto: 'αυτόματα (επιβεβαιωμένα)', srcCorr: 'αυτόματα + διόρθωση', srcManual: 'χειροκίνητα', landmarks: 'Σημεία', oAuto: 'αυτόματο', oCorr: 'αυτόματο, διορθώθηκε', oManual: 'χειροκίνητο', conf: 'βαθμός βεβαιότητας', cHi: 'υψηλή βεβαιότητα', cLo: 'χαμηλή',
       infInv: 'Η εικόνα αναγνωρίστηκε ως αρνητική (φωτεινό φόντο) – αντιστράφηκε για την ανάλυση και την προβολή.', infLow: 'Χαμηλή αντίθεση εικόνας – μειωμένη βεβαιότητα.', infMarkers: 'Οι δείκτες R/L δεν διαβάζονται αυτόματα· η πλευρά προκύπτει από τον προσανατολισμό (προεπιλογή: δεξί στα αριστερά της εικόνας). Επιβεβαιώστε με τον μολύβδινο δείκτη.',
       infMethod: 'Κλασική ανάλυση εικόνας στη συσκευή (χωρίς εκπαιδευμένο μοντέλο). Η βεβαιότητα είναι ευρετικός δείκτης ποιότητας ακμών/προσαρμογής, όχι πιθανότητα. Ακρίβεια επαληθευμένη μόνο σε συνθετικές εικόνες· σε πραγματικές ακτινογραφίες άγνωστη έως ότου ελεγχθεί.', took: 'Χρόνος',
-      r_metal: 'μέταλλο/εμφύτευμα', r_tka: 'από το μεταλλικό εμφύτευμα TKA', r_tkaUncertain: 'αβέβαιο περίγραμμα εμφυτεύματος', r_tkaTopSurface: 'κάτω επιφάνεια δίσκου από την άνω (+πάχος)', r_tkaAuto: 'εμφύτευμα εντοπίστηκε αυτόματα – ελέγξτε', r_tkaImplausible: 'ασύμβατες γραμμές εμφυτευμάτων', r_tkaPossible: 'πιθανό μεταλλικό εμφύτευμα', infTkaPossible: 'Πιθανό μεταλλικό εμφύτευμα στο γόνατο· αν πρόκειται για μετεγχειρητική TKA, ενεργοποιήστε την επιλογή «Μετεγχειρητική TKA» και επαναλάβετε.', tkaChk: 'Μετεγχειρητική TKA (ανίχνευση εμφυτευμάτων)', tkaHint: 'Με ενεργή την επιλογή, τα σημεία γόνατος λαμβάνονται από τα εμφυτεύματα: FCA = περιφερικοί κόνδυλοι μηριαίου εμφυτεύματος, TCA = κάτω επιφάνεια κνημιαίου δίσκου.', fca: 'FCA (μηριαίο εμφύτευμα, ≙ mLDFA)', tca: 'TCA (κνημιαίο εμφύτευμα, ≙ MPTA)', infTka: 'Εντοπίστηκαν μεταλλικά εμφυτεύματα TKA· τα σημεία του γόνατος προέρχονται από τα εμφυτεύματα (FCA/TCA).', infTkaNF: 'Η ακτινογραφία σημειώθηκε ως μετεγχειρητική TKA αλλά δεν εντοπίστηκαν εμφυτεύματα· χρησιμοποιήθηκε η ανάλυση φυσικού γόνατος – τοποθετήστε τα σημεία στα εμφυτεύματα.', infOverlay: 'Έγχρωμες σημειώσεις πάνω στην εικόνα αγνοήθηκαν από την ανάλυση.', cmpGo: 'Σύγκριση προ/μετεγχειρητικά', r_mlUncertain: 'αβέβαιη πρόταση μοντέλου', r_mlUnavailable: 'μοντέλο μη διαθέσιμο',  r_weakEdge: 'ασθενές περίγραμμα', r_fewPoints: 'λίγα σημεία ακμής', r_extent: 'αβέβαια άκρα', r_partialEdge: 'μερικώς ορατό περίγραμμα', r_irregular: 'ακανόνιστο περίγραμμα', r_implausible: 'ανατομικά απίθανο', r_lowContrast: 'χαμηλή αντίθεση', r_notFound: 'δεν βρέθηκε', r_lengthRatio: 'ασυνήθης λόγος μηριαίου/κνήμης', r_nearMask: 'δίπλα σε χάρακα/λωρίδα – μέρος του περιγράμματος κρυμμένο', r_ankleAtBorder: 'το φιλμ κόβεται στον αστράγαλο – κέντρο από τον άξονα της κνήμης, ελέγξτε', r_ankleFromShaft: 'εκτίμηση από τον άξονα/διεύρυνση της κνήμης – ελέγξτε', r_ankleExtrapolated: 'προέκταση του άξονα της κνήμης ως το κάτω άκρο – ελέγξτε', r_fallbackGate: 'εκτός συνήθων ορίων – ελέγξτε',
+      r_metal: 'μέταλλο/εμφύτευμα', r_tka: 'από το μεταλλικό εμφύτευμα TKA', r_tkaUncertain: 'αβέβαιο περίγραμμα εμφυτεύματος', r_tkaTopSurface: 'κάτω επιφάνεια δίσκου από την άνω (+πάχος)', r_tkaAuto: 'εμφύτευμα εντοπίστηκε αυτόματα – ελέγξτε', r_tkaImplausible: 'ασύμβατες γραμμές εμφυτευμάτων', r_tkaPossible: 'πιθανό μεταλλικό εμφύτευμα', infTkaPossible: 'Πιθανό μεταλλικό εμφύτευμα στο γόνατο· αν πρόκειται για μετεγχειρητική TKA, ενεργοποιήστε την επιλογή «Μετεγχειρητική TKA» και επαναλάβετε.', tkaChk: 'Μετεγχειρητική TKA (ανίχνευση εμφυτευμάτων)', tkaHint: 'Με ενεργή την επιλογή, τα σημεία γόνατος λαμβάνονται από τα εμφυτεύματα: FCA = περιφερικοί κόνδυλοι μηριαίου εμφυτεύματος, TCA = κάτω επιφάνεια κνημιαίου δίσκου.', fca: 'FCA (μηριαίο εμφύτευμα, ≙ mLDFA)', tca: 'TCA (κνημιαίο εμφύτευμα, ≙ MPTA)', infTka: 'Εντοπίστηκαν μεταλλικά εμφυτεύματα TKA· τα σημεία του γόνατος προέρχονται από τα εμφυτεύματα (FCA/TCA).', infTkaNF: 'Η ακτινογραφία σημειώθηκε ως μετεγχειρητική TKA αλλά δεν εντοπίστηκαν εμφυτεύματα· χρησιμοποιήθηκε η ανάλυση φυσικού γόνατος – τοποθετήστε τα σημεία στα εμφυτεύματα.', infOverlay: 'Έγχρωμες σημειώσεις πάνω στην εικόνα αγνοήθηκαν από την ανάλυση.', cmpGo: 'Σύγκριση προ/μετεγχειρητικά', tabsAria: 'Ακτινογραφίες του ασθενούς', tabPre: 'Προεγχειρητική', tabPost: 'Μετεγχειρητική', tabNew: '+ νέα', tabNewT: 'Νέα μετεγχειρητική ακτινογραφία', cmpBtn: 'Σύγκριση', sbs: 'Δίπλα-δίπλα', emptyTabPre: 'Ανεβάστε την προεγχειρητική ολόσωμη ακτινογραφία.', emptyTabPost: 'Ανεβάστε μετεγχειρητική ολόσωμη ακτινογραφία.', emptyTabTka: 'Η επιλογή «Μετεγχειρητική TKA» είναι ενεργή (ασθενής TKA).', uploadBtn: '📁 Επιλογή αρχείου', imgThumb: 'Η πλήρης εικόνα δεν βρέθηκε σε αυτή τη συσκευή – εμφανίζεται η αποθηκευμένη μικρογραφία (χαμηλή ανάλυση). Για ακριβή διόρθωση ανεβάστε ξανά το φιλμ· οι αποθηκευμένες τιμές παραμένουν στον φάκελο.', imgNone: 'Η εικόνα δεν είναι αποθηκευμένη σε αυτή τη συσκευή – ανεβάστε το φιλμ· οι αποθηκευμένες τιμές παραμένουν στον φάκελο.', imgLoading: 'Φόρτωση εικόνας…', unsaved: 'μη αποθηκευμένες αλλαγές', savedT: 'αποθηκευμένη', noPtTabs: 'Επιλέξτε ασθενή για καρτέλες προ-/μετεγχειρητικών ακτινογραφιών.', otherNone: 'χωρίς μετρήσεις', r_mlUncertain: 'αβέβαιη πρόταση μοντέλου', r_mlUnavailable: 'μοντέλο μη διαθέσιμο',  r_weakEdge: 'ασθενές περίγραμμα', r_fewPoints: 'λίγα σημεία ακμής', r_extent: 'αβέβαια άκρα', r_partialEdge: 'μερικώς ορατό περίγραμμα', r_irregular: 'ακανόνιστο περίγραμμα', r_implausible: 'ανατομικά απίθανο', r_lowContrast: 'χαμηλή αντίθεση', r_notFound: 'δεν βρέθηκε', r_lengthRatio: 'ασυνήθης λόγος μηριαίου/κνήμης', r_nearMask: 'δίπλα σε χάρακα/λωρίδα – μέρος του περιγράμματος κρυμμένο', r_ankleAtBorder: 'το φιλμ κόβεται στον αστράγαλο – κέντρο από τον άξονα της κνήμης, ελέγξτε', r_ankleFromShaft: 'εκτίμηση από τον άξονα/διεύρυνση της κνήμης – ελέγξτε', r_ankleExtrapolated: 'προέκταση του άξονα της κνήμης ως το κάτω άκρο – ελέγξτε', r_fallbackGate: 'εκτός συνήθων ορίων – ελέγξτε',
       cpakHeld: 'μετά τον έλεγχο των πορτοκαλί σημείων', gateHdr: 'Απορρίφθηκαν από έλεγχο αληθοφάνειας (δεν χρησιμοποιούνται για γωνίες/CPAK):', noCalc: 'Για αυτή την πλευρά δεν εμφανίζονται γωνίες ή CPAK μέχρι να τοποθετηθούν/διορθωθούν τα σημεία.',
       part_head: 'κεφαλή μηριαίου', part_knee: 'γόνατο (κόνδυλοι/κνημιαίο πλατό)', part_ankle: 'ποδοκνημική',
       gate_border: 'στο όριο του φιλμ', gate_outsideBone: 'εκτός οστού', gate_femurLength: 'απίθανο μήκος μηριαίου', gate_lengthRatio: 'λόγος μηριαίου/κνήμης εκτός 1,0–1,5', gate_tibiaLength: 'απίθανο μήκος κνήμης', gate_angleRange: 'mLDFA/MPTA εκτός 75–105° ή JLCA > 10°', gate_hkaRange: 'HKA εκτός 150–210°', gate_noEvidence: 'χωρίς επαρκή ένδειξη',
@@ -3989,7 +4011,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       srcAuto: 'automatic (confirmed)', srcCorr: 'automatic + corrected', srcManual: 'manual', landmarks: 'Landmarks', oAuto: 'automatic', oCorr: 'automatic, corrected', oManual: 'manual', conf: 'confidence score', cHi: 'high confidence', cLo: 'low',
       infInv: 'Image recognised as inverted (bright background) – inverted for analysis and display.', infLow: 'Low image contrast – reduced confidence.', infMarkers: 'R/L markers are not read automatically; the side follows the orientation (default: right on the image left). Confirm with the lead marker.',
       infMethod: 'Classical on-device image analysis (no trained model). Confidence is a heuristic edge/fit quality score, not a probability. Accuracy verified on synthetic images only; unknown on real radiographs until tested.', took: 'Time',
-      r_metal: 'metal/implant', r_tka: 'from the TKA metal component', r_tkaUncertain: 'uncertain component outline', r_tkaTopSurface: 'baseplate underside from the top surface (+thickness)', r_tkaAuto: 'prosthesis detected automatically – check', r_tkaImplausible: 'inconsistent component lines', r_tkaPossible: 'possible metal implant', infTkaPossible: 'Possible metal implant at the knee; if this is a post-op TKA film, tick “Post-op TKA film” and run again.', tkaChk: 'Post-op TKA film (component detection)', tkaHint: 'When on, the knee points are taken from the components: FCA = most distal points of the femoral component condyles, TCA = underside of the tibial baseplate.', fca: 'FCA (femoral component, ≙ mLDFA)', tca: 'TCA (tibial component, ≙ MPTA)', infTka: 'TKA metal components detected; the knee points come from the components (FCA/TCA).', infTkaNF: 'Film marked as post-op TKA but no components were found; the native-knee analysis was used – place the points on the components.', infOverlay: 'Coloured annotations on the image were ignored by the analysis.', cmpGo: 'Pre/post-op comparison', r_mlUncertain: 'model uncertain', r_mlUnavailable: 'model unavailable',  r_weakEdge: 'weak edge', r_fewPoints: 'few edge points', r_extent: 'uncertain end points', r_partialEdge: 'partially visible contour', r_irregular: 'irregular contour', r_implausible: 'anatomically implausible', r_lowContrast: 'low contrast', r_notFound: 'not found', r_lengthRatio: 'unusual femur/tibia ratio', r_nearMask: 'next to a ruler/strip – part of the outline hidden', r_ankleAtBorder: 'film cut at the ankle – centre from the tibial shaft, please check', r_ankleFromShaft: 'estimated from the tibial shaft / distal widening – please check', r_ankleExtrapolated: 'tibial axis extrapolated to the film edge – please check', r_fallbackGate: 'outside the usual limits – please check',
+      r_metal: 'metal/implant', r_tka: 'from the TKA metal component', r_tkaUncertain: 'uncertain component outline', r_tkaTopSurface: 'baseplate underside from the top surface (+thickness)', r_tkaAuto: 'prosthesis detected automatically – check', r_tkaImplausible: 'inconsistent component lines', r_tkaPossible: 'possible metal implant', infTkaPossible: 'Possible metal implant at the knee; if this is a post-op TKA film, tick “Post-op TKA film” and run again.', tkaChk: 'Post-op TKA film (component detection)', tkaHint: 'When on, the knee points are taken from the components: FCA = most distal points of the femoral component condyles, TCA = underside of the tibial baseplate.', fca: 'FCA (femoral component, ≙ mLDFA)', tca: 'TCA (tibial component, ≙ MPTA)', infTka: 'TKA metal components detected; the knee points come from the components (FCA/TCA).', infTkaNF: 'Film marked as post-op TKA but no components were found; the native-knee analysis was used – place the points on the components.', infOverlay: 'Coloured annotations on the image were ignored by the analysis.', cmpGo: 'Pre/post-op comparison', tabsAria: 'Radiographs of this patient', tabPre: 'Pre-op', tabPost: 'Post-op', tabNew: '+ new', tabNewT: 'New post-op film', cmpBtn: 'Compare', sbs: 'Side by side', emptyTabPre: 'Upload the pre-op full-length film.', emptyTabPost: 'Upload a post-op full-length film.', emptyTabTka: '“Post-op TKA film” is on (TKA patient).', uploadBtn: '📁 Choose file', imgThumb: 'The full image is not on this device – showing the stored thumbnail (low resolution). Re-upload the film for precise corrections; the saved values stay in the record.', imgNone: 'The image is not stored on this device – upload the film; the saved values stay in the record.', imgLoading: 'Loading image…', unsaved: 'unsaved changes', savedT: 'saved', noPtTabs: 'Select a patient for pre-/post-op film tabs.', otherNone: 'no measurements', r_mlUncertain: 'model uncertain', r_mlUnavailable: 'model unavailable',  r_weakEdge: 'weak edge', r_fewPoints: 'few edge points', r_extent: 'uncertain end points', r_partialEdge: 'partially visible contour', r_irregular: 'irregular contour', r_implausible: 'anatomically implausible', r_lowContrast: 'low contrast', r_notFound: 'not found', r_lengthRatio: 'unusual femur/tibia ratio', r_nearMask: 'next to a ruler/strip – part of the outline hidden', r_ankleAtBorder: 'film cut at the ankle – centre from the tibial shaft, please check', r_ankleFromShaft: 'estimated from the tibial shaft / distal widening – please check', r_ankleExtrapolated: 'tibial axis extrapolated to the film edge – please check', r_fallbackGate: 'outside the usual limits – please check',
       cpakHeld: 'after checking the orange points', gateHdr: 'Rejected by plausibility checks (not used for angles/CPAK):', noCalc: 'No angles or CPAK are shown for this side until the landmarks are placed/corrected.',
       part_head: 'femoral head', part_knee: 'knee (condyles/tibial plateau)', part_ankle: 'ankle',
       gate_border: 'at the film border', gate_outsideBone: 'outside bone', gate_femurLength: 'implausible femoral length', gate_lengthRatio: 'femur/tibia ratio outside 1.0–1.5', gate_tibiaLength: 'implausible tibial length', gate_angleRange: 'mLDFA/MPTA outside 75–105° or JLCA > 10°', gate_hkaRange: 'HKA outside 150–210°', gate_noEvidence: 'no sufficient evidence',
@@ -4012,7 +4034,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   var NORMAL = { ldfa: '85–90° (Paley)', mpta: '85–90° (Paley)', hka: '180° ± 3°', ahka: '0° ± 2° (CPAK)', jlo: '180° ± 3° (CPAK)' };
 
   var XA = window.OrthoXrayAuto, SY = window.OrthoXraySynth, LOW = XA ? XA.LOW : 0.6;
-  var st = { variant: 'demo', autoOn: true, scope: 'both', origin: { R: {}, L: {} }, det: { R: null, L: null }, confirmed: { R: null, L: null }, arm: null, autoRun: null, img: null, name: '', demo: false, dicom: null, W: 0, H: 0, view: { s: 1, tx: 0, ty: 0 }, bright: 100, contrast: 100, invert: false, snap: false, mirror: false, side: 'R', lm: { R: {}, L: {} }, cur: { R: 0, L: 0 }, auto: { R: {}, L: {} }, pid: '', date: '', phase: 'pre', tka: null, msg: '', lastPng: null, lastCsv: null };
+  var st = { variant: 'demo', autoOn: true, scope: 'both', origin: { R: {}, L: {} }, det: { R: null, L: null }, confirmed: { R: null, L: null }, arm: null, autoRun: null, img: null, name: '', demo: false, dicom: null, W: 0, H: 0, view: { s: 1, tx: 0, ty: 0 }, bright: 100, contrast: 100, invert: false, snap: false, mirror: false, side: 'R', lm: { R: {}, L: {} }, cur: { R: 0, L: 0 }, auto: { R: {}, L: {} }, pid: '', date: '', phase: 'pre', tka: null, filmId: null, fileBlob: null, imgNote: '', dirty: false, sbs: false, msg: '', lastPng: null, lastCsv: null };
   var P = function () { return window.__orthoProms; };
   function today() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }
 
@@ -4024,31 +4046,177 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var bh = Math.round(46 * r.W / 900); x.fillStyle = 'rgba(155,89,182,0.95)'; x.fillRect(0, 0, r.W, bh); x.fillRect(0, r.H - bh, r.W, bh);
     x.fillStyle = '#fff'; x.font = 'bold ' + Math.round(22 * r.W / 900) + 'px sans-serif'; x.textAlign = 'center';
     x.fillText('DEMO – ΣΥΝΘΕΤΙΚΗ ΕΙΚΟΝΑ · ΟΧΙ ΑΣΘΕΝΗΣ · ' + r.label.el, r.W / 2, bh * 0.66); x.fillText('DEMO – synthetic image, generated · NOT a patient · ' + r.label.en, r.W / 2, r.H - bh * 0.34);
-    st.synth = r; return c;
+    c.__synth = r; return c;
   }
   function demoNote() {
     var r = st.synth; if (!r) return '';
     var tr = ['left', 'right'].map(function (hf) { var a = r.angles[hf], sd = r.sides[hf], c = X.cpak(a.mpta - a.ldfa, a.mpta + a.ldfa); return t(sd) + ' mLDFA ' + a.ldfa + '°, MPTA ' + a.mpta + '° (CPAK ' + c.roman + ')'; }).join(' · ');
     return t('demoNote').replace('{v}', tx(r.label)).replace('{truth}', tr);
   }
-  function loadDemo(v) { st.variant = v || st.variant || 'demo'; setImage(drawDemo(st.variant), 'DEMO-synthetic-' + st.variant + '.png', true); }
+  function loadDemo(v) { st.variant = v || st.variant || 'demo'; var c = drawDemo(st.variant); st.synth = c.__synth; setImage(c, 'DEMO-synthetic-' + st.variant + '.png', true); }
+
+  // ---------- film tabs per patient (pre-op / post-op) ----------
+  // Each tab is one film with its own image, landmarks per side, measurements, TKA flag, confirmation and zoom/pan. The live tab's
+  // state is held in `st`; switching copies it into its slot and loads the other one (instant, no re-detection). A film that has
+  // not been saved yet follows the patient selector; saved films reopen from the patient record (full image from IndexedDB).
+  var SLOT_KEYS = ['img', 'W', 'H', 'name', 'demo', 'dicom', 'synth', 'variant', 'lm', 'cur', 'auto', 'origin', 'det', 'confirmed', 'arm', 'view', 'invert', 'phase', 'date', 'tka', 'msg', 'ctx2', 'side', 'mirror', 'autoRun', 'fitted', 'filmId', 'fileBlob', 'imgNote', 'dirty'];
+  var WS = {}, slotSeq = 0, idbPending = [], stored = {};
+  var clone = function (o) { return o == null ? o : JSON.parse(JSON.stringify(o)); };
+  function newSlot(pid, phase, date, extra) {
+    var s = { uid: 's' + (++slotSeq), pid: pid, loaded: true, saved: false, srcKeys: [], studies: {}, img: null, W: 0, H: 0, name: '', demo: false, dicom: null, synth: null, variant: st.variant, lm: { R: {}, L: {} }, cur: { R: 0, L: 0 }, auto: { R: {}, L: {} }, origin: { R: {}, L: {} }, det: { R: null, L: null }, confirmed: { R: null, L: null }, arm: null, view: { s: 1, tx: 0, ty: 0 }, invert: false, phase: phase, date: date || today(), tka: null, msg: '', ctx2: null, side: 'R', mirror: false, autoRun: null, fitted: false, filmId: null, fileBlob: null, imgNote: '', dirty: false };
+    for (var k in extra || {}) s[k] = extra[k]; return s;
+  }
+  function saveSlot(sl) { SLOT_KEYS.forEach(function (k) { sl[k] = st[k]; }); }
+  function loadSlot(sl) { SLOT_KEYS.forEach(function (k) { st[k] = sl[k]; }); }
+  function patientOf(pid) { var api = P(); return api && pid ? api.store.patients.filter(function (x) { return x.id === pid; })[0] : null; }
+  function groupKey(x) { return (x.filmId || '') + '|' + x.phase + '|' + x.date; }
+  function groupsFor(pid) {
+    var api = P(), g = {}, out = [];
+    ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === pid && x.landmarks && Object.keys(x.landmarks).length; }).forEach(function (x) { var k = groupKey(x); if (!g[k]) { g[k] = { key: k, phase: x.phase, date: x.date, filmId: x.filmId || null, studies: {} }; out.push(g[k]); } g[k].studies[x.side] = x; });
+    return out;
+  }
+  function slotFromGroup(pid, g) {
+    var any = g.studies.R || g.studies.L, s = newSlot(pid, g.phase, g.date, { filmId: g.filmId, loaded: false, saved: true, srcKeys: [g.key], studies: g.studies, name: any.image || '', demo: !!any.synth, variant: any.synth || st.variant, synthName: any.synth || null, tka: g.phase === 'post' ? !!any.tka : null });
+    ['R', 'L'].forEach(function (sd) { var x = g.studies[sd]; if (!x || !x.landmarks) return; var o = x.origins ? clone(x.origins) : {};
+      s.lm[sd] = clone(x.landmarks); s.origin[sd] = o; s.confirmed[sd] = x.confirmed || null; s.auto[sd] = { KF: !o.KF || o.KF === 'auto', KT: !o.KT || o.KT === 'auto' }; s.cur[sd] = nextStepOf(s.lm[sd]); });
+    return s;
+  }
+  function isEmptySlot(s) { return !s.img && !s.saved && !Object.keys(s.lm.R).length && !Object.keys(s.lm.L).length && !Object.keys(s.studies).length; }
+  function sortWs(w) { w.tabs.sort(function (a, b) { return (a.phase === 'pre' ? 0 : 1) - (b.phase === 'pre' ? 0 : 1) || (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.uid < b.uid ? -1 : 1); }); }
+  /** One pre-op and one post-op tab always exist (empty placeholders); surplus empty placeholders are dropped. */
+  function normalizeWs(w) {
+    if (!w.pid) return;
+    ['pre', 'post'].forEach(function (ph) {
+      var of = w.tabs.filter(function (s) { return s.phase === ph; });
+      if (!of.length) w.tabs.push(newSlot(w.pid, ph, today()));
+      else if (of.length > 1) of.forEach(function (s) { if (s.uid !== w.activeUid && isEmptySlot(s) && w.tabs.filter(function (q) { return q.phase === ph; }).length > 1) w.tabs.splice(w.tabs.indexOf(s), 1); });
+    });
+    sortWs(w);
+  }
+  /** Saved films missing from the tab list are added (never removes tabs, so unsaved edits elsewhere survive). */
+  function syncWs(w) {
+    if (!w.pid) return; var have = {}; w.tabs.forEach(function (s) { s.srcKeys.forEach(function (k) { have[k] = 1; }); if (s.saved) have[(s.filmId || '') + '|' + s.phase + '|' + s.date] = 1; });
+    groupsFor(w.pid).forEach(function (g) { if (!have[g.key]) w.tabs.push(slotFromGroup(w.pid, g)); }); normalizeWs(w);
+  }
+  function buildWs(pid) {
+    var w = { pid: pid, tabs: groupsFor(pid).map(function (g) { return slotFromGroup(pid, g); }), activeUid: null };
+    // several films on one date/phase (e.g. different film ids): keep them all; normalise placeholders
+    normalizeWs(w); var pre = w.tabs.filter(function (s) { return s.phase === 'pre'; }); w.activeUid = (pre[pre.length - 1] || w.tabs[0]).uid; return w;
+  }
+  function wsOf(pid) { pid = pid || ''; if (!WS[pid]) { if (pid) WS[pid] = buildWs(pid); else { var s0 = newSlot('', st.phase, st.date); WS[''] = { pid: '', tabs: [s0], activeUid: s0.uid }; saveSlot(s0); } } return WS[pid]; }
+  function findSlot(w, uid) { return w.tabs.filter(function (s) { return s.uid === uid; })[0] || null; }
+  function curSlot() { var w = WS[st.pid || '']; return w ? findSlot(w, w.activeUid) : null; }
+  function isActive(sl) { var w = WS[sl.pid || '']; return (st.pid || '') === (sl.pid || '') && !!w && w.activeUid === sl.uid; }
+  /** The state object currently holding an image: `st` for the live tab, else the (inactive) slot. */
+  function ownerOf(img) {
+    if (st.img === img) return st;
+    for (var k in WS) for (var i = 0; i < WS[k].tabs.length; i++) { var s = WS[k].tabs[i]; if (s.img === img && !isActive(s)) return s; }
+    return null;
+  }
+  function activateTab(uid) {
+    var w = wsOf(st.pid); if (w.activeUid === uid) return; var cur = findSlot(w, w.activeUid), nx = findSlot(w, uid); if (!nx) return;
+    if (cur) saveSlot(cur); w.activeUid = uid; loadSlot(nx); if (!st.date) st.date = today(); ensureImage(nx); render();
+  }
+  function newPostTab() { var w = wsOf(st.pid), s = newSlot(st.pid, 'post', today()); w.tabs.push(s); sortWs(w); activateTab(s.uid); }
+  function selectPatient(pid) {
+    var w0 = wsOf(st.pid), s0 = findSlot(w0, w0.activeUid); if (s0) saveSlot(s0);
+    var carry = s0 && s0.img && !s0.saved ? s0 : null; // a film not saved yet follows the patient selector
+    st.pid = pid; var w1 = wsOf(pid);
+    if (carry && w0 !== w1) {
+      w0.tabs.splice(w0.tabs.indexOf(carry), 1); carry.srcKeys = []; carry.studies = {};
+      if (!w0.pid) { var e0 = newSlot('', carry.phase, carry.date); w0.tabs.push(e0); w0.activeUid = e0.uid; } else { syncWs(w0); w0.activeUid = w0.tabs[0].uid; }
+      carry.pid = pid; carry.tka = null;
+      var ph = w1.tabs.filter(function (s) { return s.phase === carry.phase && isEmptySlot(s); })[0];
+      if (ph) w1.tabs.splice(w1.tabs.indexOf(ph), 1, carry); else w1.tabs.push(carry);
+      w1.activeUid = carry.uid; normalizeWs(w1);
+    }
+    loadSlot(findSlot(w1, w1.activeUid)); ensureImage(curSlot()); render();
+  }
+  function tabLabel(s, w) {
+    var p = patientOf(w.pid), multi = w.tabs.filter(function (q) { return q.phase === s.phase; }).length > 1;
+    if (s.phase === 'pre') return t('tabPre') + (multi ? ' · ' + s.date : '');
+    var iv = p && p.surgeryDate && window.__xcmp && (s.img || s.saved || multi) ? window.__xcmp.intervalLabel(p.surgeryDate, s.date) : null, q = iv && PR_TP(iv);
+    return t('tabPost') + (q ? ' · ' + q : '') + (multi && q ? ' (' + s.date.slice(2) + ')' : '');
+  }
+  function PR_TP(id) { var PRm = window.OrthoPROMs, x = PRm && PRm.TIMEPOINTS.filter(function (q) { return q.id === id; })[0]; return x ? tx(x.name) : id; }
+  function slotState(s) { return isActive(s) ? st : s; }
+  function keyVals(s) {
+    var o = slotState(s);
+    return ['R', 'L'].map(function (sd) { var r = X.compute(o.lm[sd] || {}, X.medialFor(sd, o.mirror)); return r.complete ? '<b>' + esc(t(sd)) + '</b> HKA ' + f1(r.hka) + '° · ' + ((o.phase === 'post' && (o.tka || (o.det[sd] && o.det[sd].tka))) ? 'FCA ' + f1(r.ldfa) + '° · TCA ' + f1(r.mpta) + '°' : 'mLDFA ' + f1(r.ldfa) + '° · MPTA ' + f1(r.mpta) + '°') + ' · CPAK ' + r.cpak.roman : null; }).filter(Boolean).join(' &nbsp;|&nbsp; ');
+  }
+  function otherSlot(w) {
+    var cur = findSlot(w, w.activeUid); if (!cur) return null; var has = function (s) { var o = slotState(s); return o.img || Object.keys(o.lm.R).length || Object.keys(o.lm.L).length; };
+    var cand = w.tabs.filter(function (s) { return s !== cur && s.phase !== st.phase && has(s); });
+    if (st.phase === 'pre') { var lp = cand.filter(function (s) { return s.uid === w.lastPost; })[0]; return lp || cand[cand.length - 1] || null; }
+    return cand[cand.length - 1] || null;
+  }
+  function renderTabs() {
+    var el = $('xTabs'); if (!el) return;
+    if (!st.pid) { el.innerHTML = '<p class="muted small" id="xNoPtTabs">' + esc(t('noPtTabs')) + '</p>'; return; }
+    var w = wsOf(st.pid); if (st.phase === 'post') w.lastPost = w.activeUid;
+    var h = '<div class="xtabs" role="tablist" id="xTabBar" aria-label="' + esc(t('tabsAria')) + '">' + w.tabs.map(function (s) {
+      var o = slotState(s), on = s.uid === w.activeUid, dot = o.dirty ? '<span class="tdot dirty" title="' + esc(t('unsaved')) + '">●</span>' : s.saved ? '<span class="tdot ok" title="' + esc(t('savedT')) + '">✓</span>' : '';
+      return '<button role="tab" class="xtab ' + (s.phase === 'pre' ? 'pre' : 'post') + (on ? ' active' : '') + '" id="xTab-' + s.uid + '" data-tab-uid="' + s.uid + '" data-phase="' + s.phase + '" aria-selected="' + on + '" aria-controls="xView" tabindex="' + (on ? 0 : -1) + '">' + esc(tabLabel(s, w)) + ' ' + dot + '</button>';
+    }).join('') + '<button class="xtab add" id="xTabNew" title="' + esc(t('tabNewT')) + '" aria-label="' + esc(t('tabNewT')) + '">' + esc(t('tabNew')) + '</button></div>';
+    var ot = otherSlot(w);
+    h += '<div class="xother" id="xOther">' + (ot ? '<span class="xotherlab">' + esc(tabLabel(ot, w)) + (slotState(ot).date ? ' <span class="muted">' + esc(slotState(ot).date) + '</span>' : '') + ':</span> <span id="xOtherVals">' + (keyVals(ot) || '<span class="muted">' + esc(t('otherNone')) + '</span>') + '</span>' : '') +
+      '<span class="xotherbtns"><button id="xCmpGo" class="small">⇄ ' + esc(t('cmpBtn')) + '</button>' + (ot ? '<label class="chk sbsopt"><input type="checkbox" id="xSbs"' + (st.sbs ? ' checked' : '') + '> ' + esc(t('sbs')) + '</label>' : '') + '</span></div>';
+    el.innerHTML = h;
+    el.querySelectorAll('[data-tab-uid]').forEach(function (b) { b.onclick = function () { activateTab(b.dataset.tabUid); var nb = $('xTab-' + b.dataset.tabUid); if (nb) nb.focus(); }; });
+    $('xTabBar').onkeydown = function (e) {
+      var bs = [].slice.call(el.querySelectorAll('[data-tab-uid]')), i = bs.indexOf(document.activeElement), j = null; if (i < 0) return;
+      if (e.key === 'ArrowRight') j = (i + 1) % bs.length; else if (e.key === 'ArrowLeft') j = (i - 1 + bs.length) % bs.length; else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = bs.length - 1; else return;
+      e.preventDefault(); var uid = bs[j].dataset.tabUid; activateTab(uid); var nb = $('xTab-' + uid); if (nb) nb.focus();
+    };
+    $('xTabNew').onclick = newPostTab;
+    $('xCmpGo').onclick = function () { var api = P(); if (!api) return; var cur = curSlot(); if (cur) saveSlot(cur); if (api.openPatient) api.openPatient(st.pid, 'xcmp'); };
+    if ($('xSbs')) $('xSbs').onchange = function () { st.sbs = this.checked; var vc = document.querySelector('.xviewcard'); if (vc) vc.classList.toggle('sbs', st.sbs); fit(); };
+    var vc = document.querySelector('.xviewcard'); if (vc) vc.classList.toggle('sbs', !!(st.sbs && ot));
+  }
+  // ---------- full-resolution working images (IndexedDB, this device only) ----------
+  var idbP = null;
+  function idb() { return idbP || (idbP = new Promise(function (res, rej) { if (!window.indexedDB) return rej(new Error('no IndexedDB')); var r = indexedDB.open('orthothessaly-xray', 1); r.onupgradeneeded = function () { r.result.createObjectStore('films'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; })); }
+  function idbReq(mode, fn) { return idb().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('films', mode), q = fn(tx.objectStore('films')); tx.oncomplete = function () { res(q && q.result); }; tx.onerror = function () { rej(tx.error); }; }); }); }
+  function idbPut(k, v) { var pr = idbReq('readwrite', function (os) { return os.put(v, k); }); idbPending.push(pr.catch(function () {})); return pr; }
+  function idbGet(k) { return idbReq('readonly', function (os) { return os.get(k); }); }
+  function storeFilm(pid, filmId, img, blob, name, dicom) {
+    if (!filmId || !img) return;
+    var put = function (b) { if (b) idbPut(filmId, { blob: b, w: img.width, h: img.height, name: name, pid: pid, dicom: dicom || null, at: new Date().toISOString() }).catch(function () {}); };
+    if (blob) put(blob); else if (img.toBlob) { var done = null, pr = new Promise(function (r) { done = r; }); idbPending.push(pr); img.toBlob(function (b) { put(b); done(); }, 'image/png'); }
+  }
+  function blobCanvas(blob) { return new Promise(function (res, rej) { var u = URL.createObjectURL(blob), im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u); res(c); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('image')); }; im.src = u; }); }
+  /** Lazily attach a reopened film's image: synthetic DEMO → re-rendered; upload → IndexedDB; else the stored thumbnail (low-res, same coordinates). */
+  function ensureImage(sl) {
+    if (!sl || sl.loaded) return; sl.loaded = true;
+    var tgt = function () { return isActive(sl) ? st : sl; };
+    var assign = function (c, note, extra) { var o = tgt(); o.img = c; o.W = c.width; o.H = c.height; o.ctx2 = c.getContext('2d', { willReadFrequently: true }); o.fitted = false; o.imgNote = note || ''; for (var k in extra || {}) o[k] = extra[k]; if (isActive(sl)) render(); else { renderTabs(); if (st.sbs) draw(); } };
+    var thumb = function () {
+      var x = sl.studies.R && sl.studies.R.thumb ? sl.studies.R : sl.studies.L && sl.studies.L.thumb ? sl.studies.L : null; if (!x) { tgt().imgNote = 'imgNone'; if (isActive(sl)) render(); return; }
+      var th = x.thumb, im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = Math.ceil(th.x0 + th.w / th.s); c.height = Math.ceil(th.y0 + th.h / th.s); var cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(im, th.x0, th.y0, th.w / th.s, th.h / th.s); assign(c, 'imgThumb'); }; im.src = th.url;
+    };
+    if (sl.synthName && SY && SY.VARIANTS[sl.synthName]) { var c = drawDemo(sl.synthName); assign(c, '', { synth: c.__synth, demo: true, variant: sl.synthName }); return; }
+    if (sl.filmId) { tgt().imgNote = 'imgLoading'; idbGet(sl.filmId).then(function (rec) { if (!rec || !rec.blob) return thumb(); return blobCanvas(rec.blob).then(function (c) { assign(c, '', { dicom: rec.dicom || null }); }); }).catch(thumb); return; }
+    thumb();
+  }
 
   // ---------- image loading ----------
-  function setImage(canvas, name, demo, dicom) {
+  function setImage(canvas, name, demo, dicom, blob) {
     st.autoRun = null; // any run for the previous image is abandoned
+    st.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); st.fileBlob = blob || null; st.imgNote = ''; st.dirty = true; st.fitted = false; var sl = curSlot(); if (sl) sl.saved = false;
     st.img = canvas; st.W = canvas.width; st.H = canvas.height; st.name = name; st.demo = demo; st.dicom = dicom || null;
     st.lm = { R: {}, L: {} }; st.cur = { R: 0, L: 0 }; st.auto = { R: {}, L: {} }; st.origin = { R: {}, L: {} }; st.det = { R: null, L: null }; st.confirmed = { R: null, L: null }; st.arm = null;
     if (!demo) st.synth = null; st.msg = demo ? demoNote() : ''; st.invert = false;
     st.ctx2 = canvas.getContext('2d', { willReadFrequently: true });
     render(); fit();
-    if (st.autoOn && XA) setTimeout(function () { runAuto('both'); }, 30);
+    if (st.autoOn && XA) setTimeout(function () { if (st.img === canvas) runAuto('both'); }, 30);
+    renderTabs();
   }
   function loadFile(file) {
     if (!file) return;
     var isDcm = /\.dcm$/i.test(file.name) || file.type === 'application/dicom' || !/^image\//.test(file.type);
     if (!isDcm) {
       var url = URL.createObjectURL(file), im = new Image();
-      im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(url); setImage(c, file.name, false); };
+      im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(url); setImage(c, file.name, false, null, file); };
       im.onerror = function () { URL.revokeObjectURL(url); st.msg = t('dicomErr') + 'image'; renderSide(); };
       im.src = url; return;
     }
@@ -4132,6 +4300,19 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     // small screens: values only in the results panel (on-canvas boxes would cover the bone / be clipped)
     var lbOn = z.w >= 520; st.labelRects = []; oc.dataset.labels = lbOn ? 'on' : 'off';
     drawAnn(o, tr, 1, null, { bw: z.w, bh: z.h, labels: lbOn, placed: st.labelRects });
+    drawOther();
+  }
+  /** Side-by-side (desktop): the other tab's film with its overlay, read-only. */
+  function drawOther() {
+    var c = $('xImg2'), vc = document.querySelector('.xviewcard'), w = WS[st.pid || '']; if (!c || !vc || !vc.classList.contains('sbs') || !w || !w.pid) return;
+    var o = otherSlot(w), box = $('xView2'), W2 = box.clientWidth, H2 = box.clientHeight, dpr = window.devicePixelRatio || 1; if (!W2 || !H2) return;
+    c.width = Math.round(W2 * dpr); c.height = Math.round(H2 * dpr); var x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#05080a'; x.fillRect(0, 0, c.width, c.height);
+    if (!o) return; $('xV2Lab').textContent = tabLabel(o, w) + ' · ' + o.date;
+    if (!o.img) { ensureImage(o); return; }
+    var s = Math.min(W2 / o.W, H2 / o.H) * 0.96, tx0 = (W2 - o.W * s) / 2, ty0 = (H2 - o.H * s) / 2;
+    x.setTransform(dpr * s, 0, 0, dpr * s, dpr * tx0, dpr * ty0); x.filter = o.invert ? 'invert(1)' : 'none'; x.drawImage(o.img, 0, 0); x.filter = 'none'; x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var cur = curSlot(); saveSlot(cur); loadSlot(o);
+    try { var tr = function (p) { return { x: p.x * s + tx0, y: p.y * s + ty0 }; }; tr.scale = s; drawAnn(x, tr, 1, null, { bw: W2, bh: H2, labels: W2 >= 300 }); } finally { loadSlot(cur); }
   }
   function loupe(scr) {
     var lc = $('xLoupe'); if (!lc) return;
@@ -4148,6 +4329,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
 
   // ---------- landmark workflow ----------
+  function nextStepOf(lm) { for (var i = 0; i < X.STEPS.length; i++) if (!lm[X.STEPS[i]]) return i; return -1; }
   function nextStep(sd) { var lm = st.lm[sd]; for (var i = 0; i < X.STEPS.length; i++) if (!lm[X.STEPS[i]]) return i; return -1; }
   function autoCentres(sd) {
     var lm = st.lm[sd], a = st.auto[sd];
@@ -4162,7 +4344,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     for (var i = 0; i < w * h; i++) g[i] = (d[4 * i] * 0.299 + d[4 * i + 1] * 0.587 + d[4 * i + 2] * 0.114);
     var q = X.snapToEdge(g, w, h, { x: p.x - x0, y: p.y - y0 }, r); return { x: q.x + x0, y: q.y + y0 };
   }
-  function changed(sd) { st.confirmed[sd] = null; if (st.arm === sd) st.arm = null; }
+  function changed(sd) { st.confirmed[sd] = null; if (st.arm === sd) st.arm = null; st.dirty = true; }
   function place(k, p) { var sd = st.side; st.lm[sd][k] = AUTO[k] ? p : snapPoint(p); if (AUTO[k]) st.auto[sd][k] = false; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); var n = nextStep(sd); st.cur[sd] = n; renderSide(); draw(); }
   function moved(sd, k) { var o = st.origin[sd][k]; st.origin[sd][k] = o === 'auto' || o === 'auto-corrected' ? 'auto-corrected' : 'manual'; changed(sd); }
   function isLow(sd, k) { var d = st.det[sd]; return !!(d && st.origin[sd][k] === 'auto' && d.conf[k] != null && d.conf[k] < LOW && !(st.auto[sd][k] && (k === 'KF' || k === 'KT'))); }
@@ -4189,30 +4371,31 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var img = st.img, opts = { halves: sides.map(halfFor), postop: tkaOn() ? true : undefined }, mlInfo = null, ctx; if (gray.overlay) opts.overlay = true;
     st.autoRun = { p: 0.02, ml: true, img: img }; updAuto();
     var tick = function () {
-      if (st.img !== img) { if (st.autoRun && st.autoRun.img === img) st.autoRun = null; return; }
+      var own = ownerOf(img); if (!own) return; // image replaced: run abandoned
       var t1 = performance.now(); while (!ctx.done && !ctx.pause && performance.now() - t1 < 35) XA.step(ctx);
       if (ctx.pause) { mlJoint(ctx).then(function () { setTimeout(tick, 0); }); return; }
-      st.autoRun.p = 0.05 + 0.95 * ctx.progress; updAuto();
+      if (own.autoRun) own.autoRun.p = 0.05 + 0.95 * ctx.progress; if (own === st) updAuto();
       if (!ctx.done) { setTimeout(tick, 0); return; }
       var ms = Math.round(performance.now() - t0), res = ctx.res;
       if (mlInfo) { res.ml = mlInfo; if (mlInfo.error || mlInfo.fallback) res.info.push(mlInfo.error ? 'mlUnavailable' : 'mlFallback'); }
       sides.forEach(function (sd) {
         var o = res.halves[halfFor(sd)] || { lm: {}, conf: {}, reasons: {}, missing: ['limb'], status: 'fail', low: [] };
-        st.lm[sd] = {}; st.auto[sd] = {}; st.origin[sd] = {}; st.confirmed[sd] = null;
-        Object.keys(o.lm).forEach(function (k) { st.lm[sd][k] = { x: o.lm[k].x / fa, y: o.lm[k].y / fa }; st.origin[sd][k] = 'auto'; });
-        if (st.lm[sd].KF) st.auto[sd].KF = true; if (st.lm[sd].KT) st.auto[sd].KT = true;
-        st.det[sd] = { status: o.status, conf: o.conf, reasons: o.reasons, missing: o.missing || [], gates: o.gates || [], content: res.content, ms: ms, info: res.info.slice().concat(gray.overlay ? ['overlaySuppressed'] : []), version: res.version + (o.tka ? ' + ' + o.tka.version : ''), tka: o.tka || null };
-        st.cur[sd] = nextStep(sd);
+        own.lm[sd] = {}; own.auto[sd] = {}; own.origin[sd] = {}; own.confirmed[sd] = null;
+        Object.keys(o.lm).forEach(function (k) { own.lm[sd][k] = { x: o.lm[k].x / fa, y: o.lm[k].y / fa }; own.origin[sd][k] = 'auto'; });
+        if (own.lm[sd].KF) own.auto[sd].KF = true; if (own.lm[sd].KT) own.auto[sd].KT = true;
+        own.det[sd] = { status: o.status, conf: o.conf, reasons: o.reasons, missing: o.missing || [], gates: o.gates || [], content: res.content, ms: ms, info: res.info.slice().concat(gray.overlay ? ['overlaySuppressed'] : []), version: res.version + (o.tka ? ' + ' + o.tka.version : ''), tka: o.tka || null };
+        own.cur[sd] = nextStepOf(own.lm[sd]);
       });
-      if (res.inverted) st.invert = true;
-      st.autoRun = null; st.arm = null; window.__lastAuto = { res: res, ms: ms, scale: fa };
+      if (res.inverted) own.invert = true;
+      own.autoRun = null; own.arm = null; own.dirty = true; window.__lastAuto = { res: res, ms: ms, scale: fa };
+      if (own !== st) { renderTabs(); return; }
       var inv = $('xInv'); if (inv) inv.checked = st.invert;
-      renderSide(); draw(); updAuto();
+      renderSide(); draw(); updAuto(); renderTabs();
     };
     // ml-1.0: learned femoral-head localiser first (lazy: onnxruntime-web from the CDN + model file next to the page), then the
     // classical stages (knee, ankle, gates). Any failure → classical head detection (info 'mlUnavailable' / 'mlFallback').
     var ML = window.OrthoXrayML, input = { gray: gray, W: c.width, H: c.height };
-    var go = function () { if (st.img !== img) return; ctx = XA.start(input, opts); st.autoRun = { p: 0.1, img: img }; updAuto(); setTimeout(tick, 0); };
+    var go = function () { var own = ownerOf(img); if (!own) return; ctx = XA.start(input, opts); own.autoRun = { p: 0.1, img: img }; if (own === st) updAuto(); setTimeout(tick, 0); };
     // ml-1.1: learned knee / ankle points (models loaded lazily next to the page); the detector pauses for them after the head stage
     var mlJoint = function (c2) {
       var kind = c2.pause, tm2 = performance.now(), pr = { gray: c2.gray, W: c2.W, H: c2.H, inverted: !!c2.inv }; c2.pause = false;
@@ -4226,7 +4409,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if (!ML || st.mlOff || (st.demo && !st.mlForce)) { go(); return; }
     var tm = performance.now();
     ML.load().then(function (M) { var pr = XA.prepOnly(input); return ML.findHeads(M, pr.gray, pr.W, pr.H, pr.box, { inverted: pr.inverted }); }).then(function (hd) {
-      if (st.img !== img) return;
+      if (!ownerOf(img)) return;
       var ok = hd.pairOk && Math.min(hd.left.peak, hd.right.peak) > 0.3;
       mlInfo = { version: hd.version, ms: Math.round(performance.now() - tm), peaks: [hd.left.peak, hd.right.peak].map(function (v) { return Math.round(v * 100) / 100; }), fallback: !ok };
       opts.mlHeads = ok ? hd : { declined: true }; if (!st.mlJointsOff) { opts.mlKneeHook = true; opts.mlAnkleHook = true; ML.load({ which: 'knee' }).catch(function () {}); ML.load({ which: 'ankle' }).catch(function () {}); }
@@ -4376,12 +4559,17 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   }
   function srcKey(s) { return s === 'auto' ? 'srcAuto' : s === 'auto+corrected' ? 'srcCorr' : 'srcManual'; }
   function centreOn(p, minScale) { var z = vsize(); if (minScale) { var fitS = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view.s = Math.max(st.view.s, fitS * minScale); } st.view.tx = z.w / 2 - p.x * st.view.s; st.view.ty = z.h / 2 - p.y * st.view.s; draw(); }
+  function emptyHtml() {
+    if (!st.pid) return esc(t('empty'));
+    if (st.imgNote === 'imgLoading') return esc(t('imgLoading'));
+    var h = '<div class="xemptybox"><p>' + esc(st.imgNote === 'imgNone' ? t('imgNone') : t(st.phase === 'post' ? 'emptyTabPost' : 'emptyTabPre')) + '</p>' + (st.phase === 'post' && tkaOn() ? '<p class="small">🦿 ' + esc(t('emptyTabTka')) + '</p>' : '') + '<label for="xFile" class="btn primary" id="xEmptyUp" tabindex="0">' + esc(t('uploadBtn')) + '</label></div>';
+    return h;
+  }
   function render() {
     var root = $('tab-xray'); if (!root) return;
     var api = P(), pts = api ? api.store.patients : [];
     if (!st.date) st.date = today();
-    var h = '<div class="card"><h2>🩻 ' + esc(t('title')) + ' <span class="pill demo">DEMO</span></h2><p class="muted">' + esc(t('lead')) + '</p><div class="grid2 xform">' +
-      '<label class="fld">' + esc(t('patient')) + '<select id="xPid"><option value="">—</option>' + pts.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === st.pid ? ' selected' : '') + '>' + esc(p.id) + '</option>'; }).join('') + '</select></label>' +
+    var h = '<div class="card xtopcard"><h2>🩻 ' + esc(t('title')) + ' <span class="pill demo">DEMO</span></h2><div class="xptrow"><label class="fld inl">' + esc(t('patient')) + ' <select id="xPid"><option value="">—</option>' + pts.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === st.pid ? ' selected' : '') + '>' + esc(p.id) + '</option>'; }).join('') + '</select></label><div id="xTabs" class="xtabswrap"></div></div><p class="muted">' + esc(t('lead')) + '</p><div class="grid2 xform">' +
       '<label class="fld">' + esc(t('date')) + '<input type="date" id="xDate" value="' + esc(st.date) + '"></label>' +
       '<label class="fld">' + esc(t('phase')) + '<select id="xPhase"><option value="pre"' + (st.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (st.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label>' +
       '<label class="fld">' + esc(t('file')) + '<input type="file" id="xFile" accept="image/png,image/jpeg,.dcm,application/dicom"></label></div>' +
@@ -4391,15 +4579,17 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       '<button id="xZo" title="' + esc(t('zoomOut')) + '" aria-label="' + esc(t('zoomOut')) + '">−</button><button id="xZi" title="' + esc(t('zoomIn')) + '" aria-label="' + esc(t('zoomIn')) + '">+</button><button id="xFit">' + esc(t('fit')) + '</button>' +
       '<label class="rng">☀ ' + esc(t('bright')) + '<input type="range" id="xBr" min="40" max="220" value="' + st.bright + '"></label><label class="rng">◐ ' + esc(t('contrast')) + '<input type="range" id="xCo" min="40" max="300" value="' + st.contrast + '"></label>' +
       '<label class="chk"><input type="checkbox" id="xInv"' + (st.invert ? ' checked' : '') + '> ' + esc(t('invert')) + '</label><label class="chk"><input type="checkbox" id="xMirror"' + (st.mirror ? ' checked' : '') + '> ' + esc(t('mirror')) + '</label><label class="chk"><input type="checkbox" id="xSnap"' + (st.snap ? ' checked' : '') + '> ' + esc(t('snap')) + '</label><button id="xResetSide">↺ ' + esc(t('resetSide')) + '</button></div>' +
-      '<div class="xview" id="xView"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><div id="xBanner" class="xbanner hidden" role="status" aria-live="polite"></div><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + esc(t('empty')) + '</div></div></div>' +
+      '<div class="xviewpair"><div class="xview" id="xView" role="tabpanel"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><div id="xBanner" class="xbanner hidden" role="status" aria-live="polite"></div><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + emptyHtml() + '</div>' + (st.img && st.imgNote === 'imgThumb' ? '<div class="ximgnote" id="xImgNote">' + esc(t('imgThumb')) + '</div>' : '') + '</div><div class="xview xview2" id="xView2" aria-hidden="true"><canvas id="xImg2"></canvas><div class="xv2lab" id="xV2Lab"></div></div></div></div>' +
       '<div class="card xpanel" id="xSide"></div></div>';
-    root.innerHTML = h;
+    root.innerHTML = h; renderTabs();
     var syncTka = function () { var b = $('xTka'); if (b) b.checked = tkaOn(); };
-    $('xPid').onchange = function () { st.pid = this.value; st.tka = null; syncTka(); };
+    var relabel = function () { var w = WS[st.pid || '']; if (w && w.pid) normalizeWs(w); renderTabs(); };
+    $('xPid').onchange = function () { selectPatient(this.value); };
     $('xTka').onchange = function () { st.tka = this.checked; renderSide(); draw(); };
-    $('xDate').onchange = function () { st.date = this.value; };
-    $('xPhase').onchange = function () { st.phase = this.value; st.tka = null; syncTka(); renderSide(); draw(); };
+    $('xDate').onchange = function () { st.date = this.value; st.dirty = true; relabel(); };
+    $('xPhase').onchange = function () { st.phase = this.value; st.tka = null; st.dirty = true; syncTka(); relabel(); renderSide(); draw(); };
     $('xFile').onchange = function (e) { loadFile(e.target.files[0]); };
+    if ($('xEmptyUp')) $('xEmptyUp').onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('xFile').click(); } };
     $('xDemo').onclick = function () { loadDemo($('xVariant').value); };
     $('xVariant').onchange = function () { loadDemo(this.value); };
     $('xZi').onclick = function () { var z = vsize(); zoomAt(1.25, { x: z.w / 2, y: z.h / 2 }); };
@@ -4427,10 +4617,14 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     var sd0 = st.side, det = st.det[sd0], conf = {}; if (det) X.STEPS.forEach(function (k) { if (st.origin[sd0][k] === 'auto' && det.conf[k] != null) conf[k] = det.conf[k]; });
     var res = { hka: r.hka, mhka: r.mhka, ldfa: r.ldfa, mpta: r.mpta, ahka: r.ahka, jlo: r.jlo, jlca: r.jlca, cpak: r.cpak };
     var store = api.store; store.xrays = store.xrays || []; var pt = store.patients.filter(function (x) { return x.id === st.pid; })[0];
+    if (!st.filmId) st.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     var tkaF = st.phase === 'post' && isTkaSide(sd0), label = pt && pt.surgeryDate && window.__xcmp ? window.__xcmp.intervalLabel(pt.surgeryDate, st.date) : null;
     store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side); });
     store.xrays.push({ id: 'x' + Math.random().toString(36).slice(2, 10), patientId: st.pid, date: st.date, phase: st.phase, side: st.side, landmarks: JSON.parse(JSON.stringify(st.lm[st.side])), results: res, image: st.name + (st.demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician',
-      landmarkSource: landmarkSource(sd0), origins: JSON.parse(JSON.stringify(st.origin[sd0])), autoConfidence: conf, detector: det ? det.version : null, autoStatus: det ? det.status : null, confirmed: cfd, tka: tkaF, tkaDetected: !!(det && det.tka), label: label, synth: st.demo ? st.variant : null, thumb: makeThumb(sd0) });
+      landmarkSource: landmarkSource(sd0), origins: JSON.parse(JSON.stringify(st.origin[sd0])), autoConfidence: conf, detector: det ? det.version : null, autoStatus: det ? det.status : null, confirmed: cfd, tka: tkaF, tkaDetected: !!(det && det.tka), label: label, synth: st.demo ? st.variant : null, thumb: makeThumb(sd0), filmId: st.filmId, imgStored: !st.demo && st.imgNote !== 'imgThumb' && !!st.img });
+    var slS = curSlot(); if (slS) { slS.saved = true; slS.srcKeys.push(groupKey(store.xrays[store.xrays.length - 1])); }
+    st.dirty = false; if (!st.demo && st.img && st.imgNote !== 'imgThumb' && !stored[st.filmId]) { stored[st.filmId] = 1; storeFilm(st.pid, st.filmId, st.img, st.fileBlob, st.name, st.dicom); }
+    var wS = WS[st.pid]; if (wS) syncWs(wS); renderTabs();
     api.persist(); api.audit('xray-save', st.pid + ' ' + st.side + ' ' + st.phase + ' ' + st.date + ' ' + landmarkSource(sd0));
     msg(t('saved') + ': ' + st.pid + ' · ' + t(st.side) + ' · ' + t(st.phase) + ' · HKA ' + f1(r.hka) + '° · ' + cpakText(r.cpak));
   }
@@ -4488,7 +4682,9 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     return h + (cmp ? '</details>' : '') + '<p class="muted small">' + esc(lang() === 'el' ? 'Γωνίες από σημεία που τοποθέτησε ή επιβεβαίωσε ο ιατρός (αποθηκεύεται μόνο μια μικρή μικρογραφία στη συσκευή αυτή για τη σύγκριση). Μετά από αρθροπλαστική, τα mLDFA/MPTA αφορούν τα εμφυτεύματα· η ταξινόμηση CPAK έχει οριστεί για το φυσικό γόνατο.' : 'Angles from clinician-placed or clinician-confirmed landmarks (only a small thumbnail is kept on this device for the comparison). After arthroplasty, mLDFA/MPTA refer to the components; CPAK is defined for the native knee.') + '</p>';
   }
 
-  window.__xray = { tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
+  window.__xray = { tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
+    activateTab: activateTab, newPostTab: newPostTab, selectPatient: selectPatient, idbIdle: function () { return Promise.all(idbPending); },
+    clearFilms: function () { WS = {}; stored = {}; var s0 = newSlot('', 'pre', today()); loadSlot(s0); st.pid = ''; idbReq('readwrite', function (os) { return os.clear(); }).catch(function () {}); }, tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
     fit: fit, centreOn: centreOn, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile };
 })();
 </script>
