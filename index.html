@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5f73">
+<title>OrthoThessaly – Μέτρηση γωνίας γόνατος / ισχίου (πρωτότυπο)</title>
+<style>
+:root{
+  --brand:#0b5f73; --brand2:#12a3b4; --bg:#f3f6f8; --card:#fff; --ink:#14232b; --muted:#5d6f78;
+  --ok:#1f9d55; --warn:#e8a317; --bad:#d63031; --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.logo{width:36px;height:36px;border-radius:10px;background:#fff;display:grid;place-items:center;flex:none}
+.brand{font-weight:800;font-size:1.25rem;letter-spacing:.2px;line-height:1.1}
+.brand small{display:block;font-weight:500;font-size:.75rem;opacity:.9}
+header .spacer{flex:1}
+.langbtn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer}
+main{max-width:1200px;margin:0 auto;padding:12px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:12px}
+@media (max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,.08);padding:14px}
+.card h2{font-size:1rem;margin:0 0 10px;color:var(--brand)}
+.stage{position:relative;background:#0c1418;border-radius:var(--radius);overflow:hidden;min-height:240px;display:flex;align-items:center;justify-content:center}
+.media{position:relative;width:100%;line-height:0}
+.media video{width:100%;height:auto;display:block;max-height:72vh;object-fit:contain;background:#000}
+.media canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.media.mirror video,.media.mirror canvas{transform:scaleX(-1)}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cfe3e8;text-align:center;padding:20px;gap:8px;line-height:1.4}
+.readout{position:absolute;top:10px;left:10px;background:rgba(8,20,26,.72);color:#fff;border-radius:12px;padding:8px 14px;min-width:150px;backdrop-filter:blur(4px)}
+.readout .lbl{font-size:.8rem;opacity:.85}
+.readout .val{font-size:3.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.readout .sub{font-size:.8rem;opacity:.85}
+.readout.reached .val{color:#6ef0a0}
+.readout.danger .val{color:#ff7b7b}
+.reps{position:absolute;top:10px;right:10px;background:rgba(8,20,26,.72);color:#fff;border-radius:12px;padding:8px 12px;text-align:center}
+.reps .val{font-size:2rem;font-weight:800;line-height:1}
+.reps .lbl{font-size:.75rem;opacity:.85}
+.banner{position:absolute;left:10px;right:10px;bottom:10px;border-radius:10px;padding:10px 12px;font-weight:700;font-size:.95rem;display:none;line-height:1.3}
+.banner.show{display:block}
+.banner.vis{background:rgba(232,163,23,.95);color:#222}
+.banner.danger{background:rgba(214,48,49,.96);color:#fff;font-size:1.15rem}
+.banner.exp{background:rgba(155,89,182,.95);color:#fff}
+.flash{position:absolute;inset:0;pointer-events:none;background:rgba(214,48,49,0);transition:background .15s}
+.flash.on{animation:flash .6s ease-in-out infinite}
+@keyframes flash{0%,100%{background:rgba(214,48,49,.05);box-shadow:inset 0 0 0 0 rgba(214,48,49,0)}50%{background:rgba(214,48,49,.42);box-shadow:inset 0 0 0 10px rgba(214,48,49,.95)}}
+.progress{margin-top:10px}
+.bar{height:16px;border-radius:999px;background:#e3eaee;overflow:hidden;position:relative}
+.bar > i{display:block;height:100%;width:0;background:var(--brand2);transition:width .15s,background .2s}
+.bar.reached > i{background:var(--ok)}
+.bar.near > i{background:var(--warn)}
+.bar.over > i{background:var(--bad)}
+.bar-meta{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-top:4px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.row label{font-size:.85rem;color:var(--muted)}
+button,.filebtn{font:inherit;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#e6eef1;color:var(--ink)}
+button.primary{background:var(--brand);color:#fff}
+button.go{background:var(--ok);color:#fff}
+button.stop{background:var(--bad);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.filebtn input{display:none}
+.seg{display:inline-flex;background:#e6eef1;border-radius:10px;padding:3px;gap:2px}
+.seg button{background:transparent;padding:7px 12px;border-radius:8px}
+.seg button.active{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+select,input[type=number]{font:inherit;padding:8px;border-radius:8px;border:1px solid #cdd8dd;background:#fff;max-width:110px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.stat{background:#f1f6f8;border-radius:10px;padding:8px 10px}
+.stat .k{font-size:.75rem;color:var(--muted)}
+.stat .v{font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums}
+.stat.alert .v{color:var(--bad)}
+.instr ol{margin:0;padding-left:20px;line-height:1.5;font-size:.92rem}
+.disclaimer{font-size:.78rem;color:var(--muted);background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:8px 10px;margin-top:10px;line-height:1.4}
+.status{font-size:.8rem;color:var(--muted);margin-top:6px;min-height:1em}
+.exp-tag{display:inline-block;font-size:.68rem;background:#9b59b6;color:#fff;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.hidden{display:none!important}
+.side{display:flex;flex-direction:column;gap:12px}
+footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
+/* ===== OrthoThessaly PROMs / Dashboard (demo) ===== */
+.demobar{background:#fff3cd;border-bottom:2px solid #e8a317;color:#5a4300;padding:8px 14px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;font-size:.88rem;position:sticky;top:56px;z-index:19}
+.demobar b{color:#8a5a00}
+.demobar button{padding:6px 10px;font-size:.8rem;background:#fff;border:1px solid #e0b860}
+.tabs{display:flex;gap:6px;max-width:1200px;margin:10px auto 0;padding:0 12px;overflow-x:auto}
+.tabs button{flex:none;background:#e6eef1;border-radius:12px 12px 0 0;padding:12px 16px;font-size:.98rem}
+.tabs button.active{background:var(--brand);color:#fff}
+.pane{max-width:1200px;margin:0 auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+.pane .card h3{margin:0 0 8px;font-size:1rem;color:var(--brand)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.fld input,.fld select{font:inherit;padding:10px;border-radius:10px;border:1px solid #cdd8dd;background:#fff;max-width:none;color:var(--ink)}
+.instlist{display:flex;flex-direction:column;gap:8px}
+.inst{border:1px solid #dfe8ec;border-radius:12px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.inst .nm{font-weight:800;flex:1 1 220px}
+.inst .links{flex:1 1 100%;font-size:.8rem;color:var(--muted);line-height:1.5}
+.inst .links a{color:var(--brand);margin-right:10px;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:700;background:#e6eef1;color:var(--ink)}
+.pill.yes{background:#d9f3e4;color:#126b3a}.pill.no{background:#fde2e2;color:#9b1c1c}.pill.unverified{background:#fff1cc;color:#7a5a00}
+.pill.done{background:#d9f3e4;color:#126b3a}.pill.demo{background:#9b59b6;color:#fff}.pill.clin{background:#dbeafe;color:#1e40af}
+.pill.offgr{background:#0b5f73;color:#fff}
+.qwrap{display:flex;flex-direction:column;gap:12px}
+.qprog{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);gap:8px;flex-wrap:wrap}
+.qsec{font-size:.82rem;color:var(--brand);font-weight:700}
+.qtext{font-size:1.18rem;font-weight:700;line-height:1.4}
+.qintro{font-size:.9rem;color:var(--muted);line-height:1.4}
+.answers{display:flex;flex-direction:column;gap:8px}
+.answers.compact{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+.answers button{min-height:56px;text-align:left;font-size:1.02rem;padding:12px 16px;border:2px solid #d5e1e6;background:#fff;border-radius:14px;font-weight:600;line-height:1.3}
+.answers.compact button{text-align:center;padding:12px 4px}
+.answers button.sel{border-color:var(--brand);background:#e3f4f7;color:var(--brand)}
+.qnav{display:flex;gap:8px;flex-wrap:wrap}
+.qnav button{min-height:48px;flex:1 1 120px}
+.numin{font-size:1.4rem!important;padding:12px!important;max-width:200px!important}
+.result{background:#f1f6f8;border-radius:12px;padding:12px}
+.result .big{font-size:2.2rem;font-weight:800;color:var(--brand)}
+.tbl{width:100%;border-collapse:collapse;font-size:.84rem}
+.tbl th,.tbl td{border-bottom:1px solid #e3eaee;padding:6px 8px;text-align:left;vertical-align:top}
+.tbl th{background:#f1f6f8;position:sticky;top:0}
+.tblwrap{overflow:auto;max-height:420px;border:1px solid #e3eaee;border-radius:10px}
+.tbl tr.click{cursor:pointer}.tbl tr.click:hover{background:#f3fafb}.tbl tr.selrow{background:#e3f4f7}
+.mx td.c{text-align:center;font-weight:700}
+.mx .done{color:#1f9d55}.mx .missing{color:#d63031}.mx .future{color:#9aa9b0}.mx .na{color:#c5d0d4}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.chart{border:1px solid #e3eaee;border-radius:12px;padding:8px}
+.chart h4{margin:0 0 4px;font-size:.88rem}
+.legend{font-size:.75rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;vertical-align:middle}
+.simnote{background:#fde2e2;border:1px solid #f5b5b5;color:#7a1c1c;border-radius:10px;padding:8px 10px;font-size:.82rem;line-height:1.4}
+.ok{color:#1f9d55;font-weight:700}.err{color:#d63031;font-weight:700}
+.linkbox{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;background:#f1f6f8;border-radius:8px;padding:8px;word-break:break-all}
+.muted{color:var(--muted);font-size:.82rem}
+.copyright{font-size:.72rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" aria-hidden="true">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0b5f73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="4" r="2"/><path d="M8 7l2 6-4 7"/><path d="M10 13l6 1 2 6"/></svg>
+  </div>
+  <div class="brand">OrthoThessaly<small data-i18n="tagline">Μετεγχειρητική αποκατάσταση</small></div>
+  <div class="spacer"></div>
+  <button class="langbtn" id="langBtn" aria-label="Language">EN</button>
+</header>
+<div class="demobar" id="demoBar">
+  <span>⚠️ <b data-pi="bannerEl">Δοκιμαστική έκδοση: μην εισάγετε πραγματικά δεδομένα ασθενών</b> · <span data-pi="bannerEn">Demo version: do not enter real patient data</span></span>
+  <button id="resetDemo" data-pi="reset">Επαναφορά demo δεδομένων</button>
+</div>
+<nav class="tabs" id="tabs" role="tablist">
+  <button role="tab" data-tab="measure" class="active" data-pi="tabMeasure">Μέτρηση</button>
+  <button role="tab" data-tab="proms" data-pi="tabProms">Ερωτηματολόγια (PROMs)</button>
+  <button role="tab" data-tab="dash" data-pi="tabDash">Dashboard ιατρού</button>
+</nav>
+
+
+<main>
+  <section>
+    <div class="stage" id="stage">
+      <div class="media" id="media">
+        <video id="video" playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="placeholder" id="placeholder">
+        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#7fc6d3" stroke-width="1.6"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <div data-i18n="placeholder">Πατήστε «Έναρξη κάμερας» ή ανεβάστε ένα βίντεο.</div>
+      </div>
+      <div class="flash" id="flash"></div>
+      <div class="readout hidden" id="readout">
+        <div class="lbl" id="readoutLbl">Κάμψη γόνατος</div>
+        <div class="val"><span id="angleVal">--</span>°</div>
+        <div class="sub" id="readoutSub"></div>
+      </div>
+      <div class="reps hidden" id="repsBox"><div class="val" id="repsVal">0</div><div class="lbl" data-i18n="reps">Επαναλήψεις</div></div>
+      <div class="banner" id="banner"></div>
+    </div>
+
+    <div class="card progress">
+      <div class="bar" id="bar"><i id="barFill"></i></div>
+      <div class="bar-meta"><span id="barLeft">0°</span><span id="barMid"></span><span id="barRight">90°</span></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="card">
+      <h2 data-i18n="source">Πηγή εικόνας</h2>
+      <div class="row">
+        <button class="primary" id="camBtn" data-i18n="startCam">Έναρξη κάμερας</button>
+        <button id="flipBtn" data-i18n="flipCam" disabled>Αλλαγή κάμερας</button>
+        <label class="filebtn"><span data-i18n="uploadVideo">Ανέβασμα βίντεο</span><input type="file" id="fileInput" accept="video/*"></label>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="settings">Ρυθμίσεις μέτρησης</h2>
+      <div class="row"><label data-i18n="joint">Άρθρωση</label>
+        <div class="seg" id="modeSeg">
+          <button data-mode="knee" class="active" data-i18n="knee">Γόνατο</button>
+          <button data-mode="hip" data-i18n="hip">Ισχίο</button>
+        </div>
+      </div>
+      <div class="row"><label data-i18n="side">Πλευρά</label>
+        <div class="seg" id="sideSeg">
+          <button data-side="auto" class="active" data-i18n="auto">Αυτόματα</button>
+          <button data-side="left" data-i18n="left">Αριστερό</button>
+          <button data-side="right" data-i18n="right">Δεξί</button>
+        </div>
+      </div>
+      <div class="row" id="kneeTargetRow"><label for="targetSel" data-i18n="target">Στόχος κάμψης</label>
+        <select id="targetSel"><option value="60">60°</option><option value="90" selected>90°</option><option value="110">110°</option><option value="120">120°</option><option value="135">135°</option><option value="custom" data-i18n="custom">Άλλο…</option></select>
+        <input type="number" id="targetCustom" class="hidden" min="10" max="160" value="100">
+      </div>
+      <div class="row hidden" id="hipLimitRow"><label for="hipLimit" data-i18n="hipLimit">Όριο κάμψης ισχίου</label>
+        <input type="number" id="hipLimit" min="30" max="140" value="90"> °
+        <label><input type="checkbox" id="soundChk" checked> <span data-i18n="sound">Ήχος</span></label>
+      </div>
+      <div class="row hidden" id="adductionRow">
+        <label><input type="checkbox" id="adductChk"> <span data-i18n="adduct">Προειδοποίηση προσαγωγής πέρα από τη μέση γραμμή (μετωπική λήψη)</span><span class="exp-tag" data-i18n="experimental">ΠΕΙΡΑΜΑΤΙΚΟ</span></label>
+      </div>
+      <details>
+        <summary style="cursor:pointer;font-size:.85rem;color:var(--muted)" data-i18n="advanced">Για προχωρημένους</summary>
+        <div class="row" style="margin-top:8px"><label data-i18n="repLow">Επανάληψη: κάτω όριο</label><input type="number" id="repLow" value="20" min="0" max="90"> °
+          <label data-i18n="repHigh">άνω όριο</label><input type="number" id="repHigh" value="60" min="10" max="160"> °</div>
+        <div class="row"><label data-i18n="smoothing">Εξομάλυνση (καρέ)</label><input type="number" id="smoothN" value="7" min="1" max="30"></div>
+        <div class="row"><label data-i18n="visThr">Ελάχ. ορατότητα</label><input type="number" id="visThr" value="0.5" min="0.1" max="0.95" step="0.05"></div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="session">Συνεδρία</h2>
+      <div class="row">
+        <button class="go" id="sessBtn" data-i18n="startSession" disabled>Έναρξη συνεδρίας</button>
+        <button id="csvBtn" data-i18n="downloadCsv" disabled>Λήψη CSV</button>
+      </div>
+      <div class="summary" id="summary">
+        <div class="stat"><div class="k" data-i18n="maxFlex">Μέγιστη κάμψη</div><div class="v" id="sMax">--</div></div>
+        <div class="stat"><div class="k" data-i18n="maxExt">Μέγιστη έκταση (ελάχ. κάμψη)</div><div class="v" id="sMin">--</div></div>
+        <div class="stat"><div class="k" data-i18n="reps">Επαναλήψεις</div><div class="v" id="sReps">0</div></div>
+        <div class="stat"><div class="k" data-i18n="duration">Διάρκεια</div><div class="v" id="sDur">0:00</div></div>
+        <div class="stat" id="sWarnBox"><div class="k" data-i18n="warnings">Προειδοποιήσεις</div><div class="v" id="sWarn">0</div></div>
+        <div class="stat"><div class="k" data-i18n="samples">Μετρήσεις</div><div class="v" id="sN">0</div></div>
+      </div>
+      <div class="status" id="sessNote"></div>
+    </div>
+
+    <div class="card instr">
+      <h2 data-i18n="howto">Οδηγίες</h2>
+      <ol>
+        <li data-i18n="i1">Τοποθετήστε το κινητό σε σταθερή βάση περίπου 2 μέτρα μακριά, στο ύψος του γονάτου/ισχίου.</li>
+        <li data-i18n="i2">Πλάγια λήψη: το πόδι που μετράται να είναι στραμμένο προς την κάμερα, με όλο το πόδι (ισχίο–γόνατο–αστράγαλος) και τον κορμό ορατά.</li>
+        <li data-i18n="i3">Καλός φωτισμός, εφαρμοστά ρούχα ή σορτς, ουδέτερο φόντο.</li>
+        <li data-i18n="i4">Πατήστε «Έναρξη συνεδρίας», κάντε τις ασκήσεις και μετά «Τέλος» για τη σύνοψη.</li>
+      </ol>
+      <div class="disclaimer" data-i18n="disclaimer">⚠️ Πρωτότυπο επίδειξης – ΔΕΝ είναι ιατροτεχνολογικό προϊόν. Οι μετρήσεις είναι ενδεικτικές (2D εκτίμηση στάσης) και δεν αντικαθιστούν τη μέτρηση με γωνιόμετρο ή την κρίση του θεράποντος ιατρού/φυσικοθεραπευτή. Όλη η επεξεργασία γίνεται τοπικά στη συσκευή· κανένα βίντεο δεν αποστέλλεται.</div>
+    </div>
+  </aside>
+</main>
+<section class="pane hidden" id="tab-proms" aria-label="PROMs">
+  <div class="card" id="promSetup"></div>
+  <div class="card hidden" id="promList"></div>
+  <div class="card hidden" id="promRun"></div>
+</section>
+<section class="pane hidden" id="tab-dash" aria-label="Dashboard">
+  <div id="dashGate"></div>
+  <div id="dashBody" class="hidden"></div>
+</section>
+
+<footer>OrthoThessaly · <span data-i18n="footer">Πρωτότυπο v0.3 (DEMO) · επεξεργασία μόνο στη συσκευή</span></footer>
+
+<!-- ===== Pure math (no DOM). Unit-tested in Node. ===== -->
+<script id="ortho-math">
+(function (root) {
+  'use strict';
+  // MediaPipe Pose landmark indices
+  var IDX = {
+    left:  { shoulder: 11, hip: 23, knee: 25, ankle: 27 },
+    right: { shoulder: 12, hip: 24, knee: 26, ankle: 28 }
+  };
+
+  /** Interior angle ABC (at B) in degrees, 0..180. Points {x,y}. Returns NaN if degenerate. */
+  function angleDeg(a, b, c) {
+    var v1x = a.x - b.x, v1y = a.y - b.y, v2x = c.x - b.x, v2y = c.y - b.y;
+    var n1 = Math.hypot(v1x, v1y), n2 = Math.hypot(v2x, v2y);
+    if (!(n1 > 1e-9) || !(n2 > 1e-9)) return NaN;
+    var cos = (v1x * v2x + v1y * v2y) / (n1 * n2);
+    cos = Math.max(-1, Math.min(1, cos));
+    return Math.acos(cos) * 180 / Math.PI;
+  }
+  /** Flexion = 180 - interior angle (straight limb = 0°). */
+  function flexionFromInterior(interior) { return 180 - interior; }
+
+  // Convert normalized landmark to pixel space (aspect ratio matters!)
+  function px(lm, w, h) { return { x: lm.x * w, y: lm.y * h }; }
+
+  function vis(lm) {
+    if (!lm) return 0;
+    var v = (typeof lm.visibility === 'number') ? lm.visibility : 1;
+    // Penalise points outside the frame
+    if (lm.x < -0.02 || lm.x > 1.02 || lm.y < -0.02 || lm.y > 1.02) v = Math.min(v, 0.2);
+    return v;
+  }
+
+  /** Generic joint flexion for a triple of landmark indices. */
+  function jointFlexion(lms, ia, ib, ic, w, h) {
+    var a = lms[ia], b = lms[ib], c = lms[ic];
+    if (!a || !b || !c) return { flexion: NaN, visibility: 0 };
+    var interior = angleDeg(px(a, w, h), px(b, w, h), px(c, w, h));
+    return { flexion: flexionFromInterior(interior), interior: interior, visibility: Math.min(vis(a), vis(b), vis(c)) };
+  }
+  /** Knee flexion from hip-knee-ankle. */
+  function kneeFlexion(lms, side, w, h) { var I = IDX[side]; return jointFlexion(lms, I.hip, I.knee, I.ankle, w, h); }
+  /** Hip flexion from shoulder-hip-knee (trunk–thigh angle). */
+  function hipFlexion(lms, side, w, h) { var I = IDX[side]; return jointFlexion(lms, I.shoulder, I.hip, I.knee, w, h); }
+
+  /** Auto side: pick more visible side, with hysteresis margin to avoid flicker. */
+  function pickSide(visLeft, visRight, prev, margin) {
+    margin = (margin == null) ? 0.1 : margin;
+    if (prev === 'left'  && visRight < visLeft + margin) return 'left';
+    if (prev === 'right' && visLeft  < visRight + margin) return 'right';
+    return visLeft >= visRight ? 'left' : 'right';
+  }
+
+  /**
+   * EXPERIMENTAL frontal-view adduction check.
+   * Midline = x of the hip midpoint. The leg "crosses the midline" when the knee
+   * lies on the opposite side of the midline from its own hip.
+   * Also returns an approximate adduction angle: angle of thigh (hip->knee) relative to
+   * the perpendicular of the pelvis line, positive = towards midline.
+   */
+  function adductionCheck(lms, side, w, h) {
+    var I = IDX[side], O = IDX[side === 'left' ? 'right' : 'left'];
+    var hip = lms[I.hip], other = lms[O.hip], knee = lms[I.knee];
+    if (!hip || !other || !knee) return { crossed: false, angle: NaN, visibility: 0 };
+    var H = px(hip, w, h), Oh = px(other, w, h), K = px(knee, w, h);
+    var midX = (H.x + Oh.x) / 2, midY = (H.y + Oh.y) / 2;
+    // unit vector from midline towards this hip (lateral direction)
+    var lx = H.x - midX, ly = H.y - midY, ln = Math.hypot(lx, ly);
+    if (!(ln > 1e-6)) return { crossed: false, angle: NaN, visibility: 0 };
+    lx /= ln; ly /= ln;
+    // signed lateral offset of knee relative to midline (along pelvis axis)
+    var kOff = (K.x - midX) * lx + (K.y - midY) * ly;
+    // perpendicular to pelvis pointing "down" (towards knees)
+    var dx = -ly, dy = lx; if ((K.x - H.x) * dx + (K.y - H.y) * dy < 0) { dx = -dx; dy = -dy; }
+    var tx = K.x - H.x, ty = K.y - H.y;
+    var along = tx * dx + ty * dy, lat = tx * lx + ty * ly; // lat < 0 => towards midline
+    var ang = Math.atan2(-lat, along) * 180 / Math.PI; // + = adduction
+    return { crossed: kOff < 0, angle: ang, visibility: Math.min(vis(hip), vis(other), vis(knee)) };
+  }
+
+  /** Moving average over last n finite values. */
+  function MovingAverage(n) { this.n = Math.max(1, n | 0); this.buf = []; }
+  MovingAverage.prototype.push = function (v) {
+    if (isFinite(v)) { this.buf.push(v); if (this.buf.length > this.n) this.buf.shift(); }
+    return this.value();
+  };
+  MovingAverage.prototype.value = function () {
+    if (!this.buf.length) return NaN;
+    var s = 0; for (var i = 0; i < this.buf.length; i++) s += this.buf[i];
+    return s / this.buf.length;
+  };
+  MovingAverage.prototype.reset = function () { this.buf = []; };
+  MovingAverage.prototype.setSize = function (n) { this.n = Math.max(1, n | 0); while (this.buf.length > this.n) this.buf.shift(); };
+
+  /** Rep counter with hysteresis: a rep = rise above `high` then return below `low`. */
+  function RepCounter(low, high) { this.low = low; this.high = high; this.state = 'unknown'; this.reps = 0; }
+  RepCounter.prototype.update = function (v) {
+    if (!isFinite(v)) return this.reps;
+    if (this.state !== 'flexed' && v >= this.high) this.state = 'flexed';
+    else if (this.state === 'flexed' && v <= this.low) { this.state = 'extended'; this.reps++; }
+    else if (this.state === 'unknown' && v <= this.low) this.state = 'extended';
+    return this.reps;
+  };
+  RepCounter.prototype.reset = function () { this.state = 'unknown'; this.reps = 0; };
+
+  /** Edge detector: counts rising edges of a boolean condition. */
+  function EdgeCounter() { this.on = false; this.count = 0; }
+  EdgeCounter.prototype.update = function (cond) {
+    var rising = !!cond && !this.on; if (rising) this.count++; this.on = !!cond; return rising;
+  };
+
+  function csvEscape(v) {
+    if (v == null) return '';
+    var s = String(v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function toCSV(header, rows) {
+    var out = [header.map(csvEscape).join(',')];
+    for (var i = 0; i < rows.length; i++) out.push(rows[i].map(csvEscape).join(','));
+    return out.join('\r\n') + '\r\n';
+  }
+
+  root.OrthoMath = {
+    IDX: IDX, angleDeg: angleDeg, flexionFromInterior: flexionFromInterior, kneeFlexion: kneeFlexion,
+    hipFlexion: hipFlexion, jointFlexion: jointFlexion, pickSide: pickSide, adductionCheck: adductionCheck,
+    MovingAverage: MovingAverage, RepCounter: RepCounter, EdgeCounter: EdgeCounter, toCSV: toCSV, vis: vis
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- ===== PROMs core (pure; unit-tested in Node) ===== -->
+<script id="ortho-proms">
+(function (root) {
+  'use strict';
+  // =====================================================================
+  // OrthoThessaly PROMs core: instrument definitions + scoring (pure, no DOM).
+  // DEMO ONLY. Licensed instruments contain NO copyrighted item wording:
+  // only structure (item count, response-scale size, subscales) + scoring.
+  // =====================================================================
+  function L(el, en) { return { el: el, en: en == null ? el : en }; }
+  function isNum(x) { return typeof x === 'number' && isFinite(x); }
+  function r1(x) { return Math.round(x * 10) / 10; }
+  function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  function range(n, f) { var a = []; for (var i = 1; i <= n; i++) a.push(f(i)); return a; }
+  function note(el, en) { return L(el, en); }
+
+  // ---------- placeholder builders for licensed instruments ----------
+  function phText(code, n, extraEl, extraEn) {
+    return L(code + ' – Ερώτηση ' + n + (extraEl ? ' · ' + extraEl : '') + ' (επίσημο ελληνικό κείμενο: βλ. σύνδεσμο ελληνικής έκδοσης)',
+             code + ' – Question ' + n + (extraEn ? ' · ' + extraEn : '') + ' (official wording: see Greek-version link)');
+  }
+  function phOpts(values) {
+    return values.map(function (v, i) { return { v: v, label: L('Επιλογή ' + (i + 1), 'Option ' + (i + 1)) }; });
+  }
+  function phItems(code, prefix, n, values, opts) {
+    opts = opts || {};
+    return range(n, function (i) {
+      var it = { id: prefix + i, text: phText(code, (opts.offset || 0) + i, opts.secEl, opts.secEn), type: 'choice', options: phOpts(values), better: opts.better || 'high' };
+      if (opts.sec) it.sec = opts.sec;
+      return it;
+    });
+  }
+  function answered(ans, ids) { return ids.filter(function (id) { return ans && isNum(ans[id]); }); }
+
+  // =====================================================================
+  // SCORING FUNCTIONS
+  // =====================================================================
+
+  /** Oxford Knee/Hip/Shoulder (Murray 2007; Dawson 2009): 12 items 0–4 (4 = best), total 0–48.
+   *  1–2 missing → impute respondent mean; >2 missing → no score. */
+  function scoreOxford12(ans, prefix) {
+    var ids = range(12, function (i) { return prefix + i; });
+    var a = answered(ans, ids), miss = 12 - a.length;
+    if (miss > 2) return { total: null, valid: false, subscales: {}, notes: [note('Λείπουν >2 απαντήσεις – δεν υπολογίζεται βαθμολογία.', '>2 items missing – no score.')] };
+    var s = sum(a.map(function (id) { return ans[id]; }));
+    var total = miss ? s + (s / a.length) * miss : s;
+    return { total: r1(total), valid: true, subscales: {}, notes: miss ? [note('Συμπληρώθηκαν ' + miss + ' απαντήσεις με τον μέσο όρο (Murray 2007).', miss + ' missing item(s) imputed with respondent mean (Murray 2007).')] : [] };
+  }
+
+  /** KOOS / HOOS: items 0–4 (0 = no problems). Subscale = 100 − mean×100/4 if ≥50% answered. No total. */
+  function scoreKoosLike(ans, subDefs) {
+    var subs = {}, notes = [], anyValid = false;
+    Object.keys(subDefs).forEach(function (k) {
+      var ids = subDefs[k], a = answered(ans, ids), need = Math.ceil(ids.length / 2);
+      if (a.length >= need) {
+        var mean = sum(a.map(function (id) { return ans[id]; })) / a.length;
+        subs[k] = r1(100 - mean * 100 / 4); anyValid = true;
+      } else { subs[k] = null; notes.push(note('Υποκλίμακα ' + k + ': <50% απαντήσεις – δεν υπολογίζεται.', 'Subscale ' + k + ': <50% answered – not scored.')); }
+    });
+    return { total: null, valid: anyValid, subscales: subs, notes: notes };
+  }
+
+  var KOOSJR_TABLE = [100.000, 91.975, 84.600, 79.914, 76.332, 73.342, 70.704, 68.284, 65.994, 63.776, 61.583, 59.381, 57.140, 54.840, 52.465, 50.012, 47.487, 44.905, 42.281, 39.625, 36.931, 34.174, 31.307, 28.251, 24.875, 20.941, 15.939, 8.291, 0.000];
+  var HOOSJR_TABLE = [100.000, 92.340, 85.257, 80.550, 76.776, 73.472, 70.426, 67.516, 64.664, 61.815, 58.930, 55.985, 52.965, 49.858, 46.652, 43.335, 39.902, 36.363, 32.735, 29.009, 25.103, 20.805, 15.633, 8.104, 0.000];
+  /** KOOS, JR (7) / HOOS, JR (6), HSS: raw sum → official interval table. No HSS missing rule → all required. */
+  function scoreJR(ans, prefix, n, table) {
+    var ids = range(n, function (i) { return prefix + i; }), a = answered(ans, ids);
+    if (a.length < n) return { total: null, valid: false, subscales: {}, notes: [note('Απαιτούνται όλες οι απαντήσεις (η HSS δεν δημοσιεύει κανόνα ελλειπουσών).', 'All items required (HSS publishes no missing-data rule).')] };
+    var raw = sum(a.map(function (id) { return ans[id]; }));
+    return { total: table[raw], valid: true, subscales: { raw: raw }, notes: [] };
+  }
+
+  /** WOMAC 3.1 Likert: Pain 5 (0–20), Stiffness 2 (0–8), Function 17 (0–68), total 0–96 (higher = worse).
+   *  Missing: subscale mean imputation if ≤1 pain, ≤1 stiffness, ≤3 function missing; else invalid. */
+  function scoreWomac(ans) {
+    var defs = { pain: { ids: range(5, function (i) { return 'P' + i; }), maxMiss: 1 }, stiffness: { ids: ['S1', 'S2'], maxMiss: 1 }, 'function': { ids: range(17, function (i) { return 'F' + i; }), maxMiss: 3 } };
+    var subs = {}, notes = [], allValid = true;
+    Object.keys(defs).forEach(function (k) {
+      var d = defs[k], a = answered(ans, d.ids), miss = d.ids.length - a.length;
+      if (miss > d.maxMiss) { subs[k] = null; allValid = false; notes.push(note('WOMAC ' + k + ': πάρα πολλές ελλείπουσες – άκυρη υποκλίμακα.', 'WOMAC ' + k + ': too many missing – invalid.')); return; }
+      var s = sum(a.map(function (id) { return ans[id]; }));
+      subs[k] = r1(miss ? s + (s / a.length) * miss : s);
+    });
+    var total = allValid ? r1(subs.pain + subs.stiffness + subs['function']) : null;
+    return { total: total, valid: allValid, subscales: subs, notes: notes };
+  }
+
+  /** 2011 KSS (Scuderi 2012; Knee Society manual FAQ). Separate components, no single total.
+   *  Missing: domain-mean imputation only if <50% missing; discretionary <3 → mean of given; none → 0. */
+  function meanImpute(ans, ids) {
+    var a = answered(ans, ids); if (!a.length || a.length * 2 <= ids.length) return null;
+    var s = sum(a.map(function (id) { return ans[id]; })); return s + (s / a.length) * (ids.length - a.length);
+  }
+  function scoreKss2011(ans) {
+    var subs = {}, notes = [], sym = null;
+    if (isNum(ans.SYM1) && isNum(ans.SYM2) && isNum(ans.SYM3)) sym = (10 - ans.SYM1) + (10 - ans.SYM2) + ans.SYM3;
+    else notes.push(note('KSS Συμπτώματα: απαιτούνται και οι 3 ερωτήσεις (διαφορετικά μέγιστα).', 'KSS symptoms: all 3 items required (different maxima).'));
+    subs.symptoms = sym;
+    var sat = meanImpute(ans, ['SAT1', 'SAT2', 'SAT3', 'SAT4', 'SAT5']); subs.satisfaction = sat == null ? null : r1(sat);
+    var exp = meanImpute(ans, ['EXP1', 'EXP2', 'EXP3']); subs.expectations = exp == null ? null : r1(exp);
+    var ws = (isNum(ans.FW4) && isNum(ans.FW5)) ? ans.FW4 + ans.FW5 + (isNum(ans.FW2) ? ans.FW2 : 0) : null;
+    var std = meanImpute(ans, range(6, function (i) { return 'FS' + i; }));
+    var adv = meanImpute(ans, range(5, function (i) { return 'FA' + i; }));
+    var dA = answered(ans, ['FD1', 'FD2', 'FD3']), disc;
+    if (!dA.length) disc = 0; else { var ds = sum(dA.map(function (id) { return ans[id]; })); disc = ds + (ds / dA.length) * (3 - dA.length); }
+    subs.walking = ws; subs.standard = std == null ? null : r1(std); subs.advanced = adv == null ? null : r1(adv); subs.discretionary = r1(disc);
+    if (ws != null && std != null && adv != null) subs.functional = r1(Math.max(0, ws + std + adv + disc));
+    else { subs.functional = null; notes.push(note('KSS Λειτουργικότητα: ελλιπή δεδομένα.', 'KSS functional: incomplete.')); }
+    var objIds = ['OAL', 'OML', 'OAP', 'OROM', 'OFC', 'OEL'];
+    if (answered(ans, objIds).length === 6 && sym != null) subs.objective = ans.OAL + ans.OML + ans.OAP + Math.floor(ans.OROM / 5) + ans.OFC + ans.OEL + sym;
+    else { subs.objective = null; notes.push(note('Αντικειμενική βαθμολογία: απαιτούνται τα πεδία του ιατρού.', 'Objective score: surgeon fields required.')); }
+    return { total: null, valid: subs.functional != null || subs.satisfaction != null || subs.expectations != null, subscales: subs, notes: notes };
+  }
+
+  /** EQ-5D-5L: 5-digit profile + EQ VAS 0–100. Index needs a country value set (not applied). */
+  function scoreEq5d5l(ans) {
+    var dims = ['MO', 'SC', 'UA', 'PD', 'AD'], a = answered(ans, dims);
+    var profile = a.length === 5 ? dims.map(function (d) { return ans[d]; }).join('') : null;
+    var vas = isNum(ans.VAS) ? ans.VAS : null;
+    return { total: vas, valid: profile != null || vas != null, subscales: { profile: profile, vas: vas, index: null },
+      notes: [note('Δείκτης (index) δεν υπολογίζεται: απαιτείται σύνολο αξιών (value set) χώρας.', 'Index not computed: requires a country value set.')].concat(profile ? [] : [note('Ελλιπές προφίλ 5 διαστάσεων.', 'Incomplete 5-dimension profile.')]) };
+  }
+
+  /** Tegner (1985): current level 0–10; pre-injury level stored separately. */
+  function scoreTegner(ans) {
+    if (!isNum(ans.T1)) return { total: null, valid: false, subscales: {}, notes: [note('Δεν επιλέχθηκε επίπεδο.', 'No level selected.')] };
+    return { total: ans.T1, valid: true, subscales: { preInjury: isNum(ans.T2) ? ans.T2 : null }, notes: [] };
+  }
+
+  /** Lysholm (Tegner & Lysholm 1985): sum of 8 weighted items 0–100; no published missing rule → all required. */
+  var LYS_IDS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8'];
+  function scoreLysholm(ans) {
+    var a = answered(ans, LYS_IDS);
+    if (a.length < 8) return { total: null, valid: false, subscales: {}, notes: [note('Απαιτούνται και οι 8 ενότητες.', 'All 8 sections required.')] };
+    return { total: sum(a.map(function (id) { return ans[id]; })), valid: true, subscales: {}, notes: [] };
+  }
+
+  /** IKDC 2000 (AOSSM): 18 scored items (10a excluded), items 2 & 3 reverse (10 − x);
+   *  score = sum / max possible of answered × 100; ≥16/18 required. */
+  var IKDC_MAX = { I1: 4, I2: 10, I3: 10, I4: 4, I5: 4, I6: 1, I7: 4, I8: 4, I9a: 4, I9b: 4, I9c: 4, I9d: 4, I9e: 4, I9f: 4, I9g: 4, I9h: 4, I9i: 4, I10b: 10 };
+  function scoreIkdc(ans) {
+    var ids = Object.keys(IKDC_MAX), a = answered(ans, ids);
+    if (a.length < 16) return { total: null, valid: false, subscales: {}, notes: [note('Απαιτούνται ≥16 από 18 απαντήσεις.', '≥16 of 18 items required.')] };
+    var s = 0, m = 0;
+    a.forEach(function (id) { var v = ans[id]; if (id === 'I2' || id === 'I3') v = 10 - v; s += v; m += IKDC_MAX[id]; });
+    return { total: r1(s / m * 100), valid: true, subscales: { raw: s, maxPossible: m }, notes: a.length < 18 ? [note('Βαθμολογία με ' + a.length + '/18 (άθροισμα / μέγιστο απαντημένων).', 'Scored with ' + a.length + '/18 (sum / max of answered).')] : [] };
+  }
+
+  /** Harris Hip Score: pain 44 + function 47 + deformity 4 + ROM 5 (total-arc bands). */
+  var HHS_PATIENT = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8'];
+  function hhsRomPoints(arc) {
+    if (!isNum(arc)) return null;
+    if (arc >= 211) return 5; if (arc >= 161) return 4; if (arc >= 101) return 3; if (arc >= 61) return 2; if (arc >= 31) return 1; return 0;
+  }
+  function scoreHhs(ans) {
+    var subs = {}, notes = [], pa = answered(ans, HHS_PATIENT);
+    subs.pain = isNum(ans.H1) ? ans.H1 : null;
+    subs['function'] = pa.length === 8 ? sum(['H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8'].map(function (id) { return ans[id]; })) : null;
+    subs.patientSubtotal = pa.length === 8 ? subs.pain + subs['function'] : null;
+    var dIds = ['HD1', 'HD2', 'HD3', 'HD4'], da = answered(ans, dIds);
+    subs.deformity = da.length === 4 ? (dIds.every(function (id) { return ans[id] === 1; }) ? 4 : 0) : null;
+    var rIds = ['HR1', 'HR2', 'HR3', 'HR4', 'HR5'], ra = answered(ans, rIds);
+    subs.romArc = ra.length === 5 ? sum(ra.map(function (id) { return ans[id]; })) : null;
+    subs.rom = hhsRomPoints(subs.romArc);
+    var total = (subs.patientSubtotal != null && subs.deformity != null && subs.rom != null) ? subs.patientSubtotal + subs.deformity + subs.rom : null;
+    if (total == null) notes.push(note('Συνολικό HHS: απαιτούνται και τα πεδία του ιατρού (παραμόρφωση, ROM). Εμφανίζεται το υποσύνολο πόνου+λειτουργίας (/91).', 'Total HHS needs clinician fields (deformity, ROM). Pain+function subtotal shown (/91).'));
+    return { total: total, valid: subs.patientSubtotal != null, subscales: subs, notes: notes };
+  }
+
+  /** DASH / QuickDASH (IWH): ((sum/n) − 1) × 25; DASH ≥27/30, QuickDASH ≥10/11; modules: all 4 required. */
+  function dashFormula(vals) { return r1((sum(vals) / vals.length - 1) * 25); }
+  function scoreModules(ans, subs) {
+    [['work', 'W'], ['sports', 'M']].forEach(function (m) {
+      var ids = [1, 2, 3, 4].map(function (i) { return m[1] + i; }), a = answered(ans, ids);
+      subs[m[0]] = a.length === 4 ? dashFormula(a.map(function (id) { return ans[id]; })) : null;
+    });
+  }
+  function scoreDash(ans) {
+    var ids = range(30, function (i) { return 'D' + i; }), a = answered(ans, ids), subs = {};
+    scoreModules(ans, subs);
+    if (a.length < 27) return { total: null, valid: false, subscales: subs, notes: [note('Απαιτούνται ≥27 από 30 απαντήσεις.', '≥27 of 30 items required.')] };
+    return { total: dashFormula(a.map(function (id) { return ans[id]; })), valid: true, subscales: subs, notes: [] };
+  }
+  function scoreQuickDash(ans) {
+    var ids = range(11, function (i) { return 'Q' + i; }), a = answered(ans, ids), subs = {};
+    scoreModules(ans, subs);
+    if (a.length < 10) return { total: null, valid: false, subscales: subs, notes: [note('Απαιτούνται ≥10 από 11 απαντήσεις.', '≥10 of 11 items required.')] };
+    return { total: dashFormula(a.map(function (id) { return ans[id]; })), valid: true, subscales: subs, notes: [] };
+  }
+
+  /** FJS-12 (Behrend 2012): 100 − mean×25; not scored if >4 missing. */
+  function scoreFjs(ans) {
+    var ids = range(12, function (i) { return 'F' + i; }), a = answered(ans, ids);
+    if (12 - a.length > 4) return { total: null, valid: false, subscales: {}, notes: [note('Λείπουν >4 απαντήσεις.', '>4 items missing.')] };
+    var mean = sum(a.map(function (id) { return ans[id]; })) / a.length;
+    return { total: r1(100 - mean * 25), valid: true, subscales: {}, notes: [] };
+  }
+
+  /** ACL-RSI (Webster 2008): mean of 12 items (0–100). No published missing rule found → all required. */
+  function scoreAclRsi(ans) {
+    var ids = range(12, function (i) { return 'R' + i; }), a = answered(ans, ids);
+    if (a.length < 12) return { total: null, valid: false, subscales: {}, notes: [note('Απαιτούνται και οι 12 απαντήσεις (δεν βρέθηκε δημοσιευμένος κανόνας ελλειπουσών).', 'All 12 required (no published missing rule found).')] };
+    return { total: r1(sum(a.map(function (id) { return ans[id]; })) / 12), valid: true, subscales: {}, notes: [] };
+  }
+
+  /** Pain NRS 0–10. */
+  function scoreVas(ans) {
+    return isNum(ans.V1) ? { total: ans.V1, valid: true, subscales: {}, notes: [] } : { total: null, valid: false, subscales: {}, notes: [] };
+  }
+
+  /** Constant–Murley (1987; 2008 guidelines): pain 15 + ADL 20 + ROM 40 + strength 25 (1 pt / 0.5 kg, max 25). */
+  function constantStrengthPoints(kg) { if (!isNum(kg)) return null; return Math.max(0, Math.min(25, Math.floor(kg / 0.5 + 1e-9))); }
+  function scoreConstant(ans) {
+    var subs = {}, notes = [];
+    subs.pain = isNum(ans.C1) ? ans.C1 : null;
+    var adlIds = ['C2', 'C3', 'C4', 'C5'];
+    subs.adl = answered(ans, adlIds).length === 4 ? sum(adlIds.map(function (id) { return ans[id]; })) : null;
+    subs.patientSubtotal = (subs.pain != null && subs.adl != null) ? subs.pain + subs.adl : null;
+    var er = Array.isArray(ans.C8) ? ans.C8.length * 2 : (isNum(ans.C8) ? ans.C8 : null);
+    var romOk = isNum(ans.C6) && isNum(ans.C7) && er != null && isNum(ans.C9);
+    subs.rom = romOk ? ans.C6 + ans.C7 + Math.min(10, er) + ans.C9 : null;
+    subs.strength = constantStrengthPoints(ans.C10);
+    var total = (subs.patientSubtotal != null && subs.rom != null && subs.strength != null) ? subs.patientSubtotal + subs.rom + subs.strength : null;
+    if (total == null) notes.push(note('Συνολικό Constant: απαιτούνται ROM και δύναμη (ιατρός). Εμφανίζεται υποσύνολο ασθενούς (/35).', 'Total Constant needs ROM & strength (clinician). Patient subtotal shown (/35).'));
+    return { total: total, valid: subs.patientSubtotal != null, subscales: subs, notes: notes };
+  }
+
+  // =====================================================================
+  // INSTRUMENT DEFINITIONS (part A: licensed / structure-only)
+  // =====================================================================
+  var LIC = function (holder, url, extra) { return { required: true, holder: holder, url: url, extra: extra || null }; };
+  var FREE = function (holder, url, extra) { return { required: false, holder: holder, url: url, extra: extra || null }; };
+  function E(text) { return { en: text }; } // official English text; no official Greek available to us
+  function choice(id, text, opts, extra) {
+    var it = { id: id, text: text, type: 'choice', options: opts.map(function (o) { return { v: o[0], label: typeof o[1] === 'string' ? E(o[1]) : o[1] }; }), better: 'high' };
+    for (var k in extra || {}) it[k] = extra[k]; return it;
+  }
+  var I = {};
+
+  function oxford(code, name, url, joint) {
+    return { id: code, name: L(name), short: code, joint: joint, license: LIC('Oxford University Innovation Ltd (University of Oxford)', url), greek: 'placeholder',
+      greekNote: L('Επίσημες μεταφράσεις διατίθενται μέσω OUI (απαιτείται άδεια).', 'Official translations via OUI (licence required).'),
+      items: phItems(code, 'Q', 12, [4, 3, 2, 1, 0]), range: [0, 48], better: 'high', primary: 'total', chart: ['total'],
+      scoring: L('12 ερωτήσεις 0–4 (4 = καλύτερο), σύνολο 0–48. 1–2 ελλείπουσες → μέσος όρος· >2 → καμία βαθμολογία (Murray 2007 / Dawson 2009).', '12 items 0–4 (4 = best), total 0–48. 1–2 missing → mean imputation; >2 → no score.'),
+      score: function (a) { return scoreOxford12(a, 'Q'); } };
+  }
+  I.OKS = oxford('OKS', 'Oxford Knee Score', 'https://innovation.ox.ac.uk/outcome-measures/oxford-knee-score-oks/', 'knee');
+  I.OHS = oxford('OHS', 'Oxford Hip Score', 'https://innovation.ox.ac.uk/outcome-measures/oxford-hip-score-ohs/', 'hip');
+  I.OSS = oxford('OSS', 'Oxford Shoulder Score', 'https://innovation.ox.ac.uk/licence-details/oxford-shoulder-score-oss', 'shoulder');
+
+  var KOOS_SUBS = { symptoms: range(7, function (i) { return 'S' + i; }), pain: range(9, function (i) { return 'P' + i; }), adl: range(17, function (i) { return 'A' + i; }), sport: range(5, function (i) { return 'SP' + i; }), qol: range(4, function (i) { return 'Q' + i; }) };
+  var HOOS_SUBS = { symptoms: range(5, function (i) { return 'S' + i; }), pain: range(10, function (i) { return 'P' + i; }), adl: range(17, function (i) { return 'A' + i; }), sport: range(4, function (i) { return 'SP' + i; }), qol: range(4, function (i) { return 'Q' + i; }) };
+  var SUBNAMES = { symptoms: L('Συμπτώματα', 'Symptoms'), pain: L('Πόνος', 'Pain'), adl: L('Καθημ. δραστηριότητες', 'ADL'), sport: L('Άθληση/αναψυχή', 'Sport/Rec'), qol: L('Ποιότητα ζωής', 'QOL') };
+  function koosItems(code, subs) {
+    var out = [], n = 0;
+    Object.keys(subs).forEach(function (k) {
+      subs[k].forEach(function (id) { n++; out.push({ id: id, sec: SUBNAMES[k], text: phText(code, n, SUBNAMES[k].el + ' ' + id, SUBNAMES[k].en + ' ' + id), type: 'choice', options: phOpts([0, 1, 2, 3, 4]), better: 'low' }); });
+    });
+    return out;
+  }
+  var ROOS = 'Prof. Ewa M. Roos – άδειες μέσω Mapi Research Trust (ePROVIDE)';
+  var ROOS_X = L('Δωρεάν για ακαδημαϊκούς χρήστες αλλά πάντα απαιτείται άδεια· τέλη για νοσοκομεία/ιατρεία/εμπορικούς φορείς.', 'Free for academic users but permission always required; fees for healthcare organisations/commercial users.');
+  I.KOOS = { id: 'KOOS', name: L('KOOS – Knee injury and Osteoarthritis Outcome Score'), short: 'KOOS', joint: 'knee',
+    license: LIC(ROOS, 'https://www.koos.nu/', ROOS_X), greek: 'placeholder', greekNote: L('Υπάρχει σταθμισμένη ελληνική έκδοση (διάθεση μέσω Mapi, με άδεια).', 'A validated Greek version exists (via Mapi, licensed).'),
+    items: koosItems('KOOS', KOOS_SUBS), range: [0, 100], better: 'high', primary: 'pain', chart: ['pain', 'symptoms', 'adl', 'sport', 'qol'], subNames: SUBNAMES,
+    scoring: L('42 ερωτήσεις 0–4· 5 υποκλίμακες 0–100 (100 = χωρίς προβλήματα) = 100 − μέσος×25· ≥50% απαντήσεων ανά υποκλίμακα· χωρίς συνολικό σκορ.', '42 items 0–4; 5 subscales 0–100 (100 = no problems) = 100 − mean×25; ≥50% answered per subscale; no total.'),
+    score: function (a) { return scoreKoosLike(a, KOOS_SUBS); } };
+  I.HOOS = { id: 'HOOS', name: L('HOOS – Hip disability and Osteoarthritis Outcome Score'), short: 'HOOS', joint: 'hip',
+    license: LIC(ROOS, 'https://www.koos.nu/', ROOS_X), greek: 'placeholder', greekNote: L('Ελληνική έκδοση: έλεγχος διαθεσιμότητας μέσω Mapi (δεν επαληθεύτηκε).', 'Greek version: check via Mapi (not verified).'),
+    items: koosItems('HOOS', HOOS_SUBS), range: [0, 100], better: 'high', primary: 'pain', chart: ['pain', 'symptoms', 'adl', 'sport', 'qol'], subNames: SUBNAMES,
+    scoring: L('40 ερωτήσεις 0–4· 5 υποκλίμακες 0–100 = 100 − μέσος×25· ≥50% απαντήσεων ανά υποκλίμακα.', '40 items 0–4; 5 subscales 0–100 = 100 − mean×25; ≥50% answered per subscale.'),
+    score: function (a) { return scoreKoosLike(a, HOOS_SUBS); } };
+
+  var WSUB = { pain: L('Πόνος', 'Pain'), stiffness: L('Δυσκαμψία', 'Stiffness'), 'function': L('Λειτουργικότητα', 'Function') };
+  I.WOMAC = { id: 'WOMAC', name: L('WOMAC® 3.1 Osteoarthritis Index (Likert)'), short: 'WOMAC', joint: 'knee/hip',
+    license: LIC('Prof. Nicholas Bellamy (WOMAC® – womac.com)', 'https://www.womac.com/'), greek: 'placeholder', greekNote: L('Υπάρχει ελληνική σταθμισμένη έκδοση (μέσω αδειοδότη).', 'Greek validated version exists (via licensor).'),
+    items: [].concat(phItems('WOMAC', 'P', 5, [0, 1, 2, 3, 4], { better: 'low', sec: WSUB.pain }),
+      phItems('WOMAC', 'S', 2, [0, 1, 2, 3, 4], { better: 'low', sec: WSUB.stiffness, offset: 5 }),
+      phItems('WOMAC', 'F', 17, [0, 1, 2, 3, 4], { better: 'low', sec: WSUB['function'], offset: 7 })),
+    range: [0, 96], better: 'low', primary: 'total', chart: ['total', 'pain', 'stiffness', 'function'], subNames: WSUB,
+    scoring: L('24 ερωτήσεις 0–4 (υψηλότερο = χειρότερο): Πόνος 5 (0–20), Δυσκαμψία 2 (0–8), Λειτουργικότητα 17 (0–68), σύνολο 0–96. Ελλείπουσες: ≤1 πόνου, ≤1 δυσκαμψίας, ≤3 λειτουργίας → μέσος υποκλίμακας.', '24 items 0–4 (higher = worse): Pain 5, Stiffness 2, Function 17, total 0–96. Missing: ≤1/≤1/≤3 → subscale mean.'),
+    score: scoreWomac };
+
+  function kssItem(id, n, secEl, secEn, values, extra) {
+    var it = { id: id, sec: L(secEl, secEn), text: phText('KSS 2011', n, secEl, secEn), type: 'choice', options: values.map(function (v, i) { return { v: v, label: L('Επιλογή ' + (i + 1) + ' (' + v + ' β.)', 'Option ' + (i + 1) + ' (' + v + ' pts)') }; }), better: 'high' };
+    for (var k in extra || {}) it[k] = extra[k]; return it;
+  }
+  function kssAct(id, n, secEl, secEn, withNever) {
+    var it = kssItem(id, n, secEl, secEn, [5, 4, 3, 2, 1, 0]);
+    if (withNever) it.options.push({ v: 0, label: L('Επιλογή 7 (0 β. – «δεν το κάνω ποτέ»)', 'Option 7 (0 pts – "never do this")'), gen: false });
+    return it;
+  }
+  var CLIN = { clinician: true, optional: true };
+  var kss = [
+    { id: 'SYM1', sec: L('Συμπτώματα', 'Symptoms'), text: phText('KSS 2011', 1, 'κλίμακα 0–10', '0–10 scale'), type: 'nrs', min: 0, max: 10, better: 'low' },
+    { id: 'SYM2', sec: L('Συμπτώματα', 'Symptoms'), text: phText('KSS 2011', 2, 'κλίμακα 0–10', '0–10 scale'), type: 'nrs', min: 0, max: 10, better: 'low' },
+    kssItem('SYM3', 3, 'Συμπτώματα', 'Symptoms', [5, 3, 0])];
+  var q;
+  for (q = 1; q <= 5; q++) kss.push(kssItem('SAT' + q, 3 + q, 'Ικανοποίηση', 'Satisfaction', [8, 6, 4, 2, 0]));
+  for (q = 1; q <= 3; q++) kss.push(kssItem('EXP' + q, 8 + q, 'Προσδοκίες', 'Expectations', [5, 4, 3, 2, 1]));
+  kss.push(kssItem('FW1', 12, 'Βάδιση & ορθοστασία (ναι/όχι, 0 β.)', 'Walking & standing (yes/no, 0 pts)', [1, 0], { scored: false, optional: true }));
+  kss.push(kssItem('FW2', 13, 'Βάδιση & ορθοστασία – βοήθημα (αφαίρεση)', 'Walking & standing – aid (deduction)', [0, -2, -4, -4, -6, -8, -8, -10]));
+  kss.push(kssItem('FW3', 14, 'Βάδιση & ορθοστασία (ναι/όχι, 0 β.)', 'Walking & standing (yes/no, 0 pts)', [1, 0], { scored: false, optional: true }));
+  kss.push(kssItem('FW4', 15, 'Βάδιση & ορθοστασία', 'Walking & standing', [15, 12, 9, 6, 3, 0]));
+  kss.push(kssItem('FW5', 16, 'Βάδιση & ορθοστασία', 'Walking & standing', [15, 12, 9, 6, 3, 0]));
+  for (q = 1; q <= 6; q++) kss.push(kssAct('FS' + q, 16 + q, 'Συνήθεις δραστηριότητες', 'Standard activities', true));
+  for (q = 1; q <= 5; q++) kss.push(kssAct('FA' + q, 22 + q, 'Προχωρημένες δραστηριότητες', 'Advanced activities', true));
+  for (q = 1; q <= 3; q++) { var fd = kssAct('FD' + q, 27 + q, 'Δραστηριότητες επιλογής', 'Discretionary activities', false); fd.optional = true; kss.push(fd); }
+  kss.push(kssItem('OAL', 31, 'Ιατρός: ευθυγράμμιση', 'Surgeon: alignment', [25, 15, 15], CLIN));
+  kss.push(kssItem('OML', 32, 'Ιατρός: έσω/έξω αστάθεια', 'Surgeon: M/L instability', [15, 10, 5, 0], CLIN));
+  kss.push(kssItem('OAP', 33, 'Ιατρός: πρόσθια/οπίσθια αστάθεια', 'Surgeon: A/P instability', [10, 5, 0], CLIN));
+  kss.push({ id: 'OROM', sec: L('Ιατρός: εύρος κίνησης', 'Surgeon: range of motion'), text: L('Συνολικό εύρος κίνησης γόνατος (μοίρες) – 1 βαθμός ανά 5°', 'Total knee arc of motion (degrees) – 1 point per 5°'), type: 'number', min: 0, max: 180, unit: '°', clinician: true, optional: true, better: 'high', gen: function (h) { return Math.round(70 + h * 55); } });
+  kss.push(kssItem('OFC', 34, 'Ιατρός: σύγκαμψη (αφαίρεση)', 'Surgeon: flexion contracture (deduction)', [0, -2, -5, -10, -15], CLIN));
+  kss.push(kssItem('OEL', 35, 'Ιατρός: υστέρηση έκτασης (αφαίρεση)', 'Surgeon: extensor lag (deduction)', [0, -5, -10, -15], CLIN));
+  I.KSS2011 = { id: 'KSS2011', name: L('2011 Knee Society Score (KSS)'), short: 'KSS 2011', joint: 'knee',
+    license: LIC('The Knee Society (knee@hip-knee.org)', 'https://www.kneesociety.org/the-knee-society-score', L('Δωρεάν για ιατρούς/νοσοκομεία υπό όρους (αυτούσιο, σημείωση ©, «Reproduced with permission»)· εμπορικοί φορείς: επικοινωνία. Το έντυπο απαγορεύει αναπαραγωγή χωρίς γραπτή άδεια.', 'Free to physicians/hospitals under terms (unedited, © notice); commercial entities must enquire. Form forbids reproduction without written permission.')),
+    greek: 'placeholder', greekNote: L('Δεν βρέθηκε επίσημη ελληνική έκδοση (μόνο αγγλικά/γαλλικά).', 'No official Greek version found (English/French only).'),
+    items: kss, range: [0, 100], better: 'high', primary: 'functional', chart: ['functional', 'objective', 'satisfaction', 'expectations'],
+    subNames: { functional: L('Λειτουργικότητα', 'Functional'), objective: L('Αντικειμενική', 'Objective'), satisfaction: L('Ικανοποίηση (/40)', 'Satisfaction (/40)'), expectations: L('Προσδοκίες (/15)', 'Expectations (/15)'), symptoms: L('Συμπτώματα (/25)', 'Symptoms (/25)'), walking: L('Βάδιση (/30)', 'Walking (/30)'), standard: L('Συνήθεις (/30)', 'Standard (/30)'), advanced: L('Προχωρημένες (/25)', 'Advanced (/25)'), discretionary: L('Επιλογής (/15)', 'Discretionary (/15)') },
+    scoring: L('Ξεχωριστές συνιστώσες: Λειτουργικότητα 0–100 (βάδιση 30 + συνήθεις 30 + προχωρημένες 25 + επιλογής 15, αρνητικό → 0), Ικανοποίηση 0–40, Προσδοκίες 3–15, Συμπτώματα 0–25, Αντικειμενική (ιατρός: ευθυγράμμιση 25/15, σταθερότητα 15+10, ROM 1β./5°, αφαιρέσεις, + Συμπτώματα). Ελλείπουσες: μέσος τομέα αν λείπουν <50%.', 'Separate components: Functional 0–100, Satisfaction 0–40, Expectations 3–15, Symptoms 0–25, Objective (surgeon). Missing: domain mean if <50% missing.'),
+    score: scoreKss2011 };
+
+  var EQD = [['MO', 'Κινητικότητα', 'Mobility'], ['SC', 'Αυτοεξυπηρέτηση', 'Self-care'], ['UA', 'Συνήθεις δραστηριότητες', 'Usual activities'], ['PD', 'Πόνος/δυσφορία', 'Pain/discomfort'], ['AD', 'Άγχος/κατάθλιψη', 'Anxiety/depression']];
+  I.EQ5D5L = { id: 'EQ5D5L', name: L('EQ-5D-5L + EQ VAS'), short: 'EQ-5D-5L', joint: 'generic',
+    license: LIC('EuroQol Research Foundation', 'https://euroqol.org/register/obtain-eq-5d/how-to-obtain-eq-5d/', L('Απαιτείται εγγραφή· ψηφιακές εκδόσεις μόνο σύμφωνα με τις οδηγίες/έγκριση EuroQol.', 'Registration required; digital versions per EuroQol guidelines/approval.')),
+    greek: 'placeholder', greekNote: L('Υπάρχει επίσημη ελληνική έκδοση μέσω EuroQol (μετά από εγγραφή).', 'Official Greek version via EuroQol (after registration).'),
+    items: EQD.map(function (d, i) { return { id: d[0], sec: L('Διάσταση ' + (i + 1) + ': ' + d[1], 'Dimension ' + (i + 1) + ': ' + d[2]), text: phText('EQ-5D-5L', i + 1, d[1], d[2]), type: 'choice', options: [1, 2, 3, 4, 5].map(function (v) { return { v: v, label: L('Επίπεδο ' + v, 'Level ' + v) }; }), better: 'low' }; })
+      .concat([{ id: 'VAS', sec: L('EQ VAS'), text: L('EQ VAS – κλίμακα υγείας 0–100 (επίσημο ελληνικό κείμενο: βλ. σύνδεσμο ελληνικής έκδοσης)', 'EQ VAS – health scale 0–100 (official wording: see Greek-version link)'), type: 'number', min: 0, max: 100, unit: '/100', better: 'high', gen: function (h) { return Math.round(40 + h * 50); } }]),
+    range: [0, 100], better: 'high', primary: 'vas', chart: ['vas'], subNames: { vas: L('EQ VAS'), profile: L('Προφίλ', 'Profile'), index: L('Index') },
+    scoring: L('Προφίλ 5 ψηφίων (π.χ. 11121) + EQ VAS 0–100. Ο δείκτης (index) απαιτεί σύνολο αξιών χώρας – δεν βρέθηκε ελληνικό 5L value set.', '5-digit profile + EQ VAS 0–100. Index needs a country value set – no Greek 5L value set found.'),
+    score: scoreEq5d5l };
+
+  function ik(id, n, vals) { return { id: id, text: phText('IKDC', n), type: 'choice', options: phOpts(vals), better: 'high' }; }
+  var ikItems = [ik('I1', 1, [4, 3, 2, 1, 0]),
+    { id: 'I2', text: phText('IKDC', 2, 'κλίμακα 0–10', '0–10 scale'), type: 'nrs', min: 0, max: 10, better: 'low' },
+    { id: 'I3', text: phText('IKDC', 3, 'κλίμακα 0–10', '0–10 scale'), type: 'nrs', min: 0, max: 10, better: 'low' },
+    ik('I4', 4, [4, 3, 2, 1, 0]), ik('I5', 5, [4, 3, 2, 1, 0]),
+    { id: 'I6', text: phText('IKDC', 6, 'Ναι/Όχι', 'Yes/No'), type: 'choice', options: [{ v: 0, label: L('Ναι (0)', 'Yes (0)') }, { v: 1, label: L('Όχι (1)', 'No (1)') }], better: 'high' },
+    ik('I7', 7, [4, 3, 2, 1, 0]), ik('I8', 8, [4, 3, 2, 1, 0])];
+  'abcdefghi'.split('').forEach(function (c) { ikItems.push(ik('I9' + c, '9' + c, [4, 3, 2, 1, 0])); });
+  ikItems.push({ id: 'I10a', text: phText('IKDC', '10a', 'κλίμακα 0–10, δεν βαθμολογείται', '0–10 scale, not scored'), type: 'nrs', min: 0, max: 10, better: 'high', optional: true, scored: false });
+  ikItems.push({ id: 'I10b', text: phText('IKDC', '10b', 'κλίμακα 0–10', '0–10 scale'), type: 'nrs', min: 0, max: 10, better: 'high' });
+  I.IKDC = { id: 'IKDC', name: L('IKDC 2000 Subjective Knee Evaluation Form'), short: 'IKDC', joint: 'knee',
+    license: LIC('American Orthopaedic Society for Sports Medicine (AOSSM)', 'https://www.sportsmed.org/research/resources', L('Χωρίς άδεια ΜΟΝΟ για ακαδημαϊκή έρευνα· εταιρείες, πάροχοι λογισμικού και συστήματα υγείας χρειάζονται άδεια· απαγορεύονται αλλαγές.', 'No licence ONLY for academic research; companies, vendors and healthcare systems need a licence; no changes.')),
+    greek: 'placeholder', greekNote: L('Υπάρχει σταθμισμένη ελληνική έκδοση (J Orthop Traumatol 2016) – κείμενο μέσω AOSSM/συγγραφέων.', 'Validated Greek version exists (J Orthop Traumatol 2016) – text via AOSSM/authors.'),
+    items: ikItems, range: [0, 100], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('18 βαθμολογούμενες ερωτήσεις (η 10a εξαιρείται)· 2 & 3 αντίστροφα (10 − τιμή)· (άθροισμα / μέγιστο δυνατό απαντημένων) × 100 (μέγ. 87)· ≥16/18.', '18 scored items (10a excluded); 2 & 3 reversed; (sum / max possible of answered) × 100 (max 87); ≥16/18.'),
+    score: scoreIkdc };
+
+  var MODS = [].concat(
+    range(4, function (i) { return { id: 'W' + i, sec: L('Προαιρετική ενότητα: Εργασία', 'Optional module: Work'), text: phText('DASH', 'W' + i, 'ενότητα εργασίας', 'work module'), type: 'choice', options: phOpts([1, 2, 3, 4, 5]), better: 'low', optional: true }; }),
+    range(4, function (i) { return { id: 'M' + i, sec: L('Προαιρετική ενότητα: Άθληση/Τέχνες', 'Optional module: Sports/Performing arts'), text: phText('DASH', 'S' + i, 'ενότητα άθλησης/τεχνών', 'sports/arts module'), type: 'choice', options: phOpts([1, 2, 3, 4, 5]), better: 'low', optional: true }; }));
+  var IWH = LIC('Institute for Work & Health (IWH), Toronto', 'https://dash.iwh.on.ca/faq', L('Δωρεάν μόνο εφόσον δεν πωλείται/ενσωματώνεται σε προϊόν που πωλείται· αυτούσιο· φόρμα «Intent to Use»· εμπορική άδεια από IWH.', 'Free only if not sold/incorporated in a sold product; unaltered; Intent-to-Use form; commercial licence from IWH.'));
+  var DSUB = { work: L('Εργασία', 'Work'), sports: L('Άθληση/Τέχνες', 'Sports/Arts') };
+  var DGR = L('Επίσημη ελληνική μετάφραση στον ιστότοπο IWH (Themistocleous et al.) – χρήση με τους όρους IWH.', 'Official Greek translation on IWH site (Themistocleous et al.) – use under IWH terms.');
+  I.DASH = { id: 'DASH', name: L('DASH – Disabilities of the Arm, Shoulder and Hand'), short: 'DASH', joint: 'upper', license: IWH, greek: 'placeholder', greekNote: DGR,
+    items: phItems('DASH', 'D', 30, [1, 2, 3, 4, 5], { better: 'low' }).concat(MODS), range: [0, 100], better: 'low', primary: 'total', chart: ['total'], subNames: DSUB,
+    scoring: L('30 ερωτήσεις 1–5· ((άθροισμα/n) − 1) × 25 → 0–100 (100 = μέγιστη αναπηρία)· ≥27/30. Προαιρετικές ενότητες: 4 ερωτήσεις, όλες υποχρεωτικές.', '30 items 1–5; ((sum/n) − 1) × 25 → 0–100 (100 = most disability); ≥27/30. Optional modules: all 4 required.'),
+    score: scoreDash };
+  I.QDASH = { id: 'QDASH', name: L('QuickDASH'), short: 'QuickDASH', joint: 'upper', license: IWH, greek: 'placeholder', greekNote: DGR,
+    items: phItems('QuickDASH', 'Q', 11, [1, 2, 3, 4, 5], { better: 'low' }).concat(MODS.map(function (m) { var c = {}; for (var k in m) c[k] = m[k]; c.text = L(m.text.el.replace('DASH', 'QuickDASH'), m.text.en.replace('DASH', 'QuickDASH')); return c; })),
+    range: [0, 100], better: 'low', primary: 'total', chart: ['total'], subNames: DSUB,
+    scoring: L('11 ερωτήσεις 1–5· ((άθροισμα/n) − 1) × 25· ≥10/11. Προαιρετικές ενότητες όπως DASH.', '11 items 1–5; ((sum/n) − 1) × 25; ≥10/11. Optional modules as DASH.'),
+    score: scoreQuickDash };
+
+  I.FJS12 = { id: 'FJS12', name: L('Forgotten Joint Score (FJS-12)'), short: 'FJS-12', joint: 'knee/hip',
+    license: LIC('Behrend H, Giesinger K, Giesinger JM, Kuster MS – άδειες μέσω forgotten-joint-score.info', 'http://www.forgotten-joint-score.info/', L('Δωρεάν για ακαδημαϊκές μελέτες· εμπορική χρήση με τέλος/συμφωνία (ο ιστότοπος δεν ήταν προσβάσιμος για επιβεβαίωση).', 'Free for academic studies; commercial use needs fee/agreement (site unreachable for confirmation).')),
+    greek: 'placeholder', greekNote: L('Δεν βρέθηκε επίσημη ελληνική έκδοση.', 'No official Greek version found.'),
+    items: phItems('FJS-12', 'F', 12, [0, 1, 2, 3, 4], { better: 'low' }), range: [0, 100], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('12 ερωτήσεις 0–4· 100 − (μέσος × 25) (100 = «ξεχασμένη» άρθρωση)· δεν βαθμολογείται αν λείπουν >4.', '12 items 0–4; 100 − (mean × 25); not scored if >4 missing.'),
+    score: scoreFjs };
+
+  I.ACLRSI = { id: 'ACLRSI', name: L('ACL-RSI (ACL – Return to Sport after Injury scale)'), short: 'ACL-RSI', joint: 'knee', timepoints: ['6m', '1y', '2y'],
+    license: LIC('Webster KE, Feller JA, Lambros C (2008) – δικαιούχος/όροι ασαφείς· απαιτείται άδεια συγγραφέων', 'https://pubmed.ncbi.nlm.nih.gov/19083699/'),
+    greek: 'placeholder', greekNote: L('Δεν επαληθεύτηκε επίσημη ελληνική έκδοση.', 'Official Greek version not verified.'),
+    items: range(12, function (i) { return { id: 'R' + i, text: phText('ACL-RSI', i, 'κλίμακα 0–100', '0–100 scale'), type: 'choice', compact: true, options: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(function (v) { return { v: v, label: L(String(v)) }; }), better: 'high' }; }),
+    range: [0, 100], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('12 ερωτήσεις 0–100 (βήμα 10)· βαθμολογία = μέσος όρος (υψηλότερο = μεγαλύτερη ψυχολογική ετοιμότητα).', '12 items 0–100 (steps of 10); score = mean (higher = more ready).'),
+    score: scoreAclRsi };
+
+  // =====================================================================
+  // INSTRUMENT DEFINITIONS (part B: free – full official item text)
+  // =====================================================================
+  var NONE5 = ['None', 'Mild', 'Moderate', 'Severe', 'Extreme'];
+  function jrOpts() { return NONE5.map(function (t, i) { return { v: i, label: E(t) }; }); }
+  function jr(id, sec, intro, text) { return { id: id, sec: E(sec), intro: E(intro), text: E(text), type: 'choice', options: jrOpts(), better: 'low' }; }
+  var JR_STIFF = 'The following question concerns the amount of joint stiffness you have experienced during the last week in your knee. Stiffness is a sensation of restriction or slowness in the ease of which you move your knee joint.';
+  var JR_KP = 'What amount of knee pain have you experienced in the last week during the following activities?';
+  var JR_HP = 'What amount of hip pain have you experienced the last week during the following activities?';
+  function JR_FUNC(j) { return 'The following questions concern your physical function. By this we mean your ability to move around and to look after yourself. For each of the following activities please indicate the degree of difficulty you have experienced in the last week due to your ' + j + '.'; }
+  function JR_INSTR(j) { return 'This survey asks for your view about your ' + j + '. This information will help us keep track of how you feel about your ' + j + ' and how well you are able to do your usual activities. Answer every question by ticking the appropriate box, only one box for each question. If you are unsure about how to answer a question, please give the best answer you can.'; }
+  var HSS_X = L('Ελεύθερη χρήση χωρίς άδεια (σύμφωνα με HSS/CMS και τρίτες πηγές· η σελίδα όρων της HSS δεν ήταν προσβάσιμη)· δεν επιτρέπεται τροποποίηση/μετάφραση χωρίς γραπτή άδεια.', 'Free, no licence (per HSS/CMS & third-party sources; HSS terms page unreachable); no alteration/translation without written permission.');
+  I.KOOSJR = { id: 'KOOSJR', name: L('KOOS, JR. (Knee injury and Osteoarthritis Outcome Score for Joint Replacement)'), short: 'KOOS-JR', joint: 'knee',
+    license: FREE('Hospital for Special Surgery (HSS)', 'https://www.hss.edu/globalassets/files/research/hss-koos-jr.pdf', HSS_X), greek: 'needed', instructions: E(JR_INSTR('knee')),
+    items: [jr('K1', 'Stiffness', JR_STIFF, 'How severe is your knee stiffness after first wakening in the morning?'),
+      jr('K2', 'Pain', JR_KP, 'Twisting/pivoting on your knee'), jr('K3', 'Pain', JR_KP, 'Straightening knee fully'),
+      jr('K4', 'Pain', JR_KP, 'Going up or down stairs'), jr('K5', 'Pain', JR_KP, 'Standing upright'),
+      jr('K6', 'Function, daily living', JR_FUNC('knee'), 'Rising from sitting'), jr('K7', 'Function, daily living', JR_FUNC('knee'), 'Bending to floor/pick up an object')],
+    range: [0, 100], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('7 ερωτήσεις 0–4· άθροισμα 0–28 → επίσημος πίνακας μετατροπής HSS → 0–100 (100 = τέλεια υγεία γόνατος). Απαιτούνται όλες.', '7 items 0–4; raw 0–28 → official HSS table → 0–100. All required.'),
+    score: function (a) { return scoreJR(a, 'K', 7, KOOSJR_TABLE); } };
+  I.HOOSJR = { id: 'HOOSJR', name: L('HOOS, JR. (Hip disability and Osteoarthritis Outcome Score for Joint Replacement)'), short: 'HOOS-JR', joint: 'hip',
+    license: FREE('Hospital for Special Surgery (HSS)', 'https://www.hss.edu/globalassets/files/research/hss-hoos-jr.pdf', HSS_X), greek: 'needed', instructions: E(JR_INSTR('hip')),
+    items: [jr('H1', 'Pain', JR_HP, 'Going up or down stairs'), jr('H2', 'Pain', JR_HP, 'Walking on an uneven surface'),
+      jr('H3', 'Function, daily living', JR_FUNC('hip'), 'Rising from sitting'), jr('H4', 'Function, daily living', JR_FUNC('hip'), 'Bending to floor/pick up an object'),
+      jr('H5', 'Function, daily living', JR_FUNC('hip'), 'Lying in bed (turning over, maintaining hip position)'), jr('H6', 'Function, daily living', JR_FUNC('hip'), 'Sitting')],
+    range: [0, 100], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('6 ερωτήσεις 0–4· άθροισμα 0–24 → επίσημος πίνακας HSS → 0–100. Απαιτούνται όλες.', '6 items 0–4; raw 0–24 → official HSS table → 0–100. All required.'),
+    score: function (a) { return scoreJR(a, 'H', 6, HOOSJR_TABLE); } };
+
+  // Tegner – Greek: Cureus 2026 (CC BY 4.0) Appendix B; English: Tegner & Lysholm 1985 (as tabulated by ACOEM)
+  var TEG = [
+    [10, 'Ανταγωνιστικά αθλήματα: Ποδόσφαιρο (εθνική και διεθνής ελίτ)', 'Competitive sports: soccer – national and international elite'],
+    [9, 'Ανταγωνιστικά αθλήματα: Ποδόσφαιρο (πιο μικρές κατηγορίες), Πάλη, Ενόργανη γυμναστική', 'Competitive sports: soccer (lower divisions), ice hockey, wrestling, gymnastics'],
+    [8, 'Ανταγωνιστικά αθλήματα: Μπάντμιντον, Στίβος (άλμα εις ύψος κτλ.), Σκι (κατάβασης)', 'Competitive sports: bandy, squash, badminton, athletics (jumping, etc.), downhill skiing'],
+    [7, 'Ανταγωνιστικά αθλήματα: Τένις, Στίβος (τρέξιμο), Μοτοκρος (αγώνες ταχύτητας), Χάντμπολ, Μπάσκετ Ερασιτεχνικά αθλήματα: Ποδόσφαιρο, Μπάντμιντον, Στίβος (άλμα εις ύψος κτλ.), Αγώνες στίβου ανώμαλου δρόμου ως άθλημα αναψυχής και σε επαγγελματικό επίπεδο', 'Competitive sports: tennis, athletics (running), motorcross, speedway, handball, basketball. Recreational sports: soccer, bandy, ice hockey, squash, athletics (jumping), cross country'],
+    [6, 'Ερασιτεχνικά αθλήματα: Τένις και μπάντμιντον, Χάντμπολ, Μπάσκετ, Σκι (κατάβασης), Τζόκινγκ (ελαφρύ τρέξιμο) τουλάχιστον 5 φορές την εβδομάδα', 'Recreational sports: tennis, badminton, handball, basketball, downhill skiing, jogging (at least 5 times per week)'],
+    [5, 'Εργασία: Βαριά εργασία (π.χ. οικοδόμος, αγρότης) Ανταγωνιστικά αθλήματα: Ποδήλατο, Σκι σε μη οργανωμένη πίστα Ερασιτεχνικά αθλήματα: Τζόκινγκ (ελαφρύ τρέξιμο) σε ανώμαλο έδαφος τουλάχιστον 2 φορές την εβδομάδα', 'Work: heavy labor (e.g., building, forestry). Competitive sports: cycling, cross-country skiing. Recreational sports: jogging on uneven ground at least twice weekly'],
+    [4, 'Εργασία: Μετρίως βαριά εργασία (π.χ. οδηγός νταλίκας, βαριά οικιακή εργασία) Ερασιτεχνικά αθλήματα: Ποδήλατο, Σκι σε μη οργανωμένη πίστα, Τζόκινγκ (ελαφρύ τρέξιμο) σε ομαλό έδαφος τουλάχιστον 2 φορές την εβδομάδα', 'Work: moderately heavy labor (e.g., truck driving, heavy domestic labor). Recreational sports: cycling, cross-country skiing, jogging on even ground at least twice weekly'],
+    [3, 'Εργασία: Ελαφριά εργασία Ανταγωνιστικά και ερασιτεχνικά αθλήματα: Κολύμβηση Περπάτημα στο δάσος/εξοχή δυνατό', 'Work: light labor (e.g., nursing). Competitive and recreational sports: swimming, walking in the forest possible'],
+    [2, 'Εργασία: Ελαφριά εργασία Περπάτημα σε ανώμαλο έδαφος δυνατό αλλά περπάτημα στο δάσος/εξοχή αδύνατο', 'Work: light labor. Walking on uneven ground possible but impossible to walk in forest'],
+    [1, 'Εργασία: Καθιστική εργασία Περπάτημα σε ομαλό έδαφος δυνατό', 'Work: sedentary work. Walking on even ground is possible'],
+    [0, 'Αναρρωτική άδεια ή σύνταξη αναπηρίας λόγω των προβλημάτων στο γόνατο', 'Sick leave or disability pension because of knee problems']];
+  function tegOpts() { return TEG.map(function (t) { return { v: t[0], label: L('ΕΠΙΠΕΔΟ ' + t[0] + ' – ' + t[1], 'Level ' + t[0] + ' – ' + t[2]) }; }); }
+  var GR2026 = { label: 'Cureus 2026;18:e104823 (CC BY 4.0) – PMC13052663', url: 'https://doi.org/10.7759/cureus.104823' };
+  var ACOEM = 'https://www.publicsafetymedicine.org/leo/musculoeskeletal-disorders-knee/appendix-f-lysholm-tegner-and-sane-scores';
+  I.TEGNER = { id: 'TEGNER', name: L('Κλίμακα δραστηριότητας Tegner', 'Tegner Activity Scale'), short: 'Tegner', joint: 'knee',
+    license: FREE('Tegner Y, Lysholm J (Clin Orthop 1985) – ελεύθερη χρήση', ACOEM), greek: 'official', greekSource: GR2026,
+    instructions: L('ΕΡΩΤΗΜΑΤΟΛΟΓΙΟ TEGNER Παρακαλώ σημειώστε παρακάτω το ΜΕΓΑΛΥΤΕΡΟ επίπεδο δραστηριότητας στο οποίο μπορείτε να συμμετέχετε ΑΥΤΗ ΤΗ ΣΤΙΓΜΗ:', 'Please mark the HIGHEST level of activity in which you can participate AT THIS MOMENT.'),
+    items: [{ id: 'T1', text: L('Σήμερα: επίπεδο', 'Current level'), type: 'choice', options: tegOpts(), better: 'high', gen: 'tegner' },
+      { id: 'T2', text: L('Πριν την κάκωση: επίπεδο (προαιρετικό)', 'Before injury: level (optional)'), type: 'choice', options: tegOpts(), better: 'high', optional: true, scored: false }],
+    range: [0, 10], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('Ένα επίπεδο 0–10 (τρέχον). Το επίπεδο πριν την κάκωση καταγράφεται χωριστά.', 'Single level 0–10 (current). Pre-injury level recorded separately.'),
+    score: scoreTegner };
+
+  function lys(id, secEl, secEn, opts) { return { id: id, sec: L(secEl, secEn), text: L(secEl, secEn), type: 'choice', options: opts.map(function (o) { return { v: o[0], label: L(o[1] + ' (' + o[0] + ')', o[2] + ' (' + o[0] + ')') }; }), better: 'high' }; }
+  I.LYSHOLM = { id: 'LYSHOLM', name: L('Κλίμακα Lysholm', 'Lysholm Knee Scoring Scale'), short: 'Lysholm', joint: 'knee',
+    license: FREE('Lysholm J, Gillquist J (1982); Tegner & Lysholm (1985) – ελεύθερη χρήση', ACOEM), greek: 'official', greekSource: GR2026,
+    instructions: L('Αυτό το ερωτηματολόγιο έχει σχεδιαστεί για να δώσει στο θεραπευτή σας πληροφορίες σχετικά με το πώς τα προβλήματα με το γόνατο σας έχουν επηρεάσει την ικανότητα σας να ανταπεξέρχεστε στην καθημερινή ζωή. Παρακαλώ απαντήστε κάθε ενότητα και σημειώστε μόνο εκείνο το ΕΝΑ κουτάκι που ταιριάζει καλύτερα σε εσάς αυτή τη στιγμή.', 'Please answer every section and mark only the ONE option which best applies to you at this moment.'),
+    items: [
+      lys('L1', 'ΕΝΟΤΗΤΑ 1: ΔΥΣΧΕΡΕΙΑ ΣΤΗ ΒΑΔΙΣΗ (ΧΩΛΟΤΗΤΑ)', 'Limp', [[5, 'Δεν κουτσαίνω όταν περπατώ.', 'None'], [3, 'Κουτσαίνω ελαφρώς ή περιοδικά όταν περπατώ.', 'Slight or periodical'], [0, 'Κουτσαίνω πολύ και συνεχώς όταν περπατώ.', 'Severe and constant']]),
+      lys('L2', 'ΕΝΟΤΗΤΑ 2: ΧΡΗΣΗ ΜΠΑΣΤΟΥΝΙΟΥ ή ΠΑΤΕΡΙΤΣΑΣ', 'Support', [[5, 'Δε χρησιμοποιώ μπαστούνι ή πατερίτσες.', 'None'], [2, 'Χρησιμοποιώ μπαστούνι ή πατερίτσες και λίγο βάρος στο πονεμένο πόδι.', 'Stick or crutch'], [0, 'Δεν μπορώ να βάλω βάρος στο πονεμένο πόδι.', 'Weight-bearing impossible']]),
+      lys('L3', 'ΕΝΟΤΗΤΑ 3: ΑΙΣΘΗΣΗ ΟΤΙ ΚΛΕΙΔΩΝΕΙ ΤΟ ΓΟΝΑΤΟ', 'Locking', [[15, 'Δεν αισθάνομαι καθόλου ότι κλειδώνει ή ότι πιάνεται το γόνατο μου.', 'No locking and no catching sensation'], [10, 'Αισθάνομαι ότι το γόνατό μου πιάνεται αλλά δεν κλειδώνει.', 'Catching sensation but no locking'], [6, 'Το γόνατο μου κλειδώνει περιστασιακά.', 'Locking (occasionally)'], [2, 'Το γόνατο μου κλειδώνει συχνά.', 'Locking (frequently)'], [0, 'Νοιώθω το γόνατο μου κλειδωμένο αυτή τη στιγμή.', 'Locked joint on examination']]),
+      lys('L4', 'ΕΝΟΤΗΤΑ 4: ΑΙΣΘΗΣΗ ΟΤΙ ΦΕΥΓΕΙ ΤΟ ΓΟΝΑΤΟ', 'Instability', [[25, 'Το γόνατο μου δεν φεύγει ποτέ.', 'Never giving way'], [20, 'Το γόνατο μου φεύγει σπανίως, μόνο κατά τη διάρκεια αθλητικών ή επίπονων δραστηριοτήτων.', 'Rarely during athletics or other severe exertion'], [15, 'Το γόνατο μου φεύγει συχνά σε αθλητικές ή επίπονες δραστηριότητες. Κατά συνέπεια δεν μπορώ να συμμετέχω σε τέτοιες δραστηριότητες.', 'Frequently during athletics or other severe exertion (or incapable of participation)'], [10, 'Το γόνατο μου φεύγει συχνά κατά τη διάρκεια καθημερινών δραστηριοτήτων.', 'Occasionally in daily activities'], [5, 'Το γόνατο μου φεύγει πολύ συχνά κατά τη διάρκεια καθημερινών δραστηριοτήτων.', 'Often in daily activities'], [0, 'Το γόνατο μου φεύγει σε κάθε βήμα που κάνω.', 'Every step']]),
+      lys('L5', 'ΕΝΟΤΗΤΑ 5: ΠΟΝΟΣ', 'Pain', [[25, 'Δεν έχω πόνο στο γόνατο μου.', 'None'], [20, 'Έχω διαλείποντα ή ήπιο πόνο στο γόνατο μου κατά τη διάρκεια επίπονων δραστηριοτήτων.', 'Inconstant and slight during severe exertion'], [15, 'Έχω έντονο πόνο στο γόνατό μου κατά τη διάρκεια επίπονων δραστηριοτήτων.', 'Marked during severe exertion'], [10, 'Έχω έντονο πόνο στο γόνατό μου κατά τη διάρκεια ή αφού περπατήσω περισσότερο από ένα μίλι (περίπου 1.5 χιλιόμετρο).', 'Marked on or after walking more than 2 km'], [5, 'Έχω έντονο πόνο στο γόνατό μου κατά τη διάρκεια ή αφού περπατήσω λιγότερο από ένα μίλι (περίπου 1.5 χιλιόμετρο).', 'Marked on or after walking less than 2 km'], [0, 'Έχω συνεχή πόνο στο γόνατό μου.', 'Constant']]),
+      lys('L6', 'ΕΝΟΤΗΤΑ 6: ΠΡΗΞΙΜΟ (ΟΙΔΗΜΑ)', 'Swelling', [[10, 'Δεν έχω πρήξιμο (οίδημα) στο γόνατό μου.', 'None'], [6, 'Έχω πρήξιμο (οίδημα) στο γόνατό μου μόνο μετά από επίπονες δραστηριότητες.', 'On severe exertion'], [2, 'Έχω πρήξιμο (οίδημα) στο γόνατό μου μετά από συνηθισμένες δραστηριότητες.', 'On ordinary exertion'], [0, 'Το γόνατό μου είναι συνέχεια πρησμένο.', 'Constant']]),
+      lys('L7', 'ΕΝΟΤΗΤΑ 7: ΑΝΑΒΑΣΗ ΣΚΑΛΑΣ', 'Stair-climbing', [[10, 'Δεν έχω προβλήματα ανεβαίνοντας σκάλες.', 'No problems'], [6, 'Έχω ήπια προβλήματα όταν ανεβαίνω σκάλες.', 'Slightly impaired'], [2, 'Μπορώ να ανέβω μόνο ένα-ένα τα σκαλοπάτια.', 'One step at a time'], [0, 'Δεν μπορώ να ανεβώ σκάλες.', 'Impossible']]),
+      // NOTE: the 2026 Greek appendix prints (1) for this 3rd option; original Tegner & Lysholm 1985 value = 2 (used here).
+      lys('L8', 'ΕΝΟΤΗΤΑ 8: ΒΑΘΥ ΚΑΘΙΣΜΑ', 'Squatting', [[5, 'Δεν έχω προβλήματα στο βαθύ κάθισμα.', 'No problems'], [4, 'Έχω ήπια προβλήματα στο βαθύ κάθισμα.', 'Slightly impaired'], [2, 'Δεν μπορώ να κάνω βαθύ κάθισμα πάνω από 90 μοίρες.', 'Not beyond 90 degrees'], [0, 'Δεν μπορώ να κάνω καθόλου βαθύ κάθισμα λόγω του γόνατος μου.', 'Impossible']])],
+    range: [0, 100], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('Άθροισμα 8 σταθμισμένων ενοτήτων, 0–100 (Tegner & Lysholm 1985)· απαιτούνται και οι 8.', 'Sum of 8 weighted sections, 0–100 (Tegner & Lysholm 1985); all 8 required.'),
+    score: scoreLysholm };
+
+  var CL = { clinician: true, optional: true };
+  function hhsRom(id, name, normal) { return { id: id, sec: E('Range of Motion (*indicates normal)'), text: E(name + ' (*' + normal + '°) – degrees'), type: 'number', min: 0, max: 180, unit: '°', clinician: true, optional: true, better: 'high', gen: function (h) { return Math.round(normal * (0.35 + 0.55 * h)); } }; }
+  I.HHS = { id: 'HHS', name: L('Harris Hip Score'), short: 'HHS', joint: 'hip',
+    license: FREE('Harris WH (J Bone Joint Surg Am 1969) – ελεύθερη χρήση (δεν εντοπίστηκε δικαιούχος αδειών)', 'https://www.preventivehip.org/images/harris_hip_score.pdf'),
+    greek: 'needed', greekNote: L('Υπάρχει ελληνική έκδοση μόνο του modified HHS (Stasi 2021, Hip Int) – κείμενο όχι ελεύθερα διαθέσιμο.', 'Only a Greek modified HHS exists (Stasi 2021) – text not openly available.'),
+    items: [
+      choice('H1', E('Pain'), [[44, 'None or ignores it (44)'], [40, 'Slight, occasional, no compromise in activities (40)'], [30, 'Mild pain, no effect on average activities, rarely moderate pain with unusual activity; may take aspirin (30)'], [20, 'Moderate pain, tolerable but makes concession to pain. Some limitation of ordinary activity or work. May require occasional pain medication stronger than aspirin (20)'], [10, 'Marked pain, serious limitation of activities (10)'], [0, 'Totally disabled, crippled, pain in bed, bedridden (0)']]),
+      choice('H2', E('Limp'), [[11, 'None (11)'], [8, 'Slight (8)'], [5, 'Moderate (5)'], [0, 'Severe (0)']]),
+      choice('H3', E('Support'), [[11, 'None (11)'], [7, 'Cane for long walks (7)'], [5, 'Cane most of time (5)'], [3, 'One crutch (3)'], [2, 'Two canes (2)'], [0, 'Two crutches or not able to walk (0)']]),
+      choice('H4', E('Distance walked'), [[11, 'Unlimited (11)'], [8, 'Six blocks (8)'], [5, 'Two or three blocks (5)'], [2, 'Indoors only (2)'], [0, 'Bed and chair only (0)']]),
+      choice('H5', E('Stairs'), [[4, 'Normally without using a railing (4)'], [2, 'Normally using a railing (2)'], [1, 'In any manner (1)'], [0, 'Unable to do stairs (0)']]),
+      choice('H6', E('Put on shoes and socks'), [[4, 'With ease (4)'], [2, 'With difficulty (2)'], [0, 'Unable (0)']]),
+      choice('H7', E('Sitting'), [[5, 'Comfortably in ordinary chair for one hour (5)'], [3, 'On a high chair for 30 minutes (3)'], [0, 'Unable to sit comfortably in any chair (0)']]),
+      choice('H8', E('Enter public transportation'), [[1, 'Yes (1)'], [0, 'No (0)']]),
+      choice('HD1', E('Absence of deformity – less than 30° fixed flexion contracture'), [[1, 'Yes'], [0, 'No']], CL),
+      choice('HD2', E('Absence of deformity – less than 10° fixed abduction'), [[1, 'Yes'], [0, 'No']], CL),
+      choice('HD3', E('Absence of deformity – less than 10° fixed internal rotation in extension'), [[1, 'Yes'], [0, 'No']], CL),
+      choice('HD4', E('Absence of deformity – limb length discrepancy less than 3.2 cm'), [[1, 'Yes'], [0, 'No']], CL),
+      hhsRom('HR1', 'Flexion', 140), hhsRom('HR2', 'Abduction', 40), hhsRom('HR3', 'Adduction', 40), hhsRom('HR4', 'External Rotation', 40), hhsRom('HR5', 'Internal Rotation', 40)],
+    range: [0, 100], better: 'high', primary: 'total', chart: ['total', 'patientSubtotal'],
+    subNames: { patientSubtotal: L('Πόνος+λειτουργία (/91)', 'Pain+function (/91)'), pain: L('Πόνος (/44)', 'Pain (/44)'), 'function': L('Λειτουργία (/47)', 'Function (/47)'), deformity: L('Παραμόρφωση (/4)', 'Deformity (/4)'), rom: L('ROM (/5)'), romArc: L('Τόξο ROM °', 'ROM arc °') },
+    scoring: L('Πόνος 44 + Λειτουργία 47 + Απουσία παραμόρφωσης 4 (όλα «ναι» = 4, αλλιώς 0) + ROM 5 (συνολικό τόξο: 211–300°=5, 161–210=4, 101–160=3, 61–100=2, 31–60=1, 0–30=0) = 100. Παραμόρφωση & ROM: ιατρός.', 'Pain 44 + Function 47 + Deformity 4 + ROM 5 (total-arc bands) = 100. Deformity & ROM by clinician.'),
+    score: scoreHhs };
+
+  I.VAS = { id: 'VAS', name: L('Πόνος – αριθμητική κλίμακα 0–10 (NRS/VAS)', 'Pain – numeric rating scale 0–10 (NRS/VAS)'), short: 'VAS', joint: 'generic',
+    license: FREE('Γενική κλίμακα NRS/VAS – δεν απαιτείται άδεια (δική μας διατύπωση)', 'https://doi.org/10.1002/acr.20543'), greek: 'own',
+    items: [{ id: 'V1', text: L('Πόσο πόνο είχατε κατά μέσο όρο στο χειρουργημένο άκρο την τελευταία εβδομάδα; (0 = καθόλου πόνος, 10 = ο χειρότερος δυνατός πόνος)', 'How much pain did you have on average in the operated limb over the last week? (0 = no pain, 10 = worst pain imaginable)'), type: 'nrs', min: 0, max: 10, better: 'low' }],
+    range: [0, 10], better: 'low', primary: 'total', chart: ['total'],
+    scoring: L('Τιμή 0–10 (χαμηλότερο = καλύτερο).', 'Value 0–10 (lower = better).'),
+    score: scoreVas };
+
+  var BANDS = [[0, '0–30°'], [2, '31–60°'], [4, '61–90°'], [6, '91–120°'], [8, '121–150°'], [10, '151–180°']];
+  function bandOpts() { return BANDS.map(function (b) { return [b[0], b[1] + ' (' + b[0] + ')']; }); }
+  I.CONSTANT = { id: 'CONSTANT', name: L('Constant–Murley Score'), short: 'Constant', joint: 'shoulder',
+    license: FREE('Constant CR, Murley AH (Clin Orthop 1987) – ελεύθερη κλινική/ερευνητική χρήση (δεν εντοπίστηκε δικαιούχος αδειών)', 'https://doi.org/10.1007/s11136-018-1875-7'),
+    greek: 'needed', greekNote: L('Δεν υπάρχει επίσημη ελληνική σταθμισμένη έκδοση (χρησιμοποιείται διεθνώς χωρίς επίσημες μεταφράσεις).', 'No official validated Greek version.'),
+    items: [
+      choice('C1', E('Pain – severity of pain during normal daily activities'), [[15, 'None (15)'], [10, 'Mild (10)'], [5, 'Moderate (5)'], [0, 'Severe (0)']]),
+      choice('C2', E('Activities of daily living – limitation of normal work'), [[4, 'Not limited (4)'], [2, 'Moderately limited (2)'], [0, 'Severely limited (0)']]),
+      choice('C3', E('Activities of daily living – limitation of recreational / sport activities'), [[4, 'Not limited (4)'], [2, 'Moderately limited (2)'], [0, 'Severely limited (0)']]),
+      choice('C4', E('Activities of daily living – night sleep'), [[2, 'Unaffected (2)'], [1, 'Sometimes disturbed (1)'], [0, 'Always disturbed (0)']]),
+      choice('C5', E('Activities of daily living – hand can be positioned (working level) up to'), [[10, 'Above head (10)'], [8, 'Top of head (8)'], [6, 'Neck (6)'], [4, 'Xiphoid (4)'], [2, 'Waist (2)']]),
+      choice('C6', E('Range of motion – pain-free active forward elevation'), bandOpts(), CL),
+      choice('C7', E('Range of motion – pain-free active lateral elevation (abduction)'), bandOpts(), CL),
+      { id: 'C8', sec: E('Range of motion'), text: E('External rotation – positions achieved (2 points each)'), type: 'multi', options: ['Hand behind head, elbow forward', 'Hand behind head, elbow back', 'Hand on top of head, elbow forward', 'Hand on top of head, elbow back', 'Full elevation from on top of head'].map(function (t, i) { return { v: i, label: E(t) }; }), clinician: true, optional: true, better: 'high' },
+      choice('C9', E('Internal rotation – dorsum of hand / thumb reaches'), [[0, 'Lateral thigh (0)'], [2, 'Buttock (2)'], [4, 'Lumbosacral junction (4)'], [6, 'Waist (L3) (6)'], [8, '12th dorsal vertebra (T12) (8)'], [10, 'Interscapular (T7) (10)']], CL),
+      { id: 'C10', sec: E('Strength'), text: E('Strength at 90° abduction, best of 3 (kg) – 1 point per 0.5 kg, max 25; enter 0 if 90° cannot be reached'), type: 'number', min: 0, max: 40, step: 0.5, unit: 'kg', clinician: true, optional: true, better: 'high', gen: function (h) { return Math.round((2 + h * 9) * 2) / 2; } }],
+    range: [0, 100], better: 'high', primary: 'total', chart: ['total', 'patientSubtotal'],
+    subNames: { patientSubtotal: L('Ασθενής (/35)', 'Patient (/35)'), pain: L('Πόνος (/15)', 'Pain (/15)'), adl: L('ADL (/20)'), rom: L('ROM (/40)'), strength: L('Δύναμη (/25)', 'Strength (/25)') },
+    scoring: L('Πόνος 15 + ADL 20 (εργασία 4, αναψυχή 4, ύπνος 2, θέση χεριού 10) + ROM 40 (πρόσθια & πλάγια ανύψωση 10+10, έξω στροφή 5×2, έσω στροφή 10) + Δύναμη 25 (1 β./0,5 kg, μέγ. 25) = 100. ROM & δύναμη: ιατρός.', 'Pain 15 + ADL 20 + ROM 40 + Strength 25 (1 pt/0.5 kg) = 100. ROM & strength by clinician.'),
+    score: scoreConstant };
+
+
+  // =====================================================================
+  // PART C: official GREEK text where publicly available from the official source
+  // DASH / QuickDASH: IWH official Greek translation (Themistocleous, KAT Athens), verbatim from
+  // https://dash.iwh.on.ca/sites/dash/files/Translations/DASH_Greek.pdf and QuickDASH_Greek.pdf
+  // (original spelling preserved). Licensing handled by the user's University.
+  // =====================================================================
+  var GT = function (t) { return L(t, t); };
+  var SC = {
+    diff: ['ΚΑΜΙΑ ΔΥΣΚΟΛΙΑ', 'ΗΠΙΑ ΔΥΣΚΟΛΙΑ', 'ΜΕΤΡΙΑ ΔΥΣΚΟΛΙΑ', 'ΜΕΓΑΛΗ ΔΥΣΚΟΛΙΑ', 'ΑΝΙΚΑΝΟΤΗΤΑ'],
+    soc: ['ΚΑΘΟΛΟΥ', 'ΕΛΑΦΡΩΣ', 'ΜΕΡΙΚΩΣ', 'ΑΡΚΕΤΑ', 'ΠΑΡΑ ΠΟΛΥ'],
+    lim: ['ΚΑΝΕΝΑΣ ΠΕΡΙΟΡΙΣΜΟΣ', 'ΕΛΑΦΡΩΣ ΠΕΡΙΟΡΙΣΜΟΣ', 'ΜΕΤΡΙΟΣ ΠΕΡΙΟΡΙΣΜΟΣ', 'ΜΕΓΑΛΟΣ ΠΕΡΙΟΡΙΣΜΟΣ', 'ΑΝΙΚΑΝΟΤΗΤΑ'],
+    sev: ['ΚΑΜΙΑ ΕΝΟΧΛΗΣΗ', 'ΕΛΑΦΡΑ ΕΝΟΧΛΗΣΗ', 'ΜΕΤΡΙΑ ΕΝΟΧΛΗΣΗ', 'ΜΕΓΑΛΗ ΕΝΟΧΛΗΣΗ', 'ΠΟΛΥ ΜΕΓΑΛΗ ΕΝΟΧΛΗΣΗ'],
+    sleep: ['ΚΑΜΙΑ ΔΥΣΚΟΛΙΑ', 'ΗΠΙΑ ΔΥΣΚΟΛΙΑ', 'ΜΕΤΡΙΑ ΔΥΣΚΟΛΙΑ', 'ΜΕΓΑΛΗ ΔΥΣΚΟΛΙΑ', 'ΤΟΣΟ ΠΟΛΥ ΠΟΥ ΔΕΝ ΚΟΙΜΗΘΗΚΑ'],
+    agree: ['ΔΙΑΦΩΝΩ ΑΠΟΛΥΤΩΣ', 'ΔΙΑΦΩΝΩ', 'ΟΥΤΕ ΣΥΜΦΩΝΩ ΟΥΤΕ ΔΙΑΦΩΝΩ', 'ΣΥΜΦΩΝΩ', 'ΣΥΜΦΩΝΩ ΑΠΟΛΥΤΩΣ'] };
+  function gOpts(k) { return SC[k].map(function (t, i) { return { v: i + 1, label: GT(t + ' (' + (i + 1) + ')') }; }); }
+  function gItem(id, text, k, sec, extra) { var it = { id: id, text: GT(text), type: 'choice', options: gOpts(k), better: 'low', officialGreek: true }; if (sec) it.sec = sec; for (var x in extra || {}) it[x] = extra[x]; return it; }
+  var SEC_A = GT('Παρακαλώ βαθμολογήστε την ικανότητα σας κατά την εκτέλεση των ακόλουθων ασχολιών – εργασιών την προηγούμενη εβδομάδα βάζοντας σε κύκλο τον πιο αντιπροσωπευτικό βαθμό δυσκολίας.');
+  var SEC_S = GT('Παρακαλώ βαθμολογήστε την ένταση των συμπτωμάτων την περασμένη εβδομάδα. (βάλτε σε κύκλο τον πιο αντιπροσωπευτικό αριθμό).');
+  var Q22 = 'Κατά την διάρκεια της προηγούμενης εβδομάδας σε τι βαθμό το πρόβλημα που αντιμετωπίζεται με τον ώμο, ή τον αγκώνα ή το χέρι σας, επηρέασε τις κοινωνικές σας συναναστροφές με την οικογένεια, τους φίλους, ή τους γείτονες σας; (βάλτε σε κύκλο τον πιο αντιπροσωπευτικό αριθμό).';
+  var Q23 = 'Κατά τη διάρκεια της προηγούμενης εβδομάδας, αναγκαστήκατε να περιορίσετε τις δραστηριότητες σας στην εργασία σας ή στην καθημερινή σας ζωή, ως αποτέλεσμα του προβλήματος που αντιμετωπίζεται με τον ώμο, τον αγκώνα ή το χέρι σας; (βάλτε σε κύκλο τον πιο αντιπροσωπευτικό αριθμό).';
+  var Q29 = 'Σε τι βαθμό επηρεάστηκε ο νυκτερινός σας ύπνος κατά τη διάρκεια της προηγούμενης εβδομάδας λόγω του πόνου στον ώμο ή στον αγκώνα ή στο χέρι; (βάλτε σε κύκλο τον πιο αντιπροσωπευτικό αριθμό).';
+  var DA = ['Άνοιγμα σφραγισμένου, νέου βάζου.', 'Γράψιμο.', 'Κλείδωμα – Ξεκλείδωμα πόρτας.', 'Μαγείρεμα.', 'Ώθηση βαριάς πόρτας.', 'Τοποθέτηση αντικειμένου σε ράφι πάνω από το κεφάλι σας.', 'Εκτέλεση βαριών οικιακών εργασιών (π.χ. πλύσιμο τοίχων, πατωμάτων).', 'Περιποίηση του κήπου.', 'Στρώσιμο κρεβατιού.', 'Μεταφορά χαρτοφύλακα ή τσάντας με ψώνια.', 'Μεταφορά βαριού αντικειμένου (πάνω απο 5 kg).', 'Αλλαγή λάμπας στο ταβάνι.', 'Λούσιμο, στέγνωμα μαλλιών.', 'Πλύσιμο της πλάτης σας.', 'Ένδυση με ελαστικό πουλόβερ.', 'Χρήση μαχαιριού για κόψιμο φαγητού.', 'Ψυχαγωγικές δραστηριότητες που χρειάζονται μικρή προσπάθεια (π.χ. πλέξιμο, παιγνίδια με τράπουλα).', 'Ψυχαγωγικές δραστηριότητες στις οποίες απαιτείται χειρονακτική δύναμη (π.χ. μπάσκετ, τένις κ.λ.π.).', 'Ψυχαγωγικές δραστηριότητες στις οποίες κινείται το χέρι προς όλες τις κατευθύνσεις (π.χ. κολύμβηση, βολεϊ κ.λ.π.).', 'Ικανότητα προετοιμασίας – πραγματοποίησης ταξιδιών και καθημερινών μετακινήσεων.', 'Σεξουαλικές δραστηριότητες.'];
+  var DSY = ['Πόνος στον ώμο, ή στον αγκώνα ή στο χέρι.', 'Πόνος στον ώμο, ή στον αγκώνα ή στο χέρι όταν κατεβάλατε χειρονακτική δύναμη (π.χ. μπάσκετ, τένις κ.λ.π.).', 'Μυρμήγκιασμα, μούδιασμα, τσιμπήματα στον ώμο ή στον αγκώνα ή στο χέρι.', 'Αδυναμία στον ώμο ή στον αγκώνα ή στο χέρι.', 'Δυσκαμψία στον ώμο ή στον αγκώνα ή στο χέρι.'];
+  var dashCore = [];
+  DA.forEach(function (t, i) { dashCore.push(gItem('D' + (i + 1), t, 'diff', SEC_A)); });
+  dashCore.push(gItem('D22', Q22, 'soc')); dashCore.push(gItem('D23', Q23, 'lim'));
+  DSY.forEach(function (t, i) { dashCore.push(gItem('D' + (24 + i), t, 'sev', SEC_S)); });
+  dashCore.push(gItem('D29', Q29, 'sleep'));
+  dashCore.push(gItem('D30', 'Νιώθω λιγότερο ικανός, λιγότερο χρήσιμος, έχασα την αυτοπεποίθηση μου, λόγω του προβλήματος στον ώμο ή στον αγκώνα, ή στο χέρι. (βάλτε σε κύκλο τον πιο αντιπροσωπευτικό αριθμό).', 'agree'));
+  var WSEC = GT('ΕΠΑΓΓΕΛΜΑ (ΠΡΟΑΙΡΕΤΙΚΟ) – Οι ακόλουθες ερωτήσεις αφορούν τις επιπτώσεις του προβλήματος σας στην ικανότητα εργασίας σας (συμπεριλαμβανομένων των οικιακών, εάν αυτή είναι η κύρια ενασχόληση σας). Δεν δουλεύω: μπορείτε να παρακάμψετε το κομμάτι αυτό. Αντιμετωπίσατε κάποια δυσκολία;');
+  var SSEC = GT('ΑΘΛΗΤΙΚΕΣ - ΜΟΥΣΙΚΕΣ/ ΨΥΧΑΓΩΓΙΚΕΣ ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ (ΠΡΟΑΙΡΕΤΙΚΟ) – Οι ακόλουθες ερωτήσεις αφορούν την επίπτωση του προβλήματος του ώμου, ή του αγκώνα ή του χεριού σας στην εκτέλεση αθλητικών – μουσικών/ψυχαγωγικών δραστηριοτήτων, ή και των δύο. Εάν ασκείστε σε περισσότερες από μια αθλητικές δραστηριότητες ή σε μουσικά όργανα (ή και στα δύο), απαντήστε με βάση αυτό που εσείς θεωρείται πιο σημαντικό για εσάς. Αντιμετωπίσατε κάποια δυσκολία;');
+  var WK = ['Πραγματοποιώντας την δουλειά σας με τον συνήθη τρόπο;', 'Κάνοντας την συνηθισμένη εργασία σας, λόγω του πόνου στον ώμο ή στον αγκώνα ή στο χέρι;', 'Στο να πραγματοποιήσετε την εργασία σας τόσο καλά όσο θα θέλατε;', 'Στο να εκτελέσετε την εργασία σας στο συνηθισμένο χρόνο;'];
+  var SP = ['Ασκώντας την αγαπημένη σας αθλητική δραστηριότητα – μουσικό όργανο με τον συνήθη τρόπο;', 'Ασκώντας την αγαπημένη σας αθλητική δραστηριότητα – μουσικό όργανο λόγω του πόνου στον ώμο ή στον αγκώνα ή στο χέρι σας;', 'Στο να ασκηθείτε όσο καλά όσο θα θέλατε στην αγαπημένη σας αθλητική δραστηριότητα – μουσικό όργανο;', 'Στο να ασκείται την αγαπημένη σας αθλητική δραστηριότητα – μουσικό όργανο στο συνηθισμένο χρόνο;'];
+  var gMods = WK.map(function (t, i) { return gItem('W' + (i + 1), t, 'diff', WSEC, { optional: true }); }).concat(SP.map(function (t, i) { return gItem('M' + (i + 1), t, 'diff', SSEC, { optional: true }); }));
+  var DINSTR = GT('ΟΔΗΓΙΕΣ: Το ερωτηματολόγιο αυτό αξιολογεί τα συμπτώματα καθώς και την ικανότητα σας να εκτελείται συγκεκριμένες ασχολίες – εργασίες. Παρακαλώ απαντήστε σε όλες τις ερωτήσεις βαθμολογώντας την ικανότητα σας να πραγματοποιείται συγκεκριμένες ασχολίες – εργασίες την προηγούμενη εβδομάδα βάζοντας σε κύκλο τον κατάλληλο αριθμό. Εάν δεν είχατε την ευκαιρία την προηγούμενη εβδομάδα να εκτελέσετε την συγκεκριμένη ασχολία – εργασία, παρακαλώ βαθμολογήστε κατά εκτίμηση ποία απάντηση θα ήταν πιο κοντά στην πραγματικότητα. Δεν έχει σημασία ποίο χέρι χρησιμοποιήσατε για την εκτέλεση της εργασίας – ασχολίας, παρακαλώ απαντήστε με βάση την ικανότητα με την οποία εκτελέσατε την συγκεκριμένη εργασία - ασχολία, ανεξάρτητα από τον τρόπο με τον οποίο την πραγματοποιήσατε.');
+  var IWH_CR = '© Institute for Work & Health 2006. All rights reserved. Greek translation courtesy of George Themistocleous, Athens University Medical School, KAT Hospital, Athens, Greece.';
+  I.DASH.items = dashCore.concat(gMods); I.DASH.instructions = DINSTR; I.DASH.copyright = IWH_CR; I.DASH.greek = 'official';
+  // QuickDASH items (IWH Greek QuickDASH): 1 jar, 2 heavy chores, 3 carry bag, 4 wash back, 5 knife, 6 recreational force, 7 social, 8 work limit, 9 pain, 10 tingling, 11 sleep
+  var qd = [gItem('Q1', DA[0], 'diff', SEC_A), gItem('Q2', DA[6], 'diff', SEC_A), gItem('Q3', DA[9], 'diff', SEC_A), gItem('Q4', DA[13], 'diff', SEC_A), gItem('Q5', DA[15], 'diff', SEC_A), gItem('Q6', DA[17], 'diff', SEC_A),
+    gItem('Q7', Q22, 'soc'), gItem('Q8', Q23, 'lim'), gItem('Q9', DSY[0], 'sev', SEC_S), gItem('Q10', DSY[2], 'sev', SEC_S), gItem('Q11', Q29, 'sleep')];
+  I.QDASH.items = qd.concat(gMods.map(function (m) { var c = {}; for (var k in m) c[k] = m[k]; return c; }));
+  I.QDASH.instructions = DINSTR; I.QDASH.copyright = IWH_CR; I.QDASH.greek = 'official';
+
+  // =====================================================================
+  // PART D: GREEK VERSION SOURCES (all links verified to load, 31 Oct 2026)
+  // status: 'yes' | 'no' | 'unverified'.  form = official Greek questionnaire / e-form; val = validation publication
+  // =====================================================================
+  function lk(el, en, url) { return { label: L(el, en), url: url }; }
+  var PM = function (id) { return 'https://pubmed.ncbi.nlm.nih.gov/' + id + '/'; };
+  var GR = {
+    OKS: { status: 'yes', note: L('Ελληνική μετάφραση στη λίστα γλωσσών της Oxford University Innovation (Greek – non-certified, linguistically validated). Δεν βρέθηκε δημοσιευμένη ψυχομετρική μελέτη.', 'Greek translation in the OUI language list (non-certified, linguistically validated). No psychometric validation paper found.'),
+      form: [lk('Λίστα γλωσσών OKS (OUI, PDF)', 'OKS language list (OUI, PDF)', 'https://innovation.ox.ac.uk/sites/default/files/2026-05/OKS-Language-List.pdf')], val: [] },
+    OHS: { status: 'no', note: L('Η ελληνική δεν περιλαμβάνεται στη λίστα γλωσσών OHS της OUI (Φεβ. 2025).', 'Greek is not in the OUI OHS language list (Feb 2025).'),
+      form: [lk('Λίστα γλωσσών OHS (OUI, PDF)', 'OHS language list (OUI, PDF)', 'https://innovation.ox.ac.uk/sites/default/files/2026-05/OHS-Available-Language-List-Feb-2025.pdf')], val: [] },
+    OSS: { status: 'yes', note: L('Ελληνική έκδοση στη λίστα γλωσσών OSS της OUI.', 'Greek listed in the OUI OSS language list.'),
+      form: [lk('Λίστα γλωσσών OSS (OUI, PDF)', 'OSS language list (OUI, PDF)', 'https://innovation.ox.ac.uk/sites/default/files/2026-05/OSS_language-list_July2022.pdf')], val: [] },
+    WOMAC: { status: 'yes', note: L('Σταθμισμένη ελληνική έκδοση (Papathanasiou et al., Qual Life Res 2014). Κείμενο μέσω womac.com.', 'Validated Greek version (Qual Life Res 2014). Text via womac.com.'),
+      form: [lk('WOMAC – επίσημος ιστότοπος', 'WOMAC official site', 'https://www.womac.com/')], val: [lk('Qual Life Res 2014 (PubMed)', 'Qual Life Res 2014 (PubMed)', PM(23918463)), lk('Ιατρική ΑΠΘ – περίληψη', 'AUTh Medicine – summary', 'https://www.med.auth.gr/content/comparative-validation-womac-osteoarthritis-and-lequesne-algofunctional-indices-greek')] },
+    KOOS: { status: 'yes', note: L('Σταθμισμένη ελληνική έκδοση σε ΟΑΓ (Moutzouri et al., Disabil Rehabil 2015). Μεταφράσεις μέσω ePROVIDE (Mapi). Επίσης ελληνικά KOOS-Child και KOOS-PF.', 'Validated Greek version in TKA (Disabil Rehabil 2015). Translations via ePROVIDE (Mapi). Greek KOOS-Child and KOOS-PF also exist.'),
+      form: [lk('KOOS στο ePROVIDE (μεταφράσεις)', 'KOOS on ePROVIDE (translations)', 'https://eprovide.mapi-trust.org/instruments/knee-injury-and-osteoarthritis-outcome-score'), lk('koos.nu', 'koos.nu', 'https://www.koos.nu/')],
+      val: [lk('Disabil Rehabil 2015 (PubMed)', 'Disabil Rehabil 2015 (PubMed)', PM(25335550)), lk('KOOS-PF ελληνικό (PMC 2025)', 'Greek KOOS-PF (PMC 2025)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11843890/'), lk('KOOS-Child ελληνικό (PubMed)', 'Greek KOOS-Child (PubMed)', PM(32809119))] },
+    KOOSJR: { status: 'no', note: L('Δεν βρέθηκε ελληνική σταθμισμένη έκδοση KOOS-JR.', 'No Greek validated KOOS-JR found.'), form: [lk('KOOS-12/JR στο ePROVIDE', 'KOOS on ePROVIDE', 'https://eprovide.mapi-trust.org/instruments/knee-injury-and-osteoarthritis-outcome-score')], val: [] },
+    HOOS: { status: 'unverified', note: L('Δεν βρέθηκε δημοσιευμένη ελληνική μελέτη στάθμισης HOOS· έλεγχος διαθεσιμότητας μετάφρασης στο ePROVIDE.', 'No Greek HOOS validation paper found; check translation availability on ePROVIDE.'),
+      form: [lk('HOOS στο ePROVIDE', 'HOOS on ePROVIDE', 'https://eprovide.mapi-trust.org/instruments/hip-disability-and-osteoarthritis-outcome-score')], val: [] },
+    HOOSJR: { status: 'no', note: L('Δεν βρέθηκε ελληνική έκδοση HOOS-JR.', 'No Greek HOOS-JR found.'), form: [], val: [] },
+    KSS2011: { status: 'no', note: L('Δεν βρέθηκε ελληνική σταθμισμένη έκδοση του KSS 2011.', 'No Greek validated KSS 2011 found.'), form: [lk('The Knee Society – KSS', 'The Knee Society – KSS', 'https://www.kneesociety.org/the-knee-society-score')], val: [] },
+    EQ5D5L: { status: 'yes', note: L('Επίσημη ελληνική έκδοση EuroQol (διάθεση μετά από εγγραφή). Ψυχομετρική στάθμιση σε Ελλάδα (Eur J Health Econ 2017). Δεν υπάρχει ελληνικό 5L value set.', 'Official EuroQol Greek version (after registration). Validated in Greece (Eur J Health Econ 2017). No Greek 5L value set.'),
+      form: [lk('EuroQol – διαθέσιμες εκδόσεις', 'EuroQol – available versions', 'https://euroqol.org/register/obtain-eq-5d/available-versions/')], val: [lk('Eur J Health Econ 2017 (PubMed)', 'Eur J Health Econ 2017 (PubMed)', PM(27262480))] },
+    TEGNER: { status: 'yes', note: L('Ελληνικό κείμενο από τη δημοσίευση Cureus 2026 (CC BY 4.0) – χρησιμοποιείται στη φόρμα.', 'Greek text from Cureus 2026 (CC BY 4.0) – used in the form.'),
+      form: [lk('Cureus 2026 – Παράρτημα με ελληνικό κείμενο (PMC)', 'Cureus 2026 – appendix with Greek text (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC13052663/')], val: [lk('Cureus 2026 (PMC)', 'Cureus 2026 (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC13052663/'), lk('Cureus 2020 (PMC)', 'Cureus 2020 (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7444989/')] },
+    LYSHOLM: { status: 'yes', note: L('Ελληνικό κείμενο από τη δημοσίευση Cureus 2026 (CC BY 4.0) – χρησιμοποιείται στη φόρμα.', 'Greek text from Cureus 2026 (CC BY 4.0) – used in the form.'),
+      form: [lk('Cureus 2026 – Παράρτημα με ελληνικό κείμενο (PMC)', 'Cureus 2026 – appendix with Greek text (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC13052663/')], val: [lk('Cureus 2026 (PMC)', 'Cureus 2026 (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC13052663/'), lk('Cureus 2020 (PMC)', 'Cureus 2020 (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7444989/')] },
+    IKDC: { status: 'yes', note: L('Σταθμισμένη ελληνική έκδοση (Koumantakis et al., J Orthop Traumatol 2016, open access). Το ελληνικό κείμενο δεν περιλαμβάνεται στο δημόσιο κείμενο του άρθρου.', 'Validated Greek version (J Orthop Traumatol 2016, OA). Greek item text not in the public article text.'),
+      form: [lk('AOSSM – IKDC', 'AOSSM – IKDC', 'https://www.sportsmed.org/research/resources')], val: [lk('J Orthop Traumatol 2016 (PMC)', 'J Orthop Traumatol 2016 (PMC)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4882291/'), lk('PubMed', 'PubMed', PM(26093603))] },
+    HHS: { status: 'yes', note: L('Υπάρχει ελληνική έκδοση του modified HHS (μόνο το τμήμα ασθενούς· Stasi et al., Hip Int 2021). Όχι του πλήρους HHS με κλινικά μέρη.', 'Greek modified HHS exists (patient part only; Hip Int 2021), not the full HHS.'),
+      form: [], val: [lk('Hip Int 2021 – mHHS ελληνικό (PubMed)', 'Hip Int 2021 – Greek mHHS (PubMed)', PM(31984798))] },
+    DASH: { status: 'yes', note: L('Επίσημη ελληνική μετάφραση IWH (Themistocleous, ΚΑΤ) – το επίσημο ελληνικό κείμενο χρησιμοποιείται στη φόρμα. Στάθμιση: J Hand Ther 2006.', 'Official IWH Greek translation – official Greek text used in the form. Validation: J Hand Ther 2006.'),
+      form: [lk('DASH ελληνικό (IWH, PDF)', 'Greek DASH (IWH, PDF)', 'https://dash.iwh.on.ca/sites/dash/files/Translations/DASH_Greek.pdf'), lk('Βαθμολόγηση DASH ελληνικά (IWH, PDF)', 'Greek DASH scoring (IWH, PDF)', 'https://dash.iwh.on.ca/sites/dash/files/Translations/Scoring_DASH_Greek.pdf'), lk('IWH – μεταφράσεις', 'IWH – translations', 'https://dash.iwh.on.ca/available-translations')],
+      val: [lk('J Hand Ther 2006 (PubMed)', 'J Hand Ther 2006 (PubMed)', PM(16861133))] },
+    QDASH: { status: 'yes', note: L('Επίσημη ελληνική μετάφραση IWH – το επίσημο ελληνικό κείμενο χρησιμοποιείται στη φόρμα. Δεν βρέθηκε ξεχωριστή μελέτη στάθμισης QuickDASH (βλ. DASH 2006).', 'Official IWH Greek translation – used in the form. No separate Greek QuickDASH validation found (see DASH 2006).'),
+      form: [lk('QuickDASH ελληνικό (IWH, PDF)', 'Greek QuickDASH (IWH, PDF)', 'https://dash.iwh.on.ca/sites/dash/files/Translations/QuickDASH_Greek.pdf'), lk('Βαθμολόγηση QuickDASH ελληνικά (IWH, PDF)', 'Greek QuickDASH scoring (IWH, PDF)', 'https://dash.iwh.on.ca/sites/dash/files/Translations/Scoring_QuickDASH_Greek.pdf'), lk('FESSH – QuickDASH ελληνικό (PDF)', 'FESSH – Greek QuickDASH (PDF)', 'https://fessh.com/newweb/wp-content/uploads/2025/06/QuickDASH_Greek.pdf')],
+      val: [lk('DASH ελληνικό – J Hand Ther 2006 (PubMed)', 'Greek DASH – J Hand Ther 2006 (PubMed)', PM(16861133))] },
+    FJS12: { status: 'unverified', note: L('Ο επίσημος ιστότοπος FJS αναφέρει ελληνική μετάφραση (linguistically validated) σύμφωνα με ευρετήριο αναζήτησης, αλλά ο ιστότοπος δεν φόρτωνε στον έλεγχο (HTTP 500). Δεν βρέθηκε ελληνική ψυχομετρική μελέτη.', 'Official FJS site lists Greek (per search index) but did not load during checking (HTTP 500). No Greek psychometric study found.'), form: [], val: [] },
+    ACLRSI: { status: 'yes', note: L('Ελληνική μετάφραση/πολιτισμική προσαρμογή – πιλοτική μελέτη (n=7, Παν. Πατρών, Νημερτής)· όχι πλήρης στάθμιση.', 'Greek translation/cross-cultural adaptation – pilot only (n=7, Univ. of Patras repository); not fully validated.'),
+      form: [], val: [lk('Νημερτής – Παν. Πατρών (πτυχιακή/πιλοτική)', 'Nemertes – Univ. of Patras (pilot thesis)', 'https://hdl.handle.net/10889/22150')] },
+    CONSTANT: { status: 'yes', note: L('Σταθμισμένη ελληνική έκδοση του modified Constant Score (JSES Open Access 2017).', 'Validated Greek modified Constant Score (JSES Open Access 2017).'),
+      form: [], val: [lk('JSES Open Access 2017 (DOI)', 'JSES Open Access 2017 (DOI)', 'https://doi.org/10.1016/j.jses.2017.02.004')] },
+    VAS: { status: 'no', note: L('Γενική κλίμακα· δική μας ελληνική διατύπωση.', 'Generic scale; our own Greek wording.'), form: [], val: [] }
+  };
+  Object.keys(GR).forEach(function (k) { if (I[k]) I[k].greekInfo = GR[k]; });
+
+  // =====================================================================
+  // PROCEDURES, TIMEPOINTS, COMPLETION, DEMO SEED HELPERS
+  // =====================================================================
+  var PROCEDURES = {
+    ACL: { name: L('Πρόσθιος χιαστός', 'ACL reconstruction'), recommended: ['IKDC', 'KOOS', 'LYSHOLM', 'TEGNER', 'ACLRSI', 'EQ5D5L', 'VAS'], other: ['FJS12'] },
+    TKA: { name: L('Ολική αρθροπλαστική γόνατος', 'Total knee arthroplasty'), recommended: ['OKS', 'KOOSJR', 'WOMAC', 'KSS2011', 'FJS12', 'EQ5D5L', 'VAS'], other: ['KOOS'] },
+    THA: { name: L('Ολική αρθροπλαστική ισχίου', 'Total hip arthroplasty'), recommended: ['OHS', 'HOOSJR', 'HHS', 'WOMAC', 'FJS12', 'EQ5D5L', 'VAS'], other: ['HOOS'] },
+    UL: { name: L('Άνω άκρο', 'Upper limb'), recommended: ['QDASH', 'OSS', 'CONSTANT', 'EQ5D5L', 'VAS'], other: ['DASH'] }
+  };
+  var TIMEPOINTS = [
+    { id: 'pre', name: L('Προεγχειρητικά', 'Pre-op'), days: -7 }, { id: '6w', name: L('6 εβδ.', '6 wk'), days: 42 },
+    { id: '3m', name: L('3 μήνες', '3 mo'), days: 91 }, { id: '6m', name: L('6 μήνες', '6 mo'), days: 182 },
+    { id: '1y', name: L('1 έτος', '1 yr'), days: 365 }, { id: '2y', name: L('2 έτη', '2 yr'), days: 730 }];
+  function addDays(iso, d) { var t = new Date(iso + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + d); return t.toISOString().slice(0, 10); }
+  function tpDate(surgery, tpId) { var tp = TIMEPOINTS.filter(function (t) { return t.id === tpId; })[0]; return addDays(surgery, tp.days); }
+  function appliesAt(instId, tpId) { var i = I[instId]; return !i.timepoints || i.timepoints.indexOf(tpId) >= 0; }
+  /** {instId: {tpId: 'done'|'missing'|'future'|'na'}} for the procedure's recommended set. */
+  function completion(patient, submissions, todayIso) {
+    var proc = PROCEDURES[patient.procedure], out = {};
+    proc.recommended.forEach(function (inst) {
+      out[inst] = {};
+      TIMEPOINTS.forEach(function (tp) {
+        if (!appliesAt(inst, tp.id)) { out[inst][tp.id] = 'na'; return; }
+        var done = submissions.some(function (s) { return s.patientId === patient.id && s.instrument === inst && s.timepoint === tp.id; });
+        out[inst][tp.id] = done ? 'done' : ((tp.id === 'pre' || tpDate(patient.surgeryDate, tp.id) <= todayIso) ? 'missing' : 'future');
+      });
+    });
+    return out;
+  }
+  function scoreInstrument(id, answers) { var inst = I[id]; if (!inst) throw new Error('Unknown instrument ' + id); var r = inst.score(answers || {}); r.instrument = id; return r; }
+  function primaryValue(id, result) { var p = I[id].primary; if (!result) return null; return p === 'total' ? result.total : (result.subscales ? result.subscales[p] : null); }
+
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  /** Deterministic synthetic answers for DEMO seed: h in [0,1] = overall health (1 = best). */
+  function synthAnswers(instId, h, rnd, withClinician) {
+    var inst = I[instId], ans = {};
+    inst.items.forEach(function (it) {
+      if (it.clinician && !withClinician) return;
+      if (it.id === 'T2') { ans.T2 = 6 + Math.floor(rnd() * 3); return; }
+      if (it.scored === false) return;
+      if (it.optional && !it.clinician && !/^FD/.test(it.id)) return; // skip optional modules
+      var target = Math.max(0, Math.min(1, h + (rnd() - 0.5) * 0.3));
+      if (it.gen === 'tegner') { ans[it.id] = Math.max(0, Math.min(10, Math.round(target * 8))); return; }
+      if (typeof it.gen === 'function') { ans[it.id] = it.gen(target); return; }
+      if (it.type === 'nrs') { var v = Math.round(target * (it.max - it.min)) + it.min; ans[it.id] = it.better === 'low' ? it.max - v + it.min : v; return; }
+      if (it.type === 'multi') { var n = Math.round(target * it.options.length); ans[it.id] = range(n, function (k) { return k - 1; }); return; }
+      if (it.type === 'choice') {
+        var opts = it.options.filter(function (o) { return o.gen !== false; });
+        var vs = opts.map(function (o) { return o.v; }), mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs), best = null, bd = 9;
+        opts.forEach(function (o) { var gq = mx === mn ? 1 : (o.v - mn) / (mx - mn); if (it.better === 'low') gq = 1 - gq; var dd = Math.abs(gq - target); if (dd < bd) { bd = dd; best = o; } });
+        ans[it.id] = best.v;
+      }
+    });
+    return ans;
+  }
+
+  root.OrthoPROMs = {
+    L: L, INSTRUMENTS: I, PROCEDURES: PROCEDURES, TIMEPOINTS: TIMEPOINTS, KOOSJR_TABLE: KOOSJR_TABLE, HOOSJR_TABLE: HOOSJR_TABLE,
+    scoreInstrument: scoreInstrument, primaryValue: primaryValue, completion: completion, tpDate: tpDate, addDays: addDays, appliesAt: appliesAt,
+    synthAnswers: synthAnswers, mulberry32: mulberry32,
+    _: { scoreOxford12: scoreOxford12, scoreKoosLike: scoreKoosLike, scoreJR: scoreJR, scoreWomac: scoreWomac, scoreKss2011: scoreKss2011, scoreEq5d5l: scoreEq5d5l, scoreTegner: scoreTegner, scoreLysholm: scoreLysholm, scoreIkdc: scoreIkdc, scoreHhs: scoreHhs, hhsRomPoints: hhsRomPoints, scoreDash: scoreDash, scoreQuickDash: scoreQuickDash, scoreFjs: scoreFjs, scoreAclRsi: scoreAclRsi, scoreVas: scoreVas, scoreConstant: scoreConstant, constantStrengthPoints: constantStrengthPoints }
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<!-- ===== PROMs + doctor dashboard UI (DEMO, localStorage) ===== -->
+<script id="ortho-proms-app">
+(function () {
+  'use strict';
+  // ===== OrthoThessaly PROMs + Doctor dashboard UI (DEMO ONLY, localStorage only) =====
+  var P = window.OrthoPROMs, I = P.INSTRUMENTS, PROC = P.PROCEDURES, TPS = P.TIMEPOINTS;
+  var KEY = 'orthothessaly.demo.proms.v1', AKEY = 'orthothessaly.demo.auth.v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var tx = function (o) { if (o == null) return ''; if (typeof o === 'string') return o; return o[lang()] != null ? o[lang()] : (o.en != null ? o.en : o.el); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var fmtDT = function (iso) { if (!iso) return ''; var d = new Date(iso); var z = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
+  var today = function () { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+
+  var S = {
+    el: { bannerEl: 'Δοκιμαστική έκδοση: μην εισάγετε πραγματικά δεδομένα ασθενών', bannerEn: 'Demo version: do not enter real patient data', reset: 'Επαναφορά demo δεδομένων',
+      resetQ: 'Διαγραφή όλων των τοπικών demo δεδομένων (υποβολές, προσκλήσεις, λογαριασμοί προσομοίωσης) και επαναφορά των 8 συνθετικών ασθενών;', tabMeasure: 'Μέτρηση', tabProms: 'Ερωτηματολόγια (PROMs)', tabDash: 'Dashboard ιατρού',
+      setupT: 'Ερωτηματολόγια ασθενή (PROMs)', pid: 'Κωδικός ασθενή (demo)', pidPh: 'π.χ. DEMO-ACL-01 ή νέος κωδικός', proc: 'Επέμβαση', tp: 'Χρονικό σημείο', surg: 'Ημ/νία επέμβασης (νέος ασθενής)', start: 'Συνέχεια', newPt: 'νέος demo ασθενής',
+      recT: 'Προτεινόμενα ερωτηματολόγια', otherT: 'Επιπλέον διαθέσιμα', fillAll: 'Συμπλήρωση όλων με τη σειρά', fill: 'Συμπλήρωση', refill: 'Ξανά', doneAt: 'Συμπληρώθηκε',
+      grYes: 'Ελληνική έκδοση: ναι', grNo: 'Ελληνική έκδοση: όχι', grUnv: 'Ελληνική έκδοση: μη επιβεβαιωμένη', grForm: 'Ελληνικό ερωτηματολόγιο / επίσημη έκδοση', grVal: 'Δημοσίευση στάθμισης', offGr: 'Επίσημο ελληνικό κείμενο στη φόρμα',
+      phNote: 'Στη φόρμα: σωστή δομή & βαθμολόγηση με ουδέτερες ετικέτες· το επίσημο κείμενο μέσω του συνδέσμου.', q: 'Ερώτηση', of: 'από', inst: 'Ερωτηματολόγιο', back: '← Πίσω', next: 'Επόμενο →', skip: 'Παράλειψη', submit: 'Υποβολή & βαθμολόγηση', cancel: 'Ακύρωση',
+      clin: 'συμπληρώνεται από τον ιατρό', optional: 'προαιρετικό', saved: 'Αποθηκεύτηκε στο dashboard ιατρού (localStorage).', nextInst: 'Επόμενο ερωτηματολόγιο →', finish: 'Τέλος', allDone: 'Ολοκληρώθηκαν όλα τα ερωτηματολόγια της σειράς.',
+      score: 'Βαθμολογία', notScored: 'Δεν υπολογίστηκε βαθμολογία', subs: 'Υποκλίμακες', scoring: 'Κανόνας βαθμολόγησης', choosePid: 'Εισάγετε κωδικό ασθενή.',
+      gateT: 'Πρόσβαση ιατρού', simNote: 'ΠΡΟΣΟΜΟΙΩΣΗ: δεν υπάρχει πραγματική αυθεντικοποίηση. Λογαριασμοί, κωδικοί και προσκλήσεις αποθηκεύονται μόνο στο localStorage αυτού του browser και παρακάμπτονται εύκολα. Η πραγματική επιβολή πρέπει να γίνει στον server (backend).',
+      signin: 'Σύνδεση', signup: 'Εγγραφή με πρόσκληση', email: 'Email', pw: 'Κωδικός', name: 'Ονοματεπώνυμο', token: 'Κωδικός πρόσκλησης (token)', doSignin: 'Σύνδεση', doSignup: 'Εγγραφή',
+      ownerHint: 'Demo λογαριασμός ιδιοκτήτη χειρουργού: owner@demo.orthothessaly / demo-owner', badLogin: 'Λάθος email ή κωδικός.', badToken: 'Μη έγκυρη, ανακληθείσα ή ήδη χρησιμοποιημένη πρόσκληση. Χωρίς έγκυρη πρόσκληση δεν επιτρέπεται πρόσβαση.',
+      needAll: 'Συμπληρώστε όλα τα πεδία (κωδικός ≥ 6 χαρακτήρες).', exists: 'Υπάρχει ήδη λογαριασμός με αυτό το email.', emailMismatch: 'Η πρόσκληση έχει εκδοθεί για άλλο email.', inviteDetected: 'Εντοπίστηκε πρόσκληση στον σύνδεσμο – ολοκληρώστε την εγγραφή.',
+      signedAs: 'Συνδεδεμένος/η:', owner: 'ιδιοκτήτης', doctor: 'ιατρός', logout: 'Αποσύνδεση', invT: 'Πρόσκληση ιατρού (μόνο ιδιοκτήτης)', invEmail: 'Email συναδέλφου (προαιρετικό – δεσμεύει την πρόσκληση)', gen: 'Δημιουργία συνδέσμου πρόσκλησης', copy: 'Αντιγραφή', copied: 'Αντιγράφηκε',
+      invList: 'Προσκλήσεις', status: 'Κατάσταση', created: 'Δημιουργία', unused: 'αχρησιμοποίητη (μίας χρήσης)', used: 'χρησιμοποιήθηκε από', revoked: 'ανακλήθηκε', revoke: 'Ανάκληση', sameBrowser: 'Στο demo ο σύνδεσμος λειτουργεί μόνο στον ίδιο browser (localStorage).',
+      patients: 'Ασθενείς', filterProc: 'Επέμβαση', filterInst: 'Ερωτηματολόγιο', all: 'Όλα', subsN: 'Υποβολές', missingN: 'Ελλείπουσες', surgery: 'Επέμβαση στις', csv: 'Εξαγωγή CSV (όλα τα PROM δεδομένα)',
+      ptView: 'Ασθενής', recSet: 'Προτεινόμενο σετ & ελλείπουσες χρονικές στιγμές', legend: '✓ συμπληρώθηκε · ✗ λείπει · ◦ μελλοντικό · – δεν εφαρμόζεται', charts: 'Εξέλιξη βαθμολογιών', allSubs: 'Όλες οι υποβολές', date: 'Ημ/νία', patient: 'Ασθενής',
+      noData: 'Δεν υπάρχουν δεδομένα.', selectPt: 'Επιλέξτε ασθενή από τη λίστα για γραφήματα και ελλείψεις.', better: 'καλύτερο', higher: '↑ υψηλότερο = καλύτερο', lower: '↓ χαμηλότερο = καλύτερο', source: 'Πηγή', patientSrc: 'ασθενής', seedSrc: 'demo seed', enteredBy: 'Καταχώριση / υπεύθυνος ιατρός', shared: 'Κοινό μητρώο ομάδας: κάθε προσκεκλημένος ιατρός βλέπει ΟΛΟΥΣ τους ασθενείς (χωρίς περιορισμό ανά ιατρό).', logT: 'Αρχείο πρόσβασης (demo)', logNote: 'Τοπική προσομοίωση μόνο. Στο backend απαιτείται αμετάβλητο audit log στον server (GDPR).', action: 'Ενέργεια' },
+    en: { bannerEl: 'Δοκιμαστική έκδοση: μην εισάγετε πραγματικά δεδομένα ασθενών', bannerEn: 'Demo version: do not enter real patient data', reset: 'Reset demo data',
+      resetQ: 'Delete all local demo data (submissions, invites, simulated accounts) and restore the 8 synthetic patients?', tabMeasure: 'Measurement', tabProms: 'Questionnaires (PROMs)', tabDash: 'Doctor dashboard',
+      setupT: 'Patient questionnaires (PROMs)', pid: 'Patient ID (demo)', pidPh: 'e.g. DEMO-ACL-01 or a new ID', proc: 'Procedure', tp: 'Timepoint', surg: 'Surgery date (new patient)', start: 'Continue', newPt: 'new demo patient',
+      recT: 'Recommended questionnaires', otherT: 'Also available', fillAll: 'Fill all in sequence', fill: 'Fill in', refill: 'Again', doneAt: 'Completed',
+      grYes: 'Greek version: yes', grNo: 'Greek version: no', grUnv: 'Greek version: unverified', grForm: 'Greek questionnaire / official version', grVal: 'Validation publication', offGr: 'Official Greek text in form',
+      phNote: 'In-app form: correct structure & scoring with neutral labels; official wording via the link.', q: 'Question', of: 'of', inst: 'Questionnaire', back: '← Back', next: 'Next →', skip: 'Skip', submit: 'Submit & score', cancel: 'Cancel',
+      clin: 'completed by the clinician', optional: 'optional', saved: 'Saved to the doctor dashboard (localStorage).', nextInst: 'Next questionnaire →', finish: 'Finish', allDone: 'All questionnaires in the sequence are complete.',
+      score: 'Score', notScored: 'No score computed', subs: 'Subscales', scoring: 'Scoring rule', choosePid: 'Enter a patient ID.',
+      gateT: 'Doctor access', simNote: 'SIMULATION: there is no real authentication. Accounts, passwords and invites live only in this browser\u2019s localStorage and are trivially bypassed. Real enforcement must be done server-side (backend).',
+      signin: 'Sign in', signup: 'Sign up with invite', email: 'Email', pw: 'Password', name: 'Full name', token: 'Invite code (token)', doSignin: 'Sign in', doSignup: 'Sign up',
+      ownerHint: 'Demo owner-surgeon account: owner@demo.orthothessaly / demo-owner', badLogin: 'Wrong email or password.', badToken: 'Invalid, revoked or already used invite. Without a valid invite, access is not allowed.',
+      needAll: 'Fill in all fields (password ≥ 6 characters).', exists: 'An account with this email already exists.', emailMismatch: 'This invite was issued for a different email.', inviteDetected: 'Invite detected in link – complete sign-up.',
+      signedAs: 'Signed in:', owner: 'owner', doctor: 'doctor', logout: 'Sign out', invT: 'Invite doctor (owner only)', invEmail: 'Colleague email (optional – binds the invite)', gen: 'Generate invite link', copy: 'Copy', copied: 'Copied',
+      invList: 'Invites', status: 'Status', created: 'Created', unused: 'unused (single-use)', used: 'used by', revoked: 'revoked', revoke: 'Revoke', sameBrowser: 'In the demo the link only works in the same browser (localStorage).',
+      patients: 'Patients', filterProc: 'Procedure', filterInst: 'Questionnaire', all: 'All', subsN: 'Submissions', missingN: 'Missing', surgery: 'Surgery on', csv: 'Export CSV (all PROM data)',
+      ptView: 'Patient', recSet: 'Recommended set & missing timepoints', legend: '✓ done · ✗ missing · ◦ future · – n/a', charts: 'Score trends', allSubs: 'All submissions', date: 'Date', patient: 'Patient',
+      noData: 'No data.', selectPt: 'Select a patient in the list for charts and gaps.', better: 'better', higher: '↑ higher = better', lower: '↓ lower = better', source: 'Source', patientSrc: 'patient', seedSrc: 'demo seed', enteredBy: 'Entered by / responsible doctor', shared: 'Shared team registry: every invited doctor sees ALL patients (no per-doctor restriction).', logT: 'Access log (demo)', logNote: 'Local simulation only. The backend needs a tamper-evident server-side audit log (GDPR).', action: 'Action' }
+  };
+  var t = function (k) { return S[lang()][k] != null ? S[lang()][k] : k; };
+
+  // ---------- storage ----------
+  function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.warn('localStorage unavailable'); } }
+  var DEMO_PTS = [
+    { id: 'DEMO-ACL-01', procedure: 'ACL', surgeryDate: '2024-09-16', h: 0.08, age: 24, sex: 'M' }, { id: 'DEMO-ACL-02', procedure: 'ACL', surgeryDate: '2026-02-09', h: -0.05, age: 31, sex: 'F' },
+    { id: 'DEMO-TKA-01', procedure: 'TKA', surgeryDate: '2025-01-20', h: 0.02, age: 71, sex: 'F' }, { id: 'DEMO-TKA-02', procedure: 'TKA', surgeryDate: '2026-05-04', h: -0.08, age: 66, sex: 'M' },
+    { id: 'DEMO-THA-01', procedure: 'THA', surgeryDate: '2024-11-11', h: 0.1, age: 63, sex: 'M' }, { id: 'DEMO-THA-02', procedure: 'THA', surgeryDate: '2026-03-16', h: 0, age: 74, sex: 'F' },
+    { id: 'DEMO-UL-01', procedure: 'UL', surgeryDate: '2025-06-02', h: 0.04, age: 55, sex: 'F' }, { id: 'DEMO-UL-02', procedure: 'UL', surgeryDate: '2026-08-24', h: -0.04, age: 48, sex: 'M' }];
+  var TRAJ = { pre: 0.32, '6w': 0.4, '3m': 0.56, '6m': 0.68, '1y': 0.78, '2y': 0.82 };
+  function makeSub(pt, inst, tp, answers, date, source) {
+    var r = P.scoreInstrument(inst, answers);
+    return { id: 's' + Math.random().toString(36).slice(2, 10), patientId: pt.id, procedure: pt.procedure, timepoint: tp, instrument: inst, date: date, answers: answers,
+      total: r.total, subscales: r.subscales, valid: r.valid, primary: P.primaryValue(inst, r), notes: r.notes, source: source, demo: true };
+  }
+  function seed() {
+    var rnd = P.mulberry32(20261031), subs = [], td = today();
+    DEMO_PTS.forEach(function (pt, pi) {
+      var insts = PROC[pt.procedure].recommended;
+      TPS.forEach(function (tp) {
+        var d = P.tpDate(pt.surgeryDate, tp.id); if (d > td) return;
+        insts.forEach(function (inst) {
+          if (!P.appliesAt(inst, tp.id)) return;
+          if (rnd() < 0.1 && tp.id !== 'pre') return; // some missing submissions on purpose
+          var h = Math.max(0.05, Math.min(0.97, TRAJ[tp.id] + pt.h + (rnd() - 0.5) * 0.06));
+          var clin = tp.id === 'pre' || tp.id === '6m' || tp.id === '1y' || tp.id === '2y';
+          subs.push(makeSub(pt, inst, tp.id, P.synthAnswers(inst, h, P.mulberry32(pi * 1000 + subs.length + 1), clin), d, 'seed'));
+        });
+      });
+    });
+    var OWN = { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)' }, COL = { email: 'colleague.seed@demo.test', name: 'Dr DEMO Colleague (seed)' };
+    var st = { version: 1, patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate }; }), submissions: subs };
+    save(KEY, st); return st;
+  }
+  var store = load(KEY); if (!store || !store.patients) store = seed();
+  var hash = function (s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return 'fnv' + (h >>> 0).toString(16); }; // DEMO ONLY – not secure
+  function authDefault() { return { owner: { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)', pw: hash('demo-owner'), role: 'owner' }, doctors: [], invites: [], session: null, log: [] }; }
+  var auth = load(AKEY) || authDefault();
+  if (!auth.log) auth.log = [];
+  function saveAuth() { save(AKEY, auth); }
+  function audit(action, detail, email) { var u = email || (auth.session && auth.session.email) || null; auth.log.push({ at: new Date().toISOString(), email: u, action: action, detail: detail || '' }); if (auth.log.length > 500) auth.log.shift(); saveAuth(); }
+
+  // ---------- tabs ----------
+  var curTab = 'measure';
+  function showTab(name) {
+    curTab = name;
+    [].forEach.call($('tabs').children, function (b) { b.classList.toggle('active', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
+    var m = document.querySelector('main'); if (m) m.classList.toggle('hidden', name !== 'measure');
+    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash');
+    if (name === 'proms') renderProms(); if (name === 'dash') renderDash();
+  }
+  $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
+  function i18nStatic() { document.querySelectorAll('[data-pi]').forEach(function (el) { el.textContent = t(el.dataset.pi); }); }
+
+  // ---------- Greek version info block ----------
+  function greekBlock(id) {
+    var g = I[id].greekInfo || { status: 'unverified', form: [], val: [] }, cls = g.status;
+    var lab = g.status === 'yes' ? t('grYes') : g.status === 'no' ? t('grNo') : t('grUnv');
+    var a = function (l) { return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(tx(l.label)) + ' ↗</a>'; };
+    var h = '<span class="pill ' + cls + '">' + esc(lab) + '</span>' + (I[id].greek === 'official' ? ' <span class="pill offgr">' + esc(t('offGr')) + '</span>' : '');
+    var links = '';
+    if (g.note) links += esc(tx(g.note)) + '<br>';
+    if (g.form.length) links += '<b>' + esc(t('grForm')) + ':</b> ' + g.form.map(a).join(' ') + '<br>';
+    if (g.val.length) links += '<b>' + esc(t('grVal')) + ':</b> ' + g.val.map(a).join(' ');
+    return { pill: h, links: links };
+  }
+
+  // ---------- PROMs tab ----------
+  var ctx = { pid: '', procedure: 'ACL', tp: 'pre', surgery: today() }, run = null;
+  function patientById(id) { return store.patients.filter(function (p) { return p.id === id; })[0]; }
+  function opt(v, label, sel) { return '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(label) + '</option>'; }
+  function renderProms() {
+    var pt = patientById(ctx.pid);
+    var h = '<h2>' + esc(t('setupT')) + ' <span class="pill demo">DEMO</span></h2><div class="grid2">';
+    h += '<label class="fld">' + esc(t('pid')) + '<input id="pPid" list="pPidList" autocomplete="off" placeholder="' + esc(t('pidPh')) + '" value="' + esc(ctx.pid) + '"><datalist id="pPidList">' + store.patients.map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(tx(PROC[p.procedure].name)) + '</option>'; }).join('') + '</datalist></label>';
+    h += '<label class="fld">' + esc(t('proc')) + '<select id="pProc"' + (pt ? ' disabled' : '') + '>' + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), (pt ? pt.procedure : ctx.procedure) === k); }).join('') + '</select></label>';
+    h += '<label class="fld">' + esc(t('tp')) + '<select id="pTp">' + TPS.map(function (x) { return opt(x.id, tx(x.name), ctx.tp === x.id); }).join('') + '</select></label>';
+    h += '<label class="fld' + (pt ? ' hidden' : '') + '" id="pSurgWrap">' + esc(t('surg')) + '<input type="date" id="pSurg" value="' + esc(ctx.surgery) + '"></label>';
+    h += '</div><div class="row" style="margin-top:10px"><button class="primary" id="pStart">' + esc(t('start')) + '</button><span class="muted" id="pMsg">' + (pt ? esc(t('surgery') + ' ' + pt.surgeryDate) : (ctx.pid ? esc(t('newPt')) : '')) + '</span></div>';
+    $('promSetup').innerHTML = h;
+    $('pPid').oninput = function () { ctx.pid = this.value.trim(); var p = patientById(ctx.pid); $('pProc').disabled = !!p; if (p) $('pProc').value = p.procedure; $('pSurgWrap').classList.toggle('hidden', !!p); $('pMsg').textContent = p ? t('surgery') + ' ' + p.surgeryDate : (ctx.pid ? t('newPt') : ''); };
+    $('pProc').onchange = function () { ctx.procedure = this.value; };
+    $('pTp').onchange = function () { ctx.tp = this.value; if (!$('promList').classList.contains('hidden')) renderList(); };
+    $('pSurg').onchange = function () { ctx.surgery = this.value; };
+    $('pStart').onclick = function () {
+      ctx.pid = $('pPid').value.trim(); if (!ctx.pid) { $('pMsg').textContent = t('choosePid'); return; }
+      if (!patientById(ctx.pid)) { var cu = currentUser(); store.patients.push({ id: ctx.pid, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); save(KEY, store); }
+      ctx.procedure = patientById(ctx.pid).procedure; run = null; renderList(); $('promRun').classList.add('hidden');
+    };
+    if (ctx.pid && patientById(ctx.pid) && !$('promList').classList.contains('hidden')) renderList();
+    if (run) renderRun();
+  }
+  function doneAt(pid, inst, tp) { return store.submissions.filter(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0]; }
+  function instRow(id, pt) {
+    var g = greekBlock(id), d = doneAt(pt.id, id, ctx.tp), na = !P.appliesAt(id, ctx.tp);
+    return '<div class="inst" data-inst="' + id + '"><span class="nm">' + esc(tx(I[id].name)) + '</span>' + g.pill +
+      (d ? ' <span class="pill done">✓ ' + esc(t('doneAt')) + ' ' + esc(d.date) + ' · ' + esc(fmtScore(id, d)) + '</span>' : '') +
+      (na ? ' <span class="pill">–</span>' : ' <button data-fill="' + id + '"' + (d ? '' : ' class="primary"') + '>' + esc(d ? t('refill') : t('fill')) + '</button>') +
+      '<div class="links">' + g.links + (I[id].greek === 'official' || I[id].greek === 'own' || !I[id].license.required ? '' : '<br><i>' + esc(t('phNote')) + '</i>') + '</div></div>';
+  }
+  function renderList() {
+    var pt = patientById(ctx.pid), pr = PROC[pt.procedure], el = $('promList');
+    var h = '<h3>' + esc(t('recT')) + ' – ' + esc(tx(pr.name)) + ' · ' + esc(tx(TPS.filter(function (x) { return x.id === ctx.tp; })[0].name)) + ' · ' + esc(pt.id) + '</h3>';
+    h += '<div class="row"><button class="go" id="pAll">' + esc(t('fillAll')) + '</button></div><div class="instlist">' + pr.recommended.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
+    if (pr.other.length) h += '<h3 style="margin-top:12px">' + esc(t('otherT')) + '</h3><div class="instlist">' + pr.other.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
+    el.innerHTML = h; el.classList.remove('hidden');
+    el.querySelectorAll('[data-fill]').forEach(function (b) { b.onclick = function () { startRun([b.dataset.fill]); }; });
+    $('pAll').onclick = function () { startRun(pr.recommended.filter(function (id) { return P.appliesAt(id, ctx.tp) && !doneAt(pt.id, id, ctx.tp); })); };
+  }
+  function startRun(queue) {
+    if (!queue.length) queue = PROC[patientById(ctx.pid).procedure].recommended.filter(function (id) { return P.appliesAt(id, ctx.tp); });
+    run = { queue: queue, qi: 0, idx: 0, ans: {}, result: null }; renderRun(); $('promRun').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function curInst() { return I[run.queue[run.qi]]; }
+  function itemLabelFlags(it) { return (it.clinician ? ' <span class="pill clin">🩺 ' + esc(t('clin')) + '</span>' : '') + (it.optional && !it.clinician ? ' <span class="pill">' + esc(t('optional')) + '</span>' : ''); }
+  function renderRun() {
+    var el = $('promRun'); el.classList.remove('hidden');
+    var inst = curInst(), items = inst.items, n = items.length;
+    var head = '<div class="qprog"><span><b>' + esc(t('inst')) + ' ' + (run.qi + 1) + ' ' + esc(t('of')) + ' ' + run.queue.length + ':</b> ' + esc(tx(inst.name)) + '</span><span>' + esc(ctx.pid) + ' · ' + esc(tx(TPS.filter(function (x) { return x.id === ctx.tp; })[0].name)) + '</span></div>';
+    if (run.result) {
+      var r = run.result, h = head + '<div class="result"><div>' + esc(t('score')) + '</div><div class="big">' + esc(fmtScore(inst.id, r)) + '</div>' + subsHtml(inst.id, r.subscales) +
+        (r.notes && r.notes.length ? '<ul>' + r.notes.map(function (x) { return '<li class="muted">' + esc(tx(x)) + '</li>'; }).join('') + '</ul>' : '') +
+        '<div class="muted"><b>' + esc(t('scoring')) + ':</b> ' + esc(tx(inst.scoring)) + '</div><p class="ok">✓ ' + esc(t('saved')) + '</p></div><div class="qnav">';
+      h += run.qi + 1 < run.queue.length ? '<button class="primary" id="rNext">' + esc(t('nextInst')) + '</button>' : '<span class="ok">' + esc(t('allDone')) + '</span>';
+      h += '<button id="rClose">' + esc(t('finish')) + '</button></div>';
+      el.innerHTML = '<div class="qwrap">' + h + '</div>';
+      if ($('rNext')) $('rNext').onclick = function () { run.qi++; run.idx = 0; run.ans = {}; run.result = null; renderRun(); };
+      $('rClose').onclick = function () { run = null; el.classList.add('hidden'); renderList(); };
+      return;
+    }
+    var it = items[run.idx], pct = Math.round(run.idx / n * 100);
+    var h2 = head + '<div class="bar"><i style="width:' + pct + '%"></i></div><div class="qprog"><span>' + esc(t('q')) + ' ' + (run.idx + 1) + ' ' + esc(t('of')) + ' ' + n + '</span><span>' + pct + '%</span></div>';
+    if (run.idx === 0 && inst.instructions) h2 += '<div class="qintro">' + esc(tx(inst.instructions)) + '</div>';
+    if (it.sec) h2 += '<div class="qsec">' + esc(tx(it.sec)) + '</div>';
+    if (it.intro) h2 += '<div class="qintro">' + esc(tx(it.intro)) + '</div>';
+    h2 += '<div class="qtext" id="qText">' + esc(tx(it.text)) + itemLabelFlags(it) + '</div>';
+    var v = run.ans[it.id];
+    if (it.type === 'choice') h2 += '<div class="answers' + (it.compact ? ' compact' : '') + '">' + it.options.map(function (o, k) { return '<button data-k="' + k + '"' + (v === o.v ? ' class="sel"' : '') + '>' + esc(tx(o.label)) + '</button>'; }).join('') + '</div>';
+    else if (it.type === 'nrs') { var b = ''; for (var x = it.min; x <= it.max; x++) b += '<button data-n="' + x + '"' + (v === x ? ' class="sel"' : '') + '>' + x + '</button>'; h2 += '<div class="answers compact">' + b + '</div>'; }
+    else if (it.type === 'multi') h2 += '<div class="answers">' + it.options.map(function (o) { return '<button data-m="' + o.v + '"' + (Array.isArray(v) && v.indexOf(o.v) >= 0 ? ' class="sel"' : '') + '>☐ ' + esc(tx(o.label)) + '</button>'; }).join('') + '</div>';
+    else if (it.type === 'number') h2 += '<div class="row"><input type="number" class="numin" id="qNum" inputmode="decimal" min="' + it.min + '" max="' + it.max + '" step="' + (it.step || 1) + '" value="' + (v != null ? v : '') + '"> <span>' + esc(it.unit || '') + '</span></div>';
+    var last = run.idx === n - 1;
+    h2 += '<div class="qnav"><button id="qBack"' + (run.idx === 0 ? ' disabled' : '') + '>' + esc(t('back')) + '</button><button id="qSkip">' + esc(t('skip')) + '</button>' +
+      (last ? '<button class="go" id="qSubmit">' + esc(t('submit')) + '</button>' : '<button class="primary" id="qNext">' + esc(t('next')) + '</button>') + '<button id="qCancel">' + esc(t('cancel')) + '</button></div>';
+    if (inst.copyright) h2 += '<div class="copyright">' + esc(inst.copyright) + '</div>';
+    el.innerHTML = '<div class="qwrap">' + h2 + '</div>';
+    var go = function (d) { readNum(); if (run.idx + d >= n) return submitRun(); run.idx = Math.max(0, run.idx + d); renderRun(); };
+    function readNum() { var ni = $('qNum'); if (ni) { var val = parseFloat(ni.value); if (isFinite(val)) run.ans[it.id] = Math.max(it.min, Math.min(it.max, val)); else delete run.ans[it.id]; } }
+    el.querySelectorAll('[data-k]').forEach(function (bt) { bt.onclick = function () { run.ans[it.id] = it.options[+bt.dataset.k].v; setTimeout(function () { last ? renderRun() : go(1); }, 120); bt.classList.add('sel'); }; });
+    el.querySelectorAll('[data-n]').forEach(function (bt) { bt.onclick = function () { run.ans[it.id] = +bt.dataset.n; bt.classList.add('sel'); setTimeout(function () { last ? renderRun() : go(1); }, 120); }; });
+    el.querySelectorAll('[data-m]').forEach(function (bt) { bt.onclick = function () { var a = Array.isArray(run.ans[it.id]) ? run.ans[it.id] : []; var mv = +bt.dataset.m, p = a.indexOf(mv); if (p >= 0) a.splice(p, 1); else a.push(mv); run.ans[it.id] = a; renderRun(); }; });
+    $('qBack').onclick = function () { go(-1); };
+    $('qSkip').onclick = function () { delete run.ans[it.id]; if (last) submitRun(); else { run.idx++; renderRun(); } };
+    if ($('qNext')) $('qNext').onclick = function () { go(1); };
+    if ($('qSubmit')) $('qSubmit').onclick = function () { readNum(); submitRun(); };
+    $('qCancel').onclick = function () { run = null; el.classList.add('hidden'); };
+  }
+  function submitRun() {
+    var inst = curInst(), pt = patientById(ctx.pid);
+    var s = makeSub(pt, inst.id, ctx.tp, JSON.parse(JSON.stringify(run.ans)), today(), 'patient');
+    s.demo = true; store.submissions.push(s); save(KEY, store); run.result = s; renderRun();
+  }
+  function fmtNum(x) { return x == null ? '–' : (Math.round(x * 10) / 10).toString(); }
+  function fmtScore(id, r) {
+    var inst = I[id];
+    if (id === 'EQ5D5L') return (r.subscales && r.subscales.profile ? r.subscales.profile : '–') + ' · VAS ' + fmtNum(r.subscales ? r.subscales.vas : null);
+    var p = r.primary != null ? r.primary : P.primaryValue(id, r);
+    if (p == null && inst.primary === 'total' && r.subscales && r.subscales.patientSubtotal != null) return t('notScored') + ' (' + fmtNum(r.subscales.patientSubtotal) + ' – ' + tx(inst.subNames.patientSubtotal) + ')';
+    if (p == null) return t('notScored');
+    var lab = inst.primary === 'total' ? '' : ' (' + subName(id, inst.primary) + ')';
+    return fmtNum(p) + ' / ' + inst.range[1] + lab;
+  }
+  function subName(id, k) { var sn = I[id].subNames || {}; var gen = { pain: L2('Πόνος', 'Pain'), symptoms: L2('Συμπτώματα', 'Symptoms'), adl: L2('ADL', 'ADL'), sport: L2('Άθληση', 'Sport'), qol: L2('Ποιότητα ζωής', 'QOL'), stiffness: L2('Δυσκαμψία', 'Stiffness'), 'function': L2('Λειτουργία', 'Function'), total: L2('Σύνολο', 'Total') }; return tx(sn[k] || gen[k] || k); }
+  function L2(a, b) { return { el: a, en: b }; }
+  function subsHtml(id, subs) {
+    if (!subs) return ''; var ks = Object.keys(subs).filter(function (k) { return subs[k] != null && typeof subs[k] !== 'object'; }); if (!ks.length) return '';
+    return '<div class="muted">' + esc(t('subs')) + ': ' + ks.map(function (k) { return esc(subName(id, k)) + ' ' + esc(typeof subs[k] === 'number' ? fmtNum(subs[k]) : subs[k]); }).join(' · ') + '</div>';
+  }
+
+  // ---------- Doctor gate (SIMULATION) ----------
+  function currentUser() {
+    var s = auth.session; if (!s) return null;
+    if (s.email === auth.owner.email) return auth.owner;
+    return auth.doctors.filter(function (d) { return d.email === s.email; })[0] || null;
+  }
+  function validInvite(token, email) {
+    var inv = auth.invites.filter(function (i) { return i.token === token; })[0];
+    if (!inv || inv.revoked || inv.usedBy) return { ok: false, msg: t('badToken') };
+    if (inv.email && email && inv.email.toLowerCase() !== email.toLowerCase()) return { ok: false, msg: t('emailMismatch') };
+    return { ok: true, inv: inv };
+  }
+  var urlInvite = (function () { try { return new URLSearchParams(location.search).get('invite'); } catch (e) { return null; } })();
+  function renderGate() {
+    var tok = urlInvite || '';
+    $('dashGate').innerHTML = '<div class="card"><h2>🔒 ' + esc(t('gateT')) + ' <span class="pill demo">DEMO</span></h2><div class="simnote">⚠️ ' + esc(t('simNote')) + '</div>' +
+      (tok ? '<p class="ok">' + esc(t('inviteDetected')) + '</p>' : '') +
+      '<div class="grid2" style="margin-top:10px"><div><h3>' + esc(t('signin')) + '</h3><label class="fld">' + esc(t('email')) + '<input id="gEmail" type="email" autocomplete="off"></label><label class="fld">' + esc(t('pw')) + '<input id="gPw" type="password" autocomplete="off"></label>' +
+      '<div class="row" style="margin-top:8px"><button class="primary" id="gIn">' + esc(t('doSignin')) + '</button></div><div id="gInMsg" class="err"></div><p class="muted">' + esc(t('ownerHint')) + '</p></div>' +
+      '<div><h3>' + esc(t('signup')) + '</h3><label class="fld">' + esc(t('name')) + '<input id="uName" autocomplete="off"></label><label class="fld">' + esc(t('email')) + '<input id="uEmail" type="email" autocomplete="off"></label><label class="fld">' + esc(t('pw')) + '<input id="uPw" type="password" autocomplete="off"></label>' +
+      '<label class="fld">' + esc(t('token')) + '<input id="uTok" autocomplete="off" value="' + esc(tok) + '"></label><div class="row" style="margin-top:8px"><button class="go" id="gUp">' + esc(t('doSignup')) + '</button></div><div id="gUpMsg" class="err"></div></div></div></div>';
+    $('gIn').onclick = function () {
+      var e = $('gEmail').value.trim().toLowerCase(), pw = hash($('gPw').value);
+      var u = e === auth.owner.email ? auth.owner : auth.doctors.filter(function (d) { return d.email === e; })[0];
+      if (!u || u.pw !== pw) { $('gInMsg').textContent = t('badLogin'); return; }
+      auth.session = { email: u.email, at: new Date().toISOString() }; audit('sign-in'); renderDash();
+    };
+    $('gUp').onclick = function () {
+      var nm = $('uName').value.trim(), e = $('uEmail').value.trim().toLowerCase(), pw = $('uPw').value, tk = $('uTok').value.trim();
+      if (!nm || !e || pw.length < 6 || !tk) { $('gUpMsg').textContent = t('needAll'); return; }
+      if (e === auth.owner.email || auth.doctors.some(function (d) { return d.email === e; })) { $('gUpMsg').textContent = t('exists'); return; }
+      var v = validInvite(tk, e); if (!v.ok) { $('gUpMsg').textContent = v.msg; return; }
+      auth.doctors.push({ email: e, name: nm, pw: hash(pw), role: 'doctor', invite: tk, created: new Date().toISOString() });
+      v.inv.usedBy = e; v.inv.usedAt = new Date().toISOString(); auth.session = { email: e, at: new Date().toISOString() }; audit('sign-up', 'invite ' + tk);
+      if (urlInvite) { urlInvite = null; try { history.replaceState(null, '', location.pathname); } catch (er) {} }
+      renderDash();
+    };
+  }
+  function inviteLink(tok) { return location.href.split('#')[0].split('?')[0] + '?invite=' + tok; }
+  function newToken() { var a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function (_, i) { a[i] = Math.random() * 256; }); return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  function ownerPanel() {
+    var h = '<div class="card"><h3>✉️ ' + esc(t('invT')) + ' <span class="pill demo">DEMO</span></h3><div class="row"><label class="fld" style="flex:1 1 260px">' + esc(t('invEmail')) + '<input id="iEmail" type="email" autocomplete="off"></label><button class="primary" id="iGen" style="align-self:flex-end">' + esc(t('gen')) + '</button></div>' +
+      '<div id="iOut"></div><p class="muted">' + esc(t('sameBrowser')) + '</p>';
+    if (auth.invites.length) h += '<div class="tblwrap"><table class="tbl"><tr><th>Token</th><th>Email</th><th>' + esc(t('created')) + '</th><th>' + esc(t('status')) + '</th><th></th></tr>' + auth.invites.slice().reverse().map(function (i) {
+      var st = i.revoked ? '⛔ ' + t('revoked') + (i.revokedAt ? ' · ' + fmtDT(i.revokedAt) : '') : i.usedBy ? '✓ ' + t('used') + ' ' + i.usedBy + ' · ' + fmtDT(i.usedAt) : '🟢 ' + t('unused');
+      return '<tr><td><code>' + esc(i.token) + '</code></td><td>' + esc(i.email || '–') + '</td><td>' + esc(fmtDT(i.created)) + '</td><td>' + esc(st) + '</td><td>' + (!i.revoked && !i.usedBy ? '<button data-rev="' + esc(i.token) + '">' + esc(t('revoke')) + '</button> <button data-cp="' + esc(i.token) + '">' + esc(t('copy')) + '</button>' : '') + '</td></tr>';
+    }).join('') + '</table></div>';
+    h += '<h3 style="margin-top:12px">🧾 ' + esc(t('logT')) + '</h3><p class="muted">' + esc(t('logNote')) + '</p><div class="tblwrap" style="max-height:220px"><table class="tbl" id="logTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('email')) + '</th><th>' + esc(t('action')) + '</th><th></th></tr>' + auth.log.slice(-50).reverse().map(function (l) { return '<tr><td>' + esc(fmtDT(l.at)) + '</td><td>' + esc(l.email || '–') + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.detail) + '</td></tr>'; }).join('') + '</table></div>';
+    return h + '</div>';
+  }
+  function copyText(s, btn) { var done = function () { if (btn) btn.textContent = t('copied'); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(done, done); else done(); }
+  function bindOwner() {
+    if (!$('iGen')) return;
+    $('iGen').onclick = function () {
+      var tok = newToken(); auth.invites.push({ token: tok, email: $('iEmail').value.trim().toLowerCase() || null, created: new Date().toISOString(), by: auth.owner.email }); audit('invite-create', tok); renderDash();
+      $('iOut').innerHTML = '<div class="linkbox" id="iLink">' + esc(inviteLink(tok)) + '</div><div class="row" style="margin-top:6px"><button id="iCopy">' + esc(t('copy')) + '</button></div>';
+      $('iCopy').onclick = function () { copyText(inviteLink(tok), this); };
+    };
+    document.querySelectorAll('[data-rev]').forEach(function (b) { b.onclick = function () { auth.invites.forEach(function (i) { if (i.token === b.dataset.rev && !i.usedBy) { i.revoked = true; i.revokedAt = new Date().toISOString(); } }); audit('invite-revoke', b.dataset.rev); renderDash(); }; });
+    document.querySelectorAll('[data-cp]').forEach(function (b) { b.onclick = function () { copyText(inviteLink(b.dataset.cp), b); }; });
+  }
+
+  // ---------- Dashboard ----------
+  var dsel = { proc: '', inst: '', pid: '' };
+  function renderDash() {
+    var u = currentUser();
+    $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
+    if (!u) { $('dashBody').innerHTML = ''; renderGate(); return; }
+    $('dashGate').innerHTML = '';
+    var td = today(), subs = store.submissions;
+    var pts = store.patients.filter(function (p) { return !dsel.proc || p.procedure === dsel.proc; });
+    var instIds = Object.keys(I).filter(function (id) { return !dsel.proc || PROC[dsel.proc].recommended.concat(PROC[dsel.proc].other).indexOf(id) >= 0; });
+    if (dsel.inst && instIds.indexOf(dsel.inst) < 0) dsel.inst = '';
+    var h = '<div class="card"><div class="row" style="justify-content:space-between;margin:0"><span>' + esc(t('signedAs')) + ' <b>' + esc(u.name) + '</b> (' + esc(u.email) + ') · <span class="pill">' + esc(u.role === 'owner' ? t('owner') : t('doctor')) + '</span> <span class="pill demo">' + esc(lang() === 'el' ? 'ΠΡΟΣΟΜΟΙΩΣΗ' : 'SIMULATION') + '</span></span><button id="dOut">' + esc(t('logout')) + '</button></div></div>';
+    if (u.role === 'owner') h += ownerPanel();
+    h += '<div class="card"><h2>' + esc(t('patients')) + ' <span class="pill demo">DEMO</span></h2><p class="muted">👥 ' + esc(t('shared')) + '</p><div class="row"><label class="fld">' + esc(t('filterProc')) + '<select id="fProc">' + opt('', t('all'), !dsel.proc) + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), dsel.proc === k); }).join('') + '</select></label>' +
+      '<label class="fld">' + esc(t('filterInst')) + '<select id="fInst">' + opt('', t('all'), !dsel.inst) + instIds.map(function (k) { return opt(k, I[k].short, dsel.inst === k); }).join('') + '</select></label><button id="dCsv" style="align-self:flex-end">⬇ ' + esc(t('csv')) + '</button></div>';
+    h += '<div class="tblwrap"><table class="tbl" id="ptTable"><tr><th>ID</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('surgery')) + '</th><th>' + esc(t('enteredBy')) + '</th><th>' + esc(t('subsN')) + '</th><th>' + esc(t('missingN')) + '</th></tr>' + pts.map(function (p) {
+      var c = P.completion(p, subs, td), miss = 0; Object.keys(c).forEach(function (i) { if (dsel.inst && i !== dsel.inst) return; Object.keys(c[i]).forEach(function (k) { if (c[i][k] === 'missing') miss++; }); });
+      var ns = subs.filter(function (s) { return s.patientId === p.id && (!dsel.inst || s.instrument === dsel.inst); }).length;
+      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '"><td><b>' + esc(p.id) + '</b> <span class="pill demo">DEMO</span></td><td>' + esc(tx(PROC[p.procedure].name)) + '</td><td>' + esc(p.surgeryDate) + '</td><td>' + esc(p.enteredBy ? p.enteredBy.name + (p.enteredBy.email ? ' <' + p.enteredBy.email + '>' : '') : '–') + '</td><td>' + ns + '</td><td class="' + (miss ? 'err' : 'ok') + '">' + miss + '</td></tr>';
+    }).join('') + '</table></div></div>';
+    var sp = patientById(dsel.pid);
+    if (sp && pts.indexOf(sp) >= 0) h += patientView(sp, td); else h += '<div class="card muted">' + esc(t('selectPt')) + '</div>';
+    var fs = subs.filter(function (s) { return (!dsel.proc || s.procedure === dsel.proc) && (!dsel.inst || s.instrument === dsel.inst) && (!dsel.pid || s.patientId === dsel.pid); }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    h += '<div class="card"><h3>' + esc(t('allSubs')) + ' (' + fs.length + ')</h3><div class="tblwrap"><table class="tbl" id="subTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('patient')) + '</th><th>' + esc(t('tp')) + '</th><th>' + esc(t('filterInst')) + '</th><th>' + esc(t('score')) + '</th><th>' + esc(t('subs')) + '</th><th>' + esc(t('source')) + '</th></tr>' +
+      (fs.length ? fs.map(function (s) { return '<tr data-sub="' + esc(s.id) + '"><td>' + esc(s.date) + '</td><td>' + esc(s.patientId) + '</td><td>' + esc(tpName(s.timepoint)) + '</td><td>' + esc(I[s.instrument].short) + '</td><td><b>' + esc(fmtScore(s.instrument, s)) + '</b></td><td>' + subsInline(s) + '</td><td>' + esc(s.source === 'patient' ? t('patientSrc') : t('seedSrc')) + '</td></tr>'; }).join('') : '<tr><td colspan="7">' + esc(t('noData')) + '</td></tr>') + '</table></div></div>';
+    $('dashBody').innerHTML = h;
+    $('dOut').onclick = function () { audit('sign-out'); auth.session = null; saveAuth(); renderDash(); };
+    $('fProc').onchange = function () { dsel.proc = this.value; dsel.pid = ''; renderDash(); };
+    $('fInst').onchange = function () { dsel.inst = this.value; renderDash(); };
+    $('dCsv').onclick = exportCsv;
+    document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
+    bindOwner();
+  }
+  function tpName(id) { var x = TPS.filter(function (q) { return q.id === id; })[0]; return x ? tx(x.name) : id; }
+  function subsInline(s) { var ks = Object.keys(s.subscales || {}).filter(function (k) { return s.subscales[k] != null && typeof s.subscales[k] !== 'object'; }); return ks.map(function (k) { return esc(subName(s.instrument, k)) + ': ' + esc(typeof s.subscales[k] === 'number' ? fmtNum(s.subscales[k]) : s.subscales[k]); }).join('<br>'); }
+  function patientView(p, td) {
+    var c = P.completion(p, store.submissions, td), rec = PROC[p.procedure].recommended;
+    var sym = { done: '✓', missing: '✗', future: '◦', na: '–' };
+    var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(p.id) + ' <span class="pill demo">DEMO</span></h2><div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate) + '</div>';
+    h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3><div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { return '<th>' + esc(tx(x.name)) + '<br><span class="muted">' + esc(P.tpDate(p.surgeryDate, x.id)) + '</span></th>'; }).join('') + '</tr>' +
+      rec.map(function (i) { return '<tr><td><b>' + esc(I[i].short) + '</b></td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + st + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend')) + '</div>';
+    var used = {}; store.submissions.forEach(function (s) { if (s.patientId === p.id) used[s.instrument] = 1; });
+    var list = rec.concat(PROC[p.procedure].other).filter(function (i) { return used[i] && (!dsel.inst || dsel.inst === i); });
+    h += '<h3 style="margin-top:12px">' + esc(t('charts')) + '</h3><div class="charts">' + list.map(function (i) { return chartSvg(p, i); }).join('') + '</div></div>';
+    return h;
+  }
+  var COLORS = ['#0b5f73', '#e8a317', '#d63031', '#1f9d55', '#9b59b6', '#3b82f6'];
+  function chartSvg(p, id) {
+    var inst = I[id], keys = inst.chart, W = 340, H = 170, L = 34, R = 10, T = 10, B = 30;
+    var subs = store.submissions.filter(function (s) { return s.patientId === p.id && s.instrument === id; });
+    var val = function (s, k) { return k === 'total' ? s.total : (s.subscales ? s.subscales[k] : null); };
+    var lo = inst.range[0], hi = inst.range[1];
+    subs.forEach(function (s) { keys.forEach(function (k) { var v = val(s, k); if (typeof v === 'number') { if (v > hi) hi = v; if (v < lo) lo = v; } }); });
+    var x = function (i) { return L + (W - L - R) * i / (TPS.length - 1); }, y = function (v) { return T + (H - T - B) * (1 - (v - lo) / ((hi - lo) || 1)); };
+    var g = '<line x1="' + L + '" y1="' + y(lo) + '" x2="' + (W - R) + '" y2="' + y(lo) + '" stroke="#cdd8dd"/>';
+    [lo, (lo + hi) / 2, hi].forEach(function (v) { g += '<text x="' + (L - 4) + '" y="' + (y(v) + 4) + '" font-size="10" text-anchor="end" fill="#5d6f78">' + fmtNum(v) + '</text><line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#eef3f5"/>'; });
+    TPS.forEach(function (tp, i) { g += '<text x="' + x(i) + '" y="' + (H - 12) + '" font-size="9.5" text-anchor="middle" fill="#5d6f78">' + esc(tx(tp.name)) + '</text>'; });
+    keys.forEach(function (k, ki) {
+      var pts = []; TPS.forEach(function (tp, i) { var ss = subs.filter(function (s) { return s.timepoint === tp.id; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0]; var v = ss ? val(ss, k) : null; if (typeof v === 'number') pts.push([x(i), y(v), v]); });
+      var col = COLORS[ki % COLORS.length];
+      if (pts.length > 1) g += '<polyline fill="none" stroke="' + col + '" stroke-width="2.2" points="' + pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '"/>';
+      pts.forEach(function (q) { g += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3.2" fill="' + col + '"><title>' + esc(subName(id, k)) + ': ' + fmtNum(q[2]) + '</title></circle>'; });
+    });
+    var better = inst.better === 'low' ? t('lower') : t('higher');
+    return '<div class="chart" data-chart="' + id + '"><h4>' + esc(inst.short) + ' <span class="muted">' + esc(better) + '</span></h4><svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(inst.short) + '">' + g + '</svg><div class="legend">' +
+      keys.map(function (k, ki) { return '<span><i style="background:' + COLORS[ki % COLORS.length] + '"></i>' + esc(subName(id, k)) + '</span>'; }).join('') + '</div></div>';
+  }
+  function exportCsv() {
+    if (auth.session) audit('export-csv', 'all PROM data');
+    var cols = ['submission_id', 'patient_id', 'demo', 'procedure', 'surgery_date', 'entered_by', 'timepoint', 'date', 'instrument', 'total', 'primary', 'valid', 'subscales_json', 'answers_json', 'source'];
+    var q = function (v) { v = v == null ? '' : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var rows = store.submissions.map(function (s) { var p = patientById(s.patientId) || {}; return [s.id, s.patientId, 'DEMO', s.procedure, p.surgeryDate, p.enteredBy ? (p.enteredBy.email || p.enteredBy.name) : '', s.timepoint, s.date, s.instrument, s.total, s.primary, s.valid, JSON.stringify(s.subscales || {}), JSON.stringify(s.answers || {}), s.source].map(q).join(','); });
+    var csv = '\ufeff# OrthoThessaly DEMO – synthetic data only\n' + cols.join(',') + '\n' + rows.join('\n') + '\n';
+    window.__lastCsv = csv;
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'orthothessaly_proms_demo_' + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // ---------- global ----------
+  $('resetDemo').onclick = function () {
+    if (!window.confirm(t('resetQ'))) return;
+    localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); run = null; dsel = { proc: '', inst: '', pid: '' }; ctx.pid = '';
+    $('promList').classList.add('hidden'); $('promRun').classList.add('hidden'); showTab(curTab);
+  };
+  function refresh() { i18nStatic(); if (curTab === 'proms') renderProms(); if (curTab === 'dash') renderDash(); }
+  window.addEventListener('ortho-lang', refresh);
+  new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  i18nStatic();
+  if (urlInvite) showTab('dash');
+  window.__orthoProms = { get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv };
+})();
+</script>
+
+<!-- ===== App (ES module; MediaPipe from official CDN) ===== -->
+<script type="module" id="ortho-app">
+const M = window.OrthoMath;
+const MP_VER = '0.10.14';
+const MP_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+
+// ---------- i18n ----------
+const T = {
+  el: {
+    tagline:'Μετεγχειρητική αποκατάσταση', placeholder:'Πατήστε «Έναρξη κάμερας» ή ανεβάστε ένα βίντεο.',
+    reps:'Επαναλήψεις', source:'Πηγή εικόνας', startCam:'Έναρξη κάμερας', stopCam:'Διακοπή κάμερας', flipCam:'Αλλαγή κάμερας',
+    uploadVideo:'Ανέβασμα βίντεο', settings:'Ρυθμίσεις μέτρησης', joint:'Άρθρωση', knee:'Γόνατο', hip:'Ισχίο',
+    side:'Πλευρά', auto:'Αυτόματα', left:'Αριστερό', right:'Δεξί', target:'Στόχος κάμψης', custom:'Άλλο…',
+    hipLimit:'Όριο κάμψης ισχίου', sound:'Ήχος',
+    adduct:'Προειδοποίηση προσαγωγής πέρα από τη μέση γραμμή (μετωπική λήψη)', experimental:'ΠΕΙΡΑΜΑΤΙΚΟ',
+    advanced:'Για προχωρημένους', repLow:'Επανάληψη: κάτω όριο', repHigh:'άνω όριο', smoothing:'Εξομάλυνση (καρέ)', visThr:'Ελάχ. ορατότητα',
+    session:'Συνεδρία', startSession:'Έναρξη συνεδρίας', stopSession:'Τέλος συνεδρίας', downloadCsv:'Λήψη CSV',
+    maxFlex:'Μέγιστη κάμψη', maxExt:'Μέγιστη έκταση (ελάχ. κάμψη)', duration:'Διάρκεια', warnings:'Προειδοποιήσεις', samples:'Μετρήσεις',
+    howto:'Οδηγίες',
+    i1:'Τοποθετήστε το κινητό σε σταθερή βάση περίπου 2 μέτρα μακριά, στο ύψος του γονάτου/ισχίου.',
+    i2:'Πλάγια λήψη: το πόδι που μετράται να είναι στραμμένο προς την κάμερα, με όλο το πόδι (ισχίο–γόνατο–αστράγαλος) και τον κορμό ορατά.',
+    i3:'Καλός φωτισμός, εφαρμοστά ρούχα ή σορτς, ουδέτερο φόντο.',
+    i4:'Πατήστε «Έναρξη συνεδρίας», κάντε τις ασκήσεις και μετά «Τέλος» για τη σύνοψη.',
+    disclaimer:'⚠️ Πρωτότυπο επίδειξης – ΔΕΝ είναι ιατροτεχνολογικό προϊόν. Οι μετρήσεις είναι ενδεικτικές (2D εκτίμηση στάσης) και δεν αντικαθιστούν τη μέτρηση με γωνιόμετρο ή την κρίση του θεράποντος ιατρού/φυσικοθεραπευτή. Όλη η επεξεργασία γίνεται τοπικά στη συσκευή· κανένα βίντεο δεν αποστέλλεται.',
+    footer:'Πρωτότυπο v0.3 (DEMO) · επεξεργασία μόνο στη συσκευή',
+    kneeFlex:'Κάμψη γόνατος', hipFlex:'Κάμψη ισχίου', sideL:'αριστερό', sideR:'δεξί', autoTag:'(αυτόματα)',
+    lowVis:'Μετακινηθείτε ώστε να φαίνεται ολόκληρο το πόδι στο πλάι',
+    lowVisHip:'Μετακινηθείτε ώστε να φαίνονται στο πλάι ο κορμός και ολόκληρο το πόδι',
+    noPose:'Δεν εντοπίστηκε άτομο στην εικόνα',
+    hipWarn:(l)=>`Προσοχή: κάμψη ισχίου > ${l}°`,
+    addWarn:'Προσοχή: το πόδι περνά τη μέση γραμμή (προσαγωγή) – πειραματικό',
+    loading:'Φόρτωση μοντέλου MediaPipe…', ready:'Μοντέλο έτοιμο (GPU)', readyCpu:'Μοντέλο έτοιμο (CPU)',
+    loadFail:'Αποτυχία φόρτωσης μοντέλου. Ελέγξτε τη σύνδεση στο διαδίκτυο (απαιτείται για την πρώτη φόρτωση).',
+    camFail:'Δεν ήταν δυνατή η πρόσβαση στην κάμερα: ', camHint:' (Χρειάζεται άδεια κάμερας και https ή localhost/αρχείο.)',
+    camOn:'Κάμερα ενεργή – η επεξεργασία γίνεται τοπικά.', videoOn:'Αναπαραγωγή βίντεο από αρχείο (τοπικά).',
+    targetReached:'Στόχος επιτεύχθηκε!', target2:'Στόχος', limit:'Όριο',
+    sessRunning:'Η συνεδρία καταγράφεται…', sessDone:(n)=>`Η συνεδρία ολοκληρώθηκε – ${n} μετρήσεις. Μπορείτε να κατεβάσετε το CSV.`,
+    hipWarnCount:'Υπερβάσεις ορίου ισχίου', addWarnCount:'Προειδοποιήσεις προσαγωγής'
+  },
+  en: {
+    tagline:'Post-operative rehabilitation', placeholder:'Press “Start camera” or upload a video.',
+    reps:'Repetitions', source:'Video source', startCam:'Start camera', stopCam:'Stop camera', flipCam:'Switch camera',
+    uploadVideo:'Upload video', settings:'Measurement settings', joint:'Joint', knee:'Knee', hip:'Hip',
+    side:'Side', auto:'Auto', left:'Left', right:'Right', target:'Flexion target', custom:'Other…',
+    hipLimit:'Hip flexion limit', sound:'Sound',
+    adduct:'Adduction-past-midline warning (frontal view)', experimental:'EXPERIMENTAL',
+    advanced:'Advanced', repLow:'Rep: low threshold', repHigh:'high threshold', smoothing:'Smoothing (frames)', visThr:'Min. visibility',
+    session:'Session', startSession:'Start session', stopSession:'End session', downloadCsv:'Download CSV',
+    maxFlex:'Max flexion', maxExt:'Max extension (min flexion)', duration:'Duration', warnings:'Warnings', samples:'Samples',
+    howto:'Instructions',
+    i1:'Place the phone on a stable stand about 2 m away, at knee/hip height.',
+    i2:'Side view: the measured leg faces the camera, with the whole leg (hip–knee–ankle) and the trunk visible.',
+    i3:'Good lighting, fitted clothes or shorts, plain background.',
+    i4:'Press “Start session”, do the exercises, then “End session” for the summary.',
+    disclaimer:'⚠️ Demo prototype – NOT a medical device. Measurements are indicative (2D pose estimation) and do not replace goniometer measurement or the judgement of the treating surgeon/physiotherapist. All processing happens on this device; no video is uploaded.',
+    footer:'Prototype v0.3 (DEMO) · on-device processing only',
+    kneeFlex:'Knee flexion', hipFlex:'Hip flexion', sideL:'left', sideR:'right', autoTag:'(auto)',
+    lowVis:'Move so the whole leg is visible from the side',
+    lowVisHip:'Move so the trunk and the whole leg are visible from the side',
+    noPose:'No person detected',
+    hipWarn:(l)=>`Caution: hip flexion > ${l}°`,
+    addWarn:'Caution: leg crossing the midline (adduction) – experimental',
+    loading:'Loading MediaPipe model…', ready:'Model ready (GPU)', readyCpu:'Model ready (CPU)',
+    loadFail:'Failed to load the model. Check your internet connection (needed for first load).',
+    camFail:'Could not access the camera: ', camHint:' (Camera permission and https or localhost/file are required.)',
+    camOn:'Camera on – processing locally.', videoOn:'Playing video file (locally).',
+    targetReached:'Target reached!', target2:'Target', limit:'Limit',
+    sessRunning:'Recording session…', sessDone:(n)=>`Session finished – ${n} samples. You can download the CSV.`,
+    hipWarnCount:'Hip limit exceedances', addWarnCount:'Adduction warnings'
+  }
+};
+let lang = 'el';
+const t = (k, ...a) => { const v = T[lang][k]; return typeof v === 'function' ? v(...a) : (v ?? k); };
+function applyI18n() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $('langBtn').textContent = lang === 'el' ? 'EN' : 'ΕΛ';
+  $('camBtn').textContent = stream ? t('stopCam') : t('startCam');
+  $('sessBtn').textContent = session.running ? t('stopSession') : t('startSession');
+  updateBarLabels(); renderSummary();
+}
+
+// ---------- DOM ----------
+const $ = id => document.getElementById(id);
+const video = $('video'), canvas = $('overlay'), ctx = canvas.getContext('2d');
+const setStatus = s => { $('status').textContent = s; };
+
+// ---------- State ----------
+let landmarker = null, loadingPromise = null, stream = null, facing = 'environment';
+let mode = 'knee', sideSel = 'auto', autoSide = 'left';
+let lastVideoTime = -1, rafId = 0, lastTs = 0;
+const smoother = new M.MovingAverage(7);
+const liveReps = new M.RepCounter(20, 60);
+const hipEdge = new M.EdgeCounter(), addEdge = new M.EdgeCounter();
+let session = { running:false, start:0, end:0, rows:[], max:NaN, min:NaN, reps:new M.RepCounter(20,60), hipWarn:0, addWarn:0, hipEdge:new M.EdgeCounter(), addEdge:new M.EdgeCounter(), mode:'knee', maxHip:NaN };
+let audioCtx = null, lastBeep = 0;
+
+const targetValue = () => $('targetSel').value === 'custom' ? +$('targetCustom').value || 90 : +$('targetSel').value;
+const hipLimit = () => +$('hipLimit').value || 90;
+const visThr = () => +$('visThr').value || 0.5;
+
+// ---------- MediaPipe ----------
+async function loadModel() {
+  if (landmarker) return landmarker;
+  if (loadingPromise) return loadingPromise;
+  setStatus(t('loading'));
+  loadingPromise = (async () => {
+    const { FilesetResolver, PoseLandmarker } = await import(`${MP_URL}/vision_bundle.mjs`);
+    const fileset = await FilesetResolver.forVisionTasks(`${MP_URL}/wasm`);
+    const opts = d => ({ baseOptions:{ modelAssetPath: MODEL_URL, delegate:d }, runningMode:'VIDEO', numPoses:1,
+      minPoseDetectionConfidence:0.5, minPosePresenceConfidence:0.5, minTrackingConfidence:0.5 });
+    try { landmarker = await PoseLandmarker.createFromOptions(fileset, opts('GPU')); setStatus(t('ready')); }
+    catch (e) { console.warn('GPU delegate failed, falling back to CPU', e); landmarker = await PoseLandmarker.createFromOptions(fileset, opts('CPU')); setStatus(t('readyCpu')); }
+    window.__POSE_CONNECTIONS = PoseLandmarker.POSE_CONNECTIONS;
+    return landmarker;
+  })().catch(e => { console.error(e); setStatus(t('loadFail')); loadingPromise = null; throw e; });
+  return loadingPromise;
+}
+
+// ---------- Camera / video ----------
+async function startCamera() {
+  stopSource();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio:false, video:{ facingMode:{ ideal:facing }, width:{ ideal:1280 }, height:{ ideal:720 } } });
+  } catch (e) { stream = null; setStatus(t('camFail') + (e.message || e.name) + t('camHint')); return; }
+  video.srcObject = stream; video.loop = false; video.controls = false;
+  const track = stream.getVideoTracks()[0]; const fm = track.getSettings?.().facingMode;
+  // Mirror only the user-facing camera (desktop webcams usually report 'user' or nothing)
+  $('media').classList.toggle('mirror', fm ? fm === 'user' : facing === 'user' || !isMobile());
+  await video.play().catch(()=>{});
+  $('camBtn').textContent = t('stopCam'); $('flipBtn').disabled = false;
+  onSourceReady(t('camOn'));
+  try { await navigator.wakeLock?.request('screen'); } catch {}
+}
+function stopSource() {
+  if (stream) { stream.getTracks().forEach(tr => tr.stop()); stream = null; }
+  if (video.src) { URL.revokeObjectURL(video.src); video.removeAttribute('src'); }
+  video.srcObject = null; cancelAnimationFrame(rafId);
+  $('camBtn').textContent = t('startCam'); $('flipBtn').disabled = true;
+}
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
+function onSourceReady(msg) {
+  $('placeholder').classList.add('hidden'); $('readout').classList.remove('hidden'); $('repsBox').classList.remove('hidden');
+  $('sessBtn').disabled = false; smoother.reset(); liveReps.reset(); lastVideoTime = -1;
+  loadModel().then(() => { setStatus(msg); loop(); }).catch(()=>{});
+}
+async function loadFile(file) {
+  if (!file) return;
+  stopSource();
+  video.src = URL.createObjectURL(file); video.loop = true; video.controls = true; video.muted = true;
+  $('media').classList.remove('mirror');
+  await new Promise(r => video.onloadeddata = r);
+  video.play().catch(()=>{});
+  onSourceReady(t('videoOn'));
+}
+
+// ---------- Main loop ----------
+function loop() {
+  rafId = requestAnimationFrame(loop);
+  if (!landmarker || video.readyState < 2 || !video.videoWidth) return;
+  if (video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+  let ts = performance.now(); if (ts <= lastTs) ts = lastTs + 1; lastTs = ts;
+  let res; try { res = landmarker.detectForVideo(video, ts); } catch (e) { console.error(e); return; }
+  process(res);
+}
+
+function process(res) {
+  const w = video.videoWidth, h = video.videoHeight;
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  ctx.clearRect(0, 0, w, h);
+  const lms = res?.landmarks?.[0];
+  if (!lms) { showBanner('vis', t('noPose')); setAngle(NaN); setDanger(false); record(NaN, NaN, 0, null, false, false); return; }
+
+  const fn = mode === 'hip' ? M.hipFlexion : M.kneeFlexion;
+  const L = fn(lms, 'left', w, h), R = fn(lms, 'right', w, h);
+  let side = sideSel;
+  if (side === 'auto') { autoSide = M.pickSide(L.visibility, R.visibility, autoSide); side = autoSide; }
+  const m = side === 'left' ? L : R;
+  const ok = m.visibility >= visThr() && isFinite(m.flexion);
+
+  drawSkeleton(lms, w, h, side, ok);
+
+  smoother.setSize(+$('smoothN').value || 7);
+  const val = ok ? smoother.push(m.flexion) : NaN;
+  const lo = +$('repLow').value, hi = +$('repHigh').value;
+  liveReps.low = session.reps.low = lo; liveReps.high = session.reps.high = hi;
+  if (ok) liveReps.update(val);
+
+  // Warnings
+  let hipW = false, addW = false;
+  if (mode === 'hip' && ok && val > hipLimit()) hipW = true;
+  if (mode === 'hip' && $('adductChk').checked) {
+    const a = M.adductionCheck(lms, side, w, h);
+    if (a.visibility >= visThr() && a.crossed) addW = true;
+  }
+  hipEdge.update(hipW); addEdge.update(addW);
+  setDanger(hipW || addW);
+  if (hipW) showBanner('danger', '⚠️ ' + t('hipWarn', hipLimit()));
+  else if (addW) showBanner('exp', '⚠️ ' + t('addWarn'));
+  else if (!ok) showBanner('vis', t(mode === 'hip' ? 'lowVisHip' : 'lowVis'));
+  else showBanner(null);
+
+  setAngle(val, side);
+  record(val, m.flexion, m.visibility, side, hipW, addW, ok);
+}
+
+// ---------- Drawing ----------
+function drawSkeleton(lms, w, h, side, ok) {
+  const conns = window.__POSE_CONNECTIONS || [];
+  const lw = Math.max(2, w / 320);
+  ctx.lineWidth = lw; ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+  for (const c of conns) {
+    const a = lms[c.start], b = lms[c.end]; if (!a || !b) continue;
+    if (M.vis(a) < 0.3 || M.vis(b) < 0.3) continue;
+    ctx.beginPath(); ctx.moveTo(a.x * w, a.y * h); ctx.lineTo(b.x * w, b.y * h); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(18,163,180,0.9)';
+  lms.forEach((p, i) => { if (i > 10 && M.vis(p) >= 0.3) { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, lw * 1.6, 0, Math.PI * 2); ctx.fill(); } });
+  // Highlight measured triple + arc
+  const I = M.IDX[side];
+  const tri = mode === 'hip' ? [I.shoulder, I.hip, I.knee] : [I.hip, I.knee, I.ankle];
+  const [A, B, C] = tri.map(i => ({ x: lms[i].x * w, y: lms[i].y * h }));
+  const col = !ok ? '#e8a317' : (dangerOn ? '#ff4d4d' : '#39e58c');
+  ctx.strokeStyle = col; ctx.lineWidth = lw * 2.4;
+  ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.stroke();
+  const a1 = Math.atan2(A.y - B.y, A.x - B.x), a2 = Math.atan2(C.y - B.y, C.x - B.x);
+  let d = a2 - a1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+  ctx.beginPath(); ctx.arc(B.x, B.y, Math.max(20, w / 25), a1, a1 + d, d < 0); ctx.stroke();
+  ctx.fillStyle = col;
+  [A, B, C].forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, lw * 3, 0, Math.PI * 2); ctx.fill(); });
+}
+
+// ---------- UI updates ----------
+function showBanner(kind, text) {
+  const b = $('banner'); b.className = 'banner' + (kind ? ' show ' + kind : ''); b.textContent = kind ? text : '';
+}
+let dangerOn = false;
+function setDanger(on) {
+  dangerOn = on; $('flash').classList.toggle('on', on);
+  if (on && $('soundChk').checked) beep();
+}
+function beep() {
+  const now = performance.now(); if (now - lastBeep < 1200) return; lastBeep = now;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'square'; o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+    const t0 = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+    g.gain.setValueAtTime(0.25, t0 + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.22); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.4);
+    o.start(t0); o.stop(t0 + 0.42);
+  } catch (e) { console.warn(e); }
+}
+function unlockAudio() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch {} }
+
+function setAngle(v, side) {
+  const ok = isFinite(v);
+  $('angleVal').textContent = ok ? Math.round(v) : '--';
+  $('readoutLbl').textContent = t(mode === 'hip' ? 'hipFlex' : 'kneeFlex');
+  $('readoutSub').textContent = side ? `${t(side === 'left' ? 'sideL' : 'sideR')} ${sideSel === 'auto' ? t('autoTag') : ''}` : '';
+  $('repsVal').textContent = session.running ? session.reps.reps : liveReps.reps;
+  const ro = $('readout'), bar = $('bar'), fill = $('barFill');
+  bar.classList.remove('reached', 'near', 'over'); ro.classList.remove('reached', 'danger');
+  if (mode === 'knee') {
+    const tg = targetValue(), p = ok ? Math.max(0, Math.min(1, v / tg)) : 0;
+    fill.style.width = (p * 100).toFixed(1) + '%';
+    if (ok && v >= tg) { bar.classList.add('reached'); ro.classList.add('reached'); $('barMid').textContent = '✅ ' + t('targetReached'); }
+    else $('barMid').textContent = ok ? `${Math.round(p * 100)}%` : '';
+  } else {
+    const lim = hipLimit(), max = Math.max(lim + 30, 120), p = ok ? Math.max(0, Math.min(1, v / max)) : 0;
+    fill.style.width = (p * 100).toFixed(1) + '%';
+    if (ok && v > lim) { bar.classList.add('over'); ro.classList.add('danger'); }
+    else if (ok && v > lim - 10) bar.classList.add('near');
+    $('barMid').textContent = `${t('limit')}: ${lim}°`;
+  }
+}
+function updateBarLabels() {
+  $('barLeft').textContent = '0°';
+  if (mode === 'knee') { $('barRight').textContent = `${t('target2')} ${targetValue()}°`; $('barMid').textContent = ''; }
+  else { $('barRight').textContent = Math.max(hipLimit() + 30, 120) + '°'; $('barMid').textContent = `${t('limit')}: ${hipLimit()}°`; }
+}
+
+// ---------- Session ----------
+function startSession() {
+  unlockAudio();
+  session = { running:true, start:performance.now(), startDate:new Date(), end:0, rows:[], max:NaN, min:NaN,
+    reps:new M.RepCounter(+$('repLow').value, +$('repHigh').value), hipEdge:new M.EdgeCounter(), addEdge:new M.EdgeCounter(),
+    hipWarn:0, addWarn:0, mode, target: mode === 'knee' ? targetValue() : hipLimit() };
+  $('sessBtn').textContent = t('stopSession'); $('sessBtn').className = 'stop';
+  $('csvBtn').disabled = true; $('sessNote').textContent = t('sessRunning'); renderSummary();
+}
+function stopSession() {
+  session.running = false; session.end = performance.now();
+  $('sessBtn').textContent = t('startSession'); $('sessBtn').className = 'go';
+  $('csvBtn').disabled = session.rows.length === 0;
+  $('sessNote').textContent = t('sessDone', session.rows.length); renderSummary();
+}
+function record(val, raw, visib, side, hipW, addW, ok) {
+  if (!session.running) return;
+  const now = new Date(), el = (performance.now() - session.start) / 1000;
+  const hipRise = session.hipEdge.update(hipW), addRise = session.addEdge.update(addW);
+  if (hipRise) session.hipWarn++; if (addRise) session.addWarn++;
+  const ev = [hipRise ? `HIP_FLEXION_OVER_${hipLimit()}` : '', addRise ? 'ADDUCTION_PAST_MIDLINE_EXPERIMENTAL' : ''].filter(Boolean).join('|');
+  if (ok) {
+    session.max = isFinite(session.max) ? Math.max(session.max, val) : val;
+    session.min = isFinite(session.min) ? Math.min(session.min, val) : val;
+    session.reps.update(val);
+  }
+  session.rows.push([now.toISOString(), el.toFixed(3), mode, side || '', ok ? val.toFixed(1) : '', isFinite(raw) ? raw.toFixed(1) : '',
+    (+visib || 0).toFixed(2), hipW ? 1 : 0, addW ? 1 : 0, ev]);
+  if (session.rows.length % 10 === 0) renderSummary();
+}
+function fmtDur(s) { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+function renderSummary() {
+  const f = v => isFinite(v) ? Math.round(v) + '°' : '--';
+  $('sMax').textContent = f(session.max); $('sMin').textContent = f(session.min);
+  $('sReps').textContent = session.reps?.reps ?? 0;
+  const dur = session.running ? (performance.now() - session.start) / 1000 : (session.end && session.start ? (session.end - session.start) / 1000 : 0);
+  $('sDur').textContent = fmtDur(dur);
+  const w = (session.hipWarn || 0) + (session.addWarn || 0);
+  $('sWarn').textContent = w; $('sWarn').title = `${t('hipWarnCount')}: ${session.hipWarn || 0} · ${t('addWarnCount')}: ${session.addWarn || 0}`;
+  $('sWarnBox').classList.toggle('alert', w > 0);
+  $('sN').textContent = session.rows?.length ?? 0;
+}
+setInterval(() => { if (session.running) renderSummary(); }, 1000);
+
+function downloadCSV() {
+  const header = ['timestamp_iso','elapsed_s','joint','side','flexion_deg_smoothed','flexion_deg_raw','visibility','hip_flexion_warning','adduction_warning_experimental','event'];
+  const meta = [
+    ['# OrthoThessaly prototype session export – NOT a medical device'],
+    [`# joint=${session.mode}`, `${session.mode === 'knee' ? 'target' : 'hip_limit'}=${session.target}`,
+     `max_flexion=${isFinite(session.max) ? session.max.toFixed(1) : ''}`, `min_flexion=${isFinite(session.min) ? session.min.toFixed(1) : ''}`,
+     `reps=${session.reps.reps}`, `hip_limit_exceedances=${session.hipWarn}`, `adduction_warnings=${session.addWarn}`]
+  ].map(r => r.join(',')).join('\r\n') + '\r\n';
+  const csv = '\uFEFF' + meta + M.toCSV(header, session.rows);
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  const d = session.startDate || new Date();
+  a.href = URL.createObjectURL(blob);
+  a.download = `orthothessaly_${session.mode}_${d.toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ---------- Events ----------
+$('langBtn').onclick = () => { lang = lang === 'el' ? 'en' : 'el'; applyI18n(); };
+$('camBtn').onclick = () => { unlockAudio(); stream ? (stopSource(), $('placeholder').classList.remove('hidden')) : startCamera(); };
+$('flipBtn').onclick = () => { facing = facing === 'user' ? 'environment' : 'user'; startCamera(); };
+$('fileInput').onchange = e => { unlockAudio(); loadFile(e.target.files[0]); };
+$('sessBtn').onclick = () => session.running ? stopSession() : startSession();
+$('csvBtn').onclick = downloadCSV;
+$('modeSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (session.running) stopSession();
+  mode = b.dataset.mode;
+  [...$('modeSeg').children].forEach(x => x.classList.toggle('active', x === b));
+  $('kneeTargetRow').classList.toggle('hidden', mode !== 'knee');
+  $('hipLimitRow').classList.toggle('hidden', mode !== 'hip');
+  $('adductionRow').classList.toggle('hidden', mode !== 'hip');
+  $('repHigh').value = mode === 'hip' ? 45 : 60; $('repLow').value = mode === 'hip' ? 15 : 20;
+  smoother.reset(); liveReps.reset(); setDanger(false); showBanner(null); updateBarLabels(); setAngle(NaN);
+};
+$('sideSeg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  sideSel = b.dataset.side; [...$('sideSeg').children].forEach(x => x.classList.toggle('active', x === b));
+  smoother.reset();
+};
+$('targetSel').onchange = () => { $('targetCustom').classList.toggle('hidden', $('targetSel').value !== 'custom'); updateBarLabels(); };
+$('targetCustom').oninput = updateBarLabels;
+$('hipLimit').oninput = updateBarLabels;
+
+if (!navigator.mediaDevices?.getUserMedia) $('camBtn').disabled = true;
+applyI18n();
+// Preload the model in the background so the first start is faster.
+loadModel().catch(()=>{});
+window.__ortho = { loadModel, get landmarker(){ return landmarker; }, process, get session(){ return session; } };
+</script>
+</body>
+</html>
