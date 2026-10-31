@@ -467,6 +467,49 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
 .npdone{border:2px solid #1a7f4b;background:#f3fbf6}.npinstr{font-size:1.15em;font-weight:600;line-height:1.45;background:#fff;border:1px dashed #1a7f4b;border-radius:10px;padding:10px 12px}
 .npcode{font-size:.78em}.ptident{margin:2px 0 4px}
 @media (max-width:640px){.npgrid{grid-template-columns:minmax(0,1fr)}}
+/* ===== team chat ===== */
+.tabs button[data-tab=chat]{position:relative}
+.chatbadge{display:inline-block;min-width:20px;padding:1px 6px;margin-left:6px;border-radius:999px;background:#d63031;color:#fff;font-size:.74rem;font-weight:800;line-height:1.4;text-align:center}
+.chatcard{display:flex;flex-direction:column;gap:6px;padding-bottom:0}
+.chattop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.chattop h2{margin:0}.chatsp{flex:1}
+.chatname{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;background:#fff8e1;border:1px solid #f2d27a;border-radius:12px;padding:10px}.chatname .fld{flex:1 1 240px;margin:0}
+.chatfeed{height:calc(100vh - 330px);height:calc(100dvh - 330px);min-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:8px 4px;background:#f4f8f9;border-radius:12px;overscroll-behavior:contain}
+.chatnone{text-align:center;margin:auto}
+.chatday{text-align:center;font-size:.75rem;color:#5b6b73;margin:6px 0}.chatday span{background:#e6eef1;border-radius:999px;padding:2px 10px}
+.chatmsg{max-width:min(78%,640px);align-self:flex-start;background:#fff;border:1px solid #dde7eb;border-radius:14px 14px 14px 4px;padding:8px 11px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.chatmsg.mine{align-self:flex-end;background:#e3f3f6;border-color:#bfe0e7;border-radius:14px 14px 4px 14px}
+.chatmsg.pending{opacity:.65}
+.chathead{font-size:.78rem;color:#5b6b73;margin-bottom:2px}.chatwho{color:var(--brand)}
+.chatbody{white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+.chatimgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chatthumb{padding:0;border:0;background:#cfdde2;border-radius:10px;overflow:hidden;cursor:zoom-in;line-height:0;min-width:80px;min-height:60px}
+.chatthumb img{display:block;max-width:240px;max-height:240px;width:auto;height:auto;object-fit:cover}
+.chatacts{display:flex;gap:10px;margin-top:4px;font-size:.78rem}
+.linkbtn{background:none;border:0;padding:2px 0;color:#0b5f73;font-size:.78rem;cursor:pointer;text-decoration:underline}
+.chatedit{width:100%;box-sizing:border-box;font:inherit;border-radius:8px;padding:6px}
+.chatcomposer{position:sticky;bottom:0;background:#fff;padding:8px 0 10px;border-top:1px solid #e6eef1;z-index:5}
+.chatcomposer .err{margin:0 0 4px;min-height:0}
+.chatrow{display:flex;gap:6px;align-items:flex-end}
+.chatrow textarea{flex:1;min-height:44px;max-height:160px;resize:none;font:inherit;border:1px solid #c9d6dc;border-radius:12px;padding:10px}
+.chatpick{flex:none;cursor:pointer;background:#e6eef1;border-radius:12px;padding:11px 10px;font-size:.88rem;white-space:nowrap;user-select:none}
+.chatpick:focus-within,.chatpick:hover{background:#d6e4e9}
+.chatcam{display:none}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.chatprev{display:flex;gap:6px;flex-wrap:wrap}.chatprev:not(:empty){margin-bottom:6px}
+.chatpv{position:relative;display:inline-block}.chatpv img{width:64px;height:64px;object-fit:cover;border-radius:8px;display:block}
+.chatpvx{position:absolute;top:-6px;right:-6px;width:22px;height:22px;padding:0;border-radius:50%;background:#333;color:#fff;font-size:.7rem;line-height:22px}
+.chatlb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:1000;padding:12px}
+.chatlb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+.chatlbx{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;background:#fff;color:#000;font-size:1.1rem;padding:0}
+@media (pointer:coarse){.chatcam{display:inline-block}}
+@media (max-width:640px){
+  .chatmsg{max-width:90%}
+  .chatfeed{height:calc(100dvh - 300px)}
+  .chatthumb img{max-width:150px;max-height:150px}
+  .chatpick{padding:11px 8px;font-size:.8rem}
+  .chatrow{flex-wrap:wrap}.chatrow textarea{flex:1 1 100%;order:-1}.chatrow #chatSend{margin-left:auto}
+}
+@media print{#tab-chat,#tabChatBtn{display:none!important}}
 </style>
 </head>
 <body>
@@ -3677,10 +3720,59 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   function submitRom(code, r) { return rpc('patient_submit_rom', { p_code: String(code).trim(), p_rom: r }); }
   function inviteStatus(token) { return rpc('invite_status', { p_token: String(token).trim() }); }
 
+  // ---------- team chat (doctors only; no patient data) ----------
+  var CHAT = 'chat';
+  function chatList() { return req('GET', '/rest/v1/chat_messages?select=*&order=created_at.desc&limit=300').then(function (r) { return (r || []).reverse(); }); }
+  function chatPost(m) { return req('POST', '/rest/v1/chat_messages', { id: m.id, body: m.body || '', attachments: m.attachments || [] }, { Prefer: 'return=representation' }).then(function (r) { return r && r[0]; }); }
+  function chatEdit(id, body) { return req('PATCH', '/rest/v1/chat_messages?id=eq.' + enc(id), { body: body }, { Prefer: 'return=representation' }).then(function (r) { if (!r || !r.length) throw CloudError('NOT_ALLOWED', 'not allowed'); return r[0]; }); }
+  function chatDelete(id) { return req('DELETE', '/rest/v1/chat_messages?id=eq.' + enc(id), undefined, { Prefer: 'return=representation' }).then(function (r) { if (!r || !r.length) throw CloudError('NOT_ALLOWED', 'not allowed'); return r[0]; }); }
+  function chatUpload(path, blob) { return req('POST', '/storage/v1/object/' + CHAT + '/' + path, blob, { 'Content-Type': blob.type || 'image/jpeg', 'Cache-Control': 'no-store' }); } // not kept in shared/browser HTTP caches
+  function chatFile(path) { return req('GET', '/storage/v1/object/authenticated/' + CHAT + '/' + path); }
+  function chatRemoveFiles(paths) { return paths && paths.length ? req('DELETE', '/storage/v1/object/' + CHAT, { prefixes: paths }) : Promise.resolve([]); }
+  function doctorsList() { return req('GET', '/rest/v1/doctors?select=id,full_name,email'); }
+  function setMyName(name) {
+    if (!me) return Promise.reject(CloudError('NO_SESSION'));
+    return req('PATCH', '/rest/v1/doctors?id=eq.' + enc(me.id), { full_name: String(name).trim().slice(0, 80) }, { Prefer: 'return=representation' }).then(function (r) { if (r && r[0]) me.name = r[0].full_name || me.email; return me; });
+  }
+  /** Supabase Realtime (Phoenix websocket protocol, no SDK): postgres_changes on one table; RLS applies to the signed-in doctor.
+      onChange({type:'INSERT'|'UPDATE'|'DELETE', record, old_record}); onStatus('connecting'|'live'|'error'|'closed'). Reconnects with backoff. */
+  function realtime(table, onChange, onStatus) {
+    var ws = null, ref = 0, hb = null, closed = false, joinRef = null, tok = null, wait = 2000, topic = 'realtime:' + table + ':' + Math.random().toString(36).slice(2, 8);
+    var status = function (s) { try { if (onStatus) onStatus(s); } catch (e) {} };
+    var send = function (o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
+    function open() {
+      if (closed) return; status('connecting');
+      fresh().catch(function () { return null; }).then(function () {
+        if (closed) return;
+        try { ws = new WebSocket(CFG.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + enc(CFG.key) + '&vsn=1.0.0'); } catch (e) { status('error'); return; }
+        ws.onopen = function () {
+          tok = session ? session.access_token : null; joinRef = String(++ref);
+          send({ topic: topic, event: 'phx_join', ref: joinRef, join_ref: joinRef, payload: { config: { broadcast: { self: false }, presence: { key: '' }, postgres_changes: [{ event: '*', schema: 'public', table: table }], private: false }, access_token: tok || CFG.key } });
+          hb = setInterval(function () {
+            send({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(++ref) });
+            fresh().then(function () { if (session && session.access_token !== tok) { tok = session.access_token; send({ topic: topic, event: 'access_token', payload: { access_token: tok }, ref: String(++ref), join_ref: joinRef }); } }, function () {});
+          }, 25000);
+        };
+        ws.onmessage = function (e) {
+          var m; try { m = JSON.parse(e.data); } catch (er) { return; } if (m.topic !== topic) return;
+          var pl = m.payload || {};
+          if (m.event === 'phx_reply' && m.ref === joinRef && pl.status !== 'ok') status('error');
+          else if (m.event === 'system') { if (pl.status === 'ok' && /subscribed/i.test(pl.message || '')) { wait = 2000; status('live'); } else if (pl.status === 'error') status('error'); }
+          else if (m.event === 'postgres_changes' && pl.data) { try { onChange(pl.data); } catch (er) {} }
+          else if (m.event === 'phx_error' || m.event === 'phx_close') status('error');
+        };
+        ws.onerror = function () { status('error'); };
+        ws.onclose = function () { clearInterval(hb); hb = null; if (closed) { status('closed'); return; } status('error'); setTimeout(open, wait); wait = Math.min(wait * 2, 30000); };
+      });
+    }
+    open();
+    return { close: function () { closed = true; clearInterval(hb); if (ws) try { ws.close(); } catch (e) {} } };
+  }
   root.OrthoCloud = { CFG: CFG, signIn: signIn, signUp: signUp, signOut: signOut, restore: restore, get user() { return me; }, get session() { return session; },
     loadAll: loadAll, sync: sync, idle: idle, reset: reset, onState: function (f) { listeners.push(f); }, get state() { return state; },
     listInvites: listInvites, createInvite: createInvite, revokeInvite: revokeInvite, listDoctors: listDoctors, listAudit: listAudit, audit: audit,
     filmPath: filmPath, uploadFilm: uploadFilm, downloadFilm: downloadFilm, deleteFilms: deleteFilms,
+    chatList: chatList, chatPost: chatPost, chatEdit: chatEdit, chatDelete: chatDelete, chatUpload: chatUpload, chatFile: chatFile, chatRemoveFiles: chatRemoveFiles, doctorsList: doctorsList, setMyName: setMyName, realtime: realtime, uuid: uuid,
     portal: portal, submit: submit, submitRom: submitRom, inviteStatus: inviteStatus,
     // pure helpers (unit-tested in Node)
     _M: M, _storeRows: storeRows, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
@@ -4396,7 +4488,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     [].forEach.call($('tabs').children, function (b) { b.classList.toggle('active', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
     var m = document.querySelector('main'); if (m) m.classList.toggle('hidden', name !== 'measure'); if ($('measCtx')) $('measCtx').classList.toggle('hidden', name !== 'measure');
     if (name === 'measure') window.dispatchEvent(new Event('ortho-measure-open'));
-    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray');
+    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if (name === 'chat' && window.__chat) window.__chat.show();
     if (name === 'proms') renderProms(); if (name === 'dash') renderDash(); if (name === 'xray' && window.__xray) window.__xray.render();
   }
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
@@ -5083,6 +5175,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   var dsel = { proc: '', inst: '', pid: '', tp: '' }, dashProtoOpen = false;
   function renderDash() {
     var u = currentUser();
+    chatSync(u);
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
     if (!u && CLOUD && cloudBusy) { $('dashGate').innerHTML = '<div class="card" id="cLoading">⏳ ' + esc(t('cLoading')) + '</div>'; $('dashBody').innerHTML = ''; return; }
     if (!u) { $('dashBody').innerHTML = ''; closeRun(); renderGate(); return; }
@@ -5238,6 +5331,11 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   function siteBase() { return /^https?:$/.test(location.protocol) ? location.href.split('#')[0].split('?')[0] : 'https://orthothessaly.github.io/'; }
   function cloudInviteLink(tok) { return siteBase() + '?invite=' + tok; }
   function clearInviteUrl() { if (urlInvite) { urlInvite = null; try { history.replaceState(null, '', location.pathname); } catch (er) {} } }
+  function chatSync(u) { // doctors-only team chat: tab visible only to a signed-in doctor
+    if (u === undefined) u = currentUser();
+    if (!u && curTab === 'chat') showTab('proms');
+    if (window.__chat) window.__chat.sync(u, CLOUD);
+  }
   function afterLogin(u) {
     cloudUser = u; cloudBusy = true; renderDash();
     return CL.loadAll().then(function (st) {
@@ -5429,16 +5527,280 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     setMeasCtx(null); if (window.__xray && window.__xray.clearFilms) window.__xray.clearFilms(); localStorage.removeItem(KEY); localStorage.removeItem(AKEY); store = seed(); auth = authDefault(); saveAuth(); closeRun(); dsel = { proc: '', inst: '', pid: '', tp: '' }; ctx.pid = ''; ctx.tp = ''; prun = null; drafts = {}; localStorage.removeItem(DKEY); pst = { large: pst.large }; savePst();
     showTab(curTab);
   };
-  function refresh() { i18nStatic(); updateMeasureTab(); if (curTab === 'xray' && window.__xray) window.__xray.render(); if (curTab === 'proms') renderProms(); if (curTab === 'dash') renderDash(); }
+  function refresh() { i18nStatic(); updateMeasureTab(); chatSync(); if (curTab === 'xray' && window.__xray) window.__xray.render(); if (curTab === 'proms') renderProms(); if (curTab === 'dash') renderDash(); }
   window.addEventListener('ortho-lang', refresh);
   new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   i18nStatic();
   showTab(urlInvite ? 'dash' : 'proms');
   cloudInit();
-  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
+  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); }, refreshUser: function () { chatSync(); if (curTab === 'dash') renderDash(); },
     patient: { get ctx() { return ctx; }, get run() { return prun; }, get drafts() { return drafts; }, title: ptTitle, items: function (id) { return ptItems(id, prun && prun.inst === id ? prun.ans : {}); }, open: ptOpen, currentTp: currentTp,
       preview: function (id, itemId) { var its = I[id].items.filter(function (it) { return !it.clinician; }), k = its.map(function (x) { return x.id; }).indexOf(itemId); var ans = {}; its.forEach(function (x) { if (x.showIf && x.id === itemId) { I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[y.options.length - 1].v; }); } }); var vis = ptItems(id, ans), vi = vis.map(function (x) { return x.id; }).indexOf(itemId); if (vi < 0) { ans = {}; I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[0].v; }); vis = ptItems(id, ans); vi = vis.map(function (x) { return x.id; }).indexOf(itemId); } if (vi < 0) return false; prun = { inst: id, screen: 'q', idx: vi, ans: ans, preview: true }; renderProms(); return k >= 0; } } };
 })();
+</script>
+<!-- ===== Doctors-only team chat (Συζήτηση): text + photos, Supabase Realtime; no patient data ===== -->
+<script id="ortho-chat">
+(function (root) {
+  'use strict';
+  // ===== Doctors-only team chat (Συζήτηση): text + photos. No connection to patients by design. =====
+  // ---------- pure core (unit-tested in Node) ----------
+  var TZ = 'Europe/Athens';
+  function parts(iso) {
+    var d = new Date(iso); if (isNaN(d)) return null;
+    var f = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d), o = {};
+    f.forEach(function (p) { o[p.type] = p.value; }); if (o.hour === '24') o.hour = '00'; return o;
+  }
+  /** Athens wall-clock 'HH:MM' and day key 'YYYY-MM-DD' */
+  function timeOf(iso) { var o = parts(iso); return o ? o.hour + ':' + o.minute : ''; }
+  function dayOf(iso) { var o = parts(iso); return o ? o.year + '-' + o.month + '-' + o.day : ''; }
+  /** Merge one realtime change into a list sorted by created_at (dedupe by id). */
+  function applyChange(list, ch) {
+    var rec = ch && (ch.record || {}), old = ch && (ch.old_record || {}), out = list.slice();
+    if (!ch) return out;
+    if (ch.type === 'DELETE') return out.filter(function (m) { return m.id !== old.id; });
+    if (!rec.id) return out;
+    var i = -1; out.forEach(function (m, k) { if (m.id === rec.id) i = k; });
+    if (i >= 0) out[i] = rec; else out.push(rec);
+    return out.sort(function (a, b) { return a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0; });
+  }
+  function unread(list, myId, seenIso) { return list.filter(function (m) { return m.author_id !== myId && (!seenIso || m.created_at > seenIso); }).length; }
+  function fit(w, h, max) { var s = Math.min(1, max / Math.max(w, h)); return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h * s)) }; }
+  function canEdit(m, me) { return !!(me && m && m.author_id === me.id); }
+  function canDelete(m, me) { return !!(me && m && (m.author_id === me.id || me.role === 'owner')); }
+  root.OrthoChatCore = { timeOf: timeOf, dayOf: dayOf, applyChange: applyChange, unread: unread, fit: fit, canEdit: canEdit, canDelete: canDelete, MAX: 2000, THUMB: 480, MAXFILES: 10 };
+  if (typeof document === 'undefined') return;
+
+  // ---------- UI ----------
+  var C = root.OrthoChatCore, $ = function (id) { return document.getElementById(id); };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var S = {
+    el: { tab: '💬 Συζήτηση', T: '💬 Συζήτηση ομάδας', lead: 'Μόνο για τους ιατρούς της ομάδας. Μην αναγράφετε ονόματα ή ΑΜΚΑ ασθενών.', demo: 'DEMO – τα μηνύματα μένουν μόνο σε αυτόν τον browser.',
+      ph: 'Γράψτε μήνυμα…', send: 'Αποστολή', photo: '🖼 Φωτογραφίες', camera: '📸 Κάμερα', live: '● Ζωντανά', poll: '↻ Ανανέωση ανά 10″', conn: '… σύνδεση', none: 'Δεν υπάρχουν ακόμα μηνύματα – γράψτε το πρώτο!',
+      edit: 'Επεξεργασία', del: 'Διαγραφή', delQ: 'Διαγραφή αυτού του μηνύματος;', save: 'Αποθήκευση', cancel: 'Ακύρωση', edited: 'επεξεργάστηκε', sending: 'Αποστολή…', failed: 'Η αποστολή απέτυχε – δοκιμάστε ξανά.',
+      opFail: 'Η ενέργεια απέτυχε.', today: 'Σήμερα', yesterday: 'Χθες', you: 'Εσείς', nameT: 'Πώς θα σας βλέπουν οι συνάδελφοι;', namePh: 'π.χ. Δρ. Παπαδόπουλος', nameSave: 'Αποθήκευση ονόματος', nameEdit: '✎ Όνομα',
+      tooMany: 'Έως {0} φωτογραφίες ανά μήνυμα.', notImg: 'Επιλέξτε αρχεία εικόνας.', close: 'Κλείσιμο', rm: 'Αφαίρεση', imgAlt: 'Φωτογραφία', loading: 'Φόρτωση…', older: 'Εμφανίζονται τα τελευταία 300 μηνύματα.' },
+    en: { tab: '💬 Discussion', T: '💬 Team discussion', lead: 'For the team’s doctors only. Do not write patient names or AMKA.', demo: 'DEMO – messages stay in this browser only.',
+      ph: 'Write a message…', send: 'Send', photo: '🖼 Photos', camera: '📸 Camera', live: '● Live', poll: '↻ Refresh every 10″', conn: '… connecting', none: 'No messages yet – write the first one!',
+      edit: 'Edit', del: 'Delete', delQ: 'Delete this message?', save: 'Save', cancel: 'Cancel', edited: 'edited', sending: 'Sending…', failed: 'Sending failed – please try again.',
+      opFail: 'The action failed.', today: 'Today', yesterday: 'Yesterday', you: 'You', nameT: 'How should colleagues see you?', namePh: 'e.g. Dr. Papadopoulos', nameSave: 'Save name', nameEdit: '✎ Name',
+      tooMany: 'Up to {0} photos per message.', notImg: 'Please choose image files.', close: 'Close', rm: 'Remove', imgAlt: 'Photo', loading: 'Loading…', older: 'Showing the latest 300 messages.' }
+  };
+  var t = function (k) { return S[lang()][k] != null ? S[lang()][k] : k; };
+  var api = function () { return root.__orthoProms; };
+  var CL = root.OrthoCloud;
+  var st = { user: null, cloud: false, list: [], names: {}, rt: null, rtStatus: '', poll: null, pending: [], files: [], editing: '', urls: {}, err: '', loaded: false, askName: false };
+  var DKEY = 'orthothessaly.demo.chat.v1';
+  function meKey() { return st.user ? (st.cloud ? st.user.id : st.user.email) : ''; }
+  function me() { return st.user ? { id: meKey(), role: st.user.role } : null; }
+  function seenKey() { return 'orthothessaly.chat.seen.' + meKey(); }
+  function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+
+  // tab + pane (created once)
+  var btn = document.createElement('button'); btn.setAttribute('role', 'tab'); btn.dataset.tab = 'chat'; btn.id = 'tabChatBtn'; btn.className = 'hidden';
+  var tabs = $('tabs'); if (tabs) { var mb = $('tabMeasureBtn'); tabs.insertBefore(btn, mb || null); }
+  var pane = document.createElement('section'); pane.className = 'pane hidden'; pane.id = 'tab-chat'; pane.setAttribute('aria-label', 'Chat');
+  var xr = $('tab-xray'); if (xr && xr.parentNode) xr.parentNode.insertBefore(pane, xr.nextSibling); else document.body.appendChild(pane);
+  function visible() { return !pane.classList.contains('hidden') && document.visibilityState !== 'hidden'; }
+  function badge() {
+    var n = st.user ? C.unread(st.list, meKey(), lsGet(seenKey())) : 0;
+    btn.innerHTML = esc(t('tab')) + (n && !visible() ? ' <span class="chatbadge" id="chatBadge" aria-label="' + n + '">' + (n > 99 ? '99+' : n) + '</span>' : '');
+  }
+  function markSeen() { if (!st.user || !visible() || !st.list.length) return; var last = st.list[st.list.length - 1].created_at; if (last > (lsGet(seenKey()) || '')) lsSet(seenKey(), last); badge(); }
+
+  // ---------- data: demo (localStorage) ----------
+  function demoSeed(u) {
+    var now = Date.now(), iso = function (min) { return new Date(now - min * 6e4).toISOString(); };
+    var col = 'colleague.seed@demo.test', own = 'owner@demo.orthothessaly';
+    var list = [
+      { id: 'cdemo1', author_id: col, author_name: 'Dr DEMO Colleague (seed)', body: 'Καλημέρα! Δοκιμαστικό μήνυμα στη συζήτηση της ομάδας (DEMO).', attachments: [], created_at: iso(180) },
+      { id: 'cdemo2', author_id: own, author_name: 'Owner surgeon (DEMO)', body: 'Ανεβάζω μια δοκιμαστική εικόνα – πατήστε τη για πλήρες μέγεθος.', attachments: [], created_at: iso(150) },
+      { id: 'cdemo3', author_id: col, author_name: 'Dr DEMO Colleague (seed)', body: 'Ευχαριστώ, το είδα. 👍', attachments: [], created_at: iso(120) }];
+    try { var im = demoImage(); list[1].attachments = [{ full: im.full, thumb: im.thumb, w: 1200, h: 800 }]; } catch (e) {}
+    return list;
+  }
+  function demoImage() { // synthetic picture (no patient data)
+    var c = document.createElement('canvas'); c.width = 1200; c.height = 800; var g = c.getContext('2d');
+    var gr = g.createLinearGradient(0, 0, 1200, 800); gr.addColorStop(0, '#0b3d4a'); gr.addColorStop(1, '#2a8a9a'); g.fillStyle = gr; g.fillRect(0, 0, 1200, 800);
+    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 26; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(560, 40); g.lineTo(600, 380); g.stroke(); g.beginPath(); g.moveTo(600, 430); g.lineTo(620, 760); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(600, 405, 90, 40, 0, 0, Math.PI * 2); g.fill();
+    g.font = 'bold 64px sans-serif'; g.fillStyle = '#fff'; g.fillText('DEMO', 60, 110);
+    var full = c.toDataURL('image/jpeg', 0.8), th = document.createElement('canvas'); th.width = 480; th.height = 320; th.getContext('2d').drawImage(c, 0, 0, 480, 320);
+    return { full: full, thumb: th.toDataURL('image/jpeg', 0.7) };
+  }
+  function demoLoad() { var l = lsGet(DKEY); if (!l) { l = demoSeed(); lsSet(DKEY, l); } return l; }
+  function demoSave() { if (!lsSet(DKEY, st.list)) { st.err = lang() === 'el' ? 'Ο χώρος του browser γέμισε – διαγράψτε παλιές φωτογραφίες.' : 'Browser storage is full – delete old photos.'; } }
+
+  // ---------- data: cloud ----------
+  function cloudLoad() {
+    return Promise.all([CL.chatList(), CL.doctorsList().catch(function () { return []; })]).then(function (r) {
+      st.list = r[0]; st.names = {}; (r[1] || []).forEach(function (d) { st.names[d.id] = d.full_name || d.email; }); st.loaded = true; st.err = ''; render(); badge(); if (visible()) markSeen();
+    }, function () { st.err = t('opFail'); render(); });
+  }
+  function startCloud() {
+    stop(); st.loaded = false; st.rtStatus = 'connecting';
+    st.askName = !st.user.name || st.user.name === st.user.email;
+    cloudLoad();
+    st.rt = CL.realtime('chat_messages', function (ch) {
+      st.list = C.applyChange(st.list, ch);
+      if (ch.type !== 'DELETE' && ch.record && ch.record.author_id && !st.names[ch.record.author_id] && ch.record.author_name) st.names[ch.record.author_id] = ch.record.author_name;
+      renderFeed(); badge(); if (visible()) markSeen();
+    }, function (s) { st.rtStatus = s; var e = $('chatLive'); if (e) e.outerHTML = liveHtml(); });
+    // polling: every 10 s while realtime is not live, otherwise a light reconcile every 60 s
+    var tick = 0; st.poll = setInterval(function () { tick++; if (!st.user || !st.cloud) return; if (st.rtStatus !== 'live' || tick % 6 === 0) CL.chatList().then(function (l) { var a = JSON.stringify(l.map(function (m) { return m.id + m.updated_at; })), b = JSON.stringify(st.list.map(function (m) { return m.id + m.updated_at; })); if (a !== b) { st.list = l; renderFeed(); badge(); if (visible()) markSeen(); } }, function () {}); }, 10000);
+  }
+  function stop() { if (st.rt) st.rt.close(); st.rt = null; clearInterval(st.poll); st.poll = null; Object.keys(st.urls).forEach(function (k) { try { URL.revokeObjectURL(st.urls[k]); } catch (e) {} }); st.urls = {}; }
+
+  // ---------- images ----------
+  function loadImg(file) { return new Promise(function (res, rej) { var u = URL.createObjectURL(file), im = new Image(); im.onload = function () { res({ im: im, u: u }); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('bad image')); }; im.src = u; }); }
+  function toJpeg(im, max, q) { var d = C.fit(im.naturalWidth, im.naturalHeight, max), c = document.createElement('canvas'); c.width = d.w; c.height = d.h; var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, d.w, d.h); g.drawImage(im, 0, 0, d.w, d.h); return new Promise(function (res) { c.toBlob(function (b) { res({ blob: b, w: d.w, h: d.h, c: c }); }, 'image/jpeg', q); }); }
+  function prepare(file) { // client-side downscale: full ≤ 2000 px (demo 1280 px), thumbnail 480 px, JPEG
+    return loadImg(file).then(function (x) { return Promise.all([toJpeg(x.im, st.cloud ? C.MAX : 1280, st.cloud ? 0.85 : 0.8), toJpeg(x.im, C.THUMB, 0.72)]).then(function (r) { URL.revokeObjectURL(x.u); return { full: r[0], thumb: r[1] }; }); });
+  }
+  function blobUrl(path) {
+    if (st.urls[path]) return Promise.resolve(st.urls[path]);
+    return CL.chatFile(path).then(function (b) { st.urls[path] = URL.createObjectURL(b); return st.urls[path]; });
+  }
+  function hydrate(el) { (el || pane).querySelectorAll('img[data-cpath]:not([src])').forEach(function (im) { blobUrl(im.dataset.cpath).then(function (u) { im.src = u; }, function () { im.alt = '⚠'; }); }); }
+
+  // ---------- render ----------
+  function liveHtml() { var s = st.rtStatus; return '<span class="pill ' + (s === 'live' ? 'yes' : '') + '" id="chatLive">' + esc(!st.cloud ? 'DEMO' : s === 'live' ? t('live') : s === 'connecting' ? t('conn') : t('poll')) + '</span>'; }
+  function dayLabel(k) { var now = new Date().toISOString(), td = C.dayOf(now), yd = C.dayOf(new Date(Date.now() - 864e5).toISOString()); return k === td ? t('today') : k === yd ? t('yesterday') : k.slice(8, 10) + '/' + k.slice(5, 7) + '/' + k.slice(0, 4); }
+  function msgHtml(m) {
+    var mine = m.author_id === meKey(), who = mine ? t('you') : (st.names[m.author_id] || m.author_name || '—'), ed = st.editing === m.id;
+    var h = '<article class="chatmsg' + (mine ? ' mine' : '') + (m._pending ? ' pending' : '') + '" data-mid="' + esc(m.id) + '"><div class="chathead"><b class="chatwho">' + esc(who) + '</b> <span class="chattime" title="' + esc(C.dayOf(m.created_at)) + '">' + esc(C.timeOf(m.created_at)) + '</span>' + (m.edited_at ? ' <span class="muted chated">(' + esc(t('edited')) + ')</span>' : '') + (m._pending ? ' <span class="muted">' + esc(m._failed ? t('failed') : t('sending')) + '</span>' : '') + '</div>';
+    if (ed) h += '<textarea class="chatedit" id="chatEditTa" rows="3">' + esc(m.body) + '</textarea><div class="row"><button class="small primary" data-csave="' + esc(m.id) + '">' + esc(t('save')) + '</button><button class="small" data-ccancel="1">' + esc(t('cancel')) + '</button></div>';
+    else if (m.body) h += '<div class="chatbody">' + esc(m.body).replace(/\n/g, '<br>') + '</div>';
+    if ((m.attachments || []).length) h += '<div class="chatimgs">' + m.attachments.map(function (a, i) {
+      var src = a.thumb && /^data:|^blob:/.test(a.thumb) ? ' src="' + esc(a.thumb) + '"' : '', dp = a.t ? ' data-cpath="' + esc(a.t) + '"' : '';
+      return '<button class="chatthumb" data-cfull="' + esc(m.id) + '|' + i + '" aria-label="' + esc(t('imgAlt')) + '"><img alt="' + esc(t('imgAlt')) + '" loading="lazy"' + src + dp + (a.w && a.h ? ' width="' + Math.round(C.fit(a.w, a.h, 240).w) + '" height="' + Math.round(C.fit(a.w, a.h, 240).h) + '"' : '') + '></button>';
+    }).join('') + '</div>';
+    if (!m._pending && !ed && (C.canEdit(m, me()) || C.canDelete(m, me()))) h += '<div class="chatacts">' + (C.canEdit(m, me()) ? '<button class="linkbtn" data-cedit="' + esc(m.id) + '">✎ ' + esc(t('edit')) + '</button>' : '') + (C.canDelete(m, me()) ? '<button class="linkbtn" data-cdel="' + esc(m.id) + '">🗑 ' + esc(t('del')) + '</button>' : '') + '</div>';
+    return h + '</article>';
+  }
+  function feedHtml() {
+    var all = st.list.concat(st.pending); if (!all.length) return '<p class="muted chatnone" id="chatNone">' + esc(st.cloud && !st.loaded ? t('loading') : t('none')) + '</p>';
+    var h = all.length >= 300 ? '<p class="muted chatnone">' + esc(t('older')) + '</p>' : '', day = '';
+    all.forEach(function (m) { var d = C.dayOf(m.created_at); if (d !== day) { day = d; h += '<div class="chatday"><span>' + esc(dayLabel(d)) + '</span></div>'; } h += msgHtml(m); });
+    return h;
+  }
+  function render() {
+    if (!st.user) { pane.innerHTML = ''; return; }
+    var h = '<div class="card chatcard"><div class="chattop"><h2>' + esc(t('T')) + '</h2>' + liveHtml() + '<span class="chatsp"></span>' + (st.cloud ? '<button class="small ghost" id="chatNameBtn">' + esc(t('nameEdit')) + '</button>' : '') + '</div><p class="muted">🔒 ' + esc(t('lead')) + (st.cloud ? '' : ' ' + esc(t('demo'))) + '</p>';
+    if (st.askName) h += '<div class="chatname" id="chatName"><label class="fld">' + esc(t('nameT')) + '<input id="chatNameIn" maxlength="80" placeholder="' + esc(t('namePh')) + '" value="' + esc(st.user.name && st.user.name !== st.user.email ? st.user.name : '') + '"></label><button class="primary" id="chatNameSave">' + esc(t('nameSave')) + '</button></div>';
+    h += '<div class="chatfeed" id="chatFeed" aria-live="polite">' + feedHtml() + '</div>' +
+      '<div class="chatcomposer" id="chatComposer"><div class="chatprev" id="chatPrev"></div><p class="err" id="chatErr" role="alert">' + esc(st.err) + '</p>' +
+      '<div class="chatrow"><label class="chatpick" for="chatFiles" title="' + esc(t('photo')) + '">' + esc(t('photo')) + '</label><input type="file" id="chatFiles" accept="image/*" multiple class="vh">' +
+      '<label class="chatpick chatcam" for="chatCam" title="' + esc(t('camera')) + '">' + esc(t('camera')) + '</label><input type="file" id="chatCam" accept="image/*" capture="environment" class="vh">' +
+      '<textarea id="chatText" rows="1" placeholder="' + esc(t('ph')) + '" maxlength="4000"></textarea><button class="primary" id="chatSend">' + esc(t('send')) + '</button></div></div></div>';
+    var keep = $('chatText') ? $('chatText').value : '';
+    pane.innerHTML = h; if (keep) $('chatText').value = keep;
+    bind(); renderPrev(); hydrate(); scrollEnd();
+  }
+  function renderFeed() { var f = $('chatFeed'); if (!f) return render(); var atEnd = f.scrollHeight - f.scrollTop - f.clientHeight < 80; f.innerHTML = feedHtml(); bindFeed(); hydrate(f); if (atEnd) scrollEnd(); }
+  function scrollEnd() { var f = $('chatFeed'); if (f) f.scrollTop = f.scrollHeight; }
+  function renderPrev() {
+    var p = $('chatPrev'); if (!p) return;
+    p.innerHTML = st.files.map(function (f, i) { return '<span class="chatpv"><img src="' + esc(f.url) + '" alt=""><button class="chatpvx" data-crm="' + i + '" aria-label="' + esc(t('rm')) + '">✕</button></span>'; }).join('');
+    p.querySelectorAll('[data-crm]').forEach(function (b) { b.onclick = function () { var f = st.files.splice(+b.dataset.crm, 1)[0]; if (f) URL.revokeObjectURL(f.url); renderPrev(); }; });
+  }
+  function addFiles(list) {
+    var fs = [].slice.call(list || []), bad = fs.filter(function (f) { return !/^image\//.test(f.type); });
+    fs = fs.filter(function (f) { return /^image\//.test(f.type); });
+    st.err = bad.length ? t('notImg') : '';
+    if (st.files.length + fs.length > C.MAXFILES) { st.err = t('tooMany').replace('{0}', C.MAXFILES); fs = fs.slice(0, C.MAXFILES - st.files.length); }
+    fs.forEach(function (f) { st.files.push({ file: f, url: URL.createObjectURL(f) }); });
+    var e = $('chatErr'); if (e) e.textContent = st.err; renderPrev();
+  }
+  function bind() {
+    $('chatFiles').onchange = function () { addFiles(this.files); this.value = ''; };
+    $('chatCam').onchange = function () { addFiles(this.files); this.value = ''; };
+    $('chatSend').onclick = send;
+    var ta = $('chatText');
+    ta.onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !('ontouchstart' in window && !e.ctrlKey && !e.metaKey)) { e.preventDefault(); send(); } };
+    ta.oninput = function () { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
+    ta.onpaste = function (e) { var it = e.clipboardData && e.clipboardData.files; if (it && it.length) { addFiles(it); } };
+    if ($('chatNameBtn')) $('chatNameBtn').onclick = function () { st.askName = !st.askName; render(); if ($('chatNameIn')) $('chatNameIn').focus(); };
+    if ($('chatNameSave')) $('chatNameSave').onclick = function () { var v = $('chatNameIn').value.trim(); if (!v) { $('chatNameIn').focus(); return; } CL.setMyName(v).then(function (u) { st.user.name = u.name; st.askName = false; st.names[st.user.id] = u.name; render(); var a = api(); if (a && a.refreshUser) a.refreshUser(); }, function () { st.err = t('opFail'); render(); }); };
+    bindFeed();
+  }
+  function bindFeed() {
+    pane.querySelectorAll('[data-cfull]').forEach(function (b) { b.onclick = function () { var p = b.dataset.cfull.split('|'); openFull(p[0], +p[1]); }; });
+    pane.querySelectorAll('[data-cedit]').forEach(function (b) { b.onclick = function () { st.editing = b.dataset.cedit; renderFeed(); var ta = $('chatEditTa'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }; });
+    pane.querySelectorAll('[data-ccancel]').forEach(function (b) { b.onclick = function () { st.editing = ''; renderFeed(); }; });
+    pane.querySelectorAll('[data-csave]').forEach(function (b) { b.onclick = function () { saveEdit(b.dataset.csave, $('chatEditTa').value); }; });
+    pane.querySelectorAll('[data-cdel]').forEach(function (b) { b.onclick = function () { if (window.confirm(t('delQ'))) del(b.dataset.cdel); }; });
+  }
+  function find(id) { return st.list.filter(function (m) { return m.id === id; })[0]; }
+
+  // ---------- actions ----------
+  function uid() { return CL && CL.uuid ? CL.uuid() : 'c' + Math.random().toString(36).slice(2, 12); }
+  function send() {
+    var ta = $('chatText'), body = (ta.value || '').trim(), files = st.files.slice(); if (!body && !files.length) { ta.focus(); return; }
+    var id = uid(), now = new Date().toISOString(), pend = { id: id, author_id: meKey(), author_name: st.user.name, body: body, attachments: files.map(function (f) { return { thumb: f.url }; }), created_at: now, _pending: true };
+    st.pending.push(pend); st.files = []; ta.value = ''; ta.style.height = ''; st.err = ''; renderPrev(); renderFeed(); scrollEnd(); var e0 = $('chatErr'); if (e0) e0.textContent = '';
+    var a = api(); if (a && a.audit) a.audit('chat-post', files.length ? files.length + ' photo(s)' : '');
+    Promise.all(files.map(function (f) { return prepare(f.file); })).then(function (imgs) {
+      if (!st.cloud) {
+        var atts = imgs.map(function (x) { return { full: x.full.c.toDataURL('image/jpeg', 0.8), thumb: x.thumb.c.toDataURL('image/jpeg', 0.72), w: x.full.w, h: x.full.h }; });
+        st.list.push({ id: id, author_id: meKey(), author_name: st.user.name, body: body, attachments: atts, created_at: now }); demoSave(); return;
+      }
+      var base = meKey() + '/' + id + '/', atts2 = imgs.map(function (x, i) { return { p: base + i + '.jpg', t: base + i + '_t.jpg', w: x.full.w, h: x.full.h }; });
+      return Promise.all(imgs.map(function (x, i) { return Promise.all([CL.chatUpload(atts2[i].p, x.full.blob), CL.chatUpload(atts2[i].t, x.thumb.blob)]); }))
+        .then(function () { return CL.chatPost({ id: id, body: body, attachments: atts2 }); })
+        .then(function (row) { if (row) st.list = C.applyChange(st.list, { type: 'INSERT', record: row }); }, function (e) { CL.chatRemoveFiles(atts2.reduce(function (a2, x) { return a2.concat([x.p, x.t]); }, [])).catch(function () {}); throw e; });
+    }).then(function () {
+      st.pending = st.pending.filter(function (p) { return p !== pend; }); files.forEach(function (f) { URL.revokeObjectURL(f.url); }); renderFeed(); badge(); markSeen();
+    }, function (e) {
+      if (root.console) console.warn('chat send failed', e && e.message);
+      st.pending = st.pending.filter(function (p) { return p !== pend; }); st.files = files; if ($('chatText') && !$('chatText').value) $('chatText').value = body; st.err = t('failed'); render();
+    });
+  }
+  function saveEdit(id, body) {
+    body = String(body || '').trim(); var m = find(id); if (!m) return; if (!body && !(m.attachments || []).length) return;
+    if (!st.cloud) { m.body = body; m.edited_at = new Date().toISOString(); st.editing = ''; demoSave(); renderFeed(); return; }
+    CL.chatEdit(id, body).then(function (row) { st.list = C.applyChange(st.list, { type: 'UPDATE', record: row }); st.editing = ''; renderFeed(); }, function () { st.err = t('opFail'); var e = $('chatErr'); if (e) e.textContent = st.err; });
+  }
+  function del(id) {
+    var m = find(id); if (!m) return; var a = api(); if (a && a.audit) a.audit('chat-delete', m.author_id === meKey() ? 'own' : 'by owner');
+    if (!st.cloud) { st.list = st.list.filter(function (x) { return x.id !== id; }); demoSave(); renderFeed(); return; }
+    CL.chatDelete(id).then(function () {
+      st.list = C.applyChange(st.list, { type: 'DELETE', old_record: { id: id } }); renderFeed();
+      var paths = (m.attachments || []).reduce(function (a2, x) { return a2.concat([x.p, x.t].filter(Boolean)); }, []); CL.chatRemoveFiles(paths).catch(function () {});
+    }, function () { st.err = t('opFail'); var e = $('chatErr'); if (e) e.textContent = st.err; });
+  }
+  function openFull(id, i) {
+    var m = find(id) || st.pending.filter(function (x) { return x.id === id; })[0]; if (!m) return; var a = m.attachments[i]; if (!a) return;
+    closeFull(); var d = document.createElement('div'); d.id = 'chatLb'; d.className = 'chatlb'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true');
+    d.innerHTML = '<button class="chatlbx" id="chatLbClose" aria-label="' + esc(t('close')) + '">✕</button><img id="chatLbImg" alt="' + esc(t('imgAlt')) + '">';
+    document.body.appendChild(d); var im = $('chatLbImg');
+    if (a.full) im.src = a.full; else if (a.p) { im.src = a.thumb || (st.urls[a.t] || ''); blobUrl(a.p).then(function (u) { if ($('chatLbImg')) $('chatLbImg').src = u; }, function () {}); } else if (a.thumb) im.src = a.thumb;
+    d.onclick = function (e) { if (e.target === d || e.target.id === 'chatLbClose') closeFull(); };
+    $('chatLbClose').focus();
+  }
+  function closeFull() { var d = $('chatLb'); if (d) d.remove(); }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFull(); });
+  document.addEventListener('visibilitychange', function () { if (visible()) markSeen(); });
+
+  // ---------- lifecycle: called by the app on sign-in / sign-out / language change ----------
+  function sync(user, cloud) {
+    var key = user ? (cloud ? 'c:' + user.id : 'd:' + user.email) : '', prev = st.user ? (st.cloud ? 'c:' + st.user.id : 'd:' + st.user.email) : '';
+    btn.classList.toggle('hidden', !user);
+    if (key !== prev) {
+      stop(); st = { user: user ? { id: user.id, email: user.email, name: user.name, role: user.role } : null, cloud: !!cloud, list: [], names: {}, rt: null, rtStatus: '', poll: null, pending: [], files: [], editing: '', urls: {}, err: '', loaded: false, askName: false };
+      if (user && !cloud) { st.list = demoLoad(); st.loaded = true; }
+      if (user && cloud && CL) startCloud();
+      if (!user) { pane.innerHTML = ''; closeFull(); }
+    } else if (user) { st.user.name = user.name; st.user.role = user.role; }
+    badge();
+  }
+  function show() { render(); markSeen(); var ta = $('chatText'); if (ta && !('ontouchstart' in window)) ta.focus(); }
+  new MutationObserver(function () { badge(); if (!pane.classList.contains('hidden')) render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  root.__chat = { sync: sync, show: show, render: render, get state() { return st; }, reload: function () { if (st.cloud && st.user) return cloudLoad(); } };
+  var a0 = api(); if (a0 && a0.currentUser) sync(a0.currentUser(), a0.cloud && a0.cloud.mode === 'cloud');
+})(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== X-rays tab UI ===== -->
 <script id="ortho-xray-app">
