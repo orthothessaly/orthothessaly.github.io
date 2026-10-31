@@ -174,6 +174,24 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
 }
 #promRun{scroll-margin-top:110px}
 .srcnote a{white-space:normal!important;word-break:break-word}
+/* ---- European protocol: schedule, MCID/PASS, protocol section ---- */
+.mx .due{color:#b7791f}.mx .overdue{color:#d63031}.mx .upcoming{color:#9aa9b0}.mx .off{color:#d5dde0;background:#f7f9fa}.mx th.offcol{color:#9aa9b0}
+td.warn{color:#b7791f;font-weight:700}
+.sched{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.sch{display:inline-block;border-radius:8px;padding:3px 8px;font-size:.78rem;border:1px solid #d5dde0;background:#f4f7f8;white-space:nowrap}
+.sch.done{background:#d9f3e4;border-color:#9fd8b6;color:#126b3a}.sch.due{background:#fff1cc;border-color:#f0c96a;color:#7a5a00}
+.sch.overdue,.sch.partial{background:#fde2e2;border-color:#f3a5a5;color:#9b1c1c}.sch.upcoming{color:#5d6f78}.sch.opt{border-style:dashed}
+.badge{display:inline-block;border-radius:6px;padding:2px 7px;font-size:.75rem;font-weight:700;cursor:help;white-space:nowrap}
+.badge.ok{background:#d9f3e4;color:#126b3a}.badge.no{background:#fde2e2;color:#9b1c1c}.badge.na{background:#eef2f4;color:#5d6f78}
+.footnotes{font-size:.78rem;color:#5d6f78;margin-top:8px}.footnotes ol{margin:4px 0 0 18px;padding:0}
+.proto h3{margin:14px 0 6px}.protohead{gap:6px;flex-wrap:wrap}.proto-tbl td{vertical-align:top}.proto-tbl td:first-child{min-width:150px}
+.protolist{margin:4px 0 0 18px;padding:0}.protolist li{margin:3px 0}
+.refs{font-size:.82rem;margin:4px 0 0 18px;padding:0}.refs li{margin:4px 0}.refs a{word-break:break-all}
+.gaps{background:#fff8e6;border-left:4px solid #e8a317;padding:8px 10px;border-radius:6px}
+.offtp{background:#eef2f4;color:#41545c}
+.optsel{font-size:.8rem;white-space:nowrap;cursor:pointer}.optsel input{vertical-align:middle;width:auto;min-height:0}
+details#dashProto summary{cursor:pointer}
+#protoCard,#tab-dash .card,#dashProto{scroll-margin-top:110px}#protoCard h3,.proto h3{scroll-margin-top:110px}
 </style>
 </head>
 <body>
@@ -302,6 +320,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
   <div class="card" id="promSetup"></div>
   <div class="card hidden" id="promList"></div>
   <div class="card hidden" id="promRun"></div>
+  <div class="card" id="protoCard"></div>
 </section>
 <section class="pane hidden" id="tab-dash" aria-label="Dashboard">
   <div id="dashGate"></div>
@@ -1288,35 +1307,207 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
     scoring: L('11 ερωτήσεις 1–5· βαθμολογία = ((άθροισμα / n) − 1) × 25 → 0–100· απαιτούνται ≥10 από 11 απαντήσεις. Προαιρετικές ενότητες όπως στο DASH (και οι 4 ερωτήσεις).', '11 items 1–5; score = ((sum / n) − 1) × 25 → 0–100; ≥10 of 11 required. Optional modules as for DASH (all 4 items).'),
     score: scoreQuickDash };
   // =====================================================================
+  // ANCHOR / SINGLE-ITEM QUESTIONS recommended by the European registry & consensus standards
+  // =====================================================================
+  var POST = ['6w', '3m', '6m', '1y', '2y'];
+  // ISAR PROMs Working Group (Rolfson et al., Acta Orthop 2016;87 Suppl 1:9–23): harmonised 1-item pain + 1-item satisfaction.
+  // English wording verbatim from the report; Greek: rendering. "[right/left]" is left out (one operated joint per record).
+  var ISAR_PAIN = opts(['Κανένας', 'Πολύ ήπιος', 'Ήπιος', 'Μέτριος', 'Έντονος'], ['None', 'Very mild', 'Mild', 'Moderate', 'Severe'], [0, 1, 2, 3, 4]);
+  var ISAR_SAT = opts(['Πολύ δυσαρεστημένος/η', 'Δυσαρεστημένος/η', 'Ουδέτερος/η', 'Ικανοποιημένος/η', 'Πολύ ικανοποιημένος/η'], ['Very unsatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very satisfied'], [1, 2, 3, 4, 5]);
+  function satLabel(v) { var o = ISAR_SAT.filter(function (x) { return x.v === v; })[0]; return o ? o.label : L('–'); }
+  I.ISAR = { id: 'ISAR', name: L('ISAR – ερωτήσεις ενός θέματος: πόνος & ικανοποίηση', 'ISAR single-item questions: pain & satisfaction'), short: 'ISAR 1-item', joint: 'knee/hip', greek: 'rendering', jointTemplate: true,
+    source: src('rendering', 'Rolfson et al. Acta Orthop 2016;87(Suppl 1):9–23 (ISAR PROMs Working Group)', 'https://doi.org/10.1080/17453674.2016.1181816'),
+    instructions: L('Δύο σύντομες ερωτήσεις που χρησιμοποιούνται από τα διεθνή μητρώα αρθροπλαστικών για συγκρίσιμα αποτελέσματα. Η ερώτηση ικανοποίησης τίθεται μόνο μετά την επέμβαση.', 'Two short questions used by arthroplasty registries worldwide for comparable results. The satisfaction question is asked after surgery only.'),
+    items: [
+      item('IP1', 'Τις τελευταίες 4 εβδομάδες, πώς θα περιγράφατε τον πόνο που συνήθως έχετε {JS};', 'During the past 4 weeks, how would you describe the pain you usually have in your {JE}?', ISAR_PAIN, { better: 'low' }),
+      item('IS1', 'Πόσο ικανοποιημένος/η είστε με το αποτέλεσμα της αρθροπλαστικής {JG};', 'How satisfied are you with the results of your {JE} replacement?', ISAR_SAT, { notPre: true,
+        early: { text: L('Πόσο ικανοποιημένος/η είστε μέχρι στιγμής με το αποτέλεσμα της αρθροπλαστικής {JG};', 'How satisfied are you with the results of your {JE} replacement so far?') } })],
+    range: [1, 5], better: 'high', primary: 'satisfaction', chart: ['satisfaction', 'pain'],
+    subNames: { pain: L('Πόνος (0 κανένας – 4 έντονος)', 'Pain (0 none – 4 severe)'), satisfaction: L('Ικανοποίηση (1–5)', 'Satisfaction (1–5)'), satisfied: L('Ικανοποιημένος/η (ναι = 1)', 'Satisfied (yes = 1)') },
+    fmt: function (r) { var s = r.subscales || {}; return s.satisfaction != null ? L('Ικανοποίηση: ' + satLabel(s.satisfaction).el, 'Satisfaction: ' + satLabel(s.satisfaction).en) : (s.pain != null ? L('Πόνος: ' + ISAR_PAIN[s.pain].label.el, 'Pain: ' + ISAR_PAIN[s.pain].label.en) : L('Δεν υπολογίστηκε', 'Not scored')); },
+    scoring: L('Δεν αθροίζονται. Πόνος 0–4 (0 = κανένας). Ικανοποίηση 1–5· σύμφωνα με το ISAR, «ικανοποιημένος» = «ικανοποιημένος» ή «πολύ ικανοποιημένος», όλες οι άλλες απαντήσεις = μη ικανοποιημένος. Πριν από τον 1ο χρόνο η ερώτηση συμπληρώνεται με «μέχρι στιγμής».', 'Not summed. Pain 0–4 (0 = none). Satisfaction 1–5; per ISAR, "satisfied" = satisfied or very satisfied, all other responses = dissatisfied. Before 1 year the wording adds "so far".'),
+    score: function (a) { var s = { pain: isNum(a.IP1) ? a.IP1 : null, satisfaction: isNum(a.IS1) ? a.IS1 : null }; s.satisfied = s.satisfaction == null ? null : (s.satisfaction >= 4 ? 1 : 0); return { total: null, valid: s.pain != null || s.satisfaction != null, subscales: s, notes: [] }; } };
+
+  // PASS question – Panther Symposium ACL Clinical Outcomes Consensus (Svantesson et al., KSSTA 2020;28:2415) recommends the PASS;
+  // wording verbatim from Muller et al., Am J Sports Med 2016;44:2820 (as quoted in the consensus). Greek: rendering.
+  I.PASS = { id: 'PASS', name: L('PASS – Αποδεκτή κατάσταση συμπτωμάτων (γόνατο)', 'PASS – Patient Acceptable Symptom State (knee)'), short: 'PASS', joint: 'knee', greek: 'rendering', timepoints: POST,
+    source: src('rendering', 'Muller et al. Am J Sports Med 2016;44:2820 · Panther Symposium consensus, KSSTA 2020;28:2415', 'https://doi.org/10.1177/0363546516652888'),
+    instructions: L('Μία ερώτηση για τη συνολική σας εκτίμηση της σημερινής κατάστασης του γονάτου σας. Απαντήστε «Ναι» ή «Όχι».', 'One question about your overall judgement of the current state of your knee. Answer "Yes" or "No".'),
+    items: [item('PS1', 'Λαμβάνοντας υπόψη όλες τις δραστηριότητες της καθημερινής σας ζωής, το επίπεδο του πόνου σας, καθώς και τους περιορισμούς στις δραστηριότητες και στη συμμετοχή σας, θεωρείτε ότι η τωρινή κατάσταση του γονάτου σας είναι ικανοποιητική;',
+      'Taking into account all the activity you have during your daily life, your level of pain, and also your activity limitations and participation restrictions, do you consider the current state of your knee satisfactory?', opts(['Ναι', 'Όχι'], ['Yes', 'No'], [1, 0]))],
+    range: [0, 1], better: 'high', primary: 'total', chart: ['total'],
+    fmt: function (r) { return r.total == null ? L('Δεν υπολογίστηκε', 'Not scored') : r.total === 1 ? L('Ναι – αποδεκτή κατάσταση (PASS)', 'Yes – acceptable symptom state (PASS)') : L('Όχι – μη αποδεκτή κατάσταση', 'No – not an acceptable state'); },
+    scoring: L('Ναι = 1 (ο ασθενής βρίσκεται σε αποδεκτή κατάσταση συμπτωμάτων), Όχι = 0.', 'Yes = 1 (patient in an acceptable symptom state), No = 0.'),
+    score: function (a) { return { total: isNum(a.PS1) ? a.PS1 : null, valid: isNum(a.PS1), subscales: {}, notes: [] }; } };
+
+  // Marx Activity Rating Scale (Marx et al., Am J Sports Med 2001;29:213) – the activity scale recommended by the Panther Symposium ACL
+  // Clinical Outcomes Consensus. English: AAOS form; Greek: rendering (no Greek validation found).
+  var MARX_O = opts(['Λιγότερο από μία φορά τον μήνα', 'Μία φορά τον μήνα', 'Μία φορά την εβδομάδα', '2 ή 3 φορές την εβδομάδα', '4 ή περισσότερες φορές την εβδομάδα'], ['Less than one time in a month', 'One time in a month', 'One time in a week', '2 or 3 times in a week', '4 or more times in a week'], [0, 1, 2, 3, 4]);
+  I.MARX = { id: 'MARX', name: L('Κλίμακα δραστηριότητας Marx', 'Marx Activity Rating Scale'), short: 'Marx', joint: 'knee', greek: 'rendering',
+    source: src('rendering', 'Marx et al. Am J Sports Med 2001;29:213 · Panther Symposium consensus, KSSTA 2020;28:2415', 'https://doi.org/10.1177/03635465010290021601'),
+    instructions: L('Παρακαλώ δηλώστε πόσο συχνά εκτελούσατε καθεμία από τις παρακάτω δραστηριότητες όταν βρισκόσασταν στην πιο υγιή και πιο δραστήρια κατάστασή σας, κατά τον τελευταίο χρόνο.', 'Please indicate how often you performed each activity in your healthiest and most active state, in the past year.'),
+    items: [
+      item('MX1', 'Τρέξιμο: τρέξιμο κατά τη διάρκεια αθλήματος ή τζόγκινγκ', 'Running: running while playing a sport or jogging', MARX_O),
+      item('MX2', 'Αλλαγή κατεύθυνσης: αλλαγή κατεύθυνσης ενώ τρέχετε', 'Cutting: changing directions while running', MARX_O),
+      item('MX3', 'Επιβράδυνση: απότομο σταμάτημα ενώ τρέχετε', 'Deceleration: coming to a quick stop while running', MARX_O),
+      item('MX4', 'Περιστροφή: στροφή του σώματος με το πόδι σταθερά στο έδαφος κατά τη διάρκεια αθλήματος· για παράδειγμα σκι, πατινάζ, κλοτσιά, ρίψη, χτύπημα μπάλας (γκολφ, τένις, σκουός) κ.λπ.', 'Pivoting: turning your body with your foot planted while playing sport; for example: skiing, skating, kicking, throwing, hitting a ball (golf, tennis, squash), etc.', MARX_O)],
+    range: [0, 16], better: 'high', primary: 'total', chart: ['total'],
+    scoring: L('4 δραστηριότητες 0–4 (συχνότητα)· σύνολο 0–16 (υψηλότερο = περισσότερη δραστηριότητα). Απαιτούνται και οι 4 απαντήσεις.', '4 activities scored 0–4 (frequency); total 0–16 (higher = more active). All 4 required.'),
+    score: function (a) { var ids = ['MX1', 'MX2', 'MX3', 'MX4'], an = answered(a, ids); return an.length < 4 ? { total: null, valid: false, subscales: {}, notes: [note('Απαιτούνται και οι 4 απαντήσεις.', 'All 4 items required.')] } : { total: sum(ids.map(function (k) { return a[k]; })), valid: true, subscales: {}, notes: [] }; } };
+
+  // Post-operative anchor questions (LROI / Dutch Orthopaedic Association set: change in daily functioning and in pain, 7-point,
+  // 1 = very deteriorated … 7 = very improved) + ICHOM satisfaction item (Rolfson et al., Arthritis Care Res 2016;68:1631, verbatim EN).
+  // The LROI's exact Dutch wording was not publicly available: the two change questions are our wording of the LROI construct.
+  var GRC = opts(['Πολύ βελτιωμένη', 'Αρκετά βελτιωμένη', 'Λίγο βελτιωμένη', 'Καμία αλλαγή', 'Λίγο χειρότερη', 'Αρκετά χειρότερη', 'Πολύ χειρότερη'], ['Very much improved', 'Much improved', 'Slightly improved', 'No change', 'Slightly worse', 'Much worse', 'Very much worse'], [7, 6, 5, 4, 3, 2, 1]);
+  var GRCP = opts(['Πολύ λιγότερος πόνος', 'Αρκετά λιγότερος πόνος', 'Λίγο λιγότερος πόνος', 'Καμία αλλαγή', 'Λίγο περισσότερος πόνος', 'Αρκετά περισσότερος πόνος', 'Πολύ περισσότερος πόνος'], ['Very much less pain', 'Much less pain', 'Slightly less pain', 'No change', 'Slightly more pain', 'Much more pain', 'Very much more pain'], [7, 6, 5, 4, 3, 2, 1]);
+  var ICHOM_SAT = opts(['Πολύ ικανοποιημένος/η', 'Ικανοποιημένος/η', 'Ούτε ικανοποιημένος/η ούτε δυσαρεστημένος/η', 'Δυσαρεστημένος/η', 'Πολύ δυσαρεστημένος/η'], ['Very satisfied', 'Satisfied', 'Neither satisfied nor dissatisfied', 'Unsatisfied', 'Very unsatisfied'], [5, 4, 3, 2, 1]);
+  I.ANCHOR = { id: 'ANCHOR', name: L('Ερωτήσεις-άγκυρες μετά την επέμβαση (μεταβολή & ικανοποίηση)', 'Post-operative anchor questions (change & satisfaction)'), short: 'Anchor', joint: 'generic', greek: 'rendering', timepoints: POST,
+    source: src('rendering', 'LROI PROMs set (anchor questions) · ICHOM Hip & Knee OA set, Rolfson et al. Arthritis Care Res 2016;68:1631', 'https://www.lroi.nl/lroi-data/registreren/proms'),
+    instructions: L('Συγκρίνετε την κατάστασή σας σήμερα με την κατάσταση πριν από την επέμβαση.', 'Compare how you are today with how you were before the operation.'),
+    items: [
+      item('AN1', 'Πώς είναι η καθημερινή σας λειτουργικότητα τώρα, σε σύγκριση με πριν από την επέμβαση;', 'How is your daily functioning now, compared with before the operation?', GRC),
+      item('AN2', 'Πώς είναι ο πόνος σας τώρα, σε σύγκριση με πριν από την επέμβαση;', 'How is your pain now, compared with before the operation?', GRCP),
+      item('AN3', 'Πόσο ικανοποιημένος/η είστε με τα αποτελέσματα της θεραπείας σας;', 'How satisfied are you with the results of your treatment?', ICHOM_SAT)],
+    range: [1, 7], better: 'high', primary: 'function', chart: ['function', 'pain', 'satisfaction'],
+    subNames: { 'function': L('Μεταβολή λειτουργικότητας (1–7)', 'Change in function (1–7)'), pain: L('Μεταβολή πόνου (1–7)', 'Change in pain (1–7)'), satisfaction: L('Ικανοποίηση (1–5)', 'Satisfaction (1–5)'), improved: L('Σημαντική βελτίωση (ναι = 1)', 'Meaningfully improved (yes = 1)') },
+    fmt: function (r) { var s = r.subscales || {}; var o = GRC.filter(function (x) { return x.v === s['function']; })[0]; return o ? L('Λειτουργικότητα: ' + o.label.el, 'Function: ' + o.label.en) : L('Δεν υπολογίστηκε', 'Not scored'); },
+    scoring: L('Δεν αθροίζονται. Μεταβολή 1–7 (7 = πολύ βελτιωμένη, 4 = καμία αλλαγή, 1 = πολύ χειρότερη)· «σημαντική βελτίωση» = αρκετά ή πολύ βελτιωμένη (6–7). Ικανοποίηση 1–5 (5 = πολύ ικανοποιημένος/η).', 'Not summed. Change 1–7 (7 = very much improved, 4 = no change, 1 = very much worse); "meaningfully improved" = much or very much improved (6–7). Satisfaction 1–5 (5 = very satisfied).'),
+    score: function (a) { var s = { 'function': isNum(a.AN1) ? a.AN1 : null, pain: isNum(a.AN2) ? a.AN2 : null, satisfaction: isNum(a.AN3) ? a.AN3 : null }; s.improved = s['function'] == null ? null : (s['function'] >= 6 ? 1 : 0); return { total: null, valid: s['function'] != null || s.satisfaction != null, subscales: s, notes: [] }; } };
+
+  // =====================================================================
   // PROCEDURES, TIMEPOINTS, COMPLETION, DEMO SEED HELPERS
   // =====================================================================
   // The 2011 KSS pre-operative form has no satisfaction section.
   I.KSS2011.items.forEach(function (it) { if (/^SAT/.test(it.id)) it.notPre = true; });
 
-  var PROCEDURES = {
-    ACL: { name: L('Πρόσθιος χιαστός', 'ACL reconstruction'), recommended: ['IKDC', 'KOOS', 'LYSHOLM', 'TEGNER', 'ACLRSI', 'EQ5D5L', 'VAS'], other: [] },
-    TKA: { name: L('Ολική αρθροπλαστική γόνατος', 'Total knee arthroplasty'), recommended: ['OKS', 'KOOSJR', 'WOMAC', 'KSS2011', 'FJS12', 'EQ5D5L', 'VAS'], other: ['KOOS'] },
-    THA: { name: L('Ολική αρθροπλαστική ισχίου', 'Total hip arthroplasty'), recommended: ['OHS', 'HOOSJR', 'HHS', 'WOMAC', 'FJS12', 'EQ5D5L', 'VAS'], other: ['HOOS', 'IHOT12'] },
-    UL: { name: L('Άνω άκρο', 'Upper limb'), recommended: ['QDASH', 'OSS', 'CONSTANT', 'EQ5D5L', 'VAS'], other: ['DASH', 'OES'] }
+  // ---------------------------------------------------------------------
+  // EUROPEAN-STANDARD PROTOCOLS (see the "Protocol" section in the app for the full rationale)
+  // ---------------------------------------------------------------------
+  var REFS = {
+    ISAR: { short: 'ISAR 2016', text: 'Rolfson O, et al. Patient-reported outcome measures in arthroplasty registries. Report of the PROMs Working Group of the International Society of Arthroplasty Registries. Part II. Acta Orthop 2016;87(Suppl 1):9–23.', url: 'https://doi.org/10.1080/17453674.2016.1181816' },
+    ISAR1: { short: 'ISAR 2016 (I)', text: 'Rolfson O, et al. Patient-reported outcome measures in arthroplasty registries. Report of the ISAR PROMs Working Group. Part I. Overview and rationale. Acta Orthop 2016;87(Suppl 1):3–8.', url: 'https://doi.org/10.1080/17453674.2016.1181815' },
+    EFORT: { short: 'EFORT Open Rev 2019', text: 'Wilson I, Bohm E, Lübbeke A, et al. Orthopaedic registries with patient-reported outcome measures. EFORT Open Rev 2019;4:357–367 (EFORT\u2019s review journal; relays the ISAR recommendations).', url: 'https://doi.org/10.1302/2058-5241.4.180080' },
+    LROI: { short: 'LROI', text: 'Dutch Arthroplasty Register (LROI) / Netherlands Orthopaedic Association – PROMs: measured instruments and measurement windows for hip, knee and shoulder arthroplasty.', url: 'https://www.lroi.nl/lroi-data/registreren/proms' },
+    ICHOM: { short: 'ICHOM 2016', text: 'Rolfson O, et al. Defining an international standard set of outcome measures for patients with hip or knee osteoarthritis: consensus of the International Consortium for Health Outcomes Measurement. Arthritis Care Res 2016;68:1631–1639.', url: 'https://doi.org/10.1002/acr.22868' },
+    NJR: { short: 'NJR', text: 'National Joint Registry (England, Wales, Northern Ireland, Isle of Man) – NHS PROMs: Oxford Hip/Knee Score and EQ-5D pre-operatively and at 6 months (as tabulated in ISAR Part I).', url: 'https://doi.org/10.1080/17453674.2016.1181815' },
+    PANTHER: { short: 'Panther 2020', text: 'Svantesson E, et al. Clinical outcomes after anterior cruciate ligament injury: Panther Symposium ACL Injury Clinical Outcomes Consensus Group. Knee Surg Sports Traumatol Arthrosc (ESSKA) 2020;28:2415–2434.', url: 'https://doi.org/10.1007/s00167-020-06061-x' },
+    PANTHER_RTS: { short: 'Panther RTS 2020', text: 'Meredith SJ, et al. Return to sport after anterior cruciate ligament injury: Panther Symposium ACL Injury Return to Sport Consensus Group. Knee Surg Sports Traumatol Arthrosc (ESSKA) 2020;28:2403–2414.', url: 'https://doi.org/10.1007/s00167-020-06009-1' },
+    SECEC: { short: 'Constant 2008', text: 'Constant CR, et al. A review of the Constant score: modifications and guidelines for its use. J Shoulder Elbow Surg 2008;17:355–361 (Constant score adopted by SECEC/ESSSE as its minimal data set).', url: 'https://doi.org/10.1016/j.jse.2007.06.022' },
+    BEARD: { short: 'Beard 2015', text: 'Beard DJ, et al. Meaningful changes for the Oxford hip and knee scores after joint replacement surgery. J Clin Epidemiol 2015;68:73–79.', url: 'https://doi.org/10.1016/j.jclinepi.2014.08.009' },
+    MULLER: { short: 'Muller 2016', text: 'Muller B, et al. Defining thresholds for the Patient Acceptable Symptom State for the IKDC Subjective Knee Form and KOOS for patients who underwent ACL reconstruction. Am J Sports Med 2016;44:2820–2826.', url: 'https://doi.org/10.1177/0363546516652888' },
+    IRRGANG: { short: 'Irrgang 2006', text: 'Irrgang JJ, et al. Responsiveness of the International Knee Documentation Committee Subjective Knee Form. Am J Sports Med 2006;34:1567–1573.', url: 'https://doi.org/10.1177/0363546506288855' },
+    GALARDINI: { short: 'Galardini 2024', text: 'Galardini L, et al. Minimal clinically important difference of the Disabilities of the Arm, Shoulder and Hand (DASH) and the shortened version of the DASH (QuickDASH) in people with musculoskeletal disorders: a systematic review and meta-analysis. Phys Ther 2024;104:pzae033.', url: 'https://doi.org/10.1093/ptj/pzae033' }
   };
+  // Measurement windows in days relative to surgery. LROI windows where the LROI defines them; the others are this app's convention.
+  var WINDOWS = {
+    pre: { from: -182, to: 0, src: 'LROI', note: L('έως 6 μήνες πριν (LROI)· ιδανικά 3–4 εβδ. πριν, όχι την ημέρα της επέμβασης (ISAR)', 'up to 6 months before (LROI); ideally 3–4 wk before, not on the day of surgery (ISAR)') },
+    '6w': { from: 35, to: 56, src: 'app', note: L('35–56 ημ. (σύμβαση εφαρμογής)', '35–56 d (app convention)') },
+    '3m': { from: 63, to: 110, src: 'LROI', note: L('63–110 ημ. (LROI)', '63–110 d (LROI)') },
+    '6m': { from: 154, to: 210, src: 'LROI', note: L('154–210 ημ. (LROI)', '154–210 d (LROI)') },
+    '1y': { from: 323, to: 407, src: 'LROI', note: L('323–407 ημ. (LROI)', '323–407 d (LROI)') },
+    '2y': { from: 685, to: 775, src: 'app', note: L('685–775 ημ. (σύμβαση εφαρμογής)', '685–775 d (app convention)') }
+  };
+  /* PROTOCOLS: core = auto-assigned; optional = selectable per patient; tps = protocol timepoints (req false = optional timepoint);
+     at = per-instrument timepoint restriction inside this protocol. */
+  var PROTOCOLS = {
+    TKA: { core: ['OKS', 'EQ5D5L', 'VAS', 'ISAR'], optional: ['KOOS', 'KOOSJR', 'FJS12', 'WOMAC', 'KSS2011', 'ANCHOR'],
+      tps: [{ id: 'pre', req: true }, { id: '3m', req: false }, { id: '6m', req: true }, { id: '1y', req: true }, { id: '2y', req: false }],
+      at: {}, refs: ['ISAR', 'EFORT', 'LROI', 'NJR', 'ICHOM', 'BEARD'] },
+    THA: { core: ['OHS', 'EQ5D5L', 'VAS', 'ISAR'], optional: ['HOOS', 'HOOSJR', 'FJS12', 'WOMAC', 'HHS', 'ANCHOR', 'IHOT12'],
+      tps: [{ id: 'pre', req: true }, { id: '3m', req: true }, { id: '6m', req: false }, { id: '1y', req: true }, { id: '2y', req: false }],
+      at: {}, refs: ['ISAR', 'EFORT', 'LROI', 'NJR', 'ICHOM', 'BEARD'] },
+    ACL: { core: ['IKDC', 'MARX', 'EQ5D5L', 'PASS', 'ACLRSI'], optional: ['KOOS', 'LYSHOLM', 'TEGNER', 'VAS'],
+      tps: [{ id: 'pre', req: true }, { id: '3m', req: false }, { id: '6m', req: true }, { id: '1y', req: true }, { id: '2y', req: true }],
+      at: { ACLRSI: ['6m', '1y', '2y'] }, refs: ['PANTHER', 'PANTHER_RTS', 'MULLER', 'IRRGANG'] },
+    UL: { core: ['OSS', 'CONSTANT', 'EQ5D5L', 'VAS', 'ANCHOR'], optional: ['QDASH', 'DASH', 'OES'],
+      tps: [{ id: 'pre', req: true }, { id: '3m', req: true }, { id: '6m', req: false }, { id: '1y', req: true }, { id: '2y', req: false }],
+      at: {}, refs: ['LROI', 'SECEC', 'ICHOM', 'GALARDINI'] }
+  };
+  var PROCEDURES = {
+    ACL: { name: L('Πρόσθιος χιαστός', 'ACL reconstruction') }, TKA: { name: L('Ολική αρθροπλαστική γόνατος', 'Total knee arthroplasty') },
+    THA: { name: L('Ολική αρθροπλαστική ισχίου', 'Total hip arthroplasty') }, UL: { name: L('Άνω άκρο / ώμος', 'Upper limb / shoulder') }
+  };
+  Object.keys(PROCEDURES).forEach(function (k) { PROCEDURES[k].recommended = PROTOCOLS[k].core; PROCEDURES[k].other = PROTOCOLS[k].optional; PROCEDURES[k].protocol = PROTOCOLS[k]; });
+
+  /* Clinically meaningful thresholds (change from the pre-operative baseline; PASS on the follow-up value). */
+  var THRESHOLDS = {
+    OKS: { mcid: 7, mcidRef: 'BEARD', mcidNote: L('MIC ατομικού ασθενούς (anchor-based)', 'individual-patient MIC (anchor-based)'), pass: 31, passAt: ['6m', '1y', '2y'], passRef: 'PASS_OKS' },
+    OHS: { mcid: 8, mcidRef: 'BEARD', mcidNote: L('MIC ατομικού ασθενούς (anchor-based)', 'individual-patient MIC (anchor-based)'), pass: 36, passAt: ['1y', '2y'], passRef: 'PASS_OHS' },
+    IKDC: { mcid: 11.5, mcidRef: 'IRRGANG', mcidNote: L('MCID μετά από χειρουργική γόνατος', 'MCID after knee surgery'), pass: 75.9, passAt: ['1y', '2y'], passRef: 'MULLER' },
+    KOOS: { sub: true, pass: { pain: 88.9, symptoms: 57.1, adl: 100, sport: 75.0, qol: 62.5 }, passAt: ['1y', '2y'], passRef: 'MULLER', procs: ['ACL'] },
+    QDASH: { mcid: 12, mcidRef: 'GALARDINI', mcidNote: L('συγκεντρωτική MCID ≈ 12 (εύρος μελετών 12–15)', 'pooled MCID ≈ 12 (study range 12–15)') },
+    DASH: { mcid: 11, mcidRef: 'GALARDINI', mcidNote: L('συγκεντρωτική MCID ≈ 11 (εύρος μελετών 12–14)', 'pooled MCID ≈ 11 (study range 12–14)') }
+  };
+  REFS.PASS_OKS = { short: 'Robins 2026', text: 'Robins S, Martinson E, Leitch G, Clement ND. Predictors associated with failing to achieve a patient-acceptable symptom state in the Oxford Knee Score following total knee arthroplasty. Knee 2026 (PASS OKS ≥31 at 6 months; single registry cohort, n = 3304, satisfaction anchor).', url: 'https://doi.org/10.1016/j.knee.2026.104354' };
+  REFS.PASS_OHS = { short: 'Fatima 2026', text: 'Fatima A, Hameed A, Leitch G, Clement ND. PASS threshold in the Oxford Hip Score 12 months following primary total hip arthroplasty. J Clin Med 2026 (PASS OHS ≥36 at 12 months; single-centre cohort, n = 3997, satisfaction anchor).', url: 'https://doi.org/10.3390/jcm15166338' };
+
   var TIMEPOINTS = [
-    { id: 'pre', name: L('Προεγχειρητικά', 'Pre-op'), days: -7 }, { id: '6w', name: L('6 εβδ.', '6 wk'), days: 42 },
+    { id: 'pre', name: L('Προεγχειρητικά', 'Pre-op'), days: -21 }, { id: '6w', name: L('6 εβδ.', '6 wk'), days: 42 },
     { id: '3m', name: L('3 μήνες', '3 mo'), days: 91 }, { id: '6m', name: L('6 μήνες', '6 mo'), days: 182 },
     { id: '1y', name: L('1 έτος', '1 yr'), days: 365 }, { id: '2y', name: L('2 έτη', '2 yr'), days: 730 }];
   function addDays(iso, d) { var t = new Date(iso + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + d); return t.toISOString().slice(0, 10); }
+  function daysBetween(a, b) { return Math.round((new Date(b + 'T12:00:00Z') - new Date(a + 'T12:00:00Z')) / 864e5); }
   function tpDate(surgery, tpId) { var tp = TIMEPOINTS.filter(function (t) { return t.id === tpId; })[0]; return addDays(surgery, tp.days); }
-  function appliesAt(instId, tpId) { var i = I[instId]; return !i.timepoints || i.timepoints.indexOf(tpId) >= 0; }
-  /** {instId: {tpId: 'done'|'missing'|'future'|'na'}} for the procedure's recommended set. */
-  function completion(patient, submissions, todayIso) {
-    var proc = PROCEDURES[patient.procedure], out = {};
-    proc.recommended.forEach(function (inst) {
+  function appliesAt(instId, tpId, procId) {
+    var i = I[instId]; if (i.timepoints && i.timepoints.indexOf(tpId) < 0) return false;
+    var p = procId && PROTOCOLS[procId]; return !(p && p.at[instId] && p.at[instId].indexOf(tpId) < 0);
+  }
+  /** Instruments tracked for a patient: protocol core + optional instruments selected for that patient. */
+  function patientSet(patient) { var p = PROTOCOLS[patient.procedure]; return p.core.concat((patient.optional || []).filter(function (x) { return p.optional.indexOf(x) >= 0; })); }
+  function hasSub(submissions, pid, inst, tp) { return submissions.some(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp; }); }
+  /** Status of one timepoint for a patient: window-based. done | due | overdue | upcoming. */
+  function windowStatus(surgery, tpId, todayIso, done) {
+    if (done) return 'done';
+    var w = WINDOWS[tpId], d = daysBetween(surgery, todayIso);
+    return d < w.from ? 'upcoming' : d <= w.to ? 'due' : 'overdue';
+  }
+  /** {instId: {tpId: 'done'|'due'|'overdue'|'upcoming'|'na'|'off'}} against the patient's protocol ('off' = timepoint not in protocol). */
+  function protocolStatus(patient, submissions, todayIso) {
+    var p = PROTOCOLS[patient.procedure], out = {}, tpIds = p.tps.map(function (t) { return t.id; });
+    patientSet(patient).forEach(function (inst) {
       out[inst] = {};
       TIMEPOINTS.forEach(function (tp) {
-        if (!appliesAt(inst, tp.id)) { out[inst][tp.id] = 'na'; return; }
-        var done = submissions.some(function (s) { return s.patientId === patient.id && s.instrument === inst && s.timepoint === tp.id; });
-        out[inst][tp.id] = done ? 'done' : ((tp.id === 'pre' || tpDate(patient.surgeryDate, tp.id) <= todayIso) ? 'missing' : 'future');
+        var done = hasSub(submissions, patient.id, inst, tp.id);
+        if (!appliesAt(inst, tp.id, patient.procedure)) out[inst][tp.id] = done ? 'done' : 'na';
+        else if (tpIds.indexOf(tp.id) < 0) out[inst][tp.id] = done ? 'done' : 'off';
+        else out[inst][tp.id] = windowStatus(patient.surgeryDate, tp.id, todayIso, done);
       });
     });
+    return out;
+  }
+  /** Per-timepoint summary for the patient: [{tp, req, status, done, total, window:{from,to}}]. */
+  function scheduleSummary(patient, submissions, todayIso) {
+    var p = PROTOCOLS[patient.procedure], st = protocolStatus(patient, submissions, todayIso);
+    return p.tps.map(function (t) {
+      var insts = patientSet(patient).filter(function (i) { return appliesAt(i, t.id, patient.procedure); }), done = insts.filter(function (i) { return st[i][t.id] === 'done'; }).length;
+      var status = windowStatus(patient.surgeryDate, t.id, todayIso, insts.length > 0 && done === insts.length);
+      if (status === 'overdue' && done > 0) status = 'partial';
+      return { tp: t.id, req: t.req, status: status, done: done, total: insts.length, from: addDays(patient.surgeryDate, WINDOWS[t.id].from), to: addDays(patient.surgeryDate, WINDOWS[t.id].to) };
+    });
+  }
+  /** Back-compat matrix (protocol core set): done | missing | future | na. */
+  function completion(patient, submissions, todayIso) {
+    var st = protocolStatus(patient, submissions, todayIso), out = {};
+    PROTOCOLS[patient.procedure].core.forEach(function (inst) { out[inst] = {}; TIMEPOINTS.forEach(function (tp) { var s = st[inst][tp.id]; out[inst][tp.id] = s === 'done' ? 'done' : s === 'na' ? 'na' : s === 'upcoming' ? 'future' : s === 'off' ? 'off' : 'missing'; }); });
+    return out;
+  }
+  /** MCID / PASS evaluation for one instrument: baseline = pre-op result, follow = later result (both score objects). */
+  function meaningful(instId, baseline, follow, tpId, procId) {
+    var th = THRESHOLDS[instId]; if (!th || !follow) return null;
+    if (th.procs && procId && th.procs.indexOf(procId) < 0) return null;
+    var inst = I[instId], out = { inst: instId, tp: tpId };
+    if (th.sub) {
+      var subs = Object.keys(th.pass), fs = follow.subscales || {};
+      out.passSubs = {}; subs.forEach(function (k) { if (isNum(fs[k])) out.passSubs[k] = fs[k] >= th.pass[k]; });
+      out.pass = (!th.passAt || th.passAt.indexOf(tpId) >= 0) && Object.keys(out.passSubs).length ? subs.every(function (k) { return out.passSubs[k]; }) : null;
+      out.passCount = subs.filter(function (k) { return out.passSubs[k]; }).length;
+      return out;
+    }
+    var f = primaryValue(instId, follow), b = baseline ? primaryValue(instId, baseline) : null;
+    out.follow = f; out.baseline = b;
+    if (th.mcid != null && isNum(f) && isNum(b)) { out.delta = inst.better === 'low' ? b - f : f - b; out.mcid = out.delta >= th.mcid; }
+    else out.mcid = null;
+    if (th.pass != null && isNum(f) && (!th.passAt || th.passAt.indexOf(tpId) >= 0)) out.pass = inst.better === 'low' ? f <= th.pass : f >= th.pass; else out.pass = null;
     return out;
   }
   function scoreInstrument(id, answers) { var inst = I[id]; if (!inst) throw new Error('Unknown instrument ' + id); var r = inst.score(answers || {}); r.instrument = id; return r; }
@@ -1328,10 +1519,11 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
 
   function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   /** Deterministic synthetic answers for DEMO seed: h in [0,1] = overall health (1 = best). */
-  function synthAnswers(instId, h, rnd, withClinician) {
+  function synthAnswers(instId, h, rnd, withClinician, tp) {
     var inst = I[instId], ans = {};
     inst.items.forEach(function (it) {
       if (it.clinician && !withClinician) return;
+      if (it.notPre && tp === 'pre') return;
       if (it.id === 'T2') { ans.T2 = 6 + Math.floor(rnd() * 3); return; }
       if (it.id === 'FW1') { ans.FW1 = h > 0.55 ? 1 : 0; return; }
       if (it.scored === false) return;
@@ -1357,6 +1549,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
     L: L, INSTRUMENTS: I, PROCEDURES: PROCEDURES, TIMEPOINTS: TIMEPOINTS, KOOSJR_TABLE: KOOSJR_TABLE, HOOSJR_TABLE: HOOSJR_TABLE,
     scoreInstrument: scoreInstrument, primaryValue: primaryValue, completion: completion, tpDate: tpDate, addDays: addDays, appliesAt: appliesAt,
     synthAnswers: synthAnswers, mulberry32: mulberry32, interpret: interpret, visibleItems: visibleItems, SUBNAMES: SUBNAMES,
+    PROTOCOLS: PROTOCOLS, WINDOWS: WINDOWS, THRESHOLDS: THRESHOLDS, REFS: REFS, protocolStatus: protocolStatus, scheduleSummary: scheduleSummary, patientSet: patientSet, meaningful: meaningful, daysBetween: daysBetween,
     _: { scoreOxford12: scoreOxford12, scoreKoosLike: scoreKoosLike, scoreJR: scoreJR, scoreWomac: scoreWomac, scoreKss2011: scoreKss2011, scoreEq5d5l: scoreEq5d5l, scoreTegner: scoreTegner, scoreLysholm: scoreLysholm, scoreIkdc: scoreIkdc, scoreHhs: scoreHhs, hhsRomPoints: hhsRomPoints, scoreDash: scoreDash, scoreQuickDash: scoreQuickDash, scoreFjs: scoreFjs, scoreAclRsi: scoreAclRsi, scoreVas: scoreVas, scoreConstant: scoreConstant, constantStrengthPoints: constantStrengthPoints, scoreIhot12: scoreIhot12, scoreOes: scoreOes }
   };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1367,7 +1560,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
   'use strict';
   // ===== OrthoThessaly PROMs + Doctor dashboard UI (DEMO ONLY, localStorage only) =====
   var P = window.OrthoPROMs, I = P.INSTRUMENTS, PROC = P.PROCEDURES, TPS = P.TIMEPOINTS;
-  var KEY = 'orthothessaly.demo.proms.v2', AKEY = 'orthothessaly.demo.auth.v1';
+  var KEY = 'orthothessaly.demo.proms.v3', AKEY = 'orthothessaly.demo.auth.v1';
   var $ = function (id) { return document.getElementById(id); };
   var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
   var tx = function (o) { if (o == null) return ''; if (typeof o === 'string') return o; return o[lang()] != null ? o[lang()] : (o.en != null ? o.en : o.el); };
@@ -1412,6 +1605,134 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
       noData: 'No data.', selectPt: 'Select a patient in the list for charts and gaps.', better: 'better', higher: '↑ higher = better', lower: '↓ lower = better', source: 'Source', patientSrc: 'patient', seedSrc: 'demo seed', enteredBy: 'Entered by / responsible doctor', shared: 'Shared team registry: every invited doctor sees ALL patients (no per-doctor restriction).', logT: 'Access log (demo)', logNote: 'Local simulation only. The backend needs a tamper-evident server-side audit log (GDPR).', action: 'Action' }
   };
   var t = function (k) { return S[lang()][k] != null ? S[lang()][k] : k; };
+  // ---------- European-standard protocol: texts, schedule, MCID/PASS ----------
+  var S2 = {
+    el: { protoT: 'Πρωτόκολλο PROMs – ευρωπαϊκά πρότυπα (ESSKA · EFORT/ISAR)', protoLead: 'Για κάθε επέμβαση: βασικό σετ (ανατίθεται αυτόματα), προαιρετικά ερωτηματολόγια (επιλέγονται ανά ασθενή), χρονικά σημεία με παράθυρα μέτρησης, ερωτήσεις-άγκυρες και όρια κλινικά σημαντικής μεταβολής, με τις πηγές τους.',
+      protoWhy: 'Η EFORT και η ESSKA δεν εκδίδουν ένα ενιαίο υποχρεωτικό σετ ερωτηματολογίων. Το πρωτόκολλο εφαρμόζει τις συστάσεις που εκδόθηκαν ή αναπαράγονται στα επίσημα περιοδικά τους (EFORT Open Reviews, KSSTA) και την πράξη των ευρωπαϊκών μητρώων (ISAR, LROI, NJR, ICHOM). Ό,τι δεν ορίζεται από τις οδηγίες σημειώνεται ρητά.',
+      coreT: 'Βασικό σετ πρωτοκόλλου (αυτόματη ανάθεση)', optT: 'Προαιρετικά του πρωτοκόλλου (επιλογή ανά ασθενή)', track: 'Παρακολούθηση για αυτόν τον ασθενή', role: 'Ρόλος / τεκμηρίωση',
+      tpsT: 'Χρονικά σημεία & παράθυρα', reqTp: 'απαιτείται', optTp: 'προαιρετικό', anchorsT: 'Ερωτήσεις-άγκυρες', thrT: 'Όρια κλινικά σημαντικής μεταβολής', gapsT: 'Τι δεν ορίζουν οι οδηγίες', refsT: 'Βιβλιογραφία',
+      offTp: 'Αυτό το χρονικό σημείο δεν ανήκει στο πρωτόκολλο της επέμβασης· η συμπλήρωση επιτρέπεται, αλλά δεν απαιτείται.', schedT: 'Πρόγραμμα πρωτοκόλλου', window: 'παράθυρο',
+      st_done: 'ολοκληρώθηκε', st_due: 'εκκρεμεί τώρα', st_overdue: 'εκπρόθεσμο', st_partial: 'μερικώς – εκπρόθεσμο', st_upcoming: 'προσεχώς', st_na: 'δεν εφαρμόζεται', st_off: 'εκτός πρωτοκόλλου',
+      dueN: 'Εκκρεμούν', overdueN: 'Εκπρόθεσμα', nextTp: 'Επόμενο σημείο', mcidN: 'MCID / PASS', mcidT: 'Κλινικά σημαντική βελτίωση (σε σχέση με την προεγχειρητική τιμή)',
+      baseline: 'Προεγχ.', latest: 'Τελευταία', delta: 'Μεταβολή', mcidOk: 'MCID ✓', mcidNo: 'κάτω από MCID', passOk: 'PASS ✓', passNo: 'όχι PASS', noBase: 'χωρίς προεγχειρητική τιμή', passNa: 'PASS δεν ορίζεται σε αυτό το σημείο',
+      anchorRow: 'Ερωτήσεις-άγκυρες (τελευταία απάντηση)', fnT: 'Πηγές ορίων', protoOpen: 'Πρωτόκολλο (ευρωπαϊκά πρότυπα)', switchLang: 'English',
+      legend2: '✓ ολοκληρώθηκε · ● εκκρεμεί (εντός παραθύρου) · ✗ εκπρόθεσμο · ◦ προσεχώς · – δεν εφαρμόζεται · · εκτός πρωτοκόλλου', recSet: 'Πρωτόκολλο ασθενή: ολοκληρωμένα, εκκρεμή και εκπρόθεσμα σημεία' },
+    en: { protoT: 'PROMs protocol – European standards (ESSKA · EFORT/ISAR)', protoLead: 'Per procedure: core set (auto-assigned), optional questionnaires (selectable per patient), timepoints with measurement windows, anchor questions and thresholds for clinically important change, with their sources.',
+      protoWhy: 'EFORT and ESSKA do not publish one mandatory questionnaire set. This protocol applies the recommendations issued or relayed in their official journals (EFORT Open Reviews, KSSTA) and the practice of European registries (ISAR, LROI, NJR, ICHOM). Anything the guidance does not specify is stated explicitly.',
+      coreT: 'Protocol core set (auto-assigned)', optT: 'Protocol optional set (selectable per patient)', track: 'Track for this patient', role: 'Role / evidence',
+      tpsT: 'Timepoints & windows', reqTp: 'required', optTp: 'optional', anchorsT: 'Anchor questions', thrT: 'Thresholds for clinically important change', gapsT: 'What the guidance does not specify', refsT: 'References',
+      offTp: 'This timepoint is not part of the protocol for this procedure; completion is allowed but not required.', schedT: 'Protocol schedule', window: 'window',
+      st_done: 'completed', st_due: 'due now', st_overdue: 'overdue', st_partial: 'partial – overdue', st_upcoming: 'upcoming', st_na: 'not applicable', st_off: 'not in protocol',
+      dueN: 'Due', overdueN: 'Overdue', nextTp: 'Next timepoint', mcidN: 'MCID / PASS', mcidT: 'Clinically important improvement (vs pre-operative value)',
+      baseline: 'Pre-op', latest: 'Latest', delta: 'Change', mcidOk: 'MCID ✓', mcidNo: 'below MCID', passOk: 'PASS ✓', passNo: 'no PASS', noBase: 'no pre-op value', passNa: 'PASS not defined at this timepoint',
+      anchorRow: 'Anchor questions (latest answer)', fnT: 'Threshold sources', protoOpen: 'Protocol (European standards)', switchLang: 'Ελληνικά',
+      legend2: '✓ completed · ● due (window open) · ✗ overdue · ◦ upcoming · – not applicable · · not in protocol', recSet: 'Patient protocol: completed, due and overdue timepoints' }
+  };
+  Object.keys(S2).forEach(function (lg) { Object.keys(S2[lg]).forEach(function (k) { S[lg][k] = S2[lg][k]; }); });
+  var PR = P.PROTOCOLS, REFS = P.REFS, TH = P.THRESHOLDS;
+  // Role of each instrument inside each protocol (shown in the Protocol section).
+  var ROLE = {
+    TKA: { OKS: L2('Ειδικό για την άρθρωση (ISAR: 1 ειδικό + 1 γενικό)· χρησιμοποιείται από NJR και LROI', 'Joint-specific (ISAR: 1 joint-specific + 1 generic); used by NJR and LROI'),
+      EQ5D5L: L2('Γενικό εργαλείο ποιότητας ζωής (ISAR, LROI, NJR, ICHOM)', 'Generic health-related quality of life (ISAR, LROI, NJR, ICHOM)'), VAS: L2('Ένταση πόνου NRS 0–10 (LROI, ICHOM)', 'Pain intensity NRS 0–10 (LROI, ICHOM)'),
+      ISAR: L2('Εναρμονισμένες ερωτήσεις πόνου & ικανοποίησης του ISAR για διεθνή σύγκριση', 'ISAR harmonised pain & satisfaction items for international comparison'),
+      KOOS: L2('Πλήρες προφίλ γονάτου (ερευνητική χρήση)', 'Full knee profile (research use)'), KOOSJR: L2('Σύντομη λειτουργική κλίμακα γονάτου (εναλλακτική του KOOS-PS που χρησιμοποιούν LROI/ICHOM)', 'Short knee function scale (alternative to the KOOS-PS used by LROI/ICHOM)'),
+      FJS12: L2('Επίγνωση της άρθρωσης – διακρίνει τα πολύ καλά αποτελέσματα (ceiling)', 'Joint awareness – discriminates very good outcomes (ceiling)'), WOMAC: L2('Παραδοσιακό εργαλείο οστεοαρθρίτιδας', 'Traditional osteoarthritis instrument'),
+      KSS2011: L2('Κλινική + αναφερόμενη από τον ασθενή αξιολόγηση (Knee Society)', 'Clinician + patient-reported assessment (Knee Society)'), ANCHOR: L2('Ερωτήσεις μεταβολής & ικανοποίησης τύπου LROI/ICHOM', 'LROI/ICHOM-type change & satisfaction questions') },
+    THA: { OHS: L2('Ειδικό για την άρθρωση (ISAR)· χρησιμοποιείται από NJR και LROI', 'Joint-specific (ISAR); used by NJR and LROI'),
+      EQ5D5L: L2('Γενικό εργαλείο ποιότητας ζωής (ISAR, LROI, NJR, ICHOM)', 'Generic health-related quality of life (ISAR, LROI, NJR, ICHOM)'), VAS: L2('Ένταση πόνου NRS 0–10 (LROI, ICHOM)', 'Pain intensity NRS 0–10 (LROI, ICHOM)'),
+      ISAR: L2('Εναρμονισμένες ερωτήσεις πόνου & ικανοποίησης του ISAR', 'ISAR harmonised pain & satisfaction items'), HOOS: L2('Πλήρες προφίλ ισχίου (ερευνητική χρήση)', 'Full hip profile (research use)'),
+      HOOSJR: L2('Σύντομη λειτουργική κλίμακα ισχίου (εναλλακτική του HOOS-PS των LROI/ICHOM)', 'Short hip function scale (alternative to the HOOS-PS used by LROI/ICHOM)'), FJS12: L2('Επίγνωση της άρθρωσης (ceiling)', 'Joint awareness (ceiling)'),
+      WOMAC: L2('Παραδοσιακό εργαλείο οστεοαρθρίτιδας', 'Traditional osteoarthritis instrument'), HHS: L2('Κλινική βαθμολογία ισχίου (ιατρός + ασθενής)', 'Clinical hip score (clinician + patient)'),
+      ANCHOR: L2('Ερωτήσεις μεταβολής & ικανοποίησης τύπου LROI/ICHOM', 'LROI/ICHOM-type change & satisfaction questions'), IHOT12: L2('Για νέους, δραστήριους ασθενείς (σχεδιάστηκε για αρθροσκόπηση ισχίου)', 'For young, active patients (designed for hip arthroscopy)') },
+    ACL: { IKDC: L2('Το ερωτηματολόγιο γονάτου που προτείνει η συναίνεση Panther', 'Knee-specific PRO recommended by the Panther consensus'), MARX: L2('Κλίμακα δραστηριότητας που προτείνει η συναίνεση Panther', 'Activity scale recommended by the Panther consensus'),
+      EQ5D5L: L2('Ποιότητα ζωής σχετιζόμενη με την υγεία (η συναίνεση ζητά ένα εργαλείο HRQoL)', 'Health-related quality of life (the consensus asks for an HRQoL measure)'), PASS: L2('Ερώτηση PASS – προτείνεται από τη συναίνεση Panther', 'PASS question – recommended by the Panther consensus'),
+      ACLRSI: L2('Ψυχολογική ετοιμότητα για επιστροφή στο άθλημα (συναίνεση RTS: επικυρωμένη κλίμακα· «το ACL-RSI μπορεί να είναι καλή επιλογή»)', 'Psychological readiness to return to sport (RTS consensus: validated scale; "ACL-RSI may be a good option")'),
+      KOOS: L2('Μεσο-/μακροπρόθεσμα για οστεοαρθρίτιδα (≥5 έτη) και σύγκριση με μητρώα', 'Mid/long term for osteoarthritis (≥5 years) and registry comparison'), LYSHOLM: L2('Ιστορικό εργαλείο συμπτωμάτων γονάτου', 'Legacy knee symptom score'),
+      TEGNER: L2('Ιστορική κλίμακα επιπέδου δραστηριότητας', 'Legacy activity level scale'), VAS: L2('Ένταση πόνου', 'Pain intensity') },
+    UL: { OSS: L2('Ειδικό για τον ώμο (LROI, αρθροπλαστική ώμου)', 'Shoulder-specific (LROI, shoulder arthroplasty)'), CONSTANT: L2('Ελάχιστο σύνολο δεδομένων της SECEC/ESSSE (1991)', 'SECEC/ESSSE minimal data set (1991)'),
+      EQ5D5L: L2('Γενικό εργαλείο ποιότητας ζωής (LROI)', 'Generic health-related quality of life (LROI)'), VAS: L2('Ένταση πόνου NRS (LROI)', 'Pain intensity NRS (LROI)'), ANCHOR: L2('Ερωτήσεις μεταβολής (LROI) & ικανοποίησης (ICHOM) μετά την επέμβαση', 'Post-operative change (LROI) & satisfaction (ICHOM) questions'),
+      QDASH: L2('Περιοχικό εργαλείο άνω άκρου (σύντομο)', 'Regional upper-limb measure (short)'), DASH: L2('Περιοχικό εργαλείο άνω άκρου (πλήρες)', 'Regional upper-limb measure (full)'), OES: L2('Για επεμβάσεις αγκώνα', 'For elbow procedures') }
+  };
+  var ANCH = {
+    TKA: L2('ISAR: πόνος 4 εβδομάδων (σε όλα τα σημεία) και ικανοποίηση (μόνο μετεγχειρητικά· «μέχρι στιγμής» πριν από τον 1ο χρόνο). ISAR: «ικανοποιημένος» = ικανοποιημένος + πολύ ικανοποιημένος. Προαιρετικά: μεταβολή λειτουργικότητας/πόνου 1–7 (LROI) και ικανοποίηση ICHOM.', 'ISAR: 4-week pain (all timepoints) and satisfaction (post-op only; "so far" before 1 year). ISAR: "satisfied" = satisfied + very satisfied. Optional: change in function/pain 1–7 (LROI) and ICHOM satisfaction.'),
+    THA: L2('Όπως στην αρθροπλαστική γόνατος: ερωτήσεις ISAR πόνου και ικανοποίησης· προαιρετικά μεταβολή 1–7 (LROI) και ικανοποίηση ICHOM.', 'As for knee arthroplasty: ISAR pain and satisfaction items; optional 1–7 change (LROI) and ICHOM satisfaction.'),
+    ACL: L2('Ερώτηση PASS (ναι/όχι) σε κάθε μετεγχειρητικό σημείο (Panther· διατύπωση Muller 2016).', 'PASS question (yes/no) at every post-operative timepoint (Panther; wording Muller 2016).'),
+    UL: L2('Μεταβολή καθημερινής λειτουργικότητας και πόνου 1–7 (LROI) και ικανοποίηση από τη θεραπεία (ICHOM), μόνο μετεγχειρητικά.', 'Change in daily functioning and pain 1–7 (LROI) and satisfaction with treatment (ICHOM), post-operative only.')
+  };
+  var GAPS = {
+    TKA: L2('Η EFORT/NORE και το ISAR δεν επιβάλλουν συγκεκριμένο ερωτηματολόγιο (μόνο 1 γενικό + 1 ειδικό)· η επιλογή OKS + EQ-5D-5L ακολουθεί NJR/LROI. Τα LROI/ICHOM χρησιμοποιούν KOOS-PS, το οποίο δεν περιλαμβάνεται εδώ, επειδή ο επίσημος πίνακας μετατροπής Rasch δεν ήταν διαθέσιμος για επαλήθευση· χρησιμοποιείται το KOOS JR. Το LROI μετρά NRS πόνου σε ηρεμία και σε δραστηριότητα· εδώ μία NRS μέσου πόνου εβδομάδας (ICHOM). Το παράθυρο των 2 ετών είναι σύμβαση της εφαρμογής (ICHOM: ετήσια παρακολούθηση).', 'EFORT/NORE and ISAR do not mandate a specific questionnaire (only 1 generic + 1 joint-specific); OKS + EQ-5D-5L follows NJR/LROI. LROI/ICHOM use the KOOS-PS, which is not included because its official Rasch conversion table could not be verified; KOOS JR is offered instead. LROI measures NRS pain at rest and during activity; here one NRS of average weekly pain (ICHOM). The 2-year window is an app convention (ICHOM: annual follow-up).'),
+    THA: L2('Καμία οδηγία δεν ορίζει διαφορετικό σετ για την οπίσθια προσπέλαση· το πρωτόκολλο είναι το ίδιο για κάθε προσπέλαση. HOOS-PS (LROI/ICHOM) δεν περιλαμβάνεται (μη επαληθευμένος πίνακας μετατροπής)· χρησιμοποιείται το HOOS JR. Τα 6 μήνες (NJR) και τα 2 έτη είναι προαιρετικά· το παράθυρο των 2 ετών είναι σύμβαση της εφαρμογής.', 'No guidance defines a different set for the posterior approach; the protocol is the same for every approach. HOOS-PS (LROI/ICHOM) is not included (unverified conversion table); HOOS JR is offered. 6 months (NJR) and 2 years are optional; the 2-year window is an app convention.'),
+    ACL: L2('Η συναίνεση Panther (δημοσιευμένη στο KSSTA της ESSKA) ορίζει ελάχιστη παρακολούθηση 2 ετών και επιτρέπει πολλαπλές μετρήσεις στα 2 πρώτα έτη, χωρίς συγκεκριμένα ενδιάμεσα σημεία: τα 6 μήνες και 1 έτος είναι επιλογή της εφαρμογής (το ACL-RSI από τους 6 μήνες, πριν από την επιστροφή στο άθλημα). Δεν ορίζεται συγκεκριμένο εργαλείο HRQoL (χρησιμοποιείται EQ-5D-5L). Η αξιολόγηση οστεοαρθρίτιδας ≥5 ετών (KOOS) είναι εκτός του εύρους χρονικών σημείων της εφαρμογής. Για την κλίμακα Marx δεν βρέθηκε επικυρωμένη ελληνική έκδοση.', 'The Panther consensus (published in ESSKA\u2019s KSSTA) sets a minimum 2-year follow-up and allows multiple assessments during the first 2 years without fixing intermediate timepoints: 6 months and 1 year are app choices (ACL-RSI from 6 months, before return to sport). No specific HRQoL tool is named (EQ-5D-5L used). OA assessment at ≥5 years (KOOS) lies outside the app\u2019s timepoint range. No validated Greek Marx scale was found.'),
+    UL: L2('Οι συναινέσεις ESSKA-ESA (ρήξη στροφικού πετάλου, αστάθεια) δεν ορίζουν σετ PROMs· αναφέρουν μόνο ότι συνήθως χρησιμοποιούνται ASES, Constant και VAS. Το σετ ακολουθεί το LROI (αρθροπλαστική ώμου) και το ελάχιστο σύνολο της SECEC. Για αγκώνα/χέρι δεν υπάρχει ευρωπαϊκό σετ· QuickDASH/DASH/OES είναι προαιρετικά. Η ακριβής διατύπωση των ερωτήσεων-αγκυρών του LROI δεν ήταν δημόσια διαθέσιμη· χρησιμοποιείται δική μας διατύπωση της ίδιας κλίμακας 1–7. Δεν βρέθηκε επαληθευμένο MCID για OSS, Constant ή EQ-5D που να ισχύει γενικά.', 'ESSKA-ESA consensuses (rotator cuff, instability) do not define a PROM set; they only note that ASES, Constant and VAS are commonly reported. The set follows the LROI (shoulder arthroplasty) and the SECEC minimal data set. There is no European set for elbow/hand; QuickDASH/DASH/OES are optional. The exact LROI anchor-question wording was not publicly available; our own wording of the same 1–7 scale is used. No verified, generally applicable MCID was found for OSS, Constant or EQ-5D.')
+  };
+  function stName(s) { return t('st_' + s); }
+  function refLink(k, n) { var r = REFS[k]; return '<a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(r.text) + '">' + (n ? '[' + n + '] ' : '') + esc(r.short) + ' ↗</a>'; }
+  function thrText(id, procId) {
+    var th = TH[id]; if (!th || (th.procs && th.procs.indexOf(procId) < 0)) return '';
+    var parts = [];
+    if (th.mcid != null) parts.push('MCID ' + th.mcid + ' (' + tx(th.mcidNote) + '; ' + REFS[th.mcidRef].short + ')');
+    if (th.sub) parts.push('PASS ' + Object.keys(th.pass).map(function (k) { return subName(id, k) + ' ≥' + th.pass[k]; }).join(', ') + ' (' + REFS[th.passRef].short + ')');
+    else if (th.pass != null) parts.push('PASS ≥' + th.pass + ' ' + (lang() === 'el' ? 'από' : 'from') + ' ' + tpName(th.passAt[0]) + ' (' + REFS[th.passRef].short + ')');
+    return I[id].short + ': ' + parts.join(' · ');
+  }
+  var protoSel = '';
+  function protocolHtml(procId, idp) {
+    var pr = PR[procId];
+    var h = '<div class="proto" id="' + idp + 'Body"><div class="row protohead">' + Object.keys(PR).map(function (k) { return '<button class="' + (k === procId ? 'primary' : '') + '" data-proto="' + k + '">' + esc(tx(PROC[k].name)) + '</button>'; }).join('') + '<button class="ghost" data-protolang="1">🌐 ' + esc(t('switchLang')) + '</button></div>';
+    var rows = function (ids) { return ids.map(function (id) { return '<tr><td><b>' + esc(I[id].short) + '</b><br><span class="muted">' + esc(tx(I[id].name)) + '</span></td><td>' + esc(tx((ROLE[procId] || {})[id] || '')) + '</td><td>' + srcNote(id) + '</td></tr>'; }).join(''); };
+    h += '<h3>' + esc(t('coreT')) + '</h3><div class="tblwrap"><table class="tbl proto-tbl"><tr><th>' + esc(t('inst')) + '</th><th>' + esc(t('role')) + '</th><th>' + esc(t('source')) + '</th></tr>' + rows(pr.core) + '</table></div>';
+    h += '<h3>' + esc(t('optT')) + '</h3><div class="tblwrap"><table class="tbl proto-tbl"><tr><th>' + esc(t('inst')) + '</th><th>' + esc(t('role')) + '</th><th>' + esc(t('source')) + '</th></tr>' + rows(pr.optional) + '</table></div>';
+    h += '<h3>' + esc(t('tpsT')) + '</h3><ul class="protolist">' + pr.tps.map(function (x) { var w = P.WINDOWS[x.id]; var ins = pr.core.filter(function (i) { return P.appliesAt(i, x.id, procId); }).map(function (i) { return I[i].short; }); return '<li><b>' + esc(tpName(x.id)) + '</b> <span class="pill ' + (x.req ? 'yes' : '') + '">' + esc(x.req ? t('reqTp') : t('optTp')) + '</span> · ' + esc(t('window')) + ': ' + esc(tx(w.note)) + '<br><span class="muted">' + esc(ins.join(' · ')) + '</span></li>'; }).join('') + '</ul>';
+    h += '<h3>' + esc(t('anchorsT')) + '</h3><p>' + esc(tx(ANCH[procId])) + '</p>';
+    var thr = pr.core.concat(pr.optional).map(function (i) { return thrText(i, procId); }).filter(Boolean);
+    h += '<h3>' + esc(t('thrT')) + '</h3>' + (thr.length ? '<ul class="protolist">' + thr.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '<p class="muted">–</p>');
+    h += '<h3>' + esc(t('gapsT')) + '</h3><p class="gaps">' + esc(tx(GAPS[procId])) + '</p>';
+    var refs = pr.refs.slice(); pr.core.concat(pr.optional).forEach(function (i) { var th = TH[i]; if (th && !(th.procs && th.procs.indexOf(procId) < 0)) [th.mcidRef, th.passRef].forEach(function (r) { if (r && refs.indexOf(r) < 0) refs.push(r); }); });
+    h += '<h3>' + esc(t('refsT')) + '</h3><ol class="refs">' + refs.map(function (k) { return '<li>' + esc(REFS[k].text) + ' <a href="' + esc(REFS[k].url) + '" target="_blank" rel="noopener noreferrer">' + esc(REFS[k].url.replace(/^https:\/\/(doi\.org\/)?/, '')) + ' ↗</a></li>'; }).join('') + '</ol></div>';
+    return h;
+  }
+  function bindProtocol(root, rerender) {
+    root.querySelectorAll('[data-proto]').forEach(function (b) { b.onclick = function () { protoSel = b.dataset.proto; rerender(); }; });
+    root.querySelectorAll('[data-protolang]').forEach(function (b) { b.onclick = function () { var lb = document.getElementById('langBtn'); if (lb) lb.click(); else { document.documentElement.lang = lang() === 'el' ? 'en' : 'el'; } }; });
+  }
+  function renderProtoCard() {
+    var el = $('protoCard'); if (!el) return;
+    var proc = protoSel || (patientById(ctx.pid) || {}).procedure || ctx.procedure || 'TKA';
+    el.innerHTML = '<h2>📋 ' + esc(t('protoT')) + '</h2><p>' + esc(t('protoLead')) + '</p><p class="muted">' + esc(t('protoWhy')) + '</p>' + protocolHtml(proc, 'proto');
+    bindProtocol(el, renderProtoCard);
+  }
+  function schedStrip(p, td) {
+    return '<div class="sched">' + P.scheduleSummary(p, store.submissions, td).map(function (x) {
+      return '<span class="sch ' + x.status + (x.req ? '' : ' opt') + '" title="' + esc(tpName(x.tp) + ': ' + stName(x.status) + ' · ' + t('window') + ' ' + x.from + ' → ' + x.to + ' · ' + x.done + '/' + x.total + (x.req ? '' : ' · ' + t('optTp'))) + '"><b>' + esc(tpName(x.tp)) + '</b> ' + esc(stName(x.status)) + ' <span class="muted">' + x.done + '/' + x.total + '</span></span>';
+    }).join('') + '</div>';
+  }
+  var TP_ORDER = ['pre', '6w', '3m', '6m', '1y', '2y'];
+  function latestSub(pid, inst, pred) { return store.submissions.filter(function (s) { return s.patientId === pid && s.instrument === inst && (!pred || pred(s)); }).sort(function (a, b) { var d = TP_ORDER.indexOf(b.timepoint) - TP_ORDER.indexOf(a.timepoint); return d || (a.date < b.date ? 1 : -1); })[0]; }
+  /** MCID/PASS rows for a patient: [{inst, baseline, follow, m}] */
+  function meaningfulRows(p) {
+    return P.patientSet(p).concat(PR[p.procedure].optional).filter(function (i, k, a) { return a.indexOf(i) === k && TH[i]; }).map(function (i) {
+      var base = latestSub(p.id, i, function (s) { return s.timepoint === 'pre'; }), fol = latestSub(p.id, i, function (s) { return s.timepoint !== 'pre'; });
+      if (!fol) return null; var m = P.meaningful(i, base, fol, fol.timepoint, p.procedure); return m ? { inst: i, base: base, fol: fol, m: m } : null;
+    }).filter(Boolean);
+  }
+  function badge(ok, okT, noT, naT, tip) { return '<span class="badge ' + (ok === true ? 'ok' : ok === false ? 'no' : 'na') + '" title="' + esc(tip) + '">' + esc(ok === true ? okT : ok === false ? noT : naT) + '</span>'; }
+  function mcidHtml(p) {
+    var rows = meaningfulRows(p), fn = [], fnum = function (k) { var i = fn.indexOf(k); if (i < 0) { fn.push(k); i = fn.length - 1; } return i + 1; };
+    var h = '<h3 style="margin-top:12px">' + esc(t('mcidT')) + '</h3>';
+    if (!rows.length) h += '<p class="muted">' + esc(t('noData')) + '</p>';
+    else h += '<div class="tblwrap"><table class="tbl" id="mcidTable"><tr><th>' + esc(t('inst')) + '</th><th>' + esc(t('baseline')) + '</th><th>' + esc(t('latest')) + '</th><th>' + esc(t('delta')) + '</th><th>MCID</th><th>PASS</th></tr>' + rows.map(function (r) {
+      var th = TH[r.inst], m = r.m, cm = th.mcidRef ? fnum(th.mcidRef) : null, cp = th.passRef ? fnum(th.passRef) : null;
+      var mt = th.mcidRef ? 'MCID ' + th.mcid + ' – ' + tx(th.mcidNote) + ' – ' + REFS[th.mcidRef].text : '';
+      var pt = th.passRef ? (th.sub ? 'PASS ' + Object.keys(th.pass).map(function (k) { return k + ' ≥' + th.pass[k]; }).join(', ') : 'PASS ≥' + th.pass + ' (' + th.passAt.map(tpName).join(', ') + ')') + ' – ' + REFS[th.passRef].text : '';
+      var passCell = th.passRef ? badge(m.pass, t('passOk') + (th.sub ? ' ' + m.passCount + '/5' : ''), t('passNo') + (th.sub ? ' ' + m.passCount + '/5' : ''), t('passNa'), pt) + ' <sup>' + cp + '</sup>' : '–';
+      var mcidCell = th.mcidRef ? (m.mcid == null ? badge(null, '', '', t('noBase'), mt) : badge(m.mcid, t('mcidOk'), t('mcidNo'), '', mt)) + ' <sup>' + cm + '</sup>' : '–';
+      return '<tr data-mcid="' + r.inst + '"><td><b>' + esc(I[r.inst].short) + '</b></td><td>' + (r.base ? esc(fmtScore(r.inst, r.base)) : '–') + '</td><td>' + esc(fmtScore(r.inst, r.fol)) + ' <span class="muted">(' + esc(tpName(r.fol.timepoint)) + ')</span></td><td>' + (m.delta != null ? (m.delta > 0 ? '+' : '') + fmtNum(m.delta) : '–') + '</td><td>' + mcidCell + '</td><td>' + passCell + '</td></tr>';
+    }).join('') + '</table></div>';
+    var an = ['ISAR', 'PASS', 'ANCHOR'].map(function (i) { var s = latestSub(p.id, i, function (x) { return x.timepoint !== 'pre'; }); return s ? '<li><b>' + esc(I[i].short) + '</b> (' + esc(tpName(s.timepoint)) + '): ' + esc(fmtScore(i, s)) + '</li>' : ''; }).join('');
+    if (an) h += '<h3>' + esc(t('anchorRow')) + '</h3><ul class="protolist">' + an + '</ul>';
+    if (fn.length) h += '<div class="footnotes"><b>' + esc(t('fnT')) + ':</b><ol>' + fn.map(function (k) { return '<li>' + esc(REFS[k].text) + ' ' + refLink(k) + '</li>'; }).join('') + '</ol></div>';
+    return h;
+  }
 
   // ---------- storage ----------
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -1427,23 +1748,28 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
     return { id: 's' + Math.random().toString(36).slice(2, 10), patientId: pt.id, procedure: pt.procedure, timepoint: tp, instrument: inst, date: date, answers: answers,
       total: r.total, subscales: r.subscales, valid: r.valid, primary: P.primaryValue(inst, r), notes: r.notes, source: source, demo: true };
   }
+  var DEMO_OPT = { 'DEMO-ACL-01': ['KOOS', 'LYSHOLM', 'TEGNER'], 'DEMO-ACL-02': ['KOOS', 'LYSHOLM'], 'DEMO-TKA-01': ['KOOS', 'FJS12'], 'DEMO-TKA-02': ['KSS2011'],
+    'DEMO-THA-01': ['WOMAC', 'HOOS'], 'DEMO-THA-02': ['FJS12'], 'DEMO-UL-01': ['QDASH', 'DASH'], 'DEMO-UL-02': ['QDASH'] };
+  // Deliberate gaps so the dashboard shows overdue items (protocol timepoint missed).
+  var DEMO_GAPS = { 'DEMO-UL-01|1y|EQ5D5L': 1, 'DEMO-UL-01|1y|VAS': 1, 'DEMO-ACL-01|1y|MARX': 1, 'DEMO-TKA-01|2y|EQ5D5L': 1 };
   function seed() {
     var rnd = P.mulberry32(20261031), subs = [], td = today();
     DEMO_PTS.forEach(function (pt, pi) {
-      var insts = PROC[pt.procedure].recommended;
-      TPS.forEach(function (tp) {
-        var d = P.tpDate(pt.surgeryDate, tp.id); if (d > td) return;
+      var ptx = { id: pt.id, procedure: pt.procedure, optional: DEMO_OPT[pt.id] || [] }, insts = P.patientSet(ptx), prot = P.PROTOCOLS[pt.procedure];
+      prot.tps.forEach(function (ptp) {
+        var tp = TPS.filter(function (x) { return x.id === ptp.id; })[0];
+        var d = P.tpDate(pt.surgeryDate, tp.id); if (d > td) return; // not yet reached → stays due / upcoming
         insts.forEach(function (inst) {
-          if (!P.appliesAt(inst, tp.id)) return;
-          if (rnd() < 0.1 && tp.id !== 'pre') return; // some missing submissions on purpose
+          if (!P.appliesAt(inst, tp.id, pt.procedure)) return;
+          if (DEMO_GAPS[pt.id + '|' + tp.id + '|' + inst]) return;
           var h = Math.max(0.05, Math.min(0.97, TRAJ[tp.id] + pt.h + (rnd() - 0.5) * 0.06));
           var clin = tp.id === 'pre' || tp.id === '6m' || tp.id === '1y' || tp.id === '2y';
-          subs.push(makeSub(pt, inst, tp.id, P.synthAnswers(inst, h, P.mulberry32(pi * 1000 + subs.length + 1), clin), d, 'seed'));
+          subs.push(makeSub(pt, inst, tp.id, P.synthAnswers(inst, h, P.mulberry32(pi * 1000 + subs.length + 1), clin, tp.id), d, 'seed'));
         });
       });
     });
     var OWN = { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)' }, COL = { email: 'colleague.seed@demo.test', name: 'Dr DEMO Colleague (seed)' };
-    var st = { version: 1, patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate }; }), submissions: subs };
+    var st = { version: 3, patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, optional: (DEMO_OPT[p.id] || []).slice(), demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate }; }), submissions: subs };
     save(KEY, st); return st;
   }
   var store = load(KEY); if (!store || !store.patients) store = seed();
@@ -1492,7 +1818,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
     h += '</div><div class="row" style="margin-top:10px"><button class="primary" id="pStart">' + esc(t('start')) + '</button><span class="muted" id="pMsg">' + (pt ? esc(t('surgery') + ' ' + pt.surgeryDate) : (ctx.pid ? esc(t('newPt')) : '')) + '</span></div>';
     $('promSetup').innerHTML = h;
     $('pPid').oninput = function () { ctx.pid = this.value.trim(); var p = patientById(ctx.pid); $('pProc').disabled = !!p; if (p) $('pProc').value = p.procedure; $('pSurgWrap').classList.toggle('hidden', !!p); $('pMsg').textContent = p ? t('surgery') + ' ' + p.surgeryDate : (ctx.pid ? t('newPt') : ''); };
-    $('pProc').onchange = function () { ctx.procedure = this.value; };
+    $('pProc').onchange = function () { ctx.procedure = this.value; protoSel = ''; renderProtoCard(); };
     $('pTp').onchange = function () { ctx.tp = this.value; if (!$('promList').classList.contains('hidden')) renderList(); };
     $('pSurg').onchange = function () { ctx.surgery = this.value; };
     $('pStart').onclick = function () {
@@ -1501,6 +1827,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
       ctx.procedure = patientById(ctx.pid).procedure; run = null; renderList(); $('promRun').classList.add('hidden');
     };
     if (ctx.pid && patientById(ctx.pid) && !$('promList').classList.contains('hidden')) renderList();
+    renderProtoCard();
     if (run) renderRun();
   }
   function doneAt(pid, inst, tp) { return store.submissions.filter(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0]; }
@@ -1508,30 +1835,35 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
   function nClinItems(id) { return I[id].items.filter(function (it) { return it.clinician; }).length; }
   function countLabel(id) { var c = nClinItems(id); return nPatientItems(id) + ' ' + t('qs') + (c ? ' + ' + c + ' ' + t('clinQs') : ''); }
   function instRow(id, pt) {
-    var d = doneAt(pt.id, id, ctx.tp), na = !P.appliesAt(id, ctx.tp);
+    var d = doneAt(pt.id, id, ctx.tp), na = !P.appliesAt(id, ctx.tp, pt.procedure), isOpt = PROC[pt.procedure].other.indexOf(id) >= 0, tracked = (pt.optional || []).indexOf(id) >= 0;
     return '<div class="inst" data-inst="' + id + '"><div class="insthead"><span class="nm">' + esc(tx(I[id].name)) + '</span>' +
       (d ? ' <span class="pill done">✓ ' + esc(t('doneAt')) + ' ' + esc(d.date) + ' · ' + esc(fmtScore(id, d)) + '</span>' : '') +
       (na ? ' <span class="pill" title="' + esc(t('naTp')) + '">– ' + esc(t('naTp')) + '</span>' : ' <button data-fill="' + id + '"' + (d ? '' : ' class="primary"') + '>' + esc(d ? t('refill') : t('fill')) + '</button>') +
-      '</div><div class="links"><span class="muted">' + esc(countLabel(id)) + '</span> · ' + srcNote(id) + '</div></div>';
+      '</div><div class="links"><span class="muted">' + esc(countLabel(id)) + '</span> · ' + srcNote(id) + (isOpt ? ' · <label class="optsel"><input type="checkbox" data-optsel="' + id + '"' + (tracked ? ' checked' : '') + '> ' + esc(t('track')) + '</label>' : '') + '</div></div>';
   }
   function renderList() {
-    var pt = patientById(ctx.pid), pr = PROC[pt.procedure], el = $('promList');
-    var h = '<h3>' + esc(t('recT')) + ' – ' + esc(tx(pr.name)) + ' · ' + esc(tpName(ctx.tp)) + ' · ' + esc(pt.id) + '</h3>';
-    h += '<div class="row"><button class="go" id="pAll">' + esc(t('fillAll')) + '</button></div><div class="instlist">' + pr.recommended.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
-    if (pr.other.length) h += '<h3 style="margin-top:12px">' + esc(t('otherT')) + '</h3><div class="instlist">' + pr.other.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
+    var pt = patientById(ctx.pid), pr = PROC[pt.procedure], el = $('promList'), prot = PR[pt.procedure];
+    var inProt = prot.tps.some(function (x) { return x.id === ctx.tp; });
+    var h = '<h3>' + esc(t('coreT')) + ' – ' + esc(tx(pr.name)) + ' · ' + esc(tpName(ctx.tp)) + ' · ' + esc(pt.id) + '</h3>';
+    h += '<div class="muted">' + esc(t('schedT')) + ':</div>' + schedStrip(pt, today());
+    if (!inProt) h += '<p class="qmsg offtp" id="offTp">' + esc(t('offTp')) + '</p>';
+    h += '<div class="row"><button class="go" id="pAll">' + esc(t('fillAll')) + '</button></div><div class="instlist" id="coreList">' + pr.recommended.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
+    if (pr.other.length) h += '<h3 style="margin-top:12px">' + esc(t('optT')) + '</h3><div class="instlist" id="optList">' + pr.other.map(function (id) { return instRow(id, pt); }).join('') + '</div>';
     el.innerHTML = h; el.classList.remove('hidden');
     el.querySelectorAll('[data-fill]').forEach(function (b) { b.onclick = function () { startRun([b.dataset.fill]); }; });
-    $('pAll').onclick = function () { startRun(pr.recommended.filter(function (id) { return P.appliesAt(id, ctx.tp) && !doneAt(pt.id, id, ctx.tp); })); };
+    el.querySelectorAll('[data-optsel]').forEach(function (b) { b.onchange = function () { var o = (pt.optional || []).filter(function (x) { return x !== b.dataset.optsel; }); if (b.checked) o.push(b.dataset.optsel); pt.optional = o; save(KEY, store); renderList(); }; });
+    $('pAll').onclick = function () { startRun(P.patientSet(pt).filter(function (id) { return P.appliesAt(id, ctx.tp, pt.procedure) && !doneAt(pt.id, id, ctx.tp); })); };
+    renderProtoCard();
   }
   function startRun(queue) {
-    if (!queue.length) queue = PROC[patientById(ctx.pid).procedure].recommended.filter(function (id) { return P.appliesAt(id, ctx.tp); });
+    if (!queue.length) { var qp = patientById(ctx.pid); queue = P.patientSet(qp).filter(function (id) { return P.appliesAt(id, ctx.tp, qp.procedure); }); }
     run = { queue: queue, qi: 0, idx: -1, ans: {}, result: null, msg: '' }; renderRun(); $('promRun').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function curInst() { return I[run.queue[run.qi]]; }
   function visItems() { return P.visibleItems(curInst().id, run.ans, { clinician: true, tp: ctx.tp }); }
   function isAnswered(it) { var v = run.ans[it.id]; return it.type === 'multi' ? Array.isArray(v) : typeof v === 'number' && isFinite(v); }
   function itemLabelFlags(it) { return (it.clinician ? ' <span class="pill clin">🩺 ' + esc(t('clin')) + '</span>' : '') + (it.optional && !it.clinician ? ' <span class="pill">' + esc(t('optional')) + '</span>' : ''); }
-  function variant(it) { return ctx.tp === 'pre' && it.preop ? { text: it.preop.text, options: it.preop.options || it.options, intro: it.preop.intro || it.intro } : { text: it.text, options: it.options, intro: it.intro }; }
+  function variant(it) { if (it.early && ['6w', '3m', '6m'].indexOf(ctx.tp) >= 0) return { text: it.early.text, options: it.options, intro: it.intro }; return ctx.tp === 'pre' && it.preop ? { text: it.preop.text, options: it.preop.options || it.options, intro: it.preop.intro || it.intro } : { text: it.text, options: it.options, intro: it.intro }; }
   function anchorsHtml(it) { return it.anchors ? '<div class="anchors"><span>' + esc(tj(it.anchors[0])) + '</span><span>' + esc(tj(it.anchors[1])) + '</span></div>' : ''; }
   function optLabel(it, o) { var l = tj(o.label); if (it.clinician && !/\(−|\(-|\(\d/.test(l)) l += ' — ' + o.v + ' ' + t('pts'); return l; }
   function bandHtml(id, r) { var b = P.interpret(id, r); return b ? '<span class="band ' + esc(b.cls) + '">' + esc(tx(b.label)) + '</span>' : ''; }
@@ -1629,6 +1961,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
   function fmtNum(x) { return x == null ? '–' : (Math.round(x * 10) / 10).toString(); }
   function fmtScore(id, r) {
     var inst = I[id];
+    if (inst.fmt) return tx(inst.fmt(r));
     if (id === 'EQ5D5L') return (r.subscales && r.subscales.profile ? r.subscales.profile : '–') + ' · EQ VAS ' + fmtNum(r.subscales ? r.subscales.vas : null);
     var p = r.primary != null ? r.primary : P.primaryValue(id, r);
     if (p == null && inst.primary === 'total' && r.subscales && r.subscales.patientSubtotal != null) return fmtNum(r.subscales.patientSubtotal) + ' (' + tx(inst.subNames.patientSubtotal) + ')';
@@ -1712,7 +2045,7 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
   }
 
   // ---------- Dashboard ----------
-  var dsel = { proc: '', inst: '', pid: '' };
+  var dsel = { proc: '', inst: '', pid: '' }, dashProtoOpen = false;
   function renderDash() {
     var u = currentUser();
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
@@ -1726,13 +2059,18 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
     if (u.role === 'owner') h += ownerPanel();
     h += '<div class="card"><h2>' + esc(t('patients')) + ' <span class="pill demo">DEMO</span></h2><p class="muted">👥 ' + esc(t('shared')) + '</p><div class="row"><label class="fld">' + esc(t('filterProc')) + '<select id="fProc">' + opt('', t('all'), !dsel.proc) + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), dsel.proc === k); }).join('') + '</select></label>' +
       '<label class="fld">' + esc(t('filterInst')) + '<select id="fInst">' + opt('', t('all'), !dsel.inst) + instIds.map(function (k) { return opt(k, I[k].short, dsel.inst === k); }).join('') + '</select></label><button id="dCsv" style="align-self:flex-end">⬇ ' + esc(t('csv')) + '</button></div>';
-    h += '<div class="tblwrap"><table class="tbl" id="ptTable"><tr><th>ID</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('surgery')) + '</th><th>' + esc(t('enteredBy')) + '</th><th>' + esc(t('subsN')) + '</th><th>' + esc(t('missingN')) + '</th></tr>' + pts.map(function (p) {
-      var c = P.completion(p, subs, td), miss = 0; Object.keys(c).forEach(function (i) { if (dsel.inst && i !== dsel.inst) return; Object.keys(c[i]).forEach(function (k) { if (c[i][k] === 'missing') miss++; }); });
+    h += '<div class="tblwrap"><table class="tbl" id="ptTable"><tr><th>ID</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('surgery')) + '</th><th>' + esc(t('enteredBy')) + '</th><th>' + esc(t('subsN')) + '</th><th>' + esc(t('dueN')) + '</th><th>' + esc(t('overdueN')) + '</th><th>' + esc(t('nextTp')) + '</th><th>' + esc(t('mcidN')) + '</th></tr>' + pts.map(function (p) {
+      var st = P.protocolStatus(p, subs, td), due = 0, over = 0;
+      Object.keys(st).forEach(function (i) { if (dsel.inst && i !== dsel.inst) return; Object.keys(st[i]).forEach(function (k) { if (st[i][k] === 'due') due++; if (st[i][k] === 'overdue') over++; }); });
       var ns = subs.filter(function (s) { return s.patientId === p.id && (!dsel.inst || s.instrument === dsel.inst); }).length;
-      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '"><td><b>' + esc(p.id) + '</b> <span class="pill demo">DEMO</span></td><td>' + esc(tx(PROC[p.procedure].name)) + '</td><td>' + esc(p.surgeryDate) + '</td><td>' + esc(p.enteredBy ? p.enteredBy.name + (p.enteredBy.email ? ' <' + p.enteredBy.email + '>' : '') : '–') + '</td><td>' + ns + '</td><td class="' + (miss ? 'err' : 'ok') + '">' + miss + '</td></tr>';
+      var nx = P.scheduleSummary(p, subs, td).filter(function (x) { return x.status === 'due' || x.status === 'upcoming'; })[0];
+      var mr = meaningfulRows(p), mOk = mr.filter(function (r) { return r.m.mcid === true; }).length, mT = mr.filter(function (r) { return r.m.mcid != null; }).length, pOk = mr.filter(function (r) { return r.m.pass === true; }).length, pT = mr.filter(function (r) { return r.m.pass != null; }).length;
+      var mc = (mT ? '<span class="badge ' + (mOk === mT ? 'ok' : mOk ? 'na' : 'no') + '" title="MCID">MCID ' + mOk + '/' + mT + '</span> ' : '') + (pT ? '<span class="badge ' + (pOk === pT ? 'ok' : pOk ? 'na' : 'no') + '" title="PASS">PASS ' + pOk + '/' + pT + '</span>' : '') || '–';
+      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '"><td><b>' + esc(p.id) + '</b> <span class="pill demo">DEMO</span></td><td>' + esc(tx(PROC[p.procedure].name)) + '</td><td>' + esc(p.surgeryDate) + '</td><td>' + esc(p.enteredBy ? p.enteredBy.name + (p.enteredBy.email ? ' <' + p.enteredBy.email + '>' : '') : '–') + '</td><td>' + ns + '</td><td class="' + (due ? 'warn' : 'ok') + '">' + due + '</td><td class="' + (over ? 'err' : 'ok') + '">' + over + '</td><td>' + (nx ? '<span class="sch ' + nx.status + '">' + esc(tpName(nx.tp)) + ' · ' + esc(stName(nx.status)) + '</span><br><span class="muted">' + esc(nx.from + ' → ' + nx.to) + '</span>' : '–') + '</td><td>' + mc + '</td></tr>';
     }).join('') + '</table></div></div>';
     var sp = patientById(dsel.pid);
     if (sp && pts.indexOf(sp) >= 0) h += patientView(sp, td); else h += '<div class="card muted">' + esc(t('selectPt')) + '</div>';
+    h += '<details class="card" id="dashProto"' + (dashProtoOpen ? ' open' : '') + '><summary><b>📋 ' + esc(t('protoOpen')) + '</b></summary><p class="muted">' + esc(t('protoWhy')) + '</p>' + protocolHtml(protoSel || dsel.proc || (sp ? sp.procedure : 'TKA'), 'dproto') + '</details>';
     var fs = subs.filter(function (s) { return (!dsel.proc || s.procedure === dsel.proc) && (!dsel.inst || s.instrument === dsel.inst) && (!dsel.pid || s.patientId === dsel.pid); }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
     h += '<div class="card"><h3>' + esc(t('allSubs')) + ' (' + fs.length + ')</h3><div class="tblwrap"><table class="tbl" id="subTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('patient')) + '</th><th>' + esc(t('tp')) + '</th><th>' + esc(t('filterInst')) + '</th><th>' + esc(t('score')) + '</th><th>' + esc(t('subs')) + '</th><th>' + esc(t('source')) + '</th></tr>' +
       (fs.length ? fs.map(function (s) { return '<tr data-sub="' + esc(s.id) + '"><td>' + esc(s.date) + '</td><td>' + esc(s.patientId) + '</td><td>' + esc(tpName(s.timepoint)) + '</td><td>' + esc(I[s.instrument].short) + '</td><td><b>' + esc(fmtScore(s.instrument, s)) + '</b></td><td>' + subsInline(s) + '</td><td>' + esc(s.source === 'patient' ? t('patientSrc') : t('seedSrc')) + '</td></tr>'; }).join('') : '<tr><td colspan="7">' + esc(t('noData')) + '</td></tr>') + '</table></div></div>';
@@ -1742,18 +2080,20 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:14px}
     $('fInst').onchange = function () { dsel.inst = this.value; renderDash(); };
     $('dCsv').onclick = exportCsv;
     document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
+    var dp = $('dashProto'); dp.ontoggle = function () { dashProtoOpen = dp.open; }; bindProtocol(dp, renderDash);
     bindOwner();
   }
   function tpName(id) { var x = TPS.filter(function (q) { return q.id === id; })[0]; return x ? tx(x.name) : id; }
   function subsInline(s) { return subKeys(s.instrument, s.subscales).map(function (k) { return esc(subName(s.instrument, k)) + ': ' + esc(subVal(k, s.subscales[k])); }).join('<br>'); }
   function patientView(p, td) {
-    var c = P.completion(p, store.submissions, td), rec = PROC[p.procedure].recommended;
-    var sym = { done: '✓', missing: '✗', future: '◦', na: '–' };
+    var c = P.protocolStatus(p, store.submissions, td), rec = P.patientSet(p), prot = PR[p.procedure];
+    var sym = { done: '✓', due: '●', overdue: '✗', upcoming: '◦', na: '–', off: '·' };
     var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(p.id) + ' <span class="pill demo">DEMO</span></h2><div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate) + '</div>';
-    h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3><div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { return '<th>' + esc(tx(x.name)) + '<br><span class="muted">' + esc(P.tpDate(p.surgeryDate, x.id)) + '</span></th>'; }).join('') + '</tr>' +
-      rec.map(function (i) { return '<tr><td><b>' + esc(I[i].short) + '</b></td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + st + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend')) + '</div>';
+    h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to)) : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
+      rec.map(function (i) { var opt = prot.optional.indexOf(i) >= 0; return '<tr><td><b>' + esc(I[i].short) + '</b>' + (opt ? ' <span class="muted">(' + esc(t('optional')) + ')</span>' : '') + '</td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + esc(stName(st)) + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend2')) + '</div>';
+    h += mcidHtml(p);
     var used = {}; store.submissions.forEach(function (s) { if (s.patientId === p.id) used[s.instrument] = 1; });
-    var list = rec.concat(PROC[p.procedure].other).filter(function (i) { return used[i] && (!dsel.inst || dsel.inst === i); });
+    var list = rec.concat(PROC[p.procedure].other).filter(function (i, k, a) { return a.indexOf(i) === k && used[i] && (!dsel.inst || dsel.inst === i); });
     h += '<h3 style="margin-top:12px">' + esc(t('charts')) + '</h3><div class="charts">' + list.map(function (i) { return chartSvg(p, i); }).join('') + '</div></div>';
     return h;
   }
