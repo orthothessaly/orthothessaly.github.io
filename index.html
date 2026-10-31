@@ -416,6 +416,44 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
 .xemptybox .btn:focus-visible{outline:3px solid #67e8f9}
 .ximgnote{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(180,83,9,.9);color:#fff;font-size:.78rem;padding:6px 10px;border-radius:8px;pointer-events:none}
 @media (max-width:600px){.xtopcard h2{font-size:1.02rem}.xtopcard>p.muted{font-size:.8rem}.xtab{padding:7px 10px;font-size:.86rem}.xptrow>.fld{width:100%}.xptrow>.fld select{flex:1}}
+/* ===== Operative note (doctor dashboard) ===== */
+.opn .opnbtns{white-space:nowrap}
+.opnview,.opnedit{border:1px solid #cfdde2;border-radius:12px;padding:10px 12px;margin-top:8px;background:#fbfdfe}
+.opnbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:6px}.opnsp{flex:1 1 auto}
+.opnview h4{margin:10px 0 4px;color:#0b3d4a}
+.opndl{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;margin:0}
+.opndl>div{min-width:0}.opndl>div.wide{grid-column:1/-1}.opndl dt{font-size:.82em;color:#5d6f78}.opndl dd{margin:0 0 2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.opnfs{border:1px solid #d6e3e8;border-radius:10px;margin:8px 0;padding:6px 10px 10px}.opnfs legend{font-weight:700;color:#0b3d4a;padding:0 4px}
+.opngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 12px}
+.opnf{display:flex;flex-direction:column;margin:0;min-width:0}.opnf.wide{grid-column:1/-1}.opnf>span{font-size:.86em;color:#33464e;margin-bottom:2px}
+.opnf input,.opnf select,.opnf textarea{width:100%;box-sizing:border-box;font:inherit;min-height:36px}
+.opnf textarea{resize:vertical}
+.opnimp input,.opnimp select{width:100%;min-width:70px;box-sizing:border-box;font:inherit}
+.opnactions{margin-top:8px}.opnactions .danger{color:#b42318;border-color:#e3a9a3}
+@media (max-width:640px){.opngrid{grid-template-columns:minmax(0,1fr)}}
+/* print: A4 operative note */
+.opreport{display:none}
+body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;overflow:auto;background:#fff;color:#0b1f26;padding:14px}
+.opr-bar{max-width:190mm;margin:0 auto 8px;display:flex;gap:8px;justify-content:flex-end}
+.opr-page{max-width:190mm;margin:0 auto;font-size:9pt;line-height:1.3;position:relative;font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif}
+.opr-page.draft::before{content:attr(data-mark);position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-28deg);font-size:72pt;font-weight:800;color:rgba(180,35,24,.10);pointer-events:none;letter-spacing:6px}
+.opr-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #0b3d4a;padding-bottom:5px;margin-bottom:6px}
+.opr-clinic{font-size:17pt;font-weight:800;color:#0b3d4a;letter-spacing:.5px}.opr-title{text-align:right}.opr-title h1{margin:0;font-size:14pt}
+.opr-id{width:100%;border-collapse:collapse;margin-bottom:4px}.opr-id th,.opr-id td{border:1px solid #b7c4ca;padding:2px 5px;text-align:left;font-size:9pt}.opr-id th{background:#eef4f6;width:16%;font-weight:600}
+.opr-page h2{font-size:10pt;margin:5px 0 2px;padding:1px 4px;background:#eef4f6;border-left:3px solid #0b3d4a}
+.opr-page .opndl{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 9px}.opr-page .opndl dt{font-size:7pt;line-height:1.15}.opr-page .opndl dd{font-size:8.6pt;line-height:1.25}
+.opr-page .tblwrap{overflow:visible}.opr-page .opnimp{font-size:8pt;width:100%}.opr-page .opnimp td,.opr-page .opnimp th{padding:2px 4px;white-space:normal}
+.opr-sign{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10mm}.opr-line{border-top:1px solid #0b1f26;min-width:65mm;text-align:center;padding-top:2px;font-size:8pt}
+.opr-foot{border-top:1px solid #b7c4ca;margin-top:4mm;font-size:7pt;color:#41545c;padding-top:2px}
+@media print{
+  @page{size:A4 portrait;margin:11mm 12mm}
+  body.op-print>*:not(#opReport){display:none!important}
+  body.op-print .opreport{position:static;padding:0;overflow:visible}
+  body.op-print .noprint{display:none!important}
+  .opr-page{max-width:none}
+  .opr-page h2,.opr-page .opndl>div,.opr-page tr{break-inside:avoid}
+  .opreport *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -3520,9 +3558,21 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
         var x = pick(r.extra, []); x.id = r.id; x.patientId = pc(r.patient_id); x.date = r.taken_on; x.phase = r.phase; x.side = r.side; x.landmarks = r.landmarks || {}; x.results = r.measurements || {}; x.tka = !!r.tka;
         if (r.landmark_source != null) x.landmarkSource = r.landmark_source; if (r.confirmed != null) x.confirmed = r.confirmed; if (r.film_id != null) x.filmId = r.film_id; if (r.film_path != null) x.filmPath = r.film_path;
         if (r.image_name != null) x.image = r.image_name; if (r.thumb != null) x.thumb = r.thumb; if (r.source != null) x.source = r.source; return x;
+      } },
+    opnotes: { table: 'operative_notes', child: true,
+      key: function (n) { return n.id; },
+      toRow: function (n, pu) {
+        var d = /^\d{4}-\d\d-\d\d$/.test(n.date || '') ? n.date : null;
+        return { id: n.id, patient_id: pu(n.patientId), procedure: ['TKA', 'THA', 'ACL', 'OTHER'].indexOf(n.procedure) >= 0 ? n.procedure : 'OTHER', op_date: d,
+          side: ['R', 'L', 'B'].indexOf(n.side) >= 0 ? n.side : null, status: n.status === 'final' ? 'final' : 'draft', surgeon: nn(n.surgeon || (n.fields && n.fields.surgeon) || null), fields: n.fields || {},
+          extra: pick(n, ['id', 'patientId', 'procedure', 'date', 'side', 'status', 'surgeon', 'fields']) };
+      },
+      fromRow: function (r, pc) {
+        var n = pick(r.extra, []); n.id = r.id; n.patientId = pc(r.patient_id); n.procedure = r.procedure; n.date = r.op_date; n.side = r.side; n.status = r.status; n.surgeon = r.surgeon || ''; n.fields = r.fields || {};
+        if (!n.updatedAt) n.updatedAt = r.updated_at; if (!n.createdAt) n.createdAt = r.created_at; return n;
       } }
   };
-  var COLS = ['patients', 'submissions', 'rom', 'xrays'];
+  var COLS = ['patients', 'submissions', 'rom', 'xrays', 'opnotes'];
   function codeMaps(store) {
     var byCode = {}, byUuid = {};
     (store.patients || []).forEach(function (p) { if (!p._uuid) M.patients.toRow(p); byCode[String(p.id).toUpperCase()] = p._uuid; byUuid[p._uuid] = p.id; });
@@ -3535,11 +3585,12 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     return out;
   }
   function rowsToStore(rows) {
-    var st = { version: 4, cloud: true, patients: rows.patients.map(M.patients.fromRow), submissions: [], rom: [], xrays: [] };
+    var st = { version: 4, cloud: true, patients: rows.patients.map(M.patients.fromRow), submissions: [], rom: [], xrays: [], opnotes: [] };
     var byUuid = {}; st.patients.forEach(function (p) { byUuid[p._uuid] = p.id; }); var pc = function (u) { return byUuid[u]; };
     st.submissions = rows.submissions.map(function (r) { return M.submissions.fromRow(r, pc); });
     st.rom = rows.rom.map(function (r) { return M.rom.fromRow(r, pc); });
     st.xrays = rows.xrays.map(function (r) { return M.xrays.fromRow(r, pc); });
+    st.opnotes = (rows.opnotes || []).map(function (r) { return M.opnotes.fromRow(r, pc); });
     return st;
   }
   /** Diff two row snapshots -> { upsert: {c: [rows]}, del: {c: [keys]} } */
@@ -3562,8 +3613,8 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   var base = null, syncing = null, again = false, listeners = [], state = { status: 'idle', error: null, at: null };
   function emit(s, err) { state = { status: s, error: err || null, at: new Date().toISOString() }; listeners.forEach(function (f) { try { f(state); } catch (e) {} }); }
   function loadAll() {
-    return Promise.all([getAll('patients'), getAll('prom_submissions'), getAll('rom_sessions'), getAll('xray_studies')]).then(function (r) {
-      var st = rowsToStore({ patients: r[0], submissions: r[1], rom: r[2], xrays: r[3] }); base = storeRows(st); emit('saved'); return st;
+    return Promise.all([getAll('patients'), getAll('prom_submissions'), getAll('rom_sessions'), getAll('xray_studies'), getAll('operative_notes')]).then(function (r) {
+      var st = rowsToStore({ patients: r[0], submissions: r[1], rom: r[2], xrays: r[3], opnotes: r[4] }); base = storeRows(st); emit('saved'); return st;
     });
   }
   function upsert(table, rows) { if (!rows.length) return Promise.resolve(); return req('POST', '/rest/v1/' + table + '?on_conflict=id', rows, { Prefer: 'resolution=merge-duplicates,return=minimal' }); }
@@ -3571,8 +3622,8 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function syncOnce(store) {
     var cur = storeRows(store), d = diff(base || {}, cur), T = function (c) { return M[c].table; };
     var steps = [function () { return upsert('patients', d.upsert.patients); }]
-      .concat(['submissions', 'rom', 'xrays'].map(function (c) { return function () { return upsert(T(c), d.upsert[c]); }; }))
-      .concat(['submissions', 'rom', 'xrays'].map(function (c) { return function () { return remove(T(c), d.del[c]); }; }))
+      .concat(['submissions', 'rom', 'xrays', 'opnotes'].map(function (c) { return function () { return upsert(T(c), d.upsert[c]); }; }))
+      .concat(['submissions', 'rom', 'xrays', 'opnotes'].map(function (c) { return function () { return remove(T(c), d.del[c]); }; }))
       .concat([function () { return remove('patients', d.del.patients); }]);
     return steps.reduce(function (p, f) { return p.then(f); }, Promise.resolve()).then(function () { base = cur; });
   }
@@ -3619,6 +3670,381 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     _M: M, _storeRows: storeRows, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<!-- ===== Operative note (Πρακτικό χειρουργείου): schema core (pure; tested in Node) + doctor-side editor/print UI ===== -->
+<script id="ortho-opnote">
+(function (root) {
+  'use strict';
+  // ===== Operative note (Πρακτικό χειρουργείου): schema, defaults, validation, summaries (pure; unit-tested in Node) =====
+  // Doctor-side only: notes live in store.opnotes (demo: localStorage; cloud: table operative_notes) and are never rendered in the patient view.
+  var L = function (el, en) { return { el: el, en: en }; };
+  var O = function (code, el, en) { return { v: code, el: el, en: en || el }; };
+  var PROCS = { TKA: L('Ολική αρθροπλαστική γόνατος', 'Total knee arthroplasty'), THA: L('Ολική αρθροπλαστική ισχίου', 'Total hip arthroplasty'),
+    ACL: L('Συνδεσμοπλαστική πρόσθιου χιαστού', 'ACL reconstruction'), OTHER: L('Άλλη επέμβαση', 'Other procedure') };
+  var SIDES = [O('R', 'Δεξιά', 'Right'), O('L', 'Αριστερά', 'Left'), O('B', 'Αμφοτερόπλευρα', 'Bilateral')];
+  var YN = [O('yes', 'Ναι', 'Yes'), O('no', 'Όχι', 'No')];
+  // Alignment targets: same keys as the X-ray TKA comparison (OrthoXrayTka.TARGETS)
+  var ALIGN = [O('mech', 'Μηχανική ευθυγράμμιση (MA)', 'Mechanical alignment (MA)'), O('rka', 'Περιορισμένη κινηματική (rKA)', 'Restricted kinematic (rKA)'),
+    O('ika', 'Αντίστροφη κινηματική (iKA)', 'Inverse kinematic (iKA)'), O('fa', 'Λειτουργική ευθυγράμμιση (FA)', 'Functional alignment (FA)')];
+  var isProc = function () { var ps = [].slice.call(arguments); return function (f, proc) { return ps.indexOf(proc) >= 0; }; };
+  var when = function (k, v) { return function (f) { return Array.isArray(v) ? v.indexOf(f[k]) >= 0 : f[k] === v; }; };
+  var whenNot = function (k, v) { return function (f) { return f[k] != null && f[k] !== '' && f[k] !== v; }; };
+  /** Field: { k, t: date|time|text|area|sel|num|multi, l: label, o: options, u: unit, d: default (value or fn(proc, ctx)), show: fn(fields, proc), w: 2 = full width } */
+  var F = function (k, t, l, x) { var f = { k: k, t: t, l: l }; for (var i in x || {}) f[i] = x[i]; return f; };
+  var byProc = function (m) { return function (proc) { return m[proc] != null ? m[proc] : m._; }; };
+
+  var GENERAL = { id: 'general', l: L('Γενικά στοιχεία', 'General'), fields: [
+    F('otherName', 'text', L('Επέμβαση', 'Procedure'), { show: function (f, p) { return p === 'OTHER'; }, w: 2, req: true }),
+    F('date', 'date', L('Ημερομηνία επέμβασης', 'Date of surgery'), { req: true }),
+    F('side', 'sel', L('Πλευρά', 'Side'), { o: SIDES, req: true }),
+    F('surgeon', 'text', L('Χειρουργός', 'Surgeon'), { req: true }),
+    F('assistants', 'text', L('Βοηθοί', 'Assistants')),
+    F('anaesthetist', 'text', L('Αναισθησιολόγος', 'Anaesthetist')),
+    F('asa', 'sel', L('ASA', 'ASA grade'), { o: [O('1', 'I'), O('2', 'II'), O('3', 'III'), O('4', 'IV'), O('5', 'V')] }),
+    F('anaesthesia', 'sel', L('Αναισθησία', 'Anaesthesia'), { o: [O('spinal', 'Υπαραχνοειδής (ραχιαία)', 'Spinal'), O('general', 'Γενική', 'General'), O('cse', 'Συνδυασμένη ραχιαία-επισκληρίδια', 'Combined spinal-epidural'),
+      O('epidural', 'Επισκληρίδια', 'Epidural'), O('ga_block', 'Γενική + περιφερικός αποκλεισμός', 'General + regional block'), O('sed_block', 'Περιφερικός αποκλεισμός + καταστολή', 'Regional block + sedation'), O('local', 'Τοπική', 'Local')],
+      d: byProc({ TKA: 'spinal', THA: 'spinal', ACL: 'general', _: '' }) }),
+    F('block', 'sel', L('Περιφερικός αποκλεισμός / τοπική διήθηση', 'Nerve block / local infiltration'), { o: [O('none', 'Όχι', 'None'), O('acb', 'Αποκλεισμός προσαγωγού σωλήνα (ACB)', 'Adductor canal block'), O('femoral', 'Αποκλεισμός μηριαίου νεύρου', 'Femoral nerve block'),
+      O('peng', 'Αποκλεισμός PENG', 'PENG block'), O('fic', 'Αποκλεισμός λαγονίου περιτονίας', 'Fascia iliaca block'), O('lia', 'Τοπική διήθηση (LIA)', 'Local infiltration analgesia (LIA)'), O('acb_lia', 'ACB + LIA', 'ACB + LIA'),
+      O('isb', 'Μεσοσκαληνικός αποκλεισμός', 'Interscalene block'), O('other', 'Άλλος', 'Other')], d: byProc({ TKA: 'acb_lia', THA: 'lia', _: 'none' }) }),
+    F('position', 'sel', L('Θέση ασθενούς', 'Patient position'), { o: [O('supine', 'Ύπτια', 'Supine'), O('lateral', 'Πλάγια κατακεκλιμένη', 'Lateral decubitus'), O('beach', 'Καθιστή (beach chair)', 'Beach chair'), O('prone', 'Πρηνής', 'Prone')],
+      d: byProc({ THA: 'lateral', TKA: 'supine', ACL: 'supine', _: '' }) }),
+    F('start', 'time', L('Έναρξη (τομή)', 'Start (incision)')), F('end', 'time', L('Λήξη (σύγκλειση)', 'End (closure)')),
+    F('duration', 'num', L('Διάρκεια', 'Duration'), { u: 'min' }),
+    F('tourniquet', 'sel', L('Ισχαιμική περίδεση', 'Tourniquet'), { o: YN, d: byProc({ TKA: 'yes', ACL: 'yes', THA: 'no', _: 'no' }) }),
+    F('tqPressure', 'num', L('Πίεση περίδεσης', 'Tourniquet pressure'), { u: 'mmHg', d: byProc({ TKA: 250, ACL: 250, _: '' }), show: when('tourniquet', 'yes') }),
+    F('tqTime', 'num', L('Χρόνος περίδεσης', 'Tourniquet time'), { u: 'min', show: when('tourniquet', 'yes') }),
+    F('antibiotic', 'sel', L('Αντιβιοτική προφύλαξη', 'Antibiotic prophylaxis'), { o: [O('cefazolin2', 'Κεφαζολίνη 2 g IV (3 g αν > 120 kg) εντός 60′ πριν από την τομή', 'Cefazolin 2 g IV (3 g if > 120 kg) within 60 min of incision'),
+      O('cefuroxime', 'Κεφουροξίμη 1,5 g IV', 'Cefuroxime 1.5 g IV'), O('clinda', 'Κλινδαμυκίνη 900 mg IV (αλλεργία β-λακτάμης)', 'Clindamycin 900 mg IV (β-lactam allergy)'), O('vanco', 'Βανκομυκίνη 15 mg/kg IV', 'Vancomycin 15 mg/kg IV'),
+      O('other', 'Άλλο', 'Other'), O('none', 'Καμία', 'None')], d: 'cefazolin2' }),
+    F('antibioticNote', 'text', L('Αντιβίωση – σημειώσεις (επαναληπτική δόση, μετεγχειρητικά)', 'Antibiotic notes (redosing, post-op doses)'), { d: byProc({ TKA: '2 επιπλέον δόσεις μετεγχειρητικά (24 ώρες)', THA: '2 επιπλέον δόσεις μετεγχειρητικά (24 ώρες)', _: '' }) }),
+    F('txa', 'sel', L('Τρανεξαμικό οξύ', 'Tranexamic acid'), { o: [O('none', 'Όχι', 'None'), O('iv1g', '1 g IV στην εισαγωγή', '1 g IV at induction'), O('iv1g2', '1 g IV στην εισαγωγή + 1 g στη σύγκλειση', '1 g IV at induction + 1 g at closure'),
+      O('topical', 'Τοπικά', 'Topical'), O('ivtop', 'IV + τοπικά', 'IV + topical')], d: byProc({ TKA: 'iv1g2', THA: 'iv1g2', _: 'none' }) }),
+    F('vte', 'sel', L('Θρομβοπροφύλαξη', 'Thromboprophylaxis'), { o: [O('lmwh', 'ΗΜΒΗ (ενοξαπαρίνη 40 mg SC ημερησίως)', 'LMWH (enoxaparin 40 mg SC daily)'), O('rivaroxaban', 'Ριβαροξαμπάνη 10 mg PO ημερησίως', 'Rivaroxaban 10 mg PO daily'),
+      O('apixaban', 'Απιξαμπάνη 2,5 mg PO × 2', 'Apixaban 2.5 mg PO twice daily'), O('aspirin', 'Ασπιρίνη', 'Aspirin'), O('mech', 'Μόνο μηχανική (κάλτσες / συμπίεση)', 'Mechanical only (stockings / compression)'),
+      O('risk', 'Κατά εκτίμηση κινδύνου', 'According to individual risk assessment'), O('none', 'Καμία', 'None')], d: byProc({ TKA: 'lmwh', THA: 'lmwh', ACL: 'risk', _: '' }) }),
+    F('vteDuration', 'sel', L('Διάρκεια θρομβοπροφύλαξης', 'Thromboprophylaxis duration'), { o: [O('14d', '14 ημέρες', '14 days'), O('28-35d', '28–35 ημέρες', '28–35 days'), O('discharge', 'Έως την έξοδο', 'Until discharge'), O('other', 'Άλλο', 'Other')],
+      d: byProc({ TKA: '14d', THA: '28-35d', _: '' }), show: whenNot('vte', 'none') })
+  ] };
+  var SPEC = {
+    TKA: { id: 'tka', l: L('Ολική αρθροπλαστική γόνατος – τεχνική', 'Total knee arthroplasty – technique'), fields: [
+      F('approach', 'sel', L('Προσπέλαση', 'Approach'), { o: [O('mpp', 'Έσω παραεπιγονατιδική', 'Medial parapatellar'), O('midvastus', 'Midvastus', 'Midvastus'), O('subvastus', 'Subvastus', 'Subvastus'), O('lpp', 'Έξω παραεπιγονατιδική', 'Lateral parapatellar'), O('other', 'Άλλη', 'Other')], d: 'mpp' }),
+      F('alignTarget', 'sel', L('Φιλοσοφία / στόχος ευθυγράμμισης', 'Alignment philosophy / target'), { o: ALIGN, d: 'mech' }),
+      F('technique', 'sel', L('Τεχνική', 'Technique'), { o: [O('conv', 'Συμβατικά εργαλεία', 'Conventional instruments'), O('nav', 'Πλοήγηση (navigation)', 'Computer navigation'), O('robot_img', 'Ρομποτική (βάσει απεικόνισης)', 'Robotic (image-based)'),
+        O('robot_noimg', 'Ρομποτική (χωρίς απεικόνιση)', 'Robotic (imageless)'), O('psi', 'Εξατομικευμένοι οδηγοί (PSI)', 'Patient-specific instrumentation (PSI)')], d: 'conv' }),
+      F('system', 'text', L('Σύστημα πλοήγησης / ρομπότ', 'Navigation / robotic system'), { show: when('technique', ['nav', 'robot_img', 'robot_noimg', 'psi']) }),
+      F('design', 'sel', L('Σχεδιασμός εμφυτεύματος', 'Implant design'), { o: [O('CR', 'Διατήρηση οπίσθιου χιαστού (CR)', 'Cruciate-retaining (CR)'), O('PS', 'Οπίσθια σταθεροποίηση (PS)', 'Posterior-stabilised (PS)'), O('MS', 'Έσω σταθεροποίηση (MS)', 'Medial-stabilised (MS)'),
+        O('UC', 'Ultra-congruent (UC)', 'Ultra-congruent (UC)'), O('CCK', 'Περιορισμένη (CCK)', 'Constrained condylar (CCK)'), O('hinge', 'Αρθρωτή (hinge)', 'Hinged')], d: 'PS' }),
+      F('pcl', 'sel', L('Οπίσθιος χιαστός', 'PCL'), { o: [O('sacrificed', 'Θυσιάστηκε', 'Sacrificed'), O('retained', 'Διατηρήθηκε', 'Retained'), O('recessed', 'Διατηρήθηκε με ύφεση (recession)', 'Retained with recession')], d: 'sacrificed' }),
+      F('patella', 'sel', L('Επιγονατίδα', 'Patella'), { o: [O('resurfaced', 'Επιστρώθηκε', 'Resurfaced'), O('not', 'Δεν επιστρώθηκε', 'Not resurfaced'), O('denerv', 'Δεν επιστρώθηκε – περιμετρική απονεύρωση / osteophytes αφαιρέθηκαν', 'Not resurfaced – rim denervation, osteophytes removed')], d: 'not' }),
+      F('patellaThick', 'text', L('Πάχος επιγονατίδας πριν / μετά', 'Patellar thickness before / after'), { u: 'mm', show: when('patella', 'resurfaced') }),
+      F('femValgus', 'num', L('Γωνία βλαισότητας περιφερικής μηριαίας τομής', 'Distal femoral valgus resection angle'), { u: '°', d: byProc({ _: 5 }) }),
+      F('femResection', 'text', L('Περιφερική μηριαία τομή έσω / έξω', 'Distal femoral resection medial / lateral'), { u: 'mm' }),
+      F('femRotation', 'sel', L('Στροφή μηριαίου', 'Femoral rotation'), { o: [O('3er_pca', '3° έξω στροφή ως προς την οπίσθια κονδυλική γραμμή', '3° external rotation to posterior condylar axis'), O('tea', 'Παράλληλα στον διεπικονδύλιο άξονα', 'Parallel to transepicondylar axis'),
+        O('gap', 'Με εξισορρόπηση χασμάτων (gap balancing)', 'Gap balancing'), O('ka', 'Κινηματική (μηδενική έξω στροφή)', 'Kinematic (0° to posterior condyles)'), O('other', 'Άλλη', 'Other')], d: '3er_pca' }),
+      F('tibVarus', 'num', L('Κνημιαία τομή στο μετωπιαίο (ραιβότητα + / βλαισότητα −)', 'Tibial coronal cut (varus + / valgus −)'), { u: '°', d: 0 }),
+      F('tibSlope', 'num', L('Οπίσθια κλίση κνήμης', 'Posterior tibial slope'), { u: '°', d: 3 }),
+      F('tibResection', 'text', L('Κνημιαία τομή (πάχος, πλευρά αναφοράς)', 'Tibial resection (thickness, reference side)'), { u: 'mm' }),
+      F('polyThick', 'num', L('Πάχος πολυαιθυλενίου', 'Polyethylene thickness'), { u: 'mm' }),
+      F('balance', 'area', L('Εξισορρόπηση / απελευθερώσεις μαλακών μορίων', 'Balancing / soft-tissue releases'), { w: 2 }),
+      F('cement', 'text', L('Τσιμέντο', 'Cement'), { d: 'Οστικό τσιμέντο με γενταμικίνη, πλήρης τσιμέντωση μηριαίου και κνημιαίου', w: 2 })
+    ] },
+    THA: { id: 'tha', l: L('Ολική αρθροπλαστική ισχίου – τεχνική', 'Total hip arthroplasty – technique'), fields: [
+      F('approach', 'sel', L('Προσπέλαση', 'Approach'), { o: [O('posterior', 'Οπίσθια', 'Posterior'), O('daa', 'Άμεση πρόσθια (DAA)', 'Direct anterior'), O('al', 'Προσθιοπλάγια', 'Anterolateral'), O('hardinge', 'Άμεση πλάγια (Hardinge)', 'Direct lateral (Hardinge)'), O('other', 'Άλλη', 'Other')], d: 'posterior' }),
+      F('capsule', 'sel', L('Ορθύλλιο / βραχείς έξω στροφείς', 'Capsule / short external rotators'), { o: [O('repair_to', 'Συρραφή οπίσθιου θυλάκου και βραχέων έξω στροφέων με διοστικές ραφές', 'Posterior capsule + short external rotators repaired through transosseous sutures'),
+        O('repair_ser', 'Συρραφή μόνο των βραχέων έξω στροφέων', 'Short external rotators repaired only'), O('none', 'Χωρίς συρραφή', 'Not repaired'), O('na', 'Δεν εφαρμόζεται', 'Not applicable')], d: 'repair_to', show: when('approach', 'posterior') }),
+      F('bearing', 'sel', L('Ζεύγος τριβής', 'Bearing couple'), { o: [O('CoP', 'Κεραμικό σε υψηλά διασταυρωμένο πολυαιθυλένιο (CoXLPE)', 'Ceramic on highly cross-linked PE'), O('MoP', 'Μέταλλο σε υψηλά διασταυρωμένο πολυαιθυλένιο (MoXLPE)', 'Metal on highly cross-linked PE'),
+        O('CoC', 'Κεραμικό σε κεραμικό (CoC)', 'Ceramic on ceramic'), O('DM', 'Διπλής κινητικότητας (dual mobility)', 'Dual mobility')], d: 'CoP' }),
+      F('cupSize', 'num', L('Μέγεθος κοτύλης', 'Cup size'), { u: 'mm' }),
+      F('liner', 'sel', L('Ένθεμα', 'Liner'), { o: [O('neutral', 'Ουδέτερο', 'Neutral'), O('lipped', 'Με χείλος 10° (lipped)', '10° lipped'), O('dm', 'Διπλής κινητικότητας', 'Dual mobility'), O('ceramic', 'Κεραμικό', 'Ceramic')], d: 'neutral' }),
+      F('screws', 'num', L('Βίδες κοτύλης', 'Acetabular screws'), { u: 'n' }),
+      F('headSize', 'sel', L('Μέγεθος κεφαλής', 'Head size'), { o: [O('28', '28 mm'), O('32', '32 mm'), O('36', '36 mm'), O('40', '40 mm')], d: '36' }),
+      F('headNeck', 'sel', L('Μήκος αυχένα κεφαλής', 'Head neck length'), { o: [O('-3.5', '−3,5 (S)', '−3.5 (S)'), O('0', '0 (M)'), O('+3.5', '+3,5 (L)', '+3.5 (L)'), O('+7', '+7 (XL)')], d: '0' }),
+      F('stemSize', 'text', L('Μέγεθος στελέχους', 'Stem size')),
+      F('stemOffset', 'sel', L('Offset στελέχους', 'Stem offset'), { o: [O('std', 'Standard'), O('high', 'Υψηλό (high / lateralised)', 'High / lateralised')], d: 'std' }),
+      F('cupIncl', 'num', L('Κλίση κοτύλης (ακτινογραφική)', 'Cup inclination (radiographic)'), { u: '°', d: 40 }),
+      F('cupAntev', 'num', L('Πρόσθια απόκλιση κοτύλης', 'Cup anteversion'), { u: '°', d: 20 }),
+      F('legLength', 'text', L('Μήκος σκέλους / offset (διεγχειρητικός έλεγχος)', 'Leg length / offset (intra-op check)'), { d: 'Ισοσκελής, διατήρηση offset (κλινικός έλεγχος)' , w: 2 }),
+      F('stability', 'text', L('Σταθερότητα', 'Stability'), { d: 'Σταθερό σε κάμψη 90° με έσω στροφή > 45° και σε πλήρη έκταση με έξω στροφή', w: 2 }),
+      F('cement', 'text', L('Τσιμέντο', 'Cement'), { d: 'Χωρίς τσιμέντο', w: 2 })
+    ] },
+    ACL: { id: 'acl', l: L('Συνδεσμοπλαστική ΠΧΣ – τεχνική', 'ACL reconstruction – technique'), fields: [
+      F('graft', 'sel', L('Μόσχευμα', 'Graft'), { o: [O('hs', 'Αυτομόσχευμα οπίσθιων μηριαίων (ημιτενοντώδης / ισχνός)', 'Hamstring autograft (semitendinosus / gracilis)'), O('st', 'Αυτομόσχευμα ημιτενοντώδους μόνο', 'Semitendinosus autograft only'),
+        O('qt', 'Αυτομόσχευμα τένοντα τετρακεφάλου', 'Quadriceps tendon autograft'), O('bptb', 'Αυτομόσχευμα επιγονατιδικού τένοντα (BPTB)', 'Bone–patellar tendon–bone autograft'), O('allo', 'Αλλομόσχευμα', 'Allograft')], d: 'hs' }),
+      F('graftConfig', 'text', L('Διαμόρφωση μοσχεύματος', 'Graft configuration'), { d: 'Τετράκλωνο (4 σκέλη)' }),
+      F('graftDiam', 'num', L('Διάμετρος μοσχεύματος', 'Graft diameter'), { u: 'mm' }),
+      F('graftLength', 'num', L('Μήκος μοσχεύματος', 'Graft length'), { u: 'mm' }),
+      F('femTunnel', 'sel', L('Μηριαίο τούνελ – τεχνική', 'Femoral tunnel technique'), { o: [O('am', 'Ανεξάρτητη – από πρόσθιο-έσω πύλη (AM portal)', 'Independent – anteromedial portal'), O('oi', 'Από έξω προς τα μέσα (outside-in)', 'Outside-in'),
+        O('tt', 'Διακνημιαία (transtibial)', 'Transtibial'), O('ai', 'All-inside (retrograde)', 'All-inside (retrograde)')], d: 'am' }),
+      F('femTunnelLen', 'num', L('Μήκος μηριαίου τούνελ', 'Femoral tunnel length'), { u: 'mm' }),
+      F('femFix', 'sel', L('Μηριαία καθήλωση', 'Femoral fixation'), { o: [O('adj', 'Συσκευή ανάρτησης – ρυθμιζόμενη θηλιά', 'Suspensory – adjustable loop'), O('fixed', 'Συσκευή ανάρτησης – σταθερή θηλιά', 'Suspensory – fixed loop'),
+        O('screw', 'Βίδα συμπίεσης (interference)', 'Interference screw'), O('cross', 'Εγκάρσια καθήλωση (cross-pin)', 'Cross-pin')], d: 'adj' }),
+      F('tibFix', 'sel', L('Κνημιαία καθήλωση', 'Tibial fixation'), { o: [O('screw', 'Βίδα συμπίεσης (interference)', 'Interference screw'), O('screw_sheath', 'Βίδα συμπίεσης + έλυτρο / αγκράφα', 'Interference screw + sheath / staple back-up'),
+        O('adj', 'Συσκευή ανάρτησης – ρυθμιζόμενη θηλιά', 'Suspensory – adjustable loop'), O('staple', 'Αγκράφα', 'Staple')], d: 'screw' }),
+      F('fixAngle', 'num', L('Γωνία κάμψης κατά την καθήλωση', 'Knee flexion at graft fixation'), { u: '°', d: 20 }),
+      F('let', 'sel', L('Έξω εξωαρθρική ενίσχυση', 'Lateral extra-articular procedure'), { o: [O('none', 'Όχι', 'None'), O('let', 'Τενοντοδεσία λαγονοκνημιαίας ταινίας (τροποποιημένη Lemaire)', 'Lateral extra-articular tenodesis (modified Lemaire)'), O('all', 'Ανακατασκευή προσθιοπλάγιου συνδέσμου (ALL)', 'Anterolateral ligament reconstruction')], d: 'none' }),
+      F('menMed', 'sel', L('Έσω μηνίσκος', 'Medial meniscus'), { o: [O('intact', 'Ακέραιος', 'Intact'), O('repair', 'Συρραφή', 'Repair'), O('ramp', 'Συρραφή βλάβης ramp', 'Ramp lesion repair'), O('root', 'Συρραφή ρίζας', 'Root repair'),
+        O('partial', 'Μερική μηνισκεκτομή', 'Partial meniscectomy'), O('left', 'Σταθερή ρήξη – αφέθηκε', 'Stable tear – left in situ')], d: 'intact' }),
+      F('menLat', 'sel', L('Έξω μηνίσκος', 'Lateral meniscus'), { o: [O('intact', 'Ακέραιος', 'Intact'), O('repair', 'Συρραφή', 'Repair'), O('root', 'Συρραφή ρίζας', 'Root repair'), O('partial', 'Μερική μηνισκεκτομή', 'Partial meniscectomy'), O('left', 'Σταθερή ρήξη – αφέθηκε', 'Stable tear – left in situ')], d: 'intact' }),
+      F('cartilage', 'area', L('Χόνδρος (ICRS) και χειρισμοί', 'Cartilage (ICRS grade) and procedures'), { w: 2 })
+    ] },
+    OTHER: { id: 'other', l: L('Τεχνική', 'Technique'), fields: [
+      F('approach', 'text', L('Προσπέλαση', 'Approach'), { w: 2 }),
+      F('procedureDetail', 'area', L('Περιγραφή χειρισμών', 'Procedure details'), { w: 2 })
+    ] }
+  };
+  var CLOSING = { id: 'closing', l: L('Ευρήματα, σύγκλειση, μετεγχειρητικές οδηγίες', 'Findings, closure, post-operative instructions'), fields: [
+    F('findings', 'area', L('Διεγχειρητικά ευρήματα', 'Intra-operative findings'), { w: 2 }),
+    F('complications', 'sel', L('Επιπλοκές', 'Complications'), { o: [O('none', 'Καμία', 'None'), O('yes', 'Ναι (περιγραφή)', 'Yes (describe)')], d: 'none' }),
+    F('complicationsText', 'area', L('Περιγραφή επιπλοκών', 'Complications – details'), { w: 2, show: when('complications', 'yes') }),
+    F('closure', 'text', L('Σύγκλειση', 'Closure'), { w: 2, d: byProc({ TKA: 'Κατά στρώματα: ανορθωτικός μηχανισμός Vicryl 1 / barbed, υποδόριο Vicryl 2-0, δέρμα ενδοδερμική Monocryl 3-0',
+      THA: 'Κατά στρώματα: λαγονοκνημιαία ταινία Vicryl 1 / barbed, υποδόριο Vicryl 2-0, δέρμα ενδοδερμική Monocryl 3-0', ACL: 'Υποδόριο Vicryl 2-0, δέρμα ράμματα Ethilon 3-0 / ενδοδερμική', _: '' }) }),
+    F('drain', 'sel', L('Παροχέτευση', 'Drain'), { o: [O('none', 'Όχι', 'None'), O('suction', 'Αναρροφητική παροχέτευση', 'Suction drain'), O('other', 'Άλλη', 'Other')], d: 'none' }),
+    F('ebl', 'num', L('Εκτιμώμενη απώλεια αίματος', 'Estimated blood loss'), { u: 'ml' }),
+    F('dressing', 'text', L('Επίδεση', 'Dressing'), { d: 'Αδιάβροχη επίδεση σιλικόνης' }),
+    F('wb', 'sel', L('Φόρτιση', 'Weight bearing'), { o: [O('fwbat', 'Πλήρης φόρτιση όπως ανέχεται', 'Full weight bearing as tolerated'), O('pwb', 'Μερική φόρτιση', 'Partial weight bearing'), O('ttwb', 'Φόρτιση με άκρα δάκτυλα', 'Toe-touch weight bearing'), O('nwb', 'Χωρίς φόρτιση', 'Non-weight bearing')], d: 'fwbat' }),
+    F('rom', 'text', L('Εύρος κίνησης', 'Range of motion'), { w: 2, d: byProc({ TKA: 'Ελεύθερο, ενεργητική / παθητική κινητοποίηση από την ημέρα 0, στόχος 0–90° στις 2 εβδομάδες', THA: 'Ελεύθερο εντός των προφυλάξεων ισχίου', ACL: 'Πλήρης έκταση από την 1η ημέρα, κάμψη 0–90° τις 2 πρώτες εβδομάδες', _: '' }) }),
+    F('brace', 'sel', L('Νάρθηκας', 'Brace'), { o: [O('none', 'Όχι', 'None'), O('hinged', 'Αρθρωτός νάρθηκας γόνατος', 'Hinged knee brace'), O('ext', 'Νάρθηκας σε έκταση για βάδιση', 'Knee brace locked in extension for walking'), O('sling', 'Ανάρτηση ώμου / αγκώνα', 'Arm sling'), O('other', 'Άλλο', 'Other')], d: 'none' }),
+    F('hipPrec', 'sel', L('Προφυλάξεις ισχίου', 'Hip precautions'), { o: [O('post6', 'Οπίσθιες προφυλάξεις ισχίου για 6 εβδομάδες (όχι κάμψη > 90°, προσαγωγή, έσω στροφή)', 'Posterior hip precautions for 6 weeks (no flexion > 90°, adduction, internal rotation)'),
+      O('none', 'Χωρίς ειδικές προφυλάξεις', 'No specific precautions'), O('other', 'Άλλες', 'Other')], d: 'post6', show: function (f, p) { return p === 'THA'; } }),
+    F('followup', 'text', L('Επανεξέταση / αφαίρεση ραμμάτων', 'Follow-up / suture removal'), { w: 2, d: 'Αλλαγή τραύματος και αφαίρεση ραμμάτων στις 14 ημέρες· επανεξέταση με ακτινογραφίες στις 6 εβδομάδες' }),
+    F('narrative', 'area', L('Περιγραφή επέμβασης (ελεύθερο κείμενο)', 'Operative narrative (free text)'), { w: 2, rows: 8 })
+  ] };
+  var IMPLANT_COLS = [F('component', 'text', L('Εξάρτημα', 'Component')), F('manufacturer', 'text', L('Κατασκευαστής', 'Manufacturer')), F('model', 'text', L('Μοντέλο', 'Model')), F('size', 'text', L('Μέγεθος', 'Size')),
+    F('ref', 'text', L('REF', 'REF')), F('lot', 'text', L('LOT', 'LOT')), F('fixation', 'sel', L('Καθήλωση', 'Fixation'), { o: [O('cemented', 'Με τσιμέντο', 'Cemented'), O('uncemented', 'Χωρίς τσιμέντο', 'Uncemented'), O('na', '–', '–')] })];
+  var IMPLANT_ROWS = {
+    TKA: [['Μηριαίο εξάρτημα', 'cemented'], ['Κνημιαία βάση', 'cemented'], ['Ένθεμα πολυαιθυλενίου', 'na'], ['Επιγονατιδικό εξάρτημα', 'cemented']],
+    THA: [['Κοτύλη', 'uncemented'], ['Ένθεμα κοτύλης', 'na'], ['Μηριαίο στέλεχος', 'uncemented'], ['Μηριαία κεφαλή', 'na']],
+    ACL: [['Μηριαία καθήλωση', 'na'], ['Κνημιαία καθήλωση', 'na']], OTHER: [['', 'na']] };
+  var IMPLANTS = { id: 'implants', l: L('Εμφυτεύματα', 'Implants'), implants: true };
+
+  function procOf(proc) { return SPEC[proc] ? proc : 'OTHER'; }
+  function sections(proc) { proc = procOf(proc); return [GENERAL, SPEC[proc], IMPLANTS, CLOSING]; }
+  function allFields(proc) { var out = []; sections(proc).forEach(function (s) { (s.fields || []).forEach(function (f) { out.push(f); }); }); return out; }
+  function defVal(f, proc, ctx) { var d = f.d; if (typeof d === 'function') d = d(proc, ctx); return d == null ? '' : d; }
+  function visible(f, fields, proc) { return !f.show || !!f.show(fields, proc); }
+  /** Fresh field values for a new note: defaults + patient context { surgeryDate, side, surgeon, alignTarget }. */
+  function defaults(proc, ctx) {
+    proc = procOf(proc); ctx = ctx || {}; var v = {};
+    allFields(proc).forEach(function (f) { v[f.k] = defVal(f, proc, ctx); });
+    v.date = ctx.surgeryDate || ''; v.side = ctx.side || ''; v.surgeon = ctx.surgeon || '';
+    if (proc === 'TKA' && ctx.alignTarget) v.alignTarget = ctx.alignTarget;
+    v.implants = (IMPLANT_ROWS[proc] || IMPLANT_ROWS.OTHER).map(function (r) { return { component: r[0], manufacturer: '', model: '', size: '', ref: '', lot: '', fixation: r[1] }; });
+    return v;
+  }
+  function newNote(p, ctx) {
+    ctx = ctx || {}; var proc = procOf(ctx.procedure || (p && p.procedure)), now = new Date().toISOString();
+    var f = defaults(proc, { surgeryDate: p && p.surgeryDate, side: ctx.side, surgeon: ctx.surgeon, alignTarget: p && p.alignTarget });
+    return { id: 'op' + Math.random().toString(36).slice(2, 10), patientId: p.id, procedure: proc, date: f.date, side: f.side, status: 'draft', fields: f, createdAt: now, updatedAt: now, updatedBy: ctx.by || null };
+  }
+  /** Keep the indexed columns in step with the form. */
+  function syncHead(n) { n.date = n.fields.date || null; n.side = n.fields.side || null; n.surgeon = n.fields.surgeon || ''; return n; }
+  function minutes(a, b) { if (!/^\d\d:\d\d/.test(a || '') || !/^\d\d:\d\d/.test(b || '')) return null; var m = (+b.slice(0, 2) * 60 + +b.slice(3, 5)) - (+a.slice(0, 2) * 60 + +a.slice(3, 5)); return m < 0 ? m + 1440 : m; }
+  /** Missing required fields (to finalise a note). */
+  function missing(n) { var f = n.fields || {}; return allFields(n.procedure).filter(function (x) { return x.req && visible(x, f, n.procedure) && (f[x.k] == null || String(f[x.k]).trim() === ''); }).map(function (x) { return x.k; }); }
+  function optLabel(f, v, lg) { var o = (f.o || []).filter(function (x) { return x.v === String(v); })[0]; return o ? (o[lg] || o.el) : v; }
+  /** Human-readable value (for quick view / print); '' when empty. */
+  function display(f, v, lg) { if (v == null || v === '') return ''; var s = f.t === 'sel' ? optLabel(f, v, lg) : String(v); if (f.t === 'date' && /^\d{4}-\d\d-\d\d$/.test(s)) s = s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4); return f.u && f.t === 'num' ? s + ' ' + f.u : s; }
+  /** Rows for print / quick view: [{ section, rows: [{ k, label, value }] }] (visible, non-empty only). */
+  function summary(n, lg) {
+    lg = lg || 'el'; var f = n.fields || {};
+    return sections(n.procedure).map(function (s) {
+      if (s.implants) return { id: s.id, label: s.l[lg], implants: (f.implants || []).filter(function (r) { return ['manufacturer', 'model', 'size', 'ref', 'lot'].some(function (k) { return r[k]; }) || r.component; }) };
+      return { id: s.id, label: s.l[lg], rows: s.fields.filter(function (x) { return visible(x, f, n.procedure); }).map(function (x) { return { k: x.k, label: x.l[lg], value: display(x, f[x.k], lg), wide: x.w === 2 || x.t === 'area' }; }).filter(function (r) { return r.value !== ''; }) };
+    });
+  }
+  /** One-line headline for lists. */
+  function headline(n, lg) {
+    lg = lg || 'el'; var f = n.fields || {}, side = optLabel(GENERAL.fields[2], f.side, lg), bits = [n.procedure === 'OTHER' && f.otherName ? f.otherName : PROCS[n.procedure][lg]];
+    if (f.side) bits.push(side); if (n.procedure === 'TKA' && f.alignTarget) bits.push(optLabel(SPEC.TKA.fields[1], f.alignTarget, lg).replace(/^.*\((\w+)\)$/, '$1'));
+    if (n.procedure === 'THA' && f.approach) bits.push(optLabel(SPEC.THA.fields[0], f.approach, lg));
+    if (n.procedure === 'ACL' && f.graft) bits.push(optLabel(SPEC.ACL.fields[0], f.graft, lg).split(' (')[0]);
+    return bits.join(' · ');
+  }
+  /** Demo notes for DEMO-TKA-01 and DEMO-THA-01 (dates follow the demo patients' surgery dates). */
+  function seedNotes(patients) {
+    var out = [], by = { name: 'Owner surgeon (DEMO)', email: 'owner@demo.orthothessaly' };
+    var tka = patients.filter(function (p) { return p.id === 'DEMO-TKA-01'; })[0], tha = patients.filter(function (p) { return p.id === 'DEMO-THA-01'; })[0];
+    if (tka) { var a = newNote(tka, { side: 'R', surgeon: 'Χειρουργός ιδιοκτήτης (DEMO)', by: by }); a.id = 'opDEMO-TKA-01'; a.status = 'final';
+      Object.assign(a.fields, { assistants: 'Βοηθός DEMO', anaesthetist: 'Αναισθησιολόγος DEMO', asa: '2', start: '09:05', end: '10:20', duration: 75, tqTime: 62, technique: 'conv', alignTarget: 'mech', design: 'PS', patella: 'resurfaced', patellaThick: '24 / 23',
+        femResection: '9 / 7', tibResection: '8 mm από την έξω πλευρά', polyThick: 10, balance: 'Απελευθέρωση έσω οπίσθιας γωνίας και αφαίρεση οστεοφύτων· ισόρροπα χάσματα κάμψης-έκτασης.', ebl: 150,
+        findings: 'Τριδιαμερισματική οστεοαρθρίτιδα, βαρύτερη στο έσω διαμέρισμα (Outerbridge IV)· ραιβότητα ~8°, ανατάξιμη.', narrative: 'DEMO – συνθετικό πρακτικό για επίδειξη.' });
+      a.fields.implants = [{ component: 'Μηριαίο εξάρτημα', manufacturer: 'DEMO', model: 'DEMO PS', size: '5', ref: 'DEMO-F5', lot: 'L0001', fixation: 'cemented' }, { component: 'Κνημιαία βάση', manufacturer: 'DEMO', model: 'DEMO', size: '5', ref: 'DEMO-T5', lot: 'L0002', fixation: 'cemented' },
+        { component: 'Ένθεμα πολυαιθυλενίου', manufacturer: 'DEMO', model: 'DEMO PS', size: '5 / 10 mm', ref: 'DEMO-P10', lot: 'L0003', fixation: 'na' }, { component: 'Επιγονατιδικό εξάρτημα', manufacturer: 'DEMO', model: 'DEMO', size: '35', ref: 'DEMO-PT35', lot: 'L0004', fixation: 'cemented' }];
+      out.push(syncHead(a)); }
+    if (tha) { var b = newNote(tha, { side: 'R', surgeon: 'Χειρουργός ιδιοκτήτης (DEMO)', by: by }); b.id = 'opDEMO-THA-01';
+      Object.assign(b.fields, { asa: '2', start: '11:00', end: '12:05', duration: 65, cupSize: 54, headSize: '36', headNeck: '0', stemSize: '4', cupIncl: 40, cupAntev: 18, ebl: 300,
+        findings: 'Πρωτοπαθής οστεοαρθρίτιδα ισχίου με οστεόφυτα κοτύλης.', narrative: 'DEMO – πρόχειρο πρακτικό (δεν έχει οριστικοποιηθεί).' });
+      b.fields.implants = [{ component: 'Κοτύλη', manufacturer: 'DEMO', model: 'DEMO cup', size: '54', ref: 'DEMO-C54', lot: 'L0101', fixation: 'uncemented' }, { component: 'Ένθεμα κοτύλης', manufacturer: 'DEMO', model: 'XLPE neutral', size: '36/54', ref: 'DEMO-L36', lot: 'L0102', fixation: 'na' },
+        { component: 'Μηριαίο στέλεχος', manufacturer: 'DEMO', model: 'DEMO stem', size: '4', ref: 'DEMO-S4', lot: 'L0103', fixation: 'uncemented' }, { component: 'Μηριαία κεφαλή', manufacturer: 'DEMO', model: 'Ceramic', size: '36 / 0', ref: 'DEMO-H36', lot: 'L0104', fixation: 'na' }];
+      out.push(syncHead(b)); }
+    return out;
+  }
+  root.OrthoOpNote = { PROCS: PROCS, SECTIONS: { GENERAL: GENERAL, SPEC: SPEC, CLOSING: CLOSING, IMPLANTS: IMPLANTS }, IMPLANT_COLS: IMPLANT_COLS, IMPLANT_ROWS: IMPLANT_ROWS, ALIGN: ALIGN,
+    procOf: procOf, sections: sections, allFields: allFields, defaults: defaults, newNote: newNote, syncHead: syncHead, minutes: minutes, missing: missing, display: display, summary: summary, headline: headline, visible: visible, seedNotes: seedNotes };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-opnote-ui">
+(function () {
+  'use strict';
+  // ===== Operative note UI (doctor dashboard only): list, quick view, structured editor with autosave, A4 print =====
+  var N = window.OrthoOpNote; if (!N) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var api = function () { return window.__orthoProms; };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var S = {
+    el: { T: 'Πρακτικό χειρουργείου', lead: 'Μόνο για ιατρούς – δεν εμφανίζεται ποτέ στον ασθενή. Οι αλλαγές αποθηκεύονται αυτόματα.', none: 'Δεν υπάρχει ακόμη πρακτικό για αυτόν τον ασθενή.', newBtn: '＋ Νέο πρακτικό', forProc: 'για',
+      date: 'Ημ/νία', proc: 'Επέμβαση', surgeon: 'Χειρουργός', status: 'Κατάσταση', updated: 'Τελευταία αλλαγή', draft: 'Πρόχειρο', final: 'Οριστικό', view: 'Προβολή', edit: 'Επεξεργασία', print: 'Εκτύπωση / PDF', close: 'Κλείσιμο',
+      finalise: '✓ Οριστικοποίηση', reopen: 'Επαναφορά σε πρόχειρο', del: 'Διαγραφή', delQ: 'Οριστική διαγραφή αυτού του πρακτικού;', saved: '✓ Αποθηκεύτηκε αυτόματα', missing: 'Συμπληρώστε πρώτα:', addRow: '＋ Γραμμή', rmRow: 'Αφαίρεση γραμμής',
+      dateDiff: 'Η ημερομηνία του πρακτικού ({0}) διαφέρει από την ημερομηνία επέμβασης του ασθενή ({1}), η οποία καθορίζει τα χρονικά σημεία των ερωτηματολογίων.', setDate: 'Ορισμός {0} ως ημερομηνία επέμβασης',
+      alignDiff: 'Ο στόχος ευθυγράμμισης του πρακτικού διαφέρει από τον στόχο του ασθενή στη σύγκριση ακτινογραφιών.', setAlign: 'Χρήση ως στόχος ευθυγράμμισης ασθενή', procDiff: 'Το είδος του πρακτικού διαφέρει από την επέμβαση του φακέλου ({0}).',
+      by: 'από', patient: 'Ασθενής', side: 'Πλευρά', sign: 'Υπογραφή χειρουργού', generated: 'Εκτυπώθηκε', draftMark: 'ΠΡΟΧΕΙΡΟ', finalAt: 'Οριστικοποιήθηκε', age: 'Ηλικία', sex: 'Φύλο', demo: 'DEMO – συνθετικά δεδομένα' },
+    en: { T: 'Operative note', lead: 'Doctors only – never shown to the patient. Changes are saved automatically.', none: 'No operative note for this patient yet.', newBtn: '＋ New operative note', forProc: 'for',
+      date: 'Date', proc: 'Procedure', surgeon: 'Surgeon', status: 'Status', updated: 'Last change', draft: 'Draft', final: 'Final', view: 'View', edit: 'Edit', print: 'Print / PDF', close: 'Close',
+      finalise: '✓ Finalise', reopen: 'Back to draft', del: 'Delete', delQ: 'Delete this operative note permanently?', saved: '✓ Saved automatically', missing: 'Please complete first:', addRow: '＋ Row', rmRow: 'Remove row',
+      dateDiff: 'The note date ({0}) differs from the patient\u2019s surgery date ({1}), which drives the questionnaire timepoints.', setDate: 'Set {0} as surgery date',
+      alignDiff: 'The note\u2019s alignment target differs from the patient\u2019s target in the X-ray comparison.', setAlign: 'Use as the patient\u2019s alignment target', procDiff: 'The note type differs from the procedure on record ({0}).',
+      by: 'by', patient: 'Patient', side: 'Side', sign: 'Surgeon\u2019s signature', generated: 'Printed', draftMark: 'DRAFT', finalAt: 'Finalised', age: 'Age', sex: 'Sex', demo: 'DEMO – synthetic data' }
+  };
+  var t = function (k, lg) { var L = S[lg || lang()]; return L[k] != null ? L[k] : k; };
+  var fmt = function (s) { var a = arguments; return s.replace(/\{(\d)\}/g, function (m, i) { return a[+i + 1]; }); };
+  var dmy = function (d) { return /^\d{4}-\d\d-\d\d/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : (d || '–'); };
+  var dt = function (iso) { if (!iso) return ''; var d = new Date(iso), z = function (n) { return ('0' + n).slice(-2); }; return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
+  var ui = { pid: '', id: '', mode: '' }, timer = null;
+  function notes(p) { var s = api().store; s.opnotes = s.opnotes || []; return s.opnotes.filter(function (n) { return n.patientId === p.id; }).sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : 0; }); }
+  function noteById(id) { return (api().store.opnotes || []).filter(function (n) { return n.id === id; })[0]; }
+  function me() { var u = api().currentUser && api().currentUser(); return u ? { name: u.name, email: u.email } : null; }
+  function touch(n) { n.updatedAt = new Date().toISOString(); n.updatedBy = me(); N.syncHead(n); }
+  function save(n, now) { if (n) touch(n); clearTimeout(timer); var go = function () { api().persist(); var s = $('opnSaved'); if (s) s.textContent = t('saved'); }; if (now) go(); else timer = setTimeout(go, 500); }
+  function latestSide(p) { var x = (api().store.xrays || []).filter(function (s) { return s.patientId === p.id && (s.side === 'R' || s.side === 'L'); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0]; return x ? x.side : ''; }
+
+  // ---------- list + quick view + editor ----------
+  function html(p) { return '<div class="opn" id="opn" data-pid="' + esc(p.id) + '">' + inner(p) + '</div>'; }
+  function inner(p) {
+    if (ui.pid !== p.id) ui = { pid: p.id, id: '', mode: '' };
+    var lg = lang(), ns = notes(p), cur = ui.id && noteById(ui.id);
+    var h = '<h3 style="margin-top:12px" id="opnH">🩺 ' + esc(t('T')) + '</h3><p class="muted">🔒 ' + esc(t('lead')) + '</p>';
+    if (!ns.length) h += '<p class="muted" id="opnNone">' + esc(t('none')) + '</p>';
+    else h += '<div class="tblwrap"><table class="tbl" id="opnTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('surgeon')) + '</th><th>' + esc(t('status')) + '</th><th>' + esc(t('updated')) + '</th><th></th></tr>' + ns.map(function (n) {
+      return '<tr data-opn="' + esc(n.id) + '"' + (cur && cur.id === n.id ? ' class="selrow"' : '') + '><td>' + esc(dmy(n.date)) + '</td><td><b>' + esc(N.headline(n, lg)) + '</b></td><td>' + esc(n.fields.surgeon || '–') + '</td><td><span class="pill ' + (n.status === 'final' ? 'yes' : '') + '">' + esc(t(n.status)) + '</span></td><td class="muted">' + esc(dt(n.updatedAt)) + (n.updatedBy && n.updatedBy.name ? ' · ' + esc(n.updatedBy.name) : '') + '</td>' +
+        '<td class="opnbtns"><button class="small" data-opview="' + esc(n.id) + '">' + esc(t('view')) + '</button> <button class="small" data-opedit="' + esc(n.id) + '">' + esc(t('edit')) + '</button> <button class="small" data-opprint="' + esc(n.id) + '">🖨</button></td></tr>';
+    }).join('') + '</table></div>';
+    h += '<div class="row"><label class="fld">' + esc(t('proc')) + '<select id="opnProc">' + Object.keys(N.PROCS).map(function (k) { return '<option value="' + k + '"' + (k === N.procOf(p.procedure) ? ' selected' : '') + '>' + esc(N.PROCS[k][lg]) + '</option>'; }).join('') + '</select></label><button class="primary" id="opnNew" style="align-self:flex-end">' + esc(t('newBtn')) + '</button></div>';
+    if (cur) h += ui.mode === 'edit' ? editorHtml(p, cur) : quickHtml(p, cur);
+    return h;
+  }
+  function quickHtml(p, n) {
+    var lg = lang();
+    var h = '<div class="opnview" id="opnView"><div class="opnbar"><b>' + esc(N.headline(n, lg)) + '</b> · ' + esc(dmy(n.date)) + ' <span class="pill ' + (n.status === 'final' ? 'yes' : '') + '">' + esc(t(n.status)) + '</span><span class="opnsp"></span>' +
+      '<button class="small" data-opedit="' + esc(n.id) + '">' + esc(t('edit')) + '</button> <button class="small" data-opprint="' + esc(n.id) + '">🖨 ' + esc(t('print')) + '</button> <button class="small" id="opnClose">✕ ' + esc(t('close')) + '</button></div>';
+    N.summary(n, lg).forEach(function (s) {
+      if (s.implants) { if (s.implants.length) h += '<h4>' + esc(s.label) + '</h4>' + implantsTable(s.implants, lg); return; }
+      if (!s.rows.length) return;
+      h += '<h4>' + esc(s.label) + '</h4><dl class="opndl">' + s.rows.map(function (r) { return '<div class="' + (r.wide ? 'wide' : '') + '" data-k="' + r.k + '"><dt>' + esc(r.label) + '</dt><dd>' + esc(r.value) + '</dd></div>'; }).join('') + '</dl>';
+    });
+    return h + '</div>';
+  }
+  function implantsTable(rows, lg) {
+    return '<div class="tblwrap"><table class="tbl opnimp"><tr>' + N.IMPLANT_COLS.map(function (c) { return '<th>' + esc(c.l[lg]) + '</th>'; }).join('') + '</tr>' + rows.map(function (r) {
+      return '<tr>' + N.IMPLANT_COLS.map(function (c) { return '<td>' + esc(N.display(c, r[c.k], lg) === '–' ? '' : N.display(c, r[c.k], lg)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+  }
+  function fieldHtml(f, v, lg) {
+    var id = 'opf-' + f.k, lab = '<span>' + esc(f.l[lg]) + (f.u && f.t === 'num' ? ' <span class="muted">(' + esc(f.u) + ')</span>' : '') + (f.req ? ' *' : '') + '</span>', a = ' id="' + id + '" data-of="' + f.k + '"';
+    var inp;
+    if (f.t === 'sel') inp = '<select' + a + '><option value="">—</option>' + f.o.map(function (o) { return '<option value="' + esc(o.v) + '"' + (String(v) === o.v ? ' selected' : '') + '>' + esc(o[lg] || o.el) + '</option>'; }).join('') + '</select>';
+    else if (f.t === 'area') inp = '<textarea' + a + ' rows="' + (f.rows || 3) + '">' + esc(v) + '</textarea>';
+    else inp = '<input' + a + ' type="' + (f.t === 'num' ? 'number' : f.t === 'date' ? 'date' : f.t === 'time' ? 'time' : 'text') + '"' + (f.t === 'num' ? ' inputmode="decimal" step="any"' : '') + ' value="' + esc(v) + '">';
+    return '<label class="fld opnf' + (f.w === 2 || f.t === 'area' ? ' wide' : '') + '" for="' + id + '">' + lab + inp + '</label>';
+  }
+  function editorHtml(p, n) {
+    var lg = lang(), f = n.fields, h = '<div class="opnedit" id="opnEdit" data-note="' + esc(n.id) + '"><div class="opnbar"><b>' + esc(t('edit')) + ': ' + esc(N.PROCS[n.procedure][lg]) + '</b> <span class="pill ' + (n.status === 'final' ? 'yes' : '') + '" id="opnStatus">' + esc(t(n.status)) + '</span><span class="opnsp"></span><span class="ok" id="opnSaved"></span></div>';
+    var notes2 = [];
+    if (f.date && p.surgeryDate && f.date !== p.surgeryDate) notes2.push('<p class="qmsg" id="opnDateDiff">📅 ' + esc(fmt(t('dateDiff'), dmy(f.date), dmy(p.surgeryDate))) + ' <button class="small" data-opsync="date">' + esc(fmt(t('setDate'), dmy(f.date))) + '</button></p>');
+    if (n.procedure === 'TKA' && f.alignTarget && (p.alignTarget || 'mech') !== f.alignTarget) notes2.push('<p class="qmsg" id="opnAlignDiff">📐 ' + esc(t('alignDiff')) + ' <button class="small" data-opsync="align">' + esc(t('setAlign')) + '</button></p>');
+    if (N.procOf(p.procedure) !== n.procedure && p.procedure !== 'UL') notes2.push('<p class="muted">' + esc(fmt(t('procDiff'), p.procedure)) + '</p>');
+    h += notes2.join('');
+    N.sections(n.procedure).forEach(function (s) {
+      if (s.implants) {
+        h += '<fieldset class="opnfs" id="opnImplants"><legend>' + esc(s.label || s.l[lg]) + '</legend><div class="tblwrap"><table class="tbl opnimp"><tr>' + N.IMPLANT_COLS.map(function (c) { return '<th>' + esc(c.l[lg]) + '</th>'; }).join('') + '<th></th></tr>' +
+          (f.implants || []).map(function (r, i) { return '<tr>' + N.IMPLANT_COLS.map(function (c) { return '<td>' + (c.t === 'sel' ? '<select data-oi="' + i + '.' + c.k + '" aria-label="' + esc(c.l[lg]) + '">' + c.o.map(function (o) { return '<option value="' + o.v + '"' + (r[c.k] === o.v ? ' selected' : '') + '>' + esc(o[lg]) + '</option>'; }).join('') + '</select>' : '<input data-oi="' + i + '.' + c.k + '" aria-label="' + esc(c.l[lg]) + '" value="' + esc(r[c.k]) + '">') + '</td>'; }).join('') + '<td><button class="small" data-oirm="' + i + '" title="' + esc(t('rmRow')) + '">✕</button></td></tr>'; }).join('') +
+          '</table></div><button class="small" id="opnAddRow">' + esc(t('addRow')) + '</button></fieldset>';
+        return;
+      }
+      var fs = s.fields.filter(function (x) { return N.visible(x, f, n.procedure); });
+      h += '<fieldset class="opnfs" id="opnfs-' + s.id + '"><legend>' + esc(s.l[lg]) + '</legend><div class="opngrid">' + fs.map(function (x) { return fieldHtml(x, f[x.k] == null ? '' : f[x.k], lg); }).join('') + '</div></fieldset>';
+    });
+    h += '<p class="err" id="opnMsg" role="alert"></p><div class="row opnactions">' + (n.status === 'final' ? '<button id="opnReopen">' + esc(t('reopen')) + '</button>' : '<button class="go" id="opnFinal">' + esc(t('finalise')) + '</button>') +
+      '<button data-opprint="' + esc(n.id) + '">🖨 ' + esc(t('print')) + '</button><button id="opnClose">✕ ' + esc(t('close')) + '</button><span class="opnsp"></span><button class="danger" id="opnDel">' + esc(t('del')) + '</button></div></div>';
+    return h;
+  }
+  function rerender(p) { var el = $('opn'); if (!el) return; el.innerHTML = inner(p); bind(p); }
+  function bind(p) {
+    var el = $('opn'); if (!el || el.dataset.pid !== p.id) return;
+    var A = api();
+    el.querySelectorAll('[data-opview]').forEach(function (b) { b.onclick = function () { ui.id = b.dataset.opview; ui.mode = 'view'; A.audit('opnote-view', p.id); rerender(p); }; });
+    el.querySelectorAll('[data-opedit]').forEach(function (b) { b.onclick = function () { ui.id = b.dataset.opedit; ui.mode = 'edit'; rerender(p); var e = $('opnEdit'); if (e && e.scrollIntoView) e.scrollIntoView({ block: 'start' }); }; });
+    el.querySelectorAll('[data-opprint]').forEach(function (b) { b.onclick = function () { printNote(b.dataset.opprint); }; });
+    $('opnNew').onclick = function () {
+      var n = N.newNote(p, { procedure: $('opnProc').value, side: latestSide(p), surgeon: (me() || {}).name || '', by: me() });
+      A.store.opnotes = A.store.opnotes || []; A.store.opnotes.push(n); save(null, true); A.audit('opnote-create', p.id + ' ' + n.procedure); ui.id = n.id; ui.mode = 'edit'; rerender(p);
+    };
+    if ($('opnClose')) $('opnClose').onclick = function () { save(null, true); ui.id = ''; ui.mode = ''; rerender(p); };
+    var n = ui.id && noteById(ui.id); if (!n || ui.mode !== 'edit') return;
+    var f = n.fields;
+    el.querySelectorAll('[data-of]').forEach(function (inp) {
+      var k = inp.dataset.of, def = N.allFields(n.procedure).filter(function (x) { return x.k === k; })[0];
+      var read = function () { var v = inp.value; if (def && def.t === 'num') { v = v === '' ? '' : +v; if (v !== '' && !isFinite(v)) v = ''; } f[k] = v; };
+      inp.oninput = function () { read(); if ((k === 'start' || k === 'end') && f.start && f.end) { var m = N.minutes(f.start, f.end); if (m != null) { f.duration = m; var d = $('opf-duration'); if (d) d.value = m; } } save(n); };
+      inp.onchange = function () { read(); save(n, true); if (inp.tagName === 'SELECT' || k === 'date') rerender(p); };
+    });
+    el.querySelectorAll('[data-oi]').forEach(function (inp) {
+      var ix = inp.dataset.oi.split('.'), i = +ix[0], c = ix[1];
+      inp.oninput = function () { f.implants[i][c] = inp.value; save(n); }; inp.onchange = function () { f.implants[i][c] = inp.value; save(n, true); };
+    });
+    el.querySelectorAll('[data-oirm]').forEach(function (b) { b.onclick = function () { f.implants.splice(+b.dataset.oirm, 1); save(n, true); rerender(p); }; });
+    $('opnAddRow').onclick = function () { f.implants = f.implants || []; f.implants.push({ component: '', manufacturer: '', model: '', size: '', ref: '', lot: '', fixation: 'na' }); save(n, true); rerender(p); };
+    el.querySelectorAll('[data-opsync]').forEach(function (b) { b.onclick = function () {
+      if (b.dataset.opsync === 'date') { p.surgeryDate = f.date; A.audit('surgery-date-from-opnote', p.id + ' ' + f.date); }
+      else { p.alignTarget = f.alignTarget; A.audit('xray-target', p.id + ' ' + f.alignTarget + ' (opnote)'); }
+      save(null, true); A.openPatient(p.id, 'opnEdit');
+    }; });
+    if ($('opnFinal')) $('opnFinal').onclick = function () {
+      var miss = N.missing(n); if (miss.length) { var lg = lang(); $('opnMsg').textContent = t('missing') + ' ' + miss.map(function (k) { return N.allFields(n.procedure).filter(function (x) { return x.k === k; })[0].l[lg]; }).join(', '); var fi = $('opf-' + miss[0]); if (fi) fi.focus(); return; }
+      n.status = 'final'; n.finalAt = new Date().toISOString(); n.finalBy = me(); save(n, true); A.audit('opnote-final', p.id); ui.mode = 'view'; rerender(p);
+    };
+    if ($('opnReopen')) $('opnReopen').onclick = function () { n.status = 'draft'; save(n, true); A.audit('opnote-reopen', p.id); rerender(p); };
+    $('opnDel').onclick = function () { if (!window.confirm(t('delQ'))) return; A.store.opnotes = A.store.opnotes.filter(function (x) { return x.id !== n.id; }); save(null, true); A.audit('opnote-delete', p.id); ui.id = ''; ui.mode = ''; rerender(p); };
+  }
+
+  // ---------- A4 print (always Greek, clinic header) ----------
+  function reportHtml(n) {
+    var lg = 'el', A = api(), p = A.store.patients.filter(function (x) { return x.id === n.patientId; })[0] || {}, f = n.fields, now = new Date();
+    var side = N.display(N.SECTIONS.GENERAL.fields[2], f.side, lg) || '–';
+    var h = '<div class="opr-page' + (n.status === 'final' ? '' : ' draft') + '" data-mark="' + esc(t('draftMark', lg)) + '"><div class="opr-head"><div class="opr-clinic">OrthoThessaly</div><div class="opr-title"><h1>' + esc(t('T', lg)) + '</h1><div>' + esc(N.headline(n, lg)) + '</div></div></div>';
+    h += '<table class="opr-id"><tr><th>' + esc(t('patient', lg)) + '</th><td><b>' + esc(p.id || n.patientId) + '</b>' + (p.age ? ' · ' + esc(t('age', lg)) + ' ' + esc(p.age) : '') + (p.sex ? ' · ' + esc(t('sex', lg)) + ' ' + (p.sex === 'F' ? 'Θ' : 'Α') : '') + '</td><th>' + esc(t('date', lg)) + '</th><td>' + esc(dmy(f.date)) + '</td></tr>' +
+      '<tr><th>' + esc(t('proc', lg)) + '</th><td>' + esc(n.procedure === 'OTHER' && f.otherName ? f.otherName : N.PROCS[n.procedure].el) + '</td><th>' + esc(t('side', lg)) + '</th><td>' + esc(side) + '</td></tr>' +
+      '<tr><th>' + esc(t('surgeon', lg)) + '</th><td>' + esc(f.surgeon || '–') + '</td><th>' + esc(t('status', lg)) + '</th><td>' + esc(t(n.status, lg)) + (n.status === 'final' && n.finalAt ? ' · ' + esc(dt(n.finalAt)) : '') + '</td></tr></table>';
+    N.summary(n, lg).forEach(function (s) {
+      if (s.implants) { if (s.implants.length) h += '<h2>' + esc(s.label) + '</h2>' + implantsTable(s.implants, lg); return; }
+      var rows = s.rows.filter(function (r) { return ['date', 'side', 'surgeon', 'otherName'].indexOf(r.k) < 0; }); if (!rows.length) return;
+      h += '<h2>' + esc(s.label) + '</h2><dl class="opndl">' + rows.map(function (r) { return '<div class="' + (r.wide ? 'wide' : '') + '"><dt>' + esc(r.label) + '</dt><dd>' + esc(r.value) + '</dd></div>'; }).join('') + '</dl>';
+    });
+    h += '<div class="opr-sign"><div>' + esc(t('surgeon', lg)) + ': <b>' + esc(f.surgeon || '') + '</b></div><div class="opr-line">' + esc(t('sign', lg)) + '</div></div>';
+    h += '<div class="opr-foot">OrthoThessaly · ' + esc(t('T', lg)) + ' · ' + esc(p.id || '') + ' · ' + esc(t('generated', lg)) + ' ' + esc(dt(now.toISOString())) + (p.demo ? ' · ' + esc(t('demo', lg)) : '') + '</div></div>';
+    return '<div class="opr-bar noprint"><button class="primary" id="oprPrint">🖨 ' + esc(t('print')) + '</button><button id="oprClose">✕ ' + esc(t('close')) + '</button></div>' + h;
+  }
+  function closeReport() { document.body.classList.remove('op-print'); var r = $('opReport'); if (r) r.remove(); }
+  function printNote(id) {
+    var n = noteById(id); if (!n) return; closeReport(); save(null, true);
+    var d = document.createElement('div'); d.id = 'opReport'; d.className = 'opreport'; d.setAttribute('lang', 'el'); d.innerHTML = reportHtml(n); document.body.appendChild(d);
+    document.body.classList.add('op-print'); $('oprClose').onclick = closeReport; $('oprPrint').onclick = function () { window.print(); };
+    api().audit('opnote-print', n.patientId);
+    if (!window.__opNoPrint) setTimeout(function () { window.print(); }, 60);
+  }
+  window.addEventListener('afterprint', function () { if (!window.__opNoPrint) closeReport(); });
+  window.__opnote = { html: html, bind: bind, print: printNote, closeReport: closeReport, get ui() { return ui; }, open: function (id, mode) { var n = noteById(id); if (!n) return; ui = { pid: n.patientId, id: id, mode: mode || 'view' }; } };
+})();
+</script>
 <!-- ===== PROMs + doctor dashboard UI (DEMO = localStorage, cloud = database) ===== -->
 <script id="ortho-proms-app">
 (function () {
@@ -3639,7 +4065,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   })();
   var CLOUD = MODE === 'cloud', cloudUser = null, cloudBusy = false;
   function setMode(m) { try { localStorage.setItem(MKEY, m); } catch (e) {} var u = location.href.split('#')[0].split('?')[0]; location.replace(u); }
-  function emptyStore() { return { version: 4, cloud: true, patients: [], submissions: [], rom: [], xrays: [] }; }
+  function emptyStore() { return { version: 4, cloud: true, patients: [], submissions: [], rom: [], xrays: [], opnotes: [] }; }
   var $ = function (id) { return document.getElementById(id); };
   var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
   var tx = function (o) { if (o == null) return ''; if (typeof o === 'string') return o; return o[lang()] != null ? o[lang()] : (o.en != null ? o.en : o.el); };
@@ -3864,10 +4290,13 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     });
     var OWN = { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)' }, COL = { email: 'colleague.seed@demo.test', name: 'Dr DEMO Colleague (seed)' };
     var st = { version: 4, rom: seedRom(td), xrays: window.OrthoXray ? window.OrthoXray.seedStudies(P.addDays, DEMO_PTS) : [], patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, optional: (DEMO_OPT[p.id] || []).slice(), camera: !!DEMO_CAM[p.id], demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate }; }), submissions: subs };
+    st.opnotes = window.OrthoOpNote ? window.OrthoOpNote.seedNotes(st.patients) : [];
     save(KEY, st); return st;
   }
   var store = CLOUD ? emptyStore() : load(KEY); if (!store || !store.patients) store = seed();
   if (!CLOUD && !store.xrays && window.OrthoXray) { store.xrays = window.OrthoXray.seedStudies(P.addDays, DEMO_PTS); persist(); }
+  // operative notes (added later): demo stores from older builds get the demo notes of their demo patients
+  if (!CLOUD && !store.opnotes && window.OrthoOpNote) { store.opnotes = window.OrthoOpNote.seedNotes(store.patients.filter(function (p) { return p.demo; })); persist(); }
   // seed v2 (TKA comparison DEMO): replace the old angle-only seed studies of DEMO-TKA-01 with synthetic-film studies (pre + 6 wk + 1 yr)
   if (!CLOUD && store.xrays && window.OrthoXray && window.OrthoXraySynth && store.patients.some(function (p) { return p.id === 'DEMO-TKA-01' && p.demo; }) && !store.xrays.some(function (x) { return x.seedV === 2; })) {
     var nsx = window.OrthoXray.seedStudies(P.addDays, DEMO_PTS).filter(function (x) { return x.seedV === 2; });
@@ -3888,6 +4317,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
         store.submissions.forEach(function (s) { if (s.patientId === p.id) s.date = sh(s.date); });
         (store.rom || []).forEach(function (r) { if (r.patientId === p.id) r.date = sh(r.date); });
         (store.xrays || []).forEach(function (x) { if (x.patientId === p.id) { x.date = sh(x.date); if (x.confirmed && x.confirmed.at) x.confirmed.at = sh(x.confirmed.at); } });
+        (store.opnotes || []).forEach(function (n) { if (n.patientId === p.id) { n.date = sh(n.date); if (n.fields && n.fields.date) n.fields.date = sh(n.fields.date); } });
         changed = true;
       }
       var nS = store.submissions.length; store.submissions = store.submissions.filter(function (s) { return !(s.patientId === p.id && s.source === 'seed' && s.date > td); });
@@ -4506,6 +4936,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; dsel.tp = ''; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
     if (sp && pts.indexOf(sp) >= 0) { bindCamera(sp); bindAssign(sp); }
     if (sp && pts.indexOf(sp) >= 0 && window.__xcmp) window.__xcmp.bind(sp);
+    if (sp && pts.indexOf(sp) >= 0 && window.__opnote) window.__opnote.bind(sp);
     var dp = $('dashProto'); dp.ontoggle = function () { dashProtoOpen = dp.open; }; bindProtocol(dp, renderDash);
     if (CLOUD) bindCloudPanels(u); else bindOwner();
   }
@@ -4519,6 +4950,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to)) : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
       rec.map(function (i) { var opt = prot.optional.indexOf(i) >= 0; return '<tr><td><b>' + esc(I[i].short) + '</b>' + (opt ? ' <span class="muted">(' + esc(t('optional')) + ')</span>' : '') + '</td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + esc(stName(st)) + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend2')) + '</div>';
     h += assignHtml(p);
+    if (window.__opnote) h += window.__opnote.html(p);
     h += cameraHtml(p);
     if (window.__xray) h += window.__xray.dashHtml(p);
     h += mcidHtml(p);
@@ -4596,7 +5028,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       cInvT: 'Πρόσκληση ιατρού (μόνο ιδιοκτήτης)', cInvLead: 'Κάθε σύνδεσμος ισχύει για έναν ιατρό (μίας χρήσης) και λήγει σε 14 ημέρες.', cExpired: 'έληξε', cExp: 'Λήξη', cTeam: 'Ιατροί της ομάδας', cLogT: 'Αρχείο πρόσβασης',
       cImpT: 'Εισαγωγή τοπικών εγγραφών', cImpLead: 'Μεταφέρει στη βάση τους ασθενείς, τα ερωτηματολόγια, τις μετρήσεις κίνησης και τις ακτινογραφίες (και τις εικόνες τους) που είναι αποθηκευμένα σε αυτόν τον browser. Ασθενείς με κωδικό που υπάρχει ήδη στη βάση παραλείπονται.',
       cImpLocal: 'Σε αυτόν τον browser: {0} ασθενείς (από τους οποίους {1} συνθετικοί demo), {2} ερωτηματολόγια, {3} ακτινογραφίες.', cImpDemo: 'Να συμπεριληφθούν και οι συνθετικοί demo ασθενείς', cImpBtn: 'Εισαγωγή στη βάση', cImpNone: 'Δεν βρέθηκαν τοπικές εγγραφές για εισαγωγή.',
-      cImpDone: 'Εισήχθησαν: {0} ασθενείς, {1} ερωτηματολόγια, {2} μετρήσεις κίνησης, {3} ακτινογραφίες ({4} εικόνες).', cImpRun: 'Εισαγωγή…' },
+      cImpDone: 'Εισήχθησαν: {0} ασθενείς, {1} ερωτηματολόγια, {2} μετρήσεις κίνησης, {3} ακτινογραφίες ({4} εικόνες), {5} πρακτικά χειρουργείου.', cImpRun: 'Εισαγωγή…' },
     en: { cLoading: 'Connecting to the database…', cGateT: 'Doctor access', cGateLead: 'Only invited doctors have access. Every doctor of the team sees all patients.',
       cSignin: 'Sign in', cSignup: 'Sign up with invite', cSignupLead: 'Each invite link is valid for one doctor only.', cInvOk: '✓ Valid invite – complete the sign-up.', cInvOwner: ' (owner account)',
       cInvBad: 'The invite is invalid, expired or already used.', cDemoBtn: '🧪 Demo', cDemoHint: 'Demo mode with synthetic patients; data stays in this browser only.', cExitDemo: '☁️ Leave demo',
@@ -4610,7 +5042,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       cInvT: 'Invite a doctor (owner only)', cInvLead: 'Each link is for one doctor (single use) and expires in 14 days.', cExpired: 'expired', cExp: 'Expires', cTeam: 'Team doctors', cLogT: 'Access log',
       cImpT: 'Import local records', cImpLead: 'Copies the patients, questionnaires, movement measurements and X-ray studies (with their images) stored in this browser into the database. Patients whose code already exists in the database are skipped.',
       cImpLocal: 'In this browser: {0} patients ({1} synthetic demo), {2} questionnaires, {3} X-ray studies.', cImpDemo: 'Also include the synthetic demo patients', cImpBtn: 'Import into the database', cImpNone: 'No local records to import.',
-      cImpDone: 'Imported: {0} patients, {1} questionnaires, {2} movement measurements, {3} X-ray studies ({4} images).', cImpRun: 'Importing…' }
+      cImpDone: 'Imported: {0} patients, {1} questionnaires, {2} movement measurements, {3} X-ray studies ({4} images), {5} operative notes.', cImpRun: 'Importing…' }
   };
   Object.keys(S5).forEach(function (lg) { Object.keys(S5[lg]).forEach(function (k) { S[lg][k] = S5[lg][k]; }); });
   var CODE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/;
@@ -4669,7 +5101,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   function bindCloudPanels(u) {
     if ($('cImpGo')) $('cImpGo').onclick = function () {
       var b = this; b.disabled = true; $('cImpMsg').textContent = t('cImpRun');
-      cloudImport({ includeDemo: $('cImpDemo').checked }).then(function (r) { renderDash(); var m = $('cImpMsg'); if (m) { var d = $('cImport'); if (d) d.open = true; m.textContent = r.patients ? fmtT('cImpDone', r.patients, r.submissions, r.rom, r.xrays, r.images) : t('cImpNone'); } },
+      cloudImport({ includeDemo: $('cImpDemo').checked }).then(function (r) { renderDash(); var m = $('cImpMsg'); if (m) { var d = $('cImport'); if (d) d.open = true; m.textContent = r.patients ? fmtT('cImpDone', r.patients, r.submissions, r.rom, r.xrays, r.images, r.opnotes) : t('cImpNone'); } },
         function (e) { b.disabled = false; var m = $('cImpMsg'); if (m) m.textContent = cErr(e); });
     };
     if (u.role !== 'owner' || !$('cOwnerBody')) return;
@@ -4701,9 +5133,9 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   /** One-click import of this browser's localStorage/IndexedDB records into the database (signed-in doctor). */
   function cloudImport(o) {
     if (!CLOUD || !cloudUser) return Promise.reject(new Error('not signed in'));
-    var loc = load(KEY) || {}, have = {}, ids = {}, cnt = { patients: 0, submissions: 0, rom: 0, xrays: 0, images: 0 };
+    var loc = load(KEY) || {}, have = {}, ids = {}, cnt = { patients: 0, submissions: 0, rom: 0, xrays: 0, opnotes: 0, images: 0 };
     store.patients.forEach(function (p) { have[String(p.id).toUpperCase()] = 1; });
-    var taken = {}; ['submissions', 'rom', 'xrays'].forEach(function (c) { (store[c] || []).forEach(function (x) { taken[x.id] = 1; }); });
+    var taken = {}; ['submissions', 'rom', 'xrays', 'opnotes'].forEach(function (c) { (store[c] || []).forEach(function (x) { taken[x.id] = 1; }); });
     var clone = function (x) { return JSON.parse(JSON.stringify(x)); };
     (loc.patients || []).forEach(function (p) {
       if (!CODE_RE.test(String(p.id)) || have[String(p.id).toUpperCase()] || (!o.includeDemo && isSeedPt(p))) return;
@@ -4711,7 +5143,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
       store.patients.push(np); ids[p.id] = 1; have[String(p.id).toUpperCase()] = 1; cnt.patients++;
     });
     var films = [];
-    ['submissions', 'rom', 'xrays'].forEach(function (c) {
+    ['submissions', 'rom', 'xrays', 'opnotes'].forEach(function (c) {
       store[c] = store[c] || [];
       (loc[c] || []).forEach(function (x) { if (!ids[x.patientId]) return; var n = clone(x); if (taken[n.id]) n.id = n.id + '_' + Math.random().toString(36).slice(2, 6); taken[n.id] = 1; if (c === 'xrays') delete n.filmPath; store[c].push(n); cnt[c]++; if (c === 'xrays' && n.filmId && n.imgStored) films.push(n); });
     });
@@ -4736,7 +5168,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
   /** Patient on their own device (no doctor signed in): look the code up through the patient RPC; keep only what the screen needs. */
   function adoptPortal(r) {
     var pt = { id: r.code, procedure: r.procedure, surgeryDate: r.surgeryDate, optional: r.optional || [], camera: !!r.camera, demo: false };
-    store = { version: 4, portal: true, patients: [pt], submissions: (r.done || []).map(function (d, i) { return { id: 'p' + i, patientId: r.code, instrument: d.instrument, timepoint: d.timepoint, date: d.date, source: 'patient' }; }), rom: [], xrays: [] };
+    store = { version: 4, portal: true, patients: [pt], submissions: (r.done || []).map(function (d, i) { return { id: 'p' + i, patientId: r.code, instrument: d.instrument, timepoint: d.timepoint, date: d.date, source: 'patient' }; }), rom: [], xrays: [], opnotes: [] };
     return pt;
   }
   function cloudPatient(el, pt) {
@@ -5745,7 +6177,7 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
     if ($('xcInst')) $('xcInst').onchange = function () { s.inst = this.value; rerender(p); };
     $('xcPrint').onclick = function () { printReport(p); };
     // lazily render synthetic DEMO thumbnails (one per frame, then refresh the section)
-    var ids = Object.keys(pending); if (ids.length) setTimeout(function () { ids.forEach(function (id) { var q = pending[id].x; try { synthThumb(q); } catch (e) { FAILED[q.synth + ':' + q.side] = 1; } }); if ($('xcmp') && $('xcmp').dataset.pid === p.id) rerender(p); }, 20);
+    var pend = pending, ids = Object.keys(pend); if (ids.length) setTimeout(function () { ids.forEach(function (id) { var q = pend[id].x; try { synthThumb(q); } catch (e) { FAILED[q.synth + ':' + q.side] = 1; } }); if ($('xcmp') && $('xcmp').dataset.pid === p.id) rerender(p); }, 20);
   }
 
   // ---------- print report ----------
