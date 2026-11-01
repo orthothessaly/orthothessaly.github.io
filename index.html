@@ -510,6 +510,70 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   .chatrow{flex-wrap:wrap}.chatrow textarea{flex:1 1 100%;order:-1}.chatrow #chatSend{margin-left:auto}
 }
 @media print{#tab-chat,#tabChatBtn{display:none!important}}
+/* ===== Doctor questionnaire library + patient answers ===== */
+.qllibbtn{background:#e8f4f6;border:2px solid #0b5f73;color:#0b4a5a}
+.qlhead h2{margin-top:0}
+.qlfilters{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end}.qlfilters .fld{flex:1 1 200px;margin:0}.qlfilters input,.qlfilters select{width:100%;box-sizing:border-box}
+.qlgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.qlcard{display:flex;flex-direction:column;gap:5px;margin:0}.qlcard h3{margin:0;font-size:1.15rem;color:var(--brand)}
+.qlname{font-size:.9rem;font-weight:600}.qlpt{font-size:.86rem;color:#3d4f57}.qlmeta{font-size:.8rem}.qlprot{display:flex;flex-wrap:wrap;gap:4px}.qlcard button{align-self:flex-start;margin-top:auto}
+.qlbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.qlsp{flex:1}
+.qldoc summary{cursor:pointer;font-size:1rem;color:var(--brand)}
+.qldl{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px 16px;margin:10px 0 0}.qldl>div{margin:0;min-width:0}.qldl dd{overflow-wrap:anywhere}.qldl .srcnote{white-space:normal}.qldl>div.wide{grid-column:1/-1}
+.qldl dt{font-size:.76rem;font-weight:700;color:#5b6b73;text-transform:uppercase;letter-spacing:.02em}.qldl dd{margin:2px 0 0}
+.qlbands{margin:2px 0 0;padding-left:18px}.qlbands li{margin:2px 0}
+.qlopts{gap:12px;align-items:flex-end}.qlopts .fld{margin:0}.qlchk{display:flex;gap:6px;align-items:center;font-size:.88rem}
+.qlform{background:#fbfdfe;border:1px solid #dde7eb;padding:16px;margin-top:10px;gap:12px}
+.qlq{border-top:1px dashed #c9d6dc;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.qlq.cond{border-left:4px solid #f0b429;padding-left:10px}
+.qlqn{font-size:.78em;font-weight:800;color:#5b6b73;text-transform:uppercase;letter-spacing:.03em}.qlcond{color:#7a5a00;text-transform:none}
+.qlform .ptqtext{font-size:1.12em}
+.qlform .ptans button{cursor:default;min-height:48px;padding:8px 14px}.qlform .ptans button:hover{border-color:#9fb6bf}
+.qlform .ptans.compact button{min-height:52px}
+.qlpts{margin-left:auto;font-size:.78em;font-weight:700;color:#0b5f73;background:#e6eef1;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.qlnrs{display:flex;flex-wrap:wrap;gap:6px}.qlbox{display:inline-grid;place-items:center;min-width:2.1em;height:2.1em;border:2px solid #9fb6bf;border-radius:8px;font-weight:700;background:#fff}
+.qlvas{display:flex;align-items:center;gap:8px}.qlvas i{flex:1;height:0;border-top:3px solid #6f878f;position:relative}
+.qlhint{font-size:.78em;margin:0}.qlnum{font-weight:700}.qlact{font-size:.9em;background:#f3f8fa;border-radius:10px;padding:8px 10px}
+.qlclin{margin-top:10px;border:2px solid #dbeafe;border-radius:12px;padding:10px 12px;background:#f5f9ff}.qlclin h3{margin:0 0 6px;font-size:1em;color:#1e40af}
+.qlans .qlsub{border:1px solid #dde7eb;border-radius:10px;margin:6px 0;background:#fff}
+.qlsub>summary{cursor:pointer;padding:10px 12px;font-size:.92rem;list-style-position:inside}
+.qlsub[open]>summary{border-bottom:1px solid #e6eef1;background:#f4f8f9;border-radius:10px 10px 0 0}
+.qlsubbody{padding:8px 12px 12px}.qlsubscore{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.qlanstbl td:first-child{width:2.2em;text-align:center;color:#5b6b73}.qlanstbl td:last-child{width:3.5em;text-align:center}
+.qlanstbl .qlsecrow td{background:#eef5f7;font-weight:700;color:#0b4a5a;text-align:left!important}
+.qlanstbl tr.qlmiss td{color:#7a8a91}
+#subTable tr.qlclick{cursor:pointer}#subTable tr.qlclick:hover td{background:#eef6f8}
+/* doctor sign-in link under the patient ΑΜΚΑ login */
+.ptdoclink{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px 0 6px;padding-top:14px;border-top:1px solid #dde7eb;font-size:.82em;color:#5b6b73}
+.ptdoclink .ptlink{min-height:40px;padding:6px 12px;font-size:.95em;font-weight:600;border-width:1px}
+/* blank form print */
+.qlprint{position:fixed;inset:0;z-index:1200;background:#fff;overflow:auto;padding:12px}
+.qlprbar{display:flex;gap:8px;margin-bottom:10px}
+.qlprpage{max-width:190mm;margin:0 auto;font-size:11pt}
+.qlprhead{display:flex;justify-content:space-between;border-bottom:2px solid #0b4a5a;padding-bottom:4px;margin-bottom:6px}
+.qlprid{width:100%;border-collapse:collapse;margin:6px 0}.qlprid th{font-size:8.5pt;text-align:left;white-space:nowrap;padding:4px}.qlprid td{border-bottom:1px solid #333;width:30%}
+.qlprtick{font-size:9pt;font-style:italic;margin:4px 0}
+.qlprint .qlform{border:0;padding:0;background:none;font-size:10.5pt;gap:6px}
+.qlprint .ptans{gap:3px}.qlprint .ptans button{min-height:0;padding:2px 6px;border:0;font-weight:500}.qlprint .ptans.compact{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+.qlprint .ptinstr,.qlprint .ptintro{padding:4px 8px}.qlprint .pth1{font-size:15pt}.qlprint .qlhint{display:none}
+.qlprfoot{border-top:1px solid #b7c4ca;margin-top:6mm;font-size:7.5pt;color:#41545c;padding-top:2px}
+@media print{
+  body.ql-print>*:not(#qlPrintArea){display:none!important}
+  body.ql-print .qlprint{position:static;padding:0;overflow:visible}
+  body.ql-print .noprint{display:none!important}
+  .qlprint .qlq{break-inside:avoid}
+  .qlprint *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #tab-lib,#tabLibBtn{display:none!important}
+}
+@media (max-width:640px){
+  .qlform{padding:10px}.qldl{grid-template-columns:1fr}
+  .qlanstbl td,.qlanstbl th{font-size:.84rem;padding:5px}
+}
+.qlsubbody .tblwrap{max-height:none;overflow:visible}.qlsubbody .tbl{width:100%}
+.pane .card .qlform h3.ptqtext{font-size:1.2em;line-height:1.4;margin:0;font-weight:800;color:#14232b}
+.qlprint .ptans{flex-direction:row;flex-wrap:wrap;gap:1px 14px}.qlprint .ptans button{width:auto;gap:6px;font-size:10pt}.qlprint .ptchk{width:1.1em;height:1.1em}
+.qlprint .qlq{gap:2px;padding-top:4px}.qlprint .pane .card .qlform h3.ptqtext,.qlprint h3.ptqtext{font-size:10.5pt;margin:0;font-weight:700;color:#000}
+.qlprint .qlqn{font-size:7.5pt}.qlprint .ptpre{font-size:9pt}.qlprint .ptsec{font-size:10.5pt}.qlprint .qlform{gap:4px}.qlprint .ptancs{font-size:8.5pt}
 </style>
 </head>
 <body>
@@ -4488,7 +4552,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     [].forEach.call($('tabs').children, function (b) { b.classList.toggle('active', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
     var m = document.querySelector('main'); if (m) m.classList.toggle('hidden', name !== 'measure'); if ($('measCtx')) $('measCtx').classList.toggle('hidden', name !== 'measure');
     if (name === 'measure') window.dispatchEvent(new Event('ortho-measure-open'));
-    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if (name === 'chat' && window.__chat) window.__chat.show();
+    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show();
     if (name === 'proms') renderProms(); if (name === 'dash') renderDash(); if (name === 'xray' && window.__xray) window.__xray.render();
   }
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
@@ -4591,7 +4655,8 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     return '<span class="srcnote ' + esc(k) + '">' + esc(lab) + (s.ref ? ' · ' + (s.url ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">' + esc(s.ref) + ' ↗</a>' : esc(s.ref)) : '') + '</span>';
   }
   // ---------- joint wording (WOMAC, FJS-12 are used for knee and hip) ----------
-  function jointOf() { var pt = patientById(JP || ctx.pid); return pt && pt.procedure === 'THA' ? 'hip' : 'knee'; }
+  var JOVR = ''; // joint override for the doctor-side questionnaire library / answers view
+  function jointOf() { if (JOVR) return JOVR; var pt = patientById(JP || ctx.pid); return pt && pt.procedure === 'THA' ? 'hip' : 'knee'; }
   var JW = { knee: { '{JS}': 'στο γόνατό σας', '{JG}': 'του γονάτου σας', '{J}': 'γόνατο', '{JE}': 'knee' }, hip: { '{JS}': 'στο ισχίο σας', '{JG}': 'του ισχίου σας', '{J}': 'ισχίο', '{JE}': 'hip' } };
   function jt(s) { if (!s || s.indexOf('{J') < 0) return s; var m = JW[jointOf()]; return s.replace(/\{J[SGE]?\}/g, function (k) { return m[k] || k; }); }
   var tj = function (o) { return jt(tx(o)); };
@@ -4814,10 +4879,11 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
       '<label class="ptfld" for="pPid">' + esc(t('ptCode')) + '</label><input id="pPid" class="ptinput" list="pPidList" autocomplete="off" autocapitalize="characters" value="' + esc(ctx.pid) + '"><datalist id="pPidList">' + store.patients.map(function (p) { return '<option value="' + esc(p.id) + '"></option>'; }).join('') + '</datalist>' +
       '<div id="ptNew" class="ptnew hidden"><div class="ptnewt">' + esc(t('ptNewT')) + '</div><label class="ptcheck"><input type="checkbox" id="pNewOk"> ' + esc(t('ptNewOk')) + '</label><label class="ptfld" for="pProc">' + esc(t('ptProc')) + '</label><select id="pProc" class="ptinput">' + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), ctx.procedure === k); }).join('') + '</select>' +
       '<label class="ptfld" for="pSurg">' + esc(t('ptSurg')) + '</label><input type="date" id="pSurg" class="ptinput" value="' + esc(ctx.surgery) + '"></div>' +
-      '<p class="ptmsg" id="pMsg" role="alert"></p><button class="ptbig" id="pStart">' + esc(t('ptCont')) + ' →</button>';
+      '<p class="ptmsg" id="pMsg" role="alert"></p><button class="ptbig" id="pStart">' + esc(t('ptCont')) + ' →</button>' + docLinkHtml();
     el.innerHTML = h;
     var upd = function () { var v = $('pPid').value.trim(); $('ptNew').classList.toggle('hidden', !v || !!findPatient(v)); $('pMsg').textContent = ''; };
     $('pPid').oninput = upd; upd();
+    bindDocLink();
     $('pPid').onkeydown = function (e) { if (e.key === 'Enter') $('pStart').click(); };
     $('pStart').onclick = function () {
       var id = $('pPid').value.trim(); if (!id) { $('pMsg').textContent = t('ptNeedCode'); $('pPid').focus(); return; }
@@ -4825,6 +4891,19 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
       else if (!$('pNewOk').checked) { $('pMsg').textContent = fmtT('ptUnknown', id); return; }
       if (!found) { var cu = currentUser(); store.patients.push({ id: id, procedure: $('pProc').value, surgeryDate: $('pSurg').value || today(), demo: true, created: today(), enteredBy: cu ? { email: cu.email, name: cu.name } : { email: null, name: lang() === 'el' ? 'Αυτο-καταχώριση ασθενή (demo)' : 'Patient self-entry (demo)' } }); persist(); }
       var pt = patientById(id); ctx.pid = id; ctx.procedure = pt.procedure; ctx.tp = currentTp(pt) || ''; prun = null; savePst(); syncPatientMeasure(pt); renderProms(); ptFocus(el);
+    };
+  }
+  // Secondary 'Σύνδεση ιατρού' under the patient ΑΜΚΑ sign-in (opens the normal doctor login; lands on the questionnaire library)
+  function docLinkHtml() {
+    var u = currentUser(), en = lang() === 'en';
+    return '<div class="ptdoclink" id="ptDocBox">' + (u ? '<span>' + esc(en ? 'Signed in as a doctor.' : 'Έχετε συνδεθεί ως ιατρός.') + '</span><button class="ptlink" id="ptDocLib">📚 ' + esc(en ? 'Questionnaire library' : 'Βιβλιοθήκη ερωτηματολογίων') + '</button>'
+      : '<span>' + esc(en ? 'Are you a doctor?' : 'Είστε ιατρός;') + '</span><button class="ptlink" id="ptDocLogin">🩺 ' + esc(en ? 'Doctor sign-in' : 'Σύνδεση ιατρού') + '</button>') + '</div>';
+  }
+  function bindDocLink() {
+    if ($('ptDocLib')) $('ptDocLib').onclick = function () { showTab('lib'); window.scrollTo(0, 0); };
+    if ($('ptDocLogin')) $('ptDocLogin').onclick = function () {
+      libAfterLogin = true; showTab('dash'); renderDash(); window.scrollTo(0, 0);
+      setTimeout(function () { var f = $('cEmail') || $('gEmail'); if (f) f.focus(); }, 30);
     };
   }
   function ptHome(el, pt) {
@@ -5172,10 +5251,11 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   function isLocked() { var s = lockState(); return s.until && s.until > Date.now(); }
   function noteFail(locked) { var s = lockState(); if (locked) s.until = Date.now() + 9e5; else { s.fails.push(Date.now()); if (s.fails.length >= 5) { s.until = Date.now() + 9e5; s.fails = []; } } save(LOCKKEY, s); }
   function clearFails() { try { localStorage.removeItem(LOCKKEY); } catch (e) {} }
-  var dsel = { proc: '', inst: '', pid: '', tp: '' }, dashProtoOpen = false;
+  var dsel = { proc: '', inst: '', pid: '', tp: '' }, dashProtoOpen = false, libAfterLogin = false;
   function renderDash() {
     var u = currentUser();
     chatSync(u);
+    if (u && libAfterLogin && !(CLOUD && cloudBusy)) { libAfterLogin = false; setTimeout(function () { showTab('lib'); window.scrollTo(0, 0); }, 0); }
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
     if (!u && CLOUD && cloudBusy) { $('dashGate').innerHTML = '<div class="card" id="cLoading">⏳ ' + esc(t('cLoading')) + '</div>'; $('dashBody').innerHTML = ''; return; }
     if (!u) { $('dashBody').innerHTML = ''; closeRun(); renderGate(); return; }
@@ -5185,7 +5265,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     var instIds = Object.keys(I).filter(function (id) { return !dsel.proc || PROC[dsel.proc].recommended.concat(PROC[dsel.proc].other).indexOf(id) >= 0; });
     if (dsel.inst && instIds.indexOf(dsel.inst) < 0) dsel.inst = '';
     var h = '<div class="card"><div class="row" style="justify-content:space-between;margin:0"><span>' + esc(t('signedAs')) + ' <b>' + esc(u.name) + '</b> (' + esc(u.email) + ') · <span class="pill">' + esc(u.role === 'owner' ? t('owner') : t('doctor')) + '</span> ' + (CLOUD ? '<span class="pill yes" id="cSync" title="' + esc(t('cDbT')) + '">' + esc(syncLabel()) + '</span>' : '<span class="pill demo">' + esc(lang() === 'el' ? 'ΠΡΟΣΟΜΟΙΩΣΗ' : 'SIMULATION') + '</span>') + '</span><span><button class="ghost small" id="dDemoMeas">' + esc(t('demoMeas')) + '</button> <button id="dOut">' + esc(t('logout')) + '</button></span></div></div>';
-    h += '<div class="card npbar"><button class="primary npbig" id="dNewPt">' + esc(t('npBtn')) + '</button>' + (store.patients.length ? '<label class="fld npsearch">🔎 ' + esc(t('npSearch')) + '<input id="dSearch" type="search" autocomplete="off" value="' + esc(dq) + '"></label>' : '') + '</div>';
+    h += '<div class="card npbar"><button class="primary npbig" id="dNewPt">' + esc(t('npBtn')) + '</button><button class="npbig qllibbtn" id="dLib">📚 ' + esc(lang() === 'en' ? 'Questionnaire library' : 'Βιβλιοθήκη ερωτηματολογίων') + '</button>' + (store.patients.length ? '<label class="fld npsearch">🔎 ' + esc(t('npSearch')) + '<input id="dSearch" type="search" autocomplete="off" value="' + esc(dq) + '"></label>' : '') + '</div>';
     h += npHtml();
     if (!store.patients.length && !np.open) h += '<div class="card npempty" id="dEmpty"><p>👥 ' + esc(t('npEmpty')) + '</p><button class="primary" id="dNewPt2">' + esc(t('npBtn')) + '</button></div>';
     if (CLOUD) h += cloudPanels(u); else if (u.role === 'owner') h += ownerPanel();
@@ -5213,10 +5293,13 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     $('fInst').onchange = function () { dsel.inst = this.value; renderDash(); };
     $('dCsv').onclick = exportCsv;
     bindNewPatient();
+    if ($('dLib')) $('dLib').onclick = function () { showTab('lib'); window.scrollTo(0, 0); };
+    if (window.__qlib) window.__qlib.bindDash(sp);
     document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; dsel.tp = ''; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
     if (sp && pts.indexOf(sp) >= 0) { bindCamera(sp); bindAssign(sp); }
     if (sp && pts.indexOf(sp) >= 0 && window.__xcmp) window.__xcmp.bind(sp);
     if (sp && pts.indexOf(sp) >= 0 && window.__opnote) window.__opnote.bind(sp);
+    if (sp && pts.indexOf(sp) >= 0 && window.__qlib) window.__qlib.bindAnswers(sp);
     var dp = $('dashProto'); dp.ontoggle = function () { dashProtoOpen = dp.open; }; bindProtocol(dp, renderDash);
     if (CLOUD) bindCloudPanels(u); else bindOwner();
   }
@@ -5229,6 +5312,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(ptLabel(p)) + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</h2>' + (p.amka || ptName(p) ? '<div class="ptident" id="ptIdent">' + (p.amka ? esc(t('npAmka')) + ' <b id="ptAmkaFull">' + esc(p.amka) + '</b>' : '') + (p.side ? ' · ' + esc(t('npSide')) + ' ' + esc(t('side' + p.side)) : '') + (p.age ? ' · ' + esc(t('npAge')) + ' ' + esc(p.age) : '') + ' · <span class="muted">' + esc(t('npCode')) + ' ' + esc(p.id) + '</span></div>' : '') + '<div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate || '—') + '</div>';
     h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(p.surgeryDate ? P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to) : '—') : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
       rec.map(function (i) { var opt = prot.optional.indexOf(i) >= 0; return '<tr><td><b>' + esc(I[i].short) + '</b>' + (opt ? ' <span class="muted">(' + esc(t('optional')) + ')</span>' : '') + '</td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + esc(stName(st)) + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend2')) + '</div>';
+    if (window.__qlib) h += window.__qlib.answersHtml(p);
     h += assignHtml(p);
     if (window.__opnote) h += window.__opnote.html(p);
     h += cameraHtml(p);
@@ -5333,8 +5417,9 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   function clearInviteUrl() { if (urlInvite) { urlInvite = null; try { history.replaceState(null, '', location.pathname); } catch (er) {} } }
   function chatSync(u) { // doctors-only team chat: tab visible only to a signed-in doctor
     if (u === undefined) u = currentUser();
-    if (!u && curTab === 'chat') showTab('proms');
+    if (!u && (curTab === 'chat' || curTab === 'lib')) showTab('proms');
     if (window.__chat) window.__chat.sync(u, CLOUD);
+    if (window.__qlib) window.__qlib.sync(u);
   }
   function afterLogin(u) {
     cloudUser = u; cloudBusy = true; renderDash();
@@ -5533,9 +5618,286 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   i18nStatic();
   showTab(urlInvite ? 'dash' : 'proms');
   cloudInit();
-  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); }, refreshUser: function () { chatSync(); if (curTab === 'dash') renderDash(); },
+  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
+    lib: { I: I, P: P, PR: PR, PROC: PROC, ROLE: ROLE, TPS: TPS, TP_ORDER: TP_ORDER, tx: tx, jt: jt, setJoint: function (j) { JOVR = j || ''; }, variant: variant, srcNote: srcNote, thrText: thrText, tpName: tpName,
+      fmtScore: fmtScore, subsHtml: subsHtml, bandHtml: bandHtml, actLabel: actLabel, ptTitle: ptTitle, ptInstr: function (id) { return PT_INSTR[id] || I[id].instructions; }, abbr: PT_ABBR, noSec: PT_NOSEC, srcLab: srcLab, esc: esc, lang: lang,
+      get curTab() { return curTab; }, patientById: function (id) { return patientById(id); } }, refreshUser: function () { chatSync(); if (curTab === 'dash') renderDash(); },
     patient: { get ctx() { return ctx; }, get run() { return prun; }, get drafts() { return drafts; }, title: ptTitle, items: function (id) { return ptItems(id, prun && prun.inst === id ? prun.ans : {}); }, open: ptOpen, currentTp: currentTp,
       preview: function (id, itemId) { var its = I[id].items.filter(function (it) { return !it.clinician; }), k = its.map(function (x) { return x.id; }).indexOf(itemId); var ans = {}; its.forEach(function (x) { if (x.showIf && x.id === itemId) { I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[y.options.length - 1].v; }); } }); var vis = ptItems(id, ans), vi = vis.map(function (x) { return x.id; }).indexOf(itemId); if (vi < 0) { ans = {}; I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[0].v; }); vis = ptItems(id, ans); vi = vis.map(function (x) { return x.id; }).indexOf(itemId); } if (vi < 0) return false; prun = { inst: id, screen: 'q', idx: vi, ans: ans, preview: true }; renderProms(); return k >= 0; } } };
+})();
+</script>
+<!-- ===== Doctor-only questionnaire library (preview / blank A4) + patient answers item-by-item ===== -->
+<script id="ortho-qlib">
+(function () {
+  'use strict';
+  // ===== Doctor-only questionnaire library (Βιβλιοθήκη ερωτηματολογίων) + patient answers item-by-item =====
+  // Library: every PROM in the app written out exactly as the patient sees it (read-only preview; nothing is saved), doctor-side
+  // scoring/interpretation/protocol info, blank A4 print. Answers: each submission of a patient expands to question + chosen answer.
+  var A = window.__orthoProms; if (!A || !A.lib) return;
+  var X = A.lib, I = X.I, P = X.P, esc = X.esc, tx = X.tx, jt = X.jt;
+  var $ = function (id) { return document.getElementById(id); };
+  var en = function () { return X.lang() === 'en'; };
+  var S = {
+    el: { tab: '📚 Βιβλιοθήκη ερωτηματολογίων', T: '📚 Βιβλιοθήκη ερωτηματολογίων', lead: 'Όλα τα ερωτηματολόγια της εφαρμογής, γραμμένα ακριβώς όπως τα βλέπει ο ασθενής. Μόνο για ιατρούς – προεπισκόπηση, δεν αποθηκεύεται τίποτα.',
+      search: 'Αναζήτηση', joint: 'Περιοχή', proto: 'Πρωτόκολλο', all: 'Όλα', n: '{0} ερωτηματολόγια', open: '👁 Προβολή', back: '← Όλα τα ερωτηματολόγια', print: '🖨 Εκτύπωση κενού εντύπου (A4)',
+      qs: 'ερωτήσεις', q1: 'ερώτηση', clinQs: 'πεδία ιατρού', range: 'Εύρος', hi: 'υψηλότερο = καλύτερο', lo: 'χαμηλότερο = καλύτερο', core: 'βασικό', optional: 'προαιρετικό', none: 'Κανένα αποτέλεσμα.',
+      docT: '🩺 Για τον ιατρό (δεν εμφανίζεται στον ασθενή)', fullName: 'Πλήρης ονομασία', greek: 'Ελληνική απόδοση', items: 'Ερωτήσεις', scoreRange: 'Εύρος βαθμολογίας', rule: 'Κανόνας βαθμολόγησης', interp: 'Ερμηνεία βαθμολογίας',
+      thr: 'Όρια κλινικής σημασίας (MCID / PASS)', protos: 'Πρωτόκολλα (ESSKA · EFORT/ISAR)', role: 'Ρόλος', inProto: 'Θέση', when: 'Χρονικά σημεία', notInProto: 'Δεν ανήκει σε πρωτόκολλο της εφαρμογής (διαθέσιμο για επιλογή μόνο αν προστεθεί).',
+      ptT: '📱 Όπως το βλέπει ο ασθενής', tp: 'Χρονικό σημείο', jt: 'Άρθρωση', knee: 'Γόνατο', hip: 'Ισχίο', pts: 'Εμφάνιση βαθμών ανά απάντηση (μόνο για ιατρό)', ptsU: 'βαθμ.',
+      cond: 'Εμφανίζεται μόνο ανάλογα με προηγούμενη απάντηση', optQ: 'προαιρετική', qN: 'Ερώτηση {0}', clinT: '🩺 Πεδία που συμπληρώνει ο ιατρός στο ιατρείο (ο ασθενής δεν τα βλέπει)', act: 'Δραστηριότητα (επιλογή από λίστα)',
+      slider: 'Ο ασθενής σύρει τον δείκτη', numHint: 'Ο ασθενής πληκτρολογεί αριθμό', notPre: 'Δεν εμφανίζεται προεγχειρητικά.',
+      ansT: '📝 Απαντήσεις ερωτηματολογίων', ansLead: 'Πατήστε μια συμπλήρωση για να δείτε κάθε ερώτηση και την απάντηση του ασθενούς.', ansNone: 'Δεν υπάρχουν ακόμα συμπληρωμένα ερωτηματολόγια.',
+      score: 'Βαθμολογία', noAns: '— χωρίς απάντηση', colQ: 'Ερώτηση', colA: 'Απάντηση', colP: 'Βαθμοί', clin: 'ιατρός', noStored: 'Δεν έχουν αποθηκευτεί απαντήσεις ανά ερώτηση για αυτή τη συμπλήρωση (μόνο η βαθμολογία).', preview: 'Δείτε το ερωτηματολόγιο', expandAll: 'Άνοιγμα όλων', collapseAll: 'Κλείσιμο όλων',
+      patientSrc: 'ασθενής', name: 'Ονοματεπώνυμο', amka: 'ΑΜΚΑ', date: 'Ημερομηνία', printFoot: 'Κενό έντυπο – OrthoThessaly', tick: 'Σημειώστε ένα κουτί σε κάθε ερώτηση.', jointN: { knee: 'Γόνατο', hip: 'Ισχίο', shoulder: 'Ώμος', elbow: 'Αγκώνας', 'knee/hip': 'Γόνατο / Ισχίο', generic: 'Γενικό', upper: 'Άνω άκρο' } },
+    en: { tab: '📚 Questionnaire library', T: '📚 Questionnaire library', lead: 'Every questionnaire in the app, written out exactly as the patient sees it. Doctors only – preview, nothing is saved.',
+      search: 'Search', joint: 'Region', proto: 'Protocol', all: 'All', n: '{0} questionnaires', open: '👁 View', back: '← All questionnaires', print: '🖨 Print blank form (A4)',
+      qs: 'questions', q1: 'question', clinQs: 'clinician fields', range: 'Range', hi: 'higher = better', lo: 'lower = better', core: 'core', optional: 'optional', none: 'No results.',
+      docT: '🩺 For the doctor (not shown to the patient)', fullName: 'Full name', greek: 'Greek version', items: 'Items', scoreRange: 'Score range', rule: 'Scoring rule', interp: 'Score interpretation',
+      thr: 'Clinical significance (MCID / PASS)', protos: 'Protocols (ESSKA · EFORT/ISAR)', role: 'Role', inProto: 'Place', when: 'Timepoints', notInProto: 'Not part of an app protocol.',
+      ptT: '📱 As the patient sees it', tp: 'Timepoint', jt: 'Joint', knee: 'Knee', hip: 'Hip', pts: 'Show points per answer (doctor only)', ptsU: 'pts',
+      cond: 'Shown only depending on a previous answer', optQ: 'optional', qN: 'Question {0}', clinT: '🩺 Fields completed by the doctor in clinic (not shown to the patient)', act: 'Activity (chosen from a list)',
+      slider: 'The patient moves a slider', numHint: 'The patient types a number', notPre: 'Not shown pre-operatively.',
+      ansT: '📝 Questionnaire answers', ansLead: 'Tap a submission to see each question and the patient’s answer.', ansNone: 'No questionnaires completed yet.',
+      score: 'Score', noAns: '— not answered', colQ: 'Question', colA: 'Answer', colP: 'Points', clin: 'clinician', noStored: 'No item answers were stored for this submission (score only).', preview: 'View the questionnaire', expandAll: 'Expand all', collapseAll: 'Collapse all',
+      patientSrc: 'patient', name: 'Full name', amka: 'AMKA', date: 'Date', printFoot: 'Blank form – OrthoThessaly', tick: 'Tick one box for each question.', jointN: { knee: 'Knee', hip: 'Hip', shoulder: 'Shoulder', elbow: 'Elbow', 'knee/hip': 'Knee / Hip', generic: 'Generic', upper: 'Upper limb' } }
+  };
+  var t = function (k) { var v = S[en() ? 'en' : 'el'][k]; return v == null ? k : v; };
+  var fmt = function (k) { var a = arguments; return t(k).replace(/\{(\d)\}/g, function (m, i) { return a[+i + 1]; }); };
+  var ORG = { TKA: 'EFORT/ISAR', THA: 'EFORT/ISAR', ACL: 'ESSKA (Panther)', UL: 'ESSKA-ESA · SECEC · LROI' };
+  var IDS = Object.keys(I);
+  var st = { sel: '', q: '', joint: '', proto: '', tp: '1y', jt: 'knee', pts: false, open: {} };
+
+  // ---------- pure helpers (also used by tests through window.__qlib) ----------
+  function protosOf(id) { var o = []; Object.keys(X.PR).forEach(function (k) { var pr = X.PR[k]; if (pr.core.indexOf(id) >= 0) o.push({ proc: k, kind: 'core' }); else if (pr.optional.indexOf(id) >= 0) o.push({ proc: k, kind: 'optional' }); }); return o; }
+  function patientItems(id, tp) { return I[id].items.filter(function (it) { return !it.clinician && !(it.notPre && tp === 'pre'); }); }
+  function clinItems(id) { return I[id].items.filter(function (it) { return it.clinician; }); }
+  function hasTpVariants(id) { return I[id].items.some(function (it) { return it.preop || it.early || it.notPre; }); }
+  /** Score bands sampled over the range (bands are functions of the total). */
+  function bands(id) {
+    var inst = I[id]; if (!inst.band || inst.primary !== 'total' || !inst.range) return [];
+    var out = [], lo = inst.range[0], hi = inst.range[1], step = hi - lo > 20 ? 1 : 0.5;
+    for (var v = lo; v <= hi + 1e-9; v += step) { var b = null; try { b = inst.band({ total: v, subscales: {} }); } catch (e) {} var lab = b ? tx(b.label) : ''; if (!lab) continue; var last = out[out.length - 1]; if (last && last.label === lab) last.to = v; else out.push({ from: v, to: v, label: lab, cls: b.cls }); }
+    return out;
+  }
+  /** Patient-facing label(s) of a stored answer value. */
+  function answerText(it, v, tp) {
+    if (v == null) return null;
+    var vr = X.variant(it, tp);
+    if (it.type === 'choice') { var ls = (vr.options || []).filter(function (o) { return o.v === v; }).map(function (o) { return jt(tx(o.label)); }); return ls.length ? ls.join(' / ') : String(v); }
+    if (it.type === 'multi') return (Array.isArray(v) ? v : [v]).map(function (x) { var o = (vr.options || []).filter(function (q) { return q.v === x; })[0]; return o ? jt(tx(o.label)) : String(x); }).join(', ');
+    if (it.type === 'nrs' || it.type === 'vas') return v + ' / ' + it.max + (it.anchors ? ' (' + it.min + ' = ' + jt(tx(it.anchors[0])) + ', ' + it.max + ' = ' + jt(tx(it.anchors[1])) + ')' : '');
+    return v + (it.unit ? ' ' + it.unit : '');
+  }
+
+  // ---------- tab + pane ----------
+  var btn = document.createElement('button'); btn.setAttribute('role', 'tab'); btn.dataset.tab = 'lib'; btn.id = 'tabLibBtn'; btn.className = 'hidden';
+  var tabs = $('tabs'); if (tabs) tabs.insertBefore(btn, $('tabChatBtn') || $('tabMeasureBtn') || null);
+  var pane = document.createElement('section'); pane.className = 'pane hidden'; pane.id = 'tab-lib'; pane.setAttribute('aria-label', 'Questionnaire library');
+  var xr = $('tab-xray'); if (xr && xr.parentNode) xr.parentNode.insertBefore(pane, xr.nextSibling); else document.body.appendChild(pane);
+  var user = null;
+  function sync(u) { user = u || null; btn.classList.toggle('hidden', !user); btn.textContent = t('tab'); if (!user) pane.innerHTML = ''; }
+  function show() { if (!user) return; render(); }
+
+  // ---------- library list ----------
+  function matches(id) {
+    var inst = I[id], q = st.q.trim().toLowerCase();
+    if (st.joint && !(inst.joint === st.joint || (st.joint !== 'generic' && inst.joint === 'knee/hip' && (st.joint === 'knee' || st.joint === 'hip')))) return false;
+    if (st.proto && !protosOf(id).some(function (p) { return p.proc === st.proto; })) return false;
+    if (!q) return true;
+    return [inst.short, tx(inst.name), X.ptTitle(id), X.abbr[id] || '', id].join(' ').toLowerCase().indexOf(q) >= 0;
+  }
+  function metaLine(id) {
+    var inst = I[id], n = patientItems(id, 'post').length, c = clinItems(id).length;
+    return n + ' ' + (n === 1 ? t('q1') : t('qs')) + (c ? ' + ' + c + ' ' + t('clinQs') : '') + ' · ' + t('range') + ' ' + inst.range[0] + '–' + inst.range[1] + ' (' + (inst.better === 'low' ? t('lo') : t('hi')) + ') · ' + (t('jointN')[inst.joint] || inst.joint);
+  }
+  function protoPills(id) { return protosOf(id).map(function (p) { return '<span class="pill ' + (p.kind === 'core' ? 'yes' : '') + '">' + esc(p.proc) + ' · ' + esc(t(p.kind)) + '</span>'; }).join(' '); }
+  function listHtml() {
+    var ids = IDS.filter(matches), jopts = ['', 'knee', 'hip', 'knee/hip', 'shoulder', 'elbow', 'upper', 'generic'];
+    var h = '<div class="card qlhead"><h2>' + esc(t('T')) + '</h2><p>' + esc(t('lead')) + '</p><div class="qlfilters">' +
+      '<label class="fld">🔎 ' + esc(t('search')) + '<input id="qlSearch" type="search" autocomplete="off" value="' + esc(st.q) + '" placeholder="OKS, KOOS, Lysholm…"></label>' +
+      '<label class="fld">' + esc(t('joint')) + '<select id="qlJoint">' + jopts.map(function (j) { return '<option value="' + j + '"' + (st.joint === j ? ' selected' : '') + '>' + esc(j ? t('jointN')[j] : t('all')) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="fld">' + esc(t('proto')) + '<select id="qlProto"><option value="">' + esc(t('all')) + '</option>' + Object.keys(X.PR).map(function (k) { return '<option value="' + k + '"' + (st.proto === k ? ' selected' : '') + '>' + esc(k + ' – ' + tx(X.PROC[k].name)) + '</option>'; }).join('') + '</select></label>' +
+      '</div><p class="muted" id="qlCount">' + esc(fmt('n', ids.length)) + '</p></div>';
+    h += '<div class="qlgrid" id="qlGrid">' + (ids.length ? ids.map(function (id) {
+      return '<article class="card qlcard" data-ql="' + id + '"><h3><b>' + esc(I[id].short) + '</b></h3><div class="qlname">' + esc(tx(I[id].name)) + '</div><div class="qlpt">«' + esc(X.ptTitle(id)) + '»</div><div class="muted qlmeta">' + esc(metaLine(id)) + '</div><div class="qlprot">' + protoPills(id) + '</div><button class="primary small" data-qlopen="' + id + '">' + esc(t('open')) + '</button></article>';
+    }).join('') : '<p class="muted">' + esc(t('none')) + '</p>') + '</div>';
+    return h;
+  }
+
+  // ---------- one questionnaire ----------
+  function docHtml(id) {
+    var inst = I[id], pr = protosOf(id), bs = bands(id), thr = [];
+    pr.forEach(function (p) { var x = X.thrText(id, p.proc); if (x && thr.indexOf(x) < 0) thr.push(x); });
+    var n = patientItems(id, 'post').length, c = clinItems(id).length;
+    var h = '<details class="card qldoc" id="qlDoc" open><summary><b>' + esc(t('docT')) + '</b></summary><dl class="qldl">' +
+      '<div><dt>' + esc(t('fullName')) + '</dt><dd>' + esc(tx(inst.name)) + '</dd></div>' +
+      '<div><dt>' + esc(t('greek')) + '</dt><dd>' + X.srcNote(id) + '</dd></div>' +
+      '<div><dt>' + esc(t('items')) + '</dt><dd>' + n + ' ' + esc(t('qs')) + (c ? ' + ' + c + ' ' + esc(t('clinQs')) : '') + '</dd></div>' +
+      '<div><dt>' + esc(t('scoreRange')) + '</dt><dd id="qlRange">' + inst.range[0] + '–' + inst.range[1] + ' (' + esc(inst.better === 'low' ? t('lo') : t('hi')) + ')</dd></div>' +
+      '<div class="wide"><dt>' + esc(t('rule')) + '</dt><dd id="qlRule">' + esc(tx(inst.scoring)) + '</dd></div>';
+    if (bs.length) h += '<div class="wide"><dt>' + esc(t('interp')) + '</dt><dd><ul class="qlbands" id="qlBands">' + bs.map(function (b) { return '<li><span class="band ' + esc(b.cls) + '">' + esc(b.label) + '</span> ' + b.from + (b.to !== b.from ? '–' + b.to : '') + '</li>'; }).join('') + '</ul></dd></div>';
+    if (thr.length) h += '<div class="wide"><dt>' + esc(t('thr')) + '</dt><dd><ul class="qlbands" id="qlThr">' + thr.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></dd></div>';
+    h += '<div class="wide"><dt>' + esc(t('protos')) + '</dt><dd id="qlProtos">' + (pr.length ? '<div class="tblwrap"><table class="tbl"><tr><th>' + esc(t('proto')) + '</th><th>' + esc(t('inProto')) + '</th><th>' + esc(t('role')) + '</th><th>' + esc(t('when')) + '</th></tr>' + pr.map(function (p) {
+      var tps = X.PR[p.proc].tps.map(function (x) { return x.id; }).filter(function (tp) { return P.appliesAt(id, tp, p.proc); }).map(X.tpName).join(', ');
+      return '<tr><td><b>' + esc(p.proc) + '</b> · ' + esc(tx(X.PROC[p.proc].name)) + '<br><span class="muted">' + esc(ORG[p.proc] || '') + '</span></td><td>' + esc(t(p.kind)) + '</td><td>' + esc(tx((X.ROLE[p.proc] || {})[id] || '')) + '</td><td>' + esc(tps) + '</td></tr>';
+    }).join('') + '</table></div>' : esc(t('notInProto'))) + '</dd></div>';
+    if (inst.copyright) h += '<div class="wide"><dt>©</dt><dd class="muted">' + esc(inst.copyright) + '</dd></div>';
+    return h + '</dl></details>';
+  }
+  function optsHtml(it, vr, clin) {
+    return vr.options.map(function (o) { return '<button type="button" tabindex="-1" aria-disabled="true"><span class="ptchk box" aria-hidden="true"></span><span class="ptlab">' + esc(jt(tx(o.label))) + '</span>' + (st.pts || clin ? '<span class="qlpts">' + o.v + ' ' + esc(t('ptsU')) + '</span>' : '') + '</button>'; }).join('');
+  }
+  function itemHtml(it, k, tp, clin) {
+    var vr = X.variant(it, tp), h = '<section class="qlq' + (it.showIf ? ' cond' : '') + '" data-item="' + esc(it.id) + '"><div class="qlqn">' + esc(fmt('qN', k)) + (it.optional ? ' · <span class="ptopt">(' + esc(t('optQ')) + ')</span>' : '') + (it.showIf ? ' · <span class="qlcond">↳ ' + esc(t('cond')) + '</span>' : '') + '</div>';
+    if (it.pre) h += '<div class="ptpre">' + esc(jt(tx(it.pre))) + '</div>';
+    h += '<h3 class="ptqtext">' + esc(jt(tx(vr.text))) + '</h3>';
+    if (it.activities) h += '<div class="qlact"><b>' + esc(t('act')) + ':</b> ' + esc(it.activities.map(X.actLabel).join(' · ')) + '</div>';
+    if (it.type === 'choice' || it.type === 'multi') {
+      if (it.compact && it.anchors) h += '<div class="ptancs"><span>' + esc(jt(tx(it.anchors[0]))) + '</span><span>' + esc(jt(tx(it.anchors[1]))) + '</span></div>';
+      h += '<div class="ptans' + (it.compact ? ' compact' : '') + '">' + optsHtml(it, vr, clin) + '</div>';
+      if (!it.compact && it.anchors) h += '<div class="ptancs"><span>' + esc(jt(tx(it.anchors[0]))) + '</span><span>' + esc(jt(tx(it.anchors[1]))) + '</span></div>';
+    } else if (it.type === 'nrs') {
+      var b = ''; for (var x = it.min; x <= it.max; x++) b += '<span class="qlbox">' + x + '</span>';
+      h += '<div class="qlnrs">' + b + '</div>' + (it.anchors ? '<div class="ptancs"><span>' + it.min + ' – ' + esc(jt(tx(it.anchors[0]))) + '</span><span>' + it.max + ' – ' + esc(jt(tx(it.anchors[1]))) + '</span></div>' : '') + '<p class="muted qlhint">' + esc(t('slider')) + ' (' + it.min + '–' + it.max + ')</p>';
+    } else if (it.type === 'vas') {
+      h += '<div class="qlvas"><span>' + it.min + '</span><i></i><span>' + it.max + '</span></div>' + (it.anchors ? '<div class="ptancs"><span>' + it.min + ' – ' + esc(jt(tx(it.anchors[0]))) + '</span><span>' + it.max + ' – ' + esc(jt(tx(it.anchors[1]))) + '</span></div>' : '') + '<p class="muted qlhint">' + esc(t('slider')) + ' (' + it.min + '–' + it.max + ')</p>';
+    } else if (it.type === 'number') h += '<div class="qlnum">________ ' + esc(it.unit || '') + ' <span class="muted">(' + it.min + '–' + it.max + ')</span></div><p class="muted qlhint">' + esc(t('numHint')) + '</p>';
+    return h + '</section>';
+  }
+  /** Patient-facing full text of one instrument (headings and intros printed when they change, as in the patient app). */
+  function formHtml(id, tp, clinicianToo) {
+    var its = patientItems(id, tp), h = '', sec = '', intro = '', k = 0, ins = X.ptInstr(id);
+    h += '<h2 class="pth1" id="qlPtTitle">' + esc(X.ptTitle(id)) + (X.abbr[id] ? ' <span class="ptabbr">(' + esc(X.abbr[id]) + ')</span>' : '') + '</h2>';
+    if (ins) h += '<div class="ptinstr" id="qlInstr">' + esc(jt(tx(ins))) + '</div>';
+    its.forEach(function (it) {
+      var vr = X.variant(it, tp), s2 = it.sec && tx(it.sec) !== tx(vr.text) && !X.noSec[id + '.' + it.id] ? jt(tx(it.sec)) : '', i2 = vr.intro ? jt(tx(vr.intro)) : '';
+      if (s2 && s2 !== sec) h += '<div class="ptsec">' + esc(s2) + '</div>'; sec = s2 || sec;
+      if (i2 && i2 !== intro) h += '<div class="ptintro">' + esc(i2) + '</div>'; intro = i2 || intro;
+      h += itemHtml(it, ++k, tp, false);
+    });
+    var cl = clinItems(id);
+    if (clinicianToo && cl.length) { h += '<div class="qlclin" id="qlClin"><h3>' + esc(t('clinT')) + '</h3>'; cl.forEach(function (it, i) { h += itemHtml(it, i + 1, tp, true); }); h += '</div>'; }
+    if (I[id].copyright) h += '<div class="copyright">' + esc(I[id].copyright) + '</div>';
+    return h;
+  }
+  function withJoint(j, f) { X.setJoint(j); try { return f(); } finally { X.setJoint(''); } }
+  function detailHtml(id) {
+    var inst = I[id], tpv = hasTpVariants(id), jtv = !!inst.jointTemplate || /\{J/.test(JSON.stringify(inst.items.map(function (x) { return x.text; })));
+    var h = '<div class="card qlbar"><button id="qlBack">' + esc(t('back')) + '</button><span class="qlsp"></span><button id="qlPrint">' + esc(t('print')) + '</button></div>';
+    h += '<div class="card"><h2 id="qlTitle">' + esc(inst.short) + ' <span class="muted">– ' + esc(tx(inst.name)) + '</span></h2><div class="qlprot">' + protoPills(id) + '</div></div>';
+    h += docHtml(id);
+    h += '<div class="card"><h3>' + esc(t('ptT')) + '</h3><div class="row qlopts">' +
+      (tpv ? '<label class="fld">' + esc(t('tp')) + '<select id="qlTp">' + X.TPS.map(function (x) { return '<option value="' + x.id + '"' + (st.tp === x.id ? ' selected' : '') + '>' + esc(X.tpName(x.id)) + '</option>'; }).join('') + '</select></label>' : '') +
+      (jtv ? '<label class="fld">' + esc(t('jt')) + '<select id="qlJt"><option value="knee"' + (st.jt === 'knee' ? ' selected' : '') + '>' + esc(t('knee')) + '</option><option value="hip"' + (st.jt === 'hip' ? ' selected' : '') + '>' + esc(t('hip')) + '</option></select></label>' : '') +
+      '<label class="qlchk"><input type="checkbox" id="qlPts"' + (st.pts ? ' checked' : '') + '> ' + esc(t('pts')) + '</label></div>' +
+      '<div class="ptapp qlform" id="qlForm">' + withJoint(jointFor(id), function () { return formHtml(id, tpv ? st.tp : '1y', true); }) + '</div></div>';
+    return h;
+  }
+  function jointFor(id) { var j = I[id].joint; return j === 'hip' ? 'hip' : j === 'knee' ? 'knee' : st.jt; }
+  function render() {
+    if (!user) { pane.innerHTML = ''; return; }
+    pane.innerHTML = st.sel && I[st.sel] ? detailHtml(st.sel) : listHtml();
+    bind();
+  }
+  function bind() {
+    var s = $('qlSearch'); if (s) s.oninput = function () { st.q = s.value; var g = $('qlGrid'), tmp = document.createElement('div'); tmp.innerHTML = listHtml(); g.innerHTML = tmp.querySelector('#qlGrid').innerHTML; $('qlCount').textContent = tmp.querySelector('#qlCount').textContent; bindCards(); };
+    if ($('qlJoint')) $('qlJoint').onchange = function () { st.joint = this.value; render(); };
+    if ($('qlProto')) $('qlProto').onchange = function () { st.proto = this.value; render(); };
+    bindCards();
+    if ($('qlBack')) $('qlBack').onclick = function () { st.sel = ''; render(); window.scrollTo(0, 0); };
+    if ($('qlPrint')) $('qlPrint').onclick = function () { printBlank(st.sel); };
+    if ($('qlTp')) $('qlTp').onchange = function () { st.tp = this.value; render(); };
+    if ($('qlJt')) $('qlJt').onchange = function () { st.jt = this.value; render(); };
+    if ($('qlPts')) $('qlPts').onchange = function () { st.pts = this.checked; render(); };
+  }
+  function bindCards() { pane.querySelectorAll('[data-qlopen]').forEach(function (b) { b.onclick = function () { open(b.dataset.qlopen); }; }); }
+  function open(id) { if (!I[id]) return; st.sel = id; if (A.audit) A.audit('view-questionnaire', id); if (A.showTab && X.curTab !== 'lib') A.showTab('lib'); else render(); window.scrollTo(0, 0); }
+
+  // ---------- blank A4 print (Greek) ----------
+  function printBlank(id) {
+    closePrint(); var tp = hasTpVariants(id) ? st.tp : '1y', d = document.createElement('div'); d.id = 'qlPrintArea'; d.className = 'qlprint'; d.setAttribute('lang', 'el');
+    var keep = document.documentElement.lang; // print always in Greek (patient form)
+    var keepPts = st.pts; st.pts = false; // a blank patient form never shows points
+    if (keep === 'en') document.documentElement.lang = 'el';
+    try {
+      d.innerHTML = '<div class="qlprbar noprint"><button class="primary" id="qlPrGo">🖨 ' + esc(t('print').replace('🖨 ', '')) + '</button><button id="qlPrClose">✕</button></div>' +
+        '<div class="qlprpage"><div class="qlprhead"><b>OrthoThessaly</b><span>' + esc(I[id].short) + (hasTpVariants(id) ? ' · ' + esc(X.tpName(tp)) : '') + '</span></div>' +
+        '<table class="qlprid"><tr><th>' + esc(t('name')) + '</th><td></td><th>' + esc(t('amka')) + '</th><td></td><th>' + esc(t('date')) + '</th><td></td></tr></table><p class="qlprtick">' + esc(t('tick')) + '</p>' +
+        '<div class="ptapp qlform">' + withJoint(jointFor(id), function () { return formHtml(id, tp, false); }) + '</div><div class="qlprfoot">' + esc(t('printFoot')) + ' · ' + esc(tx(I[id].name)) + '</div></div>';
+    } finally { if (keep === 'en') document.documentElement.lang = keep; st.pts = keepPts; }
+    document.body.appendChild(d); document.body.classList.add('ql-print');
+    $('qlPrClose').onclick = closePrint; $('qlPrGo').onclick = function () { window.print(); };
+    if (A.audit) A.audit('print-blank-questionnaire', id);
+    if (!window.__qlNoPrint) setTimeout(function () { window.print(); }, 60);
+  }
+  function closePrint() { document.body.classList.remove('ql-print'); var d = $('qlPrintArea'); if (d) d.remove(); }
+  window.addEventListener('afterprint', function () { if (!window.__qlNoPrint) closePrint(); });
+
+  // ---------- patient answers (dashboard → patient page) ----------
+  function subsOf(p) {
+    return A.store.submissions.filter(function (s) { return s.patientId === p.id; }).sort(function (a, b) { var d = X.TP_ORDER.indexOf(a.timepoint) - X.TP_ORDER.indexOf(b.timepoint); return d || (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.instrument < b.instrument ? -1 : 1)); });
+  }
+  /** Rows: every item that was shown (or answered) with the patient's answer. */
+  function answerRows(s) {
+    var inst = I[s.instrument]; if (!inst) return [];
+    var ans = s.answers || {}, rows = [], k = 0;
+    inst.items.forEach(function (it) {
+      if (it.notPre && s.timepoint === 'pre') return;
+      var v = ans[it.id], has = v != null && !(Array.isArray(v) && !v.length);
+      if (it.showIf && !has) { var shown = false; try { shown = it.showIf(ans); } catch (e) {} if (!shown) return; }
+      if (it.clinician && !has) return;
+      var vr = X.variant(it, s.timepoint);
+      rows.push({ id: it.id, n: it.clinician ? null : ++k, sec: it.sec ? jt(tx(it.sec)) : '', q: jt(tx(vr.text)), a: has ? answerText(it, v, s.timepoint) : null, pts: has && it.type === 'choice' ? v : null,
+        act: it.activities && ans[it.id + 'a'] != null ? X.actLabel(it.activities[ans[it.id + 'a']]) : '', clin: !!it.clinician, opt: !!it.optional });
+    });
+    return rows;
+  }
+  function subBody(s, p) {
+    var hasAns = s.answers && Object.keys(s.answers).length;
+    var h = '<div class="qlsubscore"><span>' + esc(t('score')) + ': <b>' + esc(X.fmtScore(s.instrument, s)) + '</b></span> ' + X.bandHtml(s.instrument, s) + '</div>' + X.subsHtml(s.instrument, s.subscales) +
+      '<p><button class="small ghost" data-qlview="' + esc(s.instrument) + '">📚 ' + esc(t('preview')) + '</button></p>';
+    if (!hasAns) return h + '<p class="muted">' + esc(t('noStored')) + '</p>';
+    var rows = withJoint(p.procedure === 'THA' ? 'hip' : 'knee', function () { return answerRows(s); }), sec = '';
+    h += '<div class="tblwrap"><table class="tbl qlanstbl"><tr><th>#</th><th>' + esc(t('colQ')) + '</th><th>' + esc(t('colA')) + '</th><th>' + esc(t('colP')) + '</th></tr>';
+    rows.forEach(function (r) {
+      if (r.sec && r.sec !== sec && r.sec !== r.q) { sec = r.sec; h += '<tr class="qlsecrow"><td colspan="4">' + esc(r.sec) + '</td></tr>'; }
+      h += '<tr data-item="' + esc(r.id) + '"' + (r.a == null ? ' class="qlmiss"' : '') + '><td>' + (r.clin ? '🩺' : r.n) + '</td><td>' + esc(r.q) + (r.clin ? ' <span class="pill clin">' + esc(t('clin')) + '</span>' : '') + (r.opt ? ' <span class="muted">(' + esc(t('optQ')) + ')</span>' : '') + '</td><td><b>' + esc(r.a == null ? t('noAns') : r.a) + '</b>' + (r.act ? '<br><span class="muted">' + esc(r.act) + '</span>' : '') + '</td><td class="muted">' + (r.pts == null ? '' : esc(r.pts)) + '</td></tr>';
+    });
+    return h + '</table></div>';
+  }
+  function answersHtml(p) {
+    var subs = subsOf(p);
+    var h = '<div class="qlans" id="ptAnswers"><h3 style="margin-top:12px">' + esc(t('ansT')) + ' (' + subs.length + ')</h3>';
+    if (!subs.length) return h + '<p class="muted">' + esc(t('ansNone')) + '</p></div>';
+    h += '<p class="muted">' + esc(t('ansLead')) + ' <button class="small ghost" id="qlExpAll">' + esc(t('expandAll')) + '</button> <button class="small ghost" id="qlColAll">' + esc(t('collapseAll')) + '</button></p>';
+    subs.forEach(function (s) {
+      var o = !!st.open[s.id];
+      h += '<details class="qlsub" id="sub-' + esc(s.id) + '" data-subid="' + esc(s.id) + '"' + (o ? ' open' : '') + '><summary><b>' + esc(I[s.instrument] ? I[s.instrument].short : s.instrument) + '</b> · ' + esc(X.tpName(s.timepoint)) + ' · ' + esc(s.date) + ' · ' + esc(t('score')) + ' <b>' + esc(I[s.instrument] ? X.fmtScore(s.instrument, s) : '–') + '</b> · <span class="muted">' + esc(X.srcLab(s.source)) + '</span></summary><div class="qlsubbody">' + (o ? subBody(s, p) : '') + '</div></details>';
+    });
+    return h + '</div>';
+  }
+  function bindAnswers(pid) {
+    var p = pid && typeof pid === 'object' ? pid : X.patientById(pid), box = $('ptAnswers'); if (!p || !box) return; pid = p.id;
+    var byId = {}; A.store.submissions.forEach(function (s) { byId[s.id] = s; });
+    var bindBody = function (d) { d.querySelectorAll('[data-qlview]').forEach(function (b) { b.onclick = function () { open(b.dataset.qlview); }; }); };
+    box.querySelectorAll('details.qlsub').forEach(function (d) {
+      bindBody(d);
+      d.ontoggle = function () { var id = d.dataset.subid; st.open[id] = d.open; if (d.open && !d.querySelector('.qlsubscore') && byId[id]) { d.querySelector('.qlsubbody').innerHTML = subBody(byId[id], p); bindBody(d); if (A.audit) A.audit('view-answers', pid); } };
+    });
+    if ($('qlExpAll')) $('qlExpAll').onclick = function () { box.querySelectorAll('details.qlsub').forEach(function (d) { d.open = true; }); };
+    if ($('qlColAll')) $('qlColAll').onclick = function () { box.querySelectorAll('details.qlsub').forEach(function (d) { d.open = false; }); };
+  }
+  /** "All submissions" table on the dashboard: a row opens that patient with the answers expanded. */
+  function bindDash() {
+    document.querySelectorAll('#subTable tr[data-sub]').forEach(function (r) {
+      r.classList.add('qlclick'); r.title = t('ansLead');
+      r.onclick = function () { var s = A.store.submissions.filter(function (x) { return x.id === r.dataset.sub; })[0]; if (!s) return; st.open[s.id] = true; A.openPatient(s.patientId, 'sub-' + s.id); };
+    });
+  }
+  new MutationObserver(function () { btn.textContent = t('tab'); if (!pane.classList.contains('hidden')) render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  window.__qlib = { sync: sync, show: show, render: render, open: open, answersHtml: answersHtml, bindAnswers: bindAnswers, bindDash: bindDash, print: printBlank, closePrint: closePrint,
+    _: { protosOf: protosOf, patientItems: patientItems, bands: bands, answerText: answerText, answerRows: answerRows, formHtml: formHtml, withJoint: withJoint }, get state() { return st; } };
+  sync(A.currentUser ? A.currentUser() : null);
 })();
 </script>
 <!-- ===== Doctors-only team chat (Συζήτηση): text + photos, Supabase Realtime; no patient data ===== -->
