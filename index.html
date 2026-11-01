@@ -574,6 +574,43 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
 .qlprint .ptans{flex-direction:row;flex-wrap:wrap;gap:1px 14px}.qlprint .ptans button{width:auto;gap:6px;font-size:10pt}.qlprint .ptchk{width:1.1em;height:1.1em}
 .qlprint .qlq{gap:2px;padding-top:4px}.qlprint .pane .card .qlform h3.ptqtext,.qlprint h3.ptqtext{font-size:10.5pt;margin:0;font-weight:700;color:#000}
 .qlprint .qlqn{font-size:7.5pt}.qlprint .ptpre{font-size:9pt}.qlprint .ptsec{font-size:10.5pt}.qlprint .qlform{gap:4px}.qlprint .ptancs{font-size:8.5pt}
+/* ===== Questionnaires due (Εκκρεμή ερωτηματολόγια) + patient timeline (Χρονογραμμή ασθενή) ===== */
+.fuh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.fusub{font-size:.85rem;font-weight:400}
+.fubadge{display:inline-block;min-width:1.5em;text-align:center;border-radius:999px;padding:1px 7px;font-size:.78rem;font-weight:800;background:#c0392b;color:#fff;line-height:1.4}
+.fubadge.fuamber{background:#e0a100;color:#3b2a00}
+.fubadge.fubtab{margin-left:6px;font-size:.7rem;vertical-align:middle}
+.fubar{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 10px}
+.fuf{border:1px solid #c9d7dd;background:#fff;color:var(--ink);border-radius:999px}.fuf.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.fuf-overdue.on{background:#b42318;border-color:#b42318}.fuchk{display:flex;gap:5px;align-items:center;font-size:.85rem}
+.fulist{display:flex;flex-direction:column;gap:8px}
+.furow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,1fr) auto;gap:6px 14px;align-items:center;border:1px solid #dde7eb;border-left:5px solid #9fb3bb;border-radius:10px;padding:9px 12px;background:#fff;cursor:pointer}
+.furow:hover,.furow:focus{background:#f3f9fb;outline:none;box-shadow:0 0 0 2px #cfe5ec}
+.furow>div{min-width:0;overflow-wrap:anywhere}
+.furow.st-overdue{border-left-color:#c0392b}.furow.st-due{border-left-color:#e0a100}.furow.st-soon{border-left-color:#2e86c1}.furow.fucont{background:#f6fbf7}
+.fust{display:inline-block;border-radius:6px;padding:1px 7px;font-size:.72rem;font-weight:800;background:#eef2f4;color:#5d6f78}
+.st-overdue .fust{background:#fde2e2;color:#9b1c1c}.st-due .fust{background:#fff1cc;color:#7a5a00}.st-soon .fust,.st-upcoming .fust{background:#dbeafe;color:#1e40af}.st-missed .fust{background:#eceff1;color:#6b7b83}
+.st-overdue .fudays{color:#9b1c1c}.fuact{text-align:right}.fumarked{color:#126b3a;font-weight:700;font-size:.85rem;white-space:nowrap}
+.fumark{white-space:nowrap}.fuanchor{display:block;height:0}
+.fuanchor,#ptTimeline,#mxTable,#fuCard,#opn,#ptIdent,#ptAnswers details.qlsub{scroll-margin-top:110px}
+@media (max-width:760px){.furow{grid-template-columns:1fr;gap:5px}.furow .fuwhen .muted{display:inline;margin-left:6px}.fuact{text-align:left}}
+/* timeline */
+.ptl{margin:12px 0 4px;border:1px solid #dde7eb;border-radius:10px;padding:8px 12px;background:#fbfdfe}
+.ptl>summary{cursor:pointer;font-size:1.05rem;color:var(--brand)}
+.tl{list-style:none;margin:8px 0 2px;padding:0 0 0 6px;position:relative}
+.tl:before{content:'';position:absolute;left:21px;top:6px;bottom:6px;width:2px;background:#cfdde3}
+.tl li{position:relative;display:flex;gap:10px;align-items:flex-start;padding:5px 0}
+.tldot{flex:0 0 32px;height:32px;border-radius:50%;background:#fff;border:2px solid #9fb3bb;display:flex;align-items:center;justify-content:center;font-size:.95rem;z-index:1}
+.tlbody{flex:1;min-width:0;overflow-wrap:anywhere;padding-top:3px}
+.tlgo{all:unset;cursor:pointer;display:block;line-height:1.35}.tlgo:hover .tltitle,.tlgo:focus .tltitle{text-decoration:underline}.tlgo:focus-visible{outline:2px solid var(--brand);border-radius:4px}
+.tldate{font-size:.82rem;color:#3d4f57;font-weight:600;margin-right:4px}.tltitle{color:var(--ink)}
+.tlmore{font-size:.86rem;margin-top:3px}.tlchips{display:flex;flex-wrap:wrap;gap:5px}.tlchip .band{font-size:.7rem;padding:1px 6px;margin-left:2px}
+.tlchip{border:1px solid #c9d7dd;background:#fff;border-radius:8px;padding:3px 8px;font-size:.82rem;cursor:pointer;text-align:left}.tlchip:hover{background:#eef7fa}
+.tl-surgery .tldot{border-color:#0b5f73;background:#e8f4f6}.tl-opnote .tldot{border-color:#0b5f73}.tl-prom .tldot{border-color:#2e9d5b}.tl-xray .tldot{border-color:#6b4fbb}.tl-rom .tldot{border-color:#2e86c1}
+.tl-sched .tldot{border-style:dashed;background:#f7fafb}.tl-sched.st-overdue .tldot{border-color:#c0392b;border-style:solid}.tl-sched.st-due .tldot{border-color:#e0a100;border-style:solid}
+.tl-sched .tltitle{color:#3d4f57;font-weight:600}.tl-sched.st-missed{opacity:.7}
+.tl-today .tldot{border-color:#c0392b;background:#fde2e2}.tl-today b{color:#9b1c1c}.tl-today:after{content:'';position:absolute;left:44px;right:0;top:50%;border-top:2px dashed #e7b1ab;z-index:0}
+.tl-today .tlbody{background:#fbfdfe;z-index:1;flex:0 0 auto;padding-right:8px}
+@media print{.ptl,.fucard{display:none}}
 </style>
 </head>
 <body>
@@ -5255,6 +5292,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   function renderDash() {
     var u = currentUser();
     chatSync(u);
+    if (window.__fu) window.__fu.syncBadge();
     if (u && libAfterLogin && !(CLOUD && cloudBusy)) { libAfterLogin = false; setTimeout(function () { showTab('lib'); window.scrollTo(0, 0); }, 0); }
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
     if (!u && CLOUD && cloudBusy) { $('dashGate').innerHTML = '<div class="card" id="cLoading">⏳ ' + esc(t('cLoading')) + '</div>'; $('dashBody').innerHTML = ''; return; }
@@ -5269,6 +5307,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     h += npHtml();
     if (!store.patients.length && !np.open) h += '<div class="card npempty" id="dEmpty"><p>👥 ' + esc(t('npEmpty')) + '</p><button class="primary" id="dNewPt2">' + esc(t('npBtn')) + '</button></div>';
     if (CLOUD) h += cloudPanels(u); else if (u.role === 'owner') h += ownerPanel();
+    if (window.__fu) h += window.__fu.dashHtml();
     h += '<div class="card"><h2>' + esc(t('patients')) + (CLOUD ? '' : ' <span class="pill demo">DEMO</span>') + '</h2><p class="muted">👥 ' + esc(t('shared')) + '</p><div class="row"><label class="fld">' + esc(t('filterProc')) + '<select id="fProc">' + opt('', t('all'), !dsel.proc) + Object.keys(PROC).map(function (k) { return opt(k, tx(PROC[k].name), dsel.proc === k); }).join('') + '</select></label>' +
       '<label class="fld">' + esc(t('filterInst')) + '<select id="fInst">' + opt('', t('all'), !dsel.inst) + instIds.map(function (k) { return opt(k, I[k].short, dsel.inst === k); }).join('') + '</select></label><button id="dCsv" style="align-self:flex-end">⬇ ' + esc(t('csv')) + '</button></div>';
     h += '<div class="tblwrap"><table class="tbl" id="ptTable"><tr><th>' + esc(t('npPatient')) + '</th><th>' + esc(t('npAmka')) + '</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('surgery')) + '</th><th>' + esc(t('enteredBy')) + '</th><th>' + esc(t('subsN')) + '</th><th>' + esc(t('dueN')) + '</th><th>' + esc(t('overdueN')) + '</th><th>' + esc(t('nextTp')) + '</th><th>' + esc(t('mcidN')) + '</th></tr>' + pts.map(function (p) {
@@ -5295,6 +5334,7 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     bindNewPatient();
     if ($('dLib')) $('dLib').onclick = function () { showTab('lib'); window.scrollTo(0, 0); };
     if (window.__qlib) window.__qlib.bindDash(sp);
+    if (window.__fu) { window.__fu.bindDash(); if (sp && pts.indexOf(sp) >= 0) window.__fu.bindTimeline(sp); }
     document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; dsel.tp = ''; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
     if (sp && pts.indexOf(sp) >= 0) { bindCamera(sp); bindAssign(sp); }
     if (sp && pts.indexOf(sp) >= 0 && window.__xcmp) window.__xcmp.bind(sp);
@@ -5310,13 +5350,14 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
     var c = P.protocolStatus(p, store.submissions, td), rec = P.patientSet(p), prot = PR[p.procedure];
     var sym = { done: '✓', due: '●', overdue: '✗', upcoming: '◦', na: '–', off: '·' };
     var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(ptLabel(p)) + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</h2>' + (p.amka || ptName(p) ? '<div class="ptident" id="ptIdent">' + (p.amka ? esc(t('npAmka')) + ' <b id="ptAmkaFull">' + esc(p.amka) + '</b>' : '') + (p.side ? ' · ' + esc(t('npSide')) + ' ' + esc(t('side' + p.side)) : '') + (p.age ? ' · ' + esc(t('npAge')) + ' ' + esc(p.age) : '') + ' · <span class="muted">' + esc(t('npCode')) + ' ' + esc(p.id) + '</span></div>' : '') + '<div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate || '—') + '</div>';
+    if (window.__fu) h += window.__fu.timelineHtml(p, td);
     h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(p.surgeryDate ? P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to) : '—') : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
       rec.map(function (i) { var opt = prot.optional.indexOf(i) >= 0; return '<tr><td><b>' + esc(I[i].short) + '</b>' + (opt ? ' <span class="muted">(' + esc(t('optional')) + ')</span>' : '') + '</td>' + TPS.map(function (x) { var st = c[i][x.id]; return '<td class="c ' + st + '" title="' + esc(stName(st)) + '">' + sym[st] + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="muted">' + esc(t('legend2')) + '</div>';
     if (window.__qlib) h += window.__qlib.answersHtml(p);
     h += assignHtml(p);
     if (window.__opnote) h += window.__opnote.html(p);
-    h += cameraHtml(p);
-    if (window.__xray) h += window.__xray.dashHtml(p);
+    h += '<span class="fuanchor" id="camSec"></span>' + cameraHtml(p);
+    if (window.__xray) h += '<span class="fuanchor" id="xrSec"></span>' + window.__xray.dashHtml(p);
     h += mcidHtml(p);
     var used = {}; store.submissions.forEach(function (s) { if (s.patientId === p.id) used[s.instrument] = 1; });
     var list = rec.concat(PROC[p.procedure].other).filter(function (i, k, a) { return a.indexOf(i) === k && used[i] && (!dsel.inst || dsel.inst === i); });
@@ -5898,6 +5939,232 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
   window.__qlib = { sync: sync, show: show, render: render, open: open, answersHtml: answersHtml, bindAnswers: bindAnswers, bindDash: bindDash, print: printBlank, closePrint: closePrint,
     _: { protosOf: protosOf, patientItems: patientItems, bands: bands, answerText: answerText, answerRows: answerRows, formHtml: formHtml, withJoint: withJoint }, get state() { return st; } };
   sync(A.currentUser ? A.currentUser() : null);
+})();
+</script>
+<!-- ===== Follow-up: questionnaires due list (Εκκρεμή ερωτηματολόγια) + patient timeline (Χρονογραμμή ασθενή); core pure, tested in Node ===== -->
+<script id="ortho-followup">
+(function (root) {
+  'use strict';
+  // ===== Follow-up core (pure; unit-tested in Node): who owes a questionnaire + patient timeline events =====
+  // Built on the '📋 Πρόγραμμα παρακολούθησης' schedule (PROTOCOLS / WINDOWS / protocolStatus in the PROMs core).
+  var P = root.OrthoPROMs;
+  var SOON = 14;          // "due soon": window opens within 14 days
+  var LAST_GRACE = 180;   // last timepoint stays collectible 180 days after its window closes
+  /** Last day a missed timepoint is still worth chasing: until the next scheduled window opens (pre-op: until surgery). */
+  function closeAt(p, tps, i) {
+    var t = tps[i], W = P.WINDOWS;
+    if (t.id === 'pre') return p.surgeryDate;
+    var nx = tps[i + 1];
+    var to = P.addDays(p.surgeryDate, W[t.id].to), lim = nx ? P.addDays(p.surgeryDate, W[nx.id].from) : P.addDays(to, LAST_GRACE);
+    return lim > to ? lim : to;
+  }
+  /** Rows for one patient: one per scheduled timepoint with questionnaires still missing.
+      status: 'overdue' (window closed, still collectible) | 'due' (window open) | 'soon' (opens within SOON days) | 'missed' (no longer collectible) */
+  function patientRows(p, subs, today, opt) {
+    opt = opt || {};
+    var pr = P.PROTOCOLS[p.procedure]; if (!pr) return [];
+    var st = P.protocolStatus(p, subs, today), set = P.patientSet(p), rows = [], soon = opt.soon != null ? opt.soon : SOON;
+    pr.tps.forEach(function (t, i) {
+      if (!t.req && !opt.optional) return;
+      var insts = set.filter(function (id) { return P.appliesAt(id, t.id, p.procedure); });
+      var missing = insts.filter(function (id) { return st[id][t.id] !== 'done'; });
+      if (!insts.length || !missing.length) return;
+      var row = { pid: p.id, procedure: p.procedure, tp: t.id, req: !!t.req, missing: missing, done: insts.length - missing.length, total: insts.length, from: '', to: '', status: '', days: 0, contacted: (p.contacts || {})[t.id] || null };
+      if (!p.surgeryDate) { if (t.id !== 'pre') return; row.status = 'due'; row.noDate = true; rows.push(row); return; }
+      row.from = P.addDays(p.surgeryDate, P.WINDOWS[t.id].from); row.to = P.addDays(p.surgeryDate, P.WINDOWS[t.id].to);
+      if (today < row.from) { var u = P.daysBetween(today, row.from); if (u > soon) return; row.status = 'soon'; row.days = u; }
+      else if (today <= row.to) { row.status = 'due'; row.days = P.daysBetween(today, row.to); }
+      else { row.days = P.daysBetween(row.to, today); row.status = today <= closeAt(p, pr.tps, i) ? 'overdue' : 'missed'; }
+      rows.push(row);
+    });
+    return rows;
+  }
+  var ORDER = { overdue: 0, due: 1, soon: 2, missed: 3 };
+  /** All patients: sorted most overdue first, then window closing soonest, then opening soonest. */
+  function dueList(patients, subs, today, opt) {
+    var out = [];
+    (patients || []).forEach(function (p) { out = out.concat(patientRows(p, subs, today, opt)); });
+    return out.sort(function (a, b) {
+      return ORDER[a.status] - ORDER[b.status] || (a.status === 'overdue' || a.status === 'missed' ? b.days - a.days : a.days - b.days) || (a.pid < b.pid ? -1 : a.pid > b.pid ? 1 : 0);
+    });
+  }
+  function counts(list) { var c = { overdue: 0, due: 0, soon: 0, missed: 0 }; list.forEach(function (r) { c[r.status]++; }); return c; }
+
+  /** Chronological events for one patient (oldest first; 'today' marker; schedule items for timepoints not done yet). */
+  function timeline(p, d, today) {
+    var ev = [], subs = (d.submissions || []).filter(function (s) { return s.patientId === p.id; });
+    if (p.created) ev.push({ kind: 'reg', date: String(p.created).slice(0, 10), by: p.enteredBy || null });
+    if (p.surgeryDate) ev.push({ kind: 'surgery', date: p.surgeryDate, procedure: p.procedure, side: p.side || '' });
+    (d.opnotes || []).filter(function (n) { return n.patientId === p.id; }).forEach(function (n) { ev.push({ kind: 'opnote', date: (n.fields && n.fields.date) || String(n.createdAt || '').slice(0, 10) || p.surgeryDate || '', id: n.id, status: n.status, note: n }); });
+    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} }); });
+    var groups = {};
+    subs.forEach(function (s) { var k = s.timepoint + '|' + s.date; if (!groups[k]) { groups[k] = { kind: 'prom', date: s.date, tp: s.timepoint, subs: [] }; ev.push(groups[k]); } groups[k].subs.push(s); });
+    (d.rom || []).filter(function (r) { return r.patientId === p.id; }).forEach(function (r) { ev.push({ kind: 'rom', date: r.date || '', id: r.id, joint: r.joint, side: r.side, max: r.max, min: r.min, reps: r.reps }); });
+    var all = patientRows(p, subs, today, { optional: true, soon: 100000 });
+    all.forEach(function (r) { ev.push({ kind: 'sched', date: r.status === 'overdue' || r.status === 'missed' ? r.to : r.from, tp: r.tp, status: r.status === 'soon' && r.days > SOON ? 'upcoming' : r.status, from: r.from, to: r.to, missing: r.missing, req: r.req, noDate: !!r.noDate, days: r.days }); });
+    ev.push({ kind: 'today', date: today });
+    var RANK = { reg: 0, surgery: 1, opnote: 2, xray: 3, prom: 4, rom: 5, sched: 6, today: 7 };
+    return ev.sort(function (a, b) {
+      var da = a.date || (a.kind === 'sched' ? '9999' : '0000'), db = b.date || (b.kind === 'sched' ? '9999' : '0000');
+      if (da !== db) return da < db ? -1 : 1;
+      if (a.kind === 'today' || b.kind === 'today') return a.kind === 'today' ? (b.kind === 'sched' ? -1 : 1) : (a.kind === 'sched' ? 1 : -1);
+      return RANK[a.kind] - RANK[b.kind];
+    });
+  }
+  root.OrthoFollowUp = { SOON: SOON, patientRows: patientRows, dueList: dueList, counts: counts, timeline: timeline, closeAt: closeAt };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-followup-ui">
+(function () {
+  'use strict';
+  // ===== Doctor-only: ⏰ «Ποιος χρωστάει ερωτηματολόγιο» (dashboard) + 🕒 Χρονογραμμή ασθενή (patient page) =====
+  // Derived from the 📋 Πρόγραμμα παρακολούθησης schedule. Contacted markers live in the patient record (p.contacts → cloud patients.extra).
+  var A = window.__orthoProms, F = window.OrthoFollowUp; if (!A || !A.lib || !F) return;
+  var X = A.lib, I = X.I, P = X.P, esc = X.esc, tx = X.tx;
+  var $ = function (id) { return document.getElementById(id); };
+  var en = function () { return X.lang() === 'en'; };
+  var S = {
+    el: { T: 'Εκκρεμή ερωτηματολόγια', sub: 'Ποιος χρωστάει ερωτηματολόγιο', lead: 'Ασθενείς με χρονικό σημείο του «📋 Πρόγραμμα παρακολούθησης» που δεν έχει συμπληρωθεί. Πατήστε μια γραμμή για να ανοίξει ο ασθενής.',
+      f_overdue: 'Εκπρόθεσμα', f_due: 'Εντός παραθύρου', f_soon: 'Σύντομα (≤14 ημ.)', f_all: 'Όλα', hideC: 'Απόκρυψη όσων ενημερώθηκαν', csv: 'Εξαγωγή CSV', none: 'Κανένας ασθενής δεν χρωστάει ερωτηματολόγιο σε αυτή την κατηγορία. 🎉',
+      missed: '{0} χρονικά σημεία έχουν χαθεί (εκτός παραθύρου, δεν συλλέγονται πλέον) – φαίνονται στη χρονογραμμή κάθε ασθενή.', amka: 'ΑΜΚΑ', due: 'Προθεσμία', opens: 'Ανοίγει', noDate: 'χωρίς ημ. χειρουργείου',
+      st_overdue: 'Εκπρόθεσμο', st_due: 'Εκκρεμεί', st_soon: 'Σύντομα', st_missed: 'Χάθηκε', st_upcoming: 'Προγραμματισμένο', dOver: '+{0} ημ. καθυστέρηση', dLeft: 'λήγει σε {0} ημ.', dOpen: 'ανοίγει σε {0} ημ.', dToday: 'λήγει σήμερα',
+      mark: '✓ Ενημερώθηκε', marked: '✓ Ενημερώθηκε {0}', undo: 'Αναίρεση', markT: 'Σημειώστε ότι ενημερώσατε τον ασθενή (τηλέφωνο/μήνυμα)', by: 'από', more: 'Εμφάνιση όλων ({0})', optl: 'προαιρετικό',
+      tlT: 'Χρονογραμμή ασθενή', tlLead: 'Όλα τα γεγονότα του ασθενή με χρονολογική σειρά. Πατήστε ένα γεγονός για λεπτομέρειες.', reg: 'Καταχώριση ασθενή', surg: 'Χειρουργείο', op: 'Πρακτικό χειρουργείου', opF: 'οριστικό', opD: 'πρόχειρο',
+      xr: 'Ακτινογραφία', pre: 'προεγχειρητική', post: 'μετεγχειρητική', sR: 'Δεξιά', sL: 'Αριστερά', sB: 'Αμφοτερόπλευρα', prom: 'Ερωτηματολόγια', rom: 'Μέτρηση κίνησης (κάμερα)', flex: 'κάμψη', ext: 'έκταση', reps: 'επαναλήψεις',
+      sched: 'Χρονικό σημείο προγράμματος', window: 'παράθυρο', today: 'Σήμερα', dayN: 'ημ. {0}', open: 'Άνοιγμα', notMeas: 'χωρίς μετρήσεις', ansHint: 'Πατήστε ένα ερωτηματολόγιο για τις απαντήσεις',
+      cols: ['Ασθενής', 'Κωδικός', 'ΑΜΚΑ', 'Επέμβαση', 'Ημ. χειρουργείου', 'Χρονικό σημείο', 'Ερωτηματολόγια που λείπουν', 'Παράθυρο από', 'Προθεσμία', 'Κατάσταση', 'Ημέρες καθυστέρησης', 'Ενημερώθηκε'] },
+    en: { T: 'Questionnaires due', sub: 'Who owes a questionnaire', lead: 'Patients with a timepoint of the “📋 Follow-up schedule” that is not completed. Tap a row to open the patient.',
+      f_overdue: 'Overdue', f_due: 'Window open', f_soon: 'Due soon (≤14 d)', f_all: 'All', hideC: 'Hide contacted', csv: 'Export CSV', none: 'Nobody owes a questionnaire in this category. 🎉',
+      missed: '{0} timepoints were missed (window closed, no longer collected) – shown on each patient’s timeline.', amka: 'AMKA', due: 'Due by', opens: 'Opens', noDate: 'no surgery date',
+      st_overdue: 'Overdue', st_due: 'Due', st_soon: 'Soon', st_missed: 'Missed', st_upcoming: 'Scheduled', dOver: '+{0} d overdue', dLeft: 'closes in {0} d', dOpen: 'opens in {0} d', dToday: 'closes today',
+      mark: '✓ Contacted', marked: '✓ Contacted {0}', undo: 'Undo', markT: 'Mark that you contacted the patient (phone/message)', by: 'by', more: 'Show all ({0})', optl: 'optional',
+      tlT: 'Patient timeline', tlLead: 'Everything about this patient in date order. Tap an event for details.', reg: 'Patient registered', surg: 'Surgery', op: 'Operative note', opF: 'final', opD: 'draft',
+      xr: 'X-ray', pre: 'pre-op', post: 'post-op', sR: 'Right', sL: 'Left', sB: 'Bilateral', prom: 'Questionnaires', rom: 'Range of motion (camera)', flex: 'flexion', ext: 'extension', reps: 'reps',
+      sched: 'Scheduled timepoint', window: 'window', today: 'Today', dayN: 'day {0}', open: 'Open', notMeas: 'no measurements', ansHint: 'Tap a questionnaire to see the answers',
+      cols: ['Patient', 'Code', 'AMKA', 'Procedure', 'Surgery date', 'Timepoint', 'Missing questionnaires', 'Window from', 'Due by', 'Status', 'Days overdue', 'Contacted'] }
+  };
+  var t = function (k) { var v = S[en() ? 'en' : 'el'][k]; return v == null ? k : v; };
+  var f = function (k) { var a = arguments; return t(k).replace(/\{(\d)\}/g, function (m, i) { return a[+i + 1]; }); };
+  var today = function () { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+  var dmy = function (iso) { return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : '—'; };
+  var ui = { filter: '', auto: true, hideC: false, all: false };
+  function ptName(p) { return p ? ((p.lastName || '') + ' ' + (p.firstName || '')).trim() : ''; }
+  function mask(a) { return a ? (window.OrthoPtId && window.OrthoPtId.maskAmka ? window.OrthoPtId.maskAmka(a) : '•••••••' + String(a).slice(-4)) : '–'; }
+  function procName(p) { return X.PROC[p.procedure] ? tx(X.PROC[p.procedure].name) : p.procedure; }
+  function list() { return F.dueList(A.store.patients, A.store.submissions, today()); }
+  function visible(rows) { return rows.filter(function (r) { return r.status !== 'missed' && (!ui.hideC || !r.contacted) && (ui.filter === 'all' || r.status === ui.filter); }); }
+  function amountTxt(r) { return r.noDate ? t('noDate') : r.status === 'overdue' ? f('dOver', r.days) : r.status === 'due' ? (r.days ? f('dLeft', r.days) : t('dToday')) : f('dOpen', r.days); }
+  /** Badge = patients' timepoints owed now (overdue + window open); red when any is overdue. */
+  function badgeTitle(c) { return t('f_overdue') + ': ' + c.overdue + ' · ' + t('f_due') + ': ' + c.due; }
+  function setBadge(c) {
+    var b = document.querySelector('[role=tab][data-tab="dash"]'); if (!b) return;
+    var s = b.querySelector('.fubadge'), n = c ? c.overdue + c.due : 0; if (!n) { if (s) s.remove(); return; }
+    if (!s) { s = document.createElement('span'); b.appendChild(s); }
+    s.className = 'fubadge fubtab' + (c.overdue ? '' : ' fuamber'); s.id = 'fuTabBadge'; s.textContent = n; s.title = '⏰ ' + t('T') + ' – ' + badgeTitle(c);
+  }
+  function syncBadge() { var u = A.currentUser && A.currentUser(); setBadge(u ? F.counts(list()) : null); }
+  function dashHtml() {
+    var rows = list(), c = F.counts(rows);
+    if (ui.auto || !ui.filter) ui.filter = c.overdue ? 'overdue' : c.due ? 'due' : 'all';
+    setTimeout(function () { setBadge(c); }, 0);
+    var vis = visible(rows), shown = ui.all ? vis : vis.slice(0, 40);
+    var h = '<div class="card fucard" id="fuCard"><h2 class="fuh">⏰ ' + esc(t('T')) + ' <span class="fubadge' + (c.overdue ? '' : ' fuamber') + '" id="fuBadge" title="' + esc(badgeTitle(c)) + '">' + (c.overdue + c.due) + '</span> <span class="muted fusub">' + esc(t('sub')) + '</span></h2><p class="muted">' + esc(t('lead')) + '</p>';
+    h += '<div class="fubar" role="group">' + ['overdue', 'due', 'soon', 'all'].map(function (k) { var n = k === 'all' ? c.overdue + c.due + c.soon : c[k]; return '<button class="small fuf fuf-' + k + (ui.filter === k ? ' on' : '') + '" data-fuf="' + k + '" aria-pressed="' + (ui.filter === k) + '">' + esc(t('f_' + k)) + ' <b>' + n + '</b></button>'; }).join('') +
+      '<label class="fuchk"><input type="checkbox" id="fuHideC"' + (ui.hideC ? ' checked' : '') + '> ' + esc(t('hideC')) + '</label><button class="small ghost" id="fuCsv">⬇ ' + esc(t('csv')) + '</button></div>';
+    if (!shown.length) h += '<p class="muted" id="fuNone">' + esc(t('none')) + '</p>';
+    h += '<div class="fulist" id="fuList">' + shown.map(function (r) {
+      var p = X.patientById(r.pid) || {}, nm = ptName(p);
+      return '<div class="furow st-' + r.status + (r.contacted ? ' fucont' : '') + '" data-fupid="' + esc(r.pid) + '" data-futp="' + esc(r.tp) + '" tabindex="0" role="button">' +
+        '<div class="fuwho"><b>' + esc(nm || r.pid) + '</b>' + (nm ? ' <span class="muted">' + esc(r.pid) + '</span>' : '') + (p.demo || A.cloud.mode !== 'cloud' ? ' <span class="pill demo">DEMO</span>' : '') + '<div class="muted small">' + esc(t('amka')) + ' <span class="fuamka">' + esc(mask(p.amka)) + '</span> · ' + esc(procName(p)) + '</div></div>' +
+        '<div class="futp"><b>' + esc(X.tpName(r.tp)) + '</b>' + (r.req ? '' : ' <span class="muted">(' + esc(t('optl')) + ')</span>') + '<div class="small">' + r.missing.map(function (i) { return '<span class="pill">' + esc(I[i] ? I[i].short : i) + '</span>'; }).join(' ') + (r.done ? ' <span class="muted">' + r.done + '/' + r.total + ' ✓</span>' : '') + '</div></div>' +
+        '<div class="fuwhen"><span class="fust">' + esc(t('st_' + r.status)) + '</span> <b class="fudays">' + esc(amountTxt(r)) + '</b><div class="muted small">' + (r.status === 'soon' ? esc(t('opens')) + ' ' + esc(dmy(r.from)) : r.to ? esc(t('due')) + ' ' + esc(dmy(r.to)) : '') + '</div></div>' +
+        '<div class="fuact">' + (r.contacted ? '<span class="fumarked" title="' + esc(t('by') + ' ' + (r.contacted.by || '')) + '">' + esc(f('marked', dmy(r.contacted.on))) + '</span> <button class="small ghost fuundo" data-fuundo="1">' + esc(t('undo')) + '</button>' : '<button class="small fumark" data-fumark="1" title="' + esc(t('markT')) + '">' + esc(t('mark')) + '</button>') + '</div></div>';
+    }).join('') + '</div>';
+    if (vis.length > shown.length) h += '<button class="small ghost" id="fuMore">' + esc(f('more', vis.length)) + '</button>';
+    if (c.missed) h += '<p class="muted small" id="fuMissed">' + esc(f('missed', c.missed)) + '</p>';
+    return h + '</div>';
+  }
+  function setContact(pid, tp, on) {
+    var p = X.patientById(pid); if (!p) return;
+    var c = Object.assign({}, p.contacts || {}), u = A.currentUser() || {};
+    if (on) c[tp] = { on: today(), by: u.name || u.email || '' }; else delete c[tp];
+    if (Object.keys(c).length) p.contacts = c; else delete p.contacts;
+    A.audit(on ? 'followup-contacted' : 'followup-contacted-undo', pid + ' ' + tp);
+    A.persist(); A.refreshUser();
+  }
+  function bindDash() {
+    var card = $('fuCard'); if (!card) return;
+    card.querySelectorAll('[data-fuf]').forEach(function (b) { b.onclick = function () { ui.filter = b.dataset.fuf; ui.auto = false; ui.all = false; A.refreshUser(); }; });
+    $('fuHideC').onchange = function () { ui.hideC = this.checked; A.refreshUser(); };
+    $('fuCsv').onclick = function () { download(csv()); };
+    if ($('fuMore')) $('fuMore').onclick = function () { ui.all = true; A.refreshUser(); };
+    card.querySelectorAll('.furow').forEach(function (r) {
+      var go = function () { A.audit('view-patient', r.dataset.fupid); A.openPatient(r.dataset.fupid, 'ptTimeline'); };
+      r.onclick = function (e) { if (e.target.closest('button')) return; go(); };
+      r.onkeydown = function (e) { if (e.key === 'Enter' && e.target === r) go(); };
+      var m = r.querySelector('[data-fumark]'), u = r.querySelector('[data-fuundo]');
+      if (m) m.onclick = function (e) { e.stopPropagation(); setContact(r.dataset.fupid, r.dataset.futp, true); };
+      if (u) u.onclick = function (e) { e.stopPropagation(); setContact(r.dataset.fupid, r.dataset.futp, false); };
+    });
+  }
+  function csv() {
+    var q = function (v) { v = v == null ? '' : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var rows = visible(list()).map(function (r) { var p = X.patientById(r.pid) || {}; return [ptName(p), r.pid, mask(p.amka), procName(p), p.surgeryDate || '', X.tpName(r.tp), r.missing.map(function (i) { return I[i] ? I[i].short : i; }).join(' + '), r.from, r.to, t('st_' + r.status), r.status === 'overdue' ? r.days : '', r.contacted ? r.contacted.on : ''].map(q).join(','); });
+    A.audit('export-csv', 'questionnaires due');
+    return '\ufeff' + (A.cloud.mode === 'cloud' ? '' : '# OrthoThessaly DEMO – synthetic data only\n') + t('cols').map(q).join(',') + '\n' + rows.join('\n') + '\n';
+  }
+  function download(s) {
+    window.__lastFuCsv = s;
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'text/csv;charset=utf-8' })); a.download = 'orthothessaly_questionnaires_due_' + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // ---------- 🕒 Patient timeline ----------
+  var tlOpen = true;
+  function side(s) { s = String(s || '').charAt(0).toUpperCase(); return s === 'R' ? t('sR') : s === 'L' ? t('sL') : s === 'B' ? t('sB') : ''; }
+  function f1(v) { return typeof v === 'number' ? (Math.round(v * 10) / 10).toFixed(1) : v; }
+  function evHtml(e, p, i) {
+    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
+    var rel = p.surgeryDate && e.date && e.kind !== 'today' ? P.daysBetween(p.surgeryDate, e.date) : null;
+    if (e.kind === 'today') return '<li class="tl-today" data-tlk="today"><span class="tldot">' + ic + '</span><div class="tlbody"><b>' + esc(t('today')) + '</b> <span class="muted">' + esc(dmy(e.date)) + '</span></div></li>';
+    if (e.kind === 'reg') { title = t('reg'); body = e.by ? esc(t('by') + ' ' + (e.by.name || e.by.email || '')) : ''; }
+    if (e.kind === 'surgery') { title = t('surg') + ': ' + (X.PROC[e.procedure] ? tx(X.PROC[e.procedure].name) : e.procedure) + (e.side ? ' · ' + side(e.side) : ''); }
+    if (e.kind === 'opnote') { title = t('op') + ' (' + (e.status === 'final' ? t('opF') : t('opD')) + ')'; body = window.OrthoOpNote ? esc(window.OrthoOpNote.headline(e.note, en() ? 'en' : 'el')) : ''; }
+    if (e.kind === 'xray') { var r = e.results || {}; title = t('xr') + ' ' + (e.phase === 'post' ? t('post') : t('pre')) + (e.side ? ' · ' + side(e.side) : '');
+      var bits = []; if (typeof r.hka === 'number') bits.push('HKA ' + f1(r.hka) + '°' + (typeof r.mhka === 'number' && window.OrthoXray ? ' (' + tx(window.OrthoXray.vv(r.mhka)) + ')' : '')); if (r.cpak && r.cpak.roman) bits.push('CPAK ' + r.cpak.roman);
+      body = bits.length ? '<b class="tlxr">' + esc(bits.join(' · ')) + '</b>' : '<span class="muted">' + esc(t('notMeas')) + '</span>'; }
+    if (e.kind === 'prom') { title = t('prom') + ' · ' + X.tpName(e.tp);
+      body = '<div class="tlchips">' + e.subs.map(function (s) { return '<button class="tlchip" data-tlsub="' + esc(s.id) + '" title="' + esc(t('ansHint')) + '"><b>' + esc(I[s.instrument] ? I[s.instrument].short : s.instrument) + '</b> ' + esc(X.fmtScore(s.instrument, s)) + ' ' + X.bandHtml(s.instrument, s) + '</button>'; }).join('') + '</div>'; }
+    if (e.kind === 'rom') { title = t('rom'); body = esc([e.side ? side(e.side) : '', e.max != null ? t('flex') + ' ' + Math.round(e.max) + '°' : '', e.min != null ? t('ext') + ' ' + Math.round(e.min) + '°' : '', e.reps ? e.reps + ' ' + t('reps') : ''].filter(Boolean).join(' · ')); }
+    if (e.kind === 'sched') { title = t('sched') + ': ' + X.tpName(e.tp) + (e.req ? '' : ' (' + t('optl') + ')');
+      body = '<span class="fust">' + esc(t('st_' + e.status)) + '</span> ' + (e.noDate ? esc(t('noDate')) : esc(t('window') + ' ' + dmy(e.from) + ' – ' + dmy(e.to))) + (e.status === 'overdue' ? ' · <b>' + esc(f('dOver', e.days)) + '</b>' : '') + '<div class="small">' + e.missing.map(function (i) { return '<span class="pill">' + esc(I[i] ? I[i].short : i) + '</span>'; }).join(' ') + '</div>'; }
+    h = '<li class="tl-' + e.kind + (e.kind === 'sched' ? ' st-' + e.status : '') + '" data-tlk="' + e.kind + '" data-tli="' + i + '"><span class="tldot">' + ic + '</span><div class="tlbody"><button class="tlgo" data-tlgo="' + i + '"><span class="tldate">' + esc(e.date ? dmy(e.date) : '—') + (rel != null && e.kind !== 'surgery' ? ' <span class="muted">(' + esc(f('dayN', (rel > 0 ? '+' : '') + rel)) + ')</span>' : '') + '</span> <b class="tltitle">' + esc(title) + '</b></button>' + (body ? '<div class="tlmore">' + body + '</div>' : '') + '</div></li>';
+    return h;
+  }
+  var lastEv = [];
+  function timelineHtml(p, td) {
+    var ev = F.timeline(p, { submissions: A.store.submissions, opnotes: A.store.opnotes || [], xrays: A.store.xrays || [], rom: A.store.rom || [] }, td || today());
+    lastEv = ev;
+    return '<details class="ptl" id="ptTimeline"' + (tlOpen ? ' open' : '') + '><summary><b>🕒 ' + esc(t('tlT')) + '</b> <span class="muted">(' + (ev.length - 1) + ')</span></summary><p class="muted small">' + esc(t('tlLead')) + '</p><ol class="tl" id="tlList">' + ev.map(function (e, i) { return evHtml(e, p, i); }).join('') + '</ol></details>';
+  }
+  function bindTimeline(p) {
+    var box = $('ptTimeline'); if (!box || !p) return;
+    box.ontoggle = function () { tlOpen = box.open; };
+    var Q = function () { return window.__qlib && window.__qlib.state; };
+    box.querySelectorAll('[data-tlsub]').forEach(function (b) { b.onclick = function () { if (Q()) Q().open[b.dataset.tlsub] = true; A.openPatient(p.id, 'sub-' + b.dataset.tlsub); }; });
+    box.querySelectorAll('[data-tlgo]').forEach(function (b) {
+      b.onclick = function () {
+        var e = lastEv[+b.dataset.tlgo]; if (!e) return;
+        if (e.kind === 'prom') { if (Q()) e.subs.forEach(function (s) { Q().open[s.id] = true; }); return A.openPatient(p.id, 'sub-' + e.subs[0].id); }
+        if (e.kind === 'opnote' && window.__opnote && window.__opnote.open) { window.__opnote.open(e.id, 'view'); return A.openPatient(p.id, 'opn'); }
+        A.openPatient(p.id, { reg: 'ptIdent', surgery: 'ptIdent', xray: 'xrSec', rom: 'camSec', sched: 'mxTable' }[e.kind] || 'ptTimeline');
+      };
+    });
+  }
+  window.__fu = { dashHtml: dashHtml, bindDash: bindDash, timelineHtml: timelineHtml, bindTimeline: bindTimeline, csv: csv, syncBadge: syncBadge, get ui() { return ui; } };
+  new MutationObserver(function () { setTimeout(syncBadge, 0); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  syncBadge();
+  if (X.curTab === 'dash' && A.refreshUser) A.refreshUser();
 })();
 </script>
 <!-- ===== Doctors-only team chat (Συζήτηση): text + photos, Supabase Realtime; no patient data ===== -->
