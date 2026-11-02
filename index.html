@@ -754,6 +754,14 @@ body.hto-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
 }
 @media (max-width:600px){.xtopcard .fld.inl{max-width:100%;min-width:0}.xtopcard .fld.inl select{min-width:0;max-width:calc(100vw - 150px)}}
 .xtop-hto>p.muted,.xtop-hto>.xform,.xtop-hto>.row{display:none}
+.xhempty{text-align:left}.xhempty h3{margin:0 0 6px}
+.xhsteps{margin:4px 0 12px 1.2em;padding:0}.xhsteps li{margin:3px 0}.xhsteps li.done{color:#166534}
+.xhto label.btn{display:inline-block;cursor:pointer;padding:8px 14px;border-radius:10px;background:#e6eef1;color:#0b3d4a;font-weight:600;border:1px solid #b7c4ca}
+.xhto label.btn.small{padding:4px 10px;font-size:.85rem}
+.xhto label.btn.primary{background:#0e7490;color:#fff;border-color:#0e7490;font-weight:700}
+.xhto label.btn:focus-visible{outline:3px solid #67e8f9}
+.xhup{font-size:1.08rem;padding:14px 22px!important;margin:4px 0 6px;box-shadow:0 2px 8px rgba(14,116,144,.3)}
+.xhfilm{gap:8px;align-items:center;margin:4px 0}
 </style>
 </head>
 <body>
@@ -9714,7 +9722,7 @@ window.OrthoQRGen = qrcode; })();
     st.autoRun = null; // any run for the previous image is abandoned
     st.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); st.fileBlob = blob || null; st.imgNote = ''; st.dirty = true; st.fitted = false; var sl = curSlot(); if (sl) sl.saved = false;
     st.img = canvas; st.W = canvas.width; st.H = canvas.height; st.name = name; st.demo = demo; st.dicom = dicom || null;
-    st.lm = { R: {}, L: {} }; st.cur = { R: 0, L: 0 }; st.auto = { R: {}, L: {} }; st.origin = { R: {}, L: {} }; st.det = { R: null, L: null }; st.confirmed = { R: null, L: null }; st.arm = null;
+    st.lm = { R: {}, L: {} }; st.cur = { R: 0, L: 0 }; st.auto = { R: {}, L: {} }; st.origin = { R: {}, L: {} }; st.det = { R: null, L: null }; st.confirmed = { R: null, L: null }; st.arm = null; st.hto = { R: {}, L: {} };
     if (!demo) st.synth = null; st.msg = demo ? demoNote() : ''; st.invert = false;
     st.ctx2 = canvas.getContext('2d', { willReadFrequently: true });
     render(); fit();
@@ -9743,7 +9751,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- view transform ----------
   function vsize() { var v = $('xView'); return { w: v.clientWidth, h: v.clientHeight }; }
-  function fit() { if (!st.img) return; var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
+  function fit() { if (!st.img) return; if (st.sub === 'hto' && window.__xhto) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
   function toScr(p) { return { x: p.x * st.view.s + st.view.tx, y: p.y * st.view.s + st.view.ty }; }
   function toImg(p) { return { x: (p.x - st.view.tx) / st.view.s, y: (p.y - st.view.ty) / st.view.s }; }
   function zoomAt(k, c) { var a = toImg(c); st.view.s = Math.max(0.05, Math.min(12, st.view.s * k)); st.view.tx = c.x - a.x * st.view.s; st.view.ty = c.y - a.y * st.view.s; draw(); }
@@ -10417,7 +10425,7 @@ window.OrthoQRGen = qrcode; })();
   var COL = { HINGE: '#dc2626', CUT: '#dc2626', FIB: '#7c3aed', LCX: '#7c3aed', CAL1: '#2563eb', CAL2: '#2563eb' };
   var S = {
     el: { title: 'Σχεδιασμός HTO', sub: 'Ανοικτή σφηνοειδής υψηλή κνημιαία οστεοτομία (έσω) – σχεδιασμός κατά Miniaci στην ακτινογραφία φόρτισης κάτω άκρων (ορθοστατική, μετωπιαία).',
-      R: 'Δεξιά', L: 'Αριστερά', needFilm: 'Ανοίξτε πρώτα μια ακτινογραφία (ή 🧪 DEMO) και τοποθετήστε τα σημεία στην «🩻 Ευθυγράμμιση».', goAlign: '🩻 Μετάβαση στην Ευθυγράμμιση',
+      R: 'Δεξιά', L: 'Αριστερά', needFilm: 'Ανοίξτε πρώτα μια ακτινογραφία (ή 🧪 DEMO) και τοποθετήστε τα σημεία στην «🩻 Ευθυγράμμιση».', goAlign: '🩻 Μετάβαση στην Ευθυγράμμιση', upload: '📁 Ανέβασμα ακτινογραφίας φόρτισης', change: '📁 Αλλαγή ακτινογραφίας', noFilmT: 'Δεν έχει ανοιχτεί ακτινογραφία', steps: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε ολόσωμη ορθοστατική ακτινογραφία κάτω άκρων (PNG, JPEG ή DICOM).', 'Ελέγξτε τα σημεία – μετά εμφανίζεται ο σχεδιασμός.'], noPt: 'Χωρίς επιλεγμένο ασθενή η ακτινογραφία δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.', fileTypes: 'PNG, JPEG ή DICOM (χωρίς συμπίεση) · η εικόνα μένει σε αυτή τη συσκευή', detecting: '🤖 Αυτόματη ανίχνευση σημείων…',
       needLm: 'Δεν υπολογίζεται σχέδιο: λείπουν σημεία ευθυγράμμισης', head: 'Δεν υπολογίζεται σχέδιο: τα 3 σημεία της μηριαίας κεφαλής δεν ορίζουν κύκλο.',
       wbl: 'Δεν υπολογίζεται σχέδιο: η γραμμή φόρτισης είναι παράλληλη με το κνημιαίο plateau.', hinge: 'Τοποθετήστε το σημείο άρθρωσης (hinge) για να υπολογιστεί το σχέδιο.',
       nosolution: 'Δεν υπολογίζεται σχέδιο: ο στόχος δεν επιτυγχάνεται με περιστροφή έως ±35° γύρω από αυτό το hinge. Ελέγξτε στόχο και θέση hinge.',
@@ -10457,7 +10465,7 @@ window.OrthoQRGen = qrcode; })();
       unconfirmedSheet: 'ΣΗΜΕΙΑ ΜΗ ΕΠΙΒΕΒΑΙΩΜΕΝΑ', synth: 'DEMO συνθετική εικόνα – όχι ασθενής', legend: 'Πορτοκαλί: προεγχειρητικός άξονας φόρτισης · Πράσινο: σχεδιαζόμενος · Κόκκινο: τομή και hinge · Κίτρινο: σφήνα',
       post2: 'μετεγχειρητική ακτινογραφία' },
     en: { title: 'HTO planning', sub: 'Medial opening-wedge high tibial osteotomy – Miniaci planning on the standing long-leg AP film.',
-      R: 'Right', L: 'Left', needFilm: 'Open a film first (or 🧪 DEMO) and place the landmarks in “🩻 Alignment”.', goAlign: '🩻 Go to Alignment',
+      R: 'Right', L: 'Left', needFilm: 'Open a film first (or 🧪 DEMO) and place the landmarks in “🩻 Alignment”.', goAlign: '🩻 Go to Alignment', upload: '📁 Upload standing long-leg X-ray', change: '📁 Change X-ray', noFilmT: 'No X-ray open yet', steps: ['Select the patient (above, “Patient”).', 'Upload a full-length standing lower-limb X-ray (PNG, JPEG or DICOM).', 'Check the landmarks – the plan then appears.'], noPt: 'With no patient selected the X-ray is not saved; select a patient to keep it.', fileTypes: 'PNG, JPEG or DICOM (uncompressed) · the image stays on this device', detecting: '🤖 Detecting landmarks…',
       needLm: 'Plan cannot be computed: missing alignment landmarks', head: 'Plan cannot be computed: the 3 femoral-head points do not define a circle.',
       wbl: 'Plan cannot be computed: the weight-bearing line is parallel to the tibial plateau.', hinge: 'Place the hinge point to compute the plan.',
       nosolution: 'Plan cannot be computed: the target cannot be reached by rotating up to ±35° about this hinge. Check the target and hinge position.',
@@ -10527,12 +10535,21 @@ window.OrthoQRGen = qrcode; })();
     var sd = s.side === 'L' ? 'L' : 'R', m = H.measure(s.lm[sd], msOf(sd));
     var seg = '<div class="seg" id="htoSideSeg">' + ['R', 'L'].map(function (k) { var ok = H.measure(s.lm[k], msOf(k)).ok; return '<button data-htoside="' + k + '" class="' + (k === sd ? 'active' : '') + '">' + esc(t(k)) + (ok ? ' ✓' : '') + '</button>'; }).join('') + '</div>';
     var head = '<div class="card xhhead"><h2>🦴 ' + esc(t('title')) + (lang() === 'el' ? ' <span class="muted small">HTO planning</span>' : '') + (s.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</h2><p class="muted small">' + esc(t('sub')) + '</p>' + seg;
-    if (!s.img || !m.ok) {
-      el.innerHTML = head + '<p class="xhwarn" id="htoReason" role="status">' + esc(!s.img ? t('needFilm') : reasonTxt({ reason: m.reason === 'head' ? 'head' : 'landmarks', missing: m.missing })) + '</p><button id="htoGoAlign">' + esc(t('goAlign')) + '</button></div>';
-      bindHead(); $('htoGoAlign').onclick = function () { XR().setSub('align'); }; ui.last = null; return;
+    // upload: a <label> for the X-ray tab's own file input (#xFile) → the same pipeline as Alignment (types, patient/tab, auto landmarks)
+    var upBtn = function (id, cls, k) { return '<label for="xFile" class="btn ' + cls + '" id="' + id + '" role="button" tabindex="0">' + esc(t(k)) + '</label>'; };
+    if (!s.img) {
+      if (s.imgNote === 'imgLoading') { el.innerHTML = head + '<p class="muted" id="htoReason" role="status">' + esc(t('detecting').replace('🤖 ', '⏳ ')) + '</p></div>'; bindHead(); ui.last = null; return; }
+      var steps = t('steps');
+      el.innerHTML = head + '</div><div class="card xhempty" id="htoEmpty"><h3>' + esc(t('noFilmT')) + '</h3><ol class="xhsteps">' + steps.map(function (x, i) { return '<li class="' + (i === 0 && s.pid ? 'done' : '') + '">' + esc(x) + (i === 0 && s.pid ? ' <b>✓ ' + esc(s.pid) + '</b>' : '') + '</li>'; }).join('') + '</ol>' +
+        upBtn('htoUpload', 'primary xhup', 'upload') + '<p class="muted small">' + esc(t('fileTypes')) + '</p>' + (!s.pid ? '<p class="small xhwarn" id="htoNoPt">' + esc(t('noPt')) + '</p>' : '') + '<p class="small"><button id="htoGoAlign" class="small">' + esc(t('goAlign')) + '</button></p></div>';
+      bindHead(); bindUpload(); $('htoGoAlign').onclick = function () { XR().setSub('align'); }; ui.last = null; return;
+    }
+    if (!m.ok) {
+      el.innerHTML = head + '<p class="' + (s.autoRun ? 'muted' : 'xhwarn') + '" id="htoReason" role="status">' + esc(s.autoRun ? t('detecting') : reasonTxt({ reason: m.reason === 'head' ? 'head' : 'landmarks', missing: m.missing })) + '</p><div class="row">' + upBtn('htoChange', '', 'change') + '<button id="htoGoAlign">' + esc(t('goAlign')) + '</button></div></div>';
+      bindHead(); bindUpload(); $('htoGoAlign').onclick = function () { XR().setSub('align'); }; ui.last = null; return;
     }
     var p = compute(sd), h = hs(sd), o = p.opt, cfd = s.confirmed[sd];
-    head += '<p class="small ' + (cfd ? 'xhok' : 'xhwarn') + '" id="htoConf">' + (cfd ? '✔ ' + esc(t('conf')) + ' · ' + esc(cfd.name || cfd.by || '') : esc(t('notConf')) + ' <button id="htoConfirm" class="small">' + esc(t('confirm')) + '</button>') + '</p></div>';
+    head += '<div class="row xhfilm"><span class="muted small">' + esc(s.name || '') + '</span>' + upBtn('htoChange', 'small', 'change') + '</div><p class="small ' + (cfd ? 'xhok' : 'xhwarn') + '" id="htoConf">' + (cfd ? '✔ ' + esc(t('conf')) + ' · ' + esc(cfd.name || cfd.by || '') : esc(t('notConf')) + ' <button id="htoConfirm" class="small">' + esc(t('confirm')) + '</button>') + '</p></div>';
     var tools = '<div class="row xhtools" role="toolbar">' + PTS.map(function (k) { var c = h.pts[k] ? ' set' : ''; return '<button class="xhpt' + c + (ui.arm === k ? ' armed' : '') + '" data-htoarm="' + k + '" title="' + esc(t('place') + ': ' + t(k)) + '"><i style="background:' + COL[k] + '"></i>' + esc(t(k)) + (h.org[k] === 'auto' ? ' 🤖' : '') + '</button>'; }).join('') + '<button id="htoPropose">' + esc(t('propose')) + '</button></div>';
     var view = '<div class="card xhview">' + tools + '<p class="muted small" id="htoHint">' + esc(ui.arm ? t('armed') + t(ui.arm) : t('drag')) + '</p><div class="xhcanv"><div class="xhknee"><canvas id="htoKnee" aria-label="' + esc(t('title') + ' – knee') + '"></canvas></div><div class="xhleg"><canvas id="htoLeg" aria-label="' + esc(t('title') + ' – limb') + '"></canvas></div></div><p class="muted small">' + esc(t('legend')) + '</p></div>';
     var tgt = '<div class="xhsec"><h3>🎯 ' + esc(t('target')) + '</h3><div class="seg" id="htoMode"><button data-htomode="wbl" class="' + (o.mode === 'wbl' ? 'active' : '') + '">' + esc(t('mWbl')) + '</button><button data-htomode="hka" class="' + (o.mode === 'hka' ? 'active' : '') + '">' + esc(t('mHka')) + '</button></div>';
@@ -10543,7 +10560,7 @@ window.OrthoQRGen = qrcode; })();
     var panel = '<div class="card xhpanel">' + tgt + '<div id="htoRes">' + resultsHtml(p) + '</div>' +
       '<div class="row xhact"><button id="htoSave" class="primary">' + esc(t('save')) + '</button><button id="htoPrint">' + esc(t('print')) + '</button></div><p class="small" id="htoMsg" role="status" aria-live="polite">' + esc(ui.msg || (h.saved ? t('savedOn') + ' · ' + (typeof h.saved === 'string' ? h.saved : '') : '')) + '</p>' + achievedHtml(sd) + '</div>';
     el.innerHTML = head + '<div class="xhgrid">' + view + panel + '</div>';
-    ui.last = p; bindHead(); bindPane(sd); drawAll();
+    ui.last = p; bindHead(); bindUpload(); bindPane(sd); drawAll();
   }
   function row(lab, a, b, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + esc(lab) + '</td><td>' + a + '</td>' + (b === undefined ? '' : '<td>' + b + '</td>') + '</tr>'; }
   function resultsHtml(p) {
@@ -10589,6 +10606,7 @@ window.OrthoQRGen = qrcode; })();
       '<tr><td>HKA</td><td>' + f1(q.hka) + '°</td><td>' + f1(a.hka) + '°</td><td>' + d(a.dHka, '°') + '</td></tr><tr><td>WBL</td><td>' + f1(q.wbl) + ' %</td><td>' + f1(a.wbl) + ' %</td><td>' + d(a.dWbl, ' %') + '</td></tr>' +
       '<tr><td>MPTA</td><td>' + f1(q.mpta) + '°</td><td>' + f1(a.mpta) + '°</td><td>' + d(a.dMpta, '°') + '</td></tr><tr><td>JLCA</td><td>' + sg(r.plan.hto.result.pre.jlca) + '° (pre)</td><td>' + sg(a.jlca) + '°</td><td>' + d(a.dJlca, '°') + '</td></tr></table></div></div>';
   }
+  function bindUpload() { ['htoUpload', 'htoChange'].forEach(function (id) { var b = $(id); if (b) b.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); var f = $('xFile'); if (f) f.click(); } }; }); }
   function bindHead() {
     document.querySelectorAll('[data-htoside]').forEach(function (b) { b.onclick = function () { st().side = b.dataset.htoside; ui.arm = null; ui.msg = ''; renderNow(); }; });
   }
