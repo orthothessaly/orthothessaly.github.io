@@ -675,6 +675,36 @@ body.qr-open{overflow:hidden}
 .vpeople{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;font-size:.9rem;margin-top:6px}.vpeople ul{margin:4px 0 0;padding-left:18px}
 .vturn{margin-top:12px}.vturn summary{cursor:pointer;color:var(--brand)}.vturn .fld{flex:1 1 180px}.vturn input{width:100%;box-sizing:border-box}
 @media (max-width:640px){.vgrid{--vcols:2!important}.vgrid .vtile:only-child{grid-column:1/-1}.vbtn{flex:1 1 40%;padding:10px 8px;font-size:.88rem}.vctl{position:sticky;bottom:0;background:#fff;padding:6px 0;z-index:5}}
+/* per-peer connection status chip */
+.vstate:empty{display:none}.vstate{background:rgba(0,0,0,.45);border-radius:999px;padding:1px 8px;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}.vstate.relay{color:#bfe3ff}.vstate.direct{color:#b8f0c9}.vstate.wait{color:#ffd27a}.vstate.bad{color:#ffb4a8}
+/* call stage + tap-to-spotlight */
+.vstage{position:relative}.vtile{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.vhint{margin:-4px 0 6px;text-align:center}
+.vfsx{display:none}
+.vbtn .vi{margin-right:4px}
+.vgrid.spot{display:flex;flex-wrap:wrap;gap:6px}.vgrid.spot .vtile{flex:0 0 calc(25% - 5px);aspect-ratio:4/3}
+.vgrid.spot .vtile.spot{flex:0 0 100%;order:-1;aspect-ratio:auto;height:min(68vh,75vw);grid-column:auto}
+.vtile.spot video{object-fit:contain;background:#000}.vtile.spot.me:not(.share) video{transform:scaleX(-1)}
+/* full screen: native (:fullscreen) or CSS immersive (.vimm, iPhone) – identical layout */
+.vstage.vfs{background:#000;display:flex;flex-direction:column;width:100%;height:100%;margin:0;padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) 0 max(6px,env(safe-area-inset-left));box-sizing:border-box}
+.vstage.vimm{position:fixed;inset:0;z-index:2147483000;width:100vw;height:100vh;height:100dvh}
+html.vimm-on,html.vimm-on body{overflow:hidden!important;overscroll-behavior:none}
+.vstage:fullscreen{width:100vw;height:100vh}.vstage:-webkit-full-screen{width:100vw;height:100vh}
+.vfs .vgrid{flex:1 1 auto;min-height:0;margin:0;gap:6px;grid-template-columns:repeat(var(--vfcols,1),minmax(0,1fr))!important;grid-template-rows:repeat(var(--vfrows,1),minmax(0,1fr));padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.vfs .vgrid .vtile{aspect-ratio:auto!important;height:100%;min-height:0;grid-column:auto!important}
+.vfs .vgrid .vtile:only-child{grid-column:auto}
+.vfs .vtile video{object-fit:contain;background:#000}.vfs .vgrid:not(.spot) .vtile:not(.share) video{object-fit:cover}
+.vfs .vstate{right:auto;left:8px}
+.vfs .vgrid.spot{display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;justify-content:center}
+.vfs .vgrid.spot .vtile{height:calc(20% - 6px);flex:1 1 0;min-width:0;max-width:40%;aspect-ratio:auto!important;width:auto}
+.vfs .vgrid.spot .vtile.spot{flex:0 0 100%;height:80%;width:100%;max-width:none;aspect-ratio:auto!important}
+.vfs .vctl,.vfs .vctl[id]{position:absolute;left:0;right:0;bottom:0;margin:0;z-index:3;display:flex;flex-wrap:nowrap;justify-content:center;gap:8px;padding:10px max(8px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));background:linear-gradient(transparent,rgba(0,0,0,.75))}
+.vfs .vbtn{flex:0 1 auto;background:rgba(255,255,255,.92);padding:9px 14px;font-size:.88rem;white-space:nowrap}.vfs .vbtn.off{background:#fde2e2}.vfs .vbtn.danger{background:#c0392b}
+.vfs .vfsx{display:block;position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:4;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:1.3rem;font-weight:800;line-height:44px;padding:0;cursor:pointer}
+.vfs .vlabel{font-size:.9rem}
+@media (max-width:760px){.vfs .vbtn .vtx{display:none}.vfs .vbtn{flex:1 1 0;padding:12px 4px;font-size:1.15rem}.vfs .vbtn .vi{margin:0}}
+@media (orientation:landscape){.vfs .vgrid.spot{flex-direction:column}.vfs .vgrid.spot .vtile{height:auto;width:calc(22% - 6px);max-width:none;flex:1 1 0;min-height:0;max-height:40%}.vfs .vgrid.spot .vtile.spot{flex:0 0 100%;width:78%;height:100%;max-height:none}}
+@media (orientation:landscape) and (max-height:500px){.vfs .vgrid{padding-bottom:58px}.vfs .vbtn{padding:8px 4px}}
 /* ===== 🦴 HTO planning sub-tab ===== */
 .xsubbar{display:flex;gap:6px;margin:0 0 8px;flex-wrap:wrap}
 .xsub{border:1px solid #b7c4ca;background:#fff;color:#0b3d4a;border-radius:999px;padding:7px 14px;font-weight:600}
@@ -9046,15 +9076,38 @@ window.OrthoQRGen = qrcode; })();
   /** mesh rule: the peer with the smaller id makes the offer (no glare) */
   function isOfferer(me, other) { return me < other; }
   function canJoin(pres, me) { var n = inCall(pres).filter(function (p) { return p.id !== me; }).length; return n < MAX; }
-  /** ICE servers: public Google STUN + optional TURN typed by the doctor (kept on this device only) */
-  function iceServers(turn) {
-    var s = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  var STUN = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  /** ICE servers: built-in list from the 'turn-credentials' Edge Function (STUN + short-lived TURN relay: UDP/TCP/TLS 443),
+   *  or public Google STUN if it is unavailable; + optional advanced TURN typed by the doctor (kept on this device only). */
+  function iceServers(turn, builtIn) {
+    var s = (builtIn && builtIn.length ? builtIn : STUN).map(function (x) { var o = { urls: [].concat(x.urls).filter(function (u) { return /^(stuns?|turns?):/.test(u) && !/:53(\?|$)/.test(u); }) }; if (x.username) { o.username = x.username; o.credential = x.credential || ''; } return o; }).filter(function (x) { return x.urls.length; });
     if (turn && turn.urls) { var u = String(turn.urls).split(/[\s,]+/).filter(function (x) { return /^turns?:/.test(x); }); if (u.length) s.push({ urls: u, username: turn.username || '', credential: turn.credential || '' }); }
     return s;
   }
+  function hasRelay(servers) { return (servers || []).some(function (x) { return x.username && [].concat(x.urls).some(function (u) { return /^turns?:/.test(u); }); }); }
+  /** automatic recovery plan for a peer that did not connect / dropped: attempt 1 = ICE restart, 2 = rebuild relay-only (TURN),
+   *  then keep alternating relay-only / all candidates forever while the peer is in the call */
+  function recovery(attempt) { return attempt <= 0 ? { restart: false, relay: false } : attempt === 1 ? { restart: true, relay: false } : { restart: false, relay: attempt % 2 === 0 }; }
+  /** connect deadline per attempt (ms) – relay attempts get longer (TURN/TLS allocation on slow mobile networks) */
+  function deadline(attempt, relay) { return relay ? 20000 : attempt ? 12000 : 15000; }
+  /** route of an RTCStatsReport (array of stats objects): 'relay' if the selected pair uses a TURN candidate, 'direct' otherwise, '' if unknown */
+  function routeOf(reports) {
+    var by = {}, pair = null; (reports || []).forEach(function (r) { by[r.id] = r; });
+    (reports || []).forEach(function (r) { if (r.type === 'transport' && r.selectedCandidatePairId && by[r.selectedCandidatePairId]) pair = by[r.selectedCandidatePairId]; });
+    if (!pair) (reports || []).forEach(function (r) { if (r.type === 'candidate-pair' && r.state === 'succeeded' && (r.selected || r.nominated) && !pair) pair = r; });
+    if (!pair) return '';
+    var l = by[pair.localCandidateId] || {}, rm = by[pair.remoteCandidateId] || {};
+    return l.candidateType === 'relay' || rm.candidateType === 'relay' ? 'relay' : l.candidateType || rm.candidateType ? 'direct' : '';
+  }
   function gridCols(n) { return n <= 1 ? 1 : n <= 4 ? 2 : 3; }
+  /** fullscreen grid: number of columns that gives the largest 4:3 tiles for n tiles in a W×H area (portrait → stacked, landscape → side by side) */
+  function fitCols(n, W, H) {
+    if (n <= 1 || !(W > 0) || !(H > 0)) return 1; var best = 1, area = 0;
+    for (var c = 1; c <= n; c++) { var r = Math.ceil(n / c), w = W / c, h = H / r; if (w / h > 4 / 3) w = h * 4 / 3; else h = w * 3 / 4; if (w * h > area + 1e-6) { area = w * h; best = c; } }
+    return best;
+  }
   var NOTICE_RE = /^📹 .+(ξεκίνησε βιντεοκλήση|started a video call)/;
-  root.OrthoVideoCore = { MAX: MAX, ROOM: ROOM, people: people, inCall: inCall, isOfferer: isOfferer, canJoin: canJoin, iceServers: iceServers, gridCols: gridCols, NOTICE_RE: NOTICE_RE };
+  root.OrthoVideoCore = { MAX: MAX, ROOM: ROOM, people: people, inCall: inCall, isOfferer: isOfferer, canJoin: canJoin, iceServers: iceServers, hasRelay: hasRelay, recovery: recovery, deadline: deadline, routeOf: routeOf, gridCols: gridCols, fitCols: fitCols, NOTICE_RE: NOTICE_RE };
   if (typeof document === 'undefined') return;
 
   // ---------- UI ----------
@@ -9068,16 +9121,18 @@ window.OrthoQRGen = qrcode; })();
       start: '📹 Έναρξη βιντεοκλήσης', join: '📹 Σύνδεση στην κλήση', leave: '⏏ Αποσύνδεση', mic: '🎙 Μικρόφωνο', cam: '📷 Κάμερα', share: '🖥 Κοινή χρήση οθόνης', unshare: '🖥 Διακοπή κοινής χρήσης', you: 'Εσείς', inCallN: 'Στην κλήση τώρα ({0}/{1})', online: 'Συνδεδεμένοι ιατροί', nobody: 'Κανείς στην κλήση.',
       full: 'Η αίθουσα είναι πλήρης ({0} άτομα). Δοκιμάστε αργότερα.', noMedia: 'Δεν επιτράπηκε η πρόσβαση σε κάμερα/μικρόφωνο – συμμετέχετε μόνο με προβολή. Ελέγξτε τις άδειες του browser.', noRtc: 'Ο browser δεν υποστηρίζει βιντεοκλήσεις (WebRTC).',
       denied: 'Δεν επιτρέπεται η σύνδεση στην αίθουσα (μόνο για ιατρούς).', sigErr: 'Σύνδεση με τον διακομιστή σηματοδότησης… (επανασύνδεση)', live: 'συνδεδεμένο', connecting: 'σύνδεση…',
-      iceFail: 'Δεν ήταν δυνατή η απευθείας σύνδεση με: {0}. Πιθανώς αυστηρό δίκτυο/firewall (π.χ. νοσοκομείου). Δοκιμάστε άλλο δίκτυο (π.χ. 4G) ή ορίστε διακομιστή TURN στις «Ρυθμίσεις δικτύου».', reconnecting: 'επανασύνδεση…', connected: 'συνδέθηκε', waiting: 'σύνδεση…',
-      turnT: '⚙️ Ρυθμίσεις δικτύου (TURN – προαιρετικό)', turnLead: 'Χωρίς TURN, ορισμένα αυστηρά δίκτυα (νοσοκομεία) μπλοκάρουν την απευθείας σύνδεση. Μπορείτε να βάλετε έναν δωρεάν/δικό σας TURN (π.χ. Open Relay, Metered, Cloudflare). Αποθηκεύεται μόνο σε αυτή τη συσκευή.', turnUrls: 'TURN URL(s)', turnUser: 'Όνομα χρήστη', turnPw: 'Κωδικός', save: 'Αποθήκευση', saved: '✓ Αποθηκεύτηκε', stunOnly: 'Τώρα: μόνο δημόσιοι STUN (Google)', turnOn: 'Τώρα: STUN + TURN',
+      iceFail: 'Η σύνδεση με {0} καθυστερεί. Γίνεται αυτόματα νέα προσπάθεια (και μέσω ασφαλούς διακομιστή αναμετάδοσης) – δεν χρειάζεται να κάνετε τίποτα. Αν συνεχιστεί, ελέγξτε ότι υπάρχει Internet.', reconnecting: 'Επανασύνδεση…', connected: 'συνδέθηκε', waiting: 'Σύνδεση…', viaRelay: 'Μέσω διακομιστή', direct: 'Απευθείας', retrying: 'Νέα προσπάθεια…',
+      turnT: '⚙️ Ρυθμίσεις δικτύου (για προχωρημένους)', turnLead: 'Δεν χρειάζεται καμία ρύθμιση: όταν ένα δίκτυο (π.χ. νοσοκομείου, 4G) μπλοκάρει την απευθείας σύνδεση, η κλήση περνά αυτόματα από ασφαλή διακομιστή αναμετάδοσης (TURN, και μέσω θύρας 443/TLS). Προαιρετικά μπορείτε να προσθέσετε δικό σας TURN – αποθηκεύεται μόνο σε αυτή τη συσκευή.', turnUrls: 'TURN URL(s)', turnUser: 'Όνομα χρήστη', turnPw: 'Κωδικός', save: 'Αποθήκευση', saved: '✓ Αποθηκεύτηκε', stunOnly: 'Τώρα: αυτόματη αναμετάδοση (TURN)', turnOn: 'Τώρα: αυτόματη αναμετάδοση + δικός σας TURN', relayNo: 'Τώρα: η αυτόματη αναμετάδοση δεν είναι διαθέσιμη – μόνο απευθείας σύνδεση (STUN)', relayChk: 'Τώρα: έλεγχος αναμετάδοσης…',
+      fs: '⛶ Πλήρης οθόνη', fsExit: '✕ Έξοδος', fsExitT: 'Έξοδος από πλήρη οθόνη', spotHint: 'Πατήστε ένα πλακίδιο για μεγέθυνση · διπλό πάτημα = πλήρης οθόνη', unspot: 'Πατήστε ξανά για επιστροφή',
       demo: 'DEMO: μόνο τοπική προεπισκόπηση κάμερας – καμία σύνδεση με άλλους ιατρούς. Στη δημοσιευμένη σελίδα η κλήση γίνεται μεταξύ των προσκεκλημένων ιατρών.', preview: '📷 Προεπισκόπηση κάμερας', stopPrev: 'Διακοπή προεπισκόπησης',
       notice: '📹 Ο/Η Δρ. {0} ξεκίνησε βιντεοκλήση — Σύνδεση', active: 'Βιντεοκλήση σε εξέλιξη', screen: 'οθόνη', muted: 'σίγαση', max: 'Έως {0} συμμετέχοντες.', camOff: 'κάμερα κλειστή', shareFail: 'Η κοινή χρήση οθόνης δεν ξεκίνησε.' },
     en: { tab: '📹 Video call', T: '📹 Doctors-only video call', room: 'Doctors’ room', lead: '🔒 Invited doctors only. Video and audio go directly between computers (peer-to-peer, DTLS-SRTP encrypted). No recording, nothing is stored. Not linked to patients.',
       start: '📹 Start video call', join: '📹 Join the call', leave: '⏏ Leave', mic: '🎙 Microphone', cam: '📷 Camera', share: '🖥 Share screen', unshare: '🖥 Stop sharing', you: 'You', inCallN: 'In the call now ({0}/{1})', online: 'Doctors online', nobody: 'Nobody in the call.',
       full: 'The room is full ({0} people). Please try later.', noMedia: 'Camera/microphone access was not allowed – you joined view-only. Check the browser permissions.', noRtc: 'This browser does not support video calls (WebRTC).',
       denied: 'Not allowed to join the room (doctors only).', sigErr: 'Connecting to the signaling server… (retrying)', live: 'connected', connecting: 'connecting…',
-      iceFail: 'Could not connect directly to: {0}. Probably a strict network/firewall (e.g. hospital). Try another network (e.g. 4G) or set a TURN server in “Network settings”.', reconnecting: 'reconnecting…', connected: 'connected', waiting: 'connecting…',
-      turnT: '⚙️ Network settings (TURN – optional)', turnLead: 'Without TURN some strict networks (hospitals) block direct connections. You can add a free/own TURN server (e.g. Open Relay, Metered, Cloudflare). Stored on this device only.', turnUrls: 'TURN URL(s)', turnUser: 'Username', turnPw: 'Password', save: 'Save', saved: '✓ Saved', stunOnly: 'Now: public STUN only (Google)', turnOn: 'Now: STUN + TURN',
+      iceFail: 'Connecting to {0} is taking longer. Retrying automatically (also through a secure relay server) – nothing to do on your side. If it persists, check your Internet connection.', reconnecting: 'Reconnecting…', connected: 'connected', waiting: 'Connecting…', viaRelay: 'Via relay server', direct: 'Direct', retrying: 'Retrying…',
+      turnT: '⚙️ Network settings (advanced)', turnLead: 'Nothing to configure: when a network (hospital, 4G) blocks direct connections, the call automatically goes through a secure relay server (TURN, also over port 443/TLS). Optionally add your own TURN server – stored on this device only.', turnUrls: 'TURN URL(s)', turnUser: 'Username', turnPw: 'Password', save: 'Save', saved: '✓ Saved', stunOnly: 'Now: automatic relay (TURN)', turnOn: 'Now: automatic relay + your own TURN', relayNo: 'Now: automatic relay unavailable – direct connections only (STUN)', relayChk: 'Now: checking relay…',
+      fs: '⛶ Full screen', fsExit: '✕ Exit', fsExitT: 'Exit full screen', spotHint: 'Tap a tile to enlarge · double-tap = full screen', unspot: 'Tap again to go back',
       demo: 'DEMO: local camera preview only – no connection to other doctors. On the published site the call connects the invited doctors.', preview: '📷 Camera preview', stopPrev: 'Stop preview',
       notice: '📹 Dr {0} started a video call — Join', active: 'Video call in progress', screen: 'screen', muted: 'muted', max: 'Up to {0} participants.', camOff: 'camera off', shareFail: 'Screen sharing did not start.' }
   };
@@ -9092,7 +9147,7 @@ window.OrthoQRGen = qrcode; })();
   var cp = $('tab-chat') || $('tab-xray'); if (cp && cp.parentNode) cp.parentNode.insertBefore(pane, cp.nextSibling); else document.body.appendChild(pane);
 
   var st = fresh(null, false);
-  function fresh(user, cloud) { return { user: user, cloud: cloud, me: 'p' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36), ch: null, sig: '', pres: {}, raw: {}, states: {}, tick: 0, inCall: false, local: null, camTrack: null, micTrack: null, screen: null, mic: true, cam: true, peers: {}, early: {}, dbg: {}, warn: '', err: '', preview: false, built: false, audio: null }; }
+  function fresh(user, cloud) { return { user: user, cloud: cloud, me: 'p' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36), ch: null, sig: '', pres: {}, raw: {}, states: {}, tick: 0, inCall: false, local: null, camTrack: null, micTrack: null, screen: null, mic: true, cam: true, peers: {}, early: {}, dbg: {}, warn: '', err: '', preview: false, built: false, audio: null, ice: null, iceP: null, hold: {}, spot: '', fs: false, fsMode: '', wake: null }; }
   var visible = function () { return !pane.classList.contains('hidden'); };
   function others() { return C.inCall(st.pres).filter(function (p) { return p.id !== st.me; }); }
   function badge() {
@@ -9106,7 +9161,7 @@ window.OrthoQRGen = qrcode; })();
     if (!CL || !CL.channel) return;
     st.sig = 'connecting';
     st.ch = CL.channel('video:' + C.ROOM, { key: st.me }, {
-      onStatus: function (s) { st.sig = s; if (s === 'live') { st.ch.track(myMeta()); announce(); } paintStatus(); },
+      onStatus: function (s) { st.sig = s; if (s === 'live') { st.ch.track(myMeta()); announce(); loadIce(); } paintStatus(); },
       onPresence: function (p) {
         var fresh = Object.keys(p).some(function (k) { return k !== st.me && !st.raw[k]; });
         Object.keys(st.states).forEach(function (k) { if (!p[k]) delete st.states[k]; });
@@ -9117,7 +9172,7 @@ window.OrthoQRGen = qrcode; })();
         st.dbg['r_' + (m && m.t)] = (st.dbg['r_' + (m && m.t)] || 0) + 1; if (ev === 'sig' && m && m.to === st.me) onSignal(m);
       }
     });
-    st.tick = setInterval(announce, 15000);
+    st.tick = setInterval(function () { announce(); refreshIce(); }, 15000);
   }
   // presence = who is connected (tracked once); call state (inCall/mic/cam/share) travels as a 'st' broadcast,
   // because re-tracking presence makes Realtime emit a late 'leave' that would drop a live peer
@@ -9138,40 +9193,99 @@ window.OrthoQRGen = qrcode; })();
   function onSignal(m) {
     if (!st.inCall) return;
     if (m.t === 'offer') answer(m);
-    else if (m.t === 'answer') { var x = st.peers[m.from]; if (x) x.pc.setRemoteDescription(m.sdp).then(function () { flushIce(x); }).catch(function (e) { console.warn('answer', e); }); }
-    else if (m.t === 'ice') { var y = st.peers[m.from]; if (!y) { (st.early[m.from] = st.early[m.from] || []).push(m.c); return; } if (y.pc.remoteDescription) y.pc.addIceCandidate(m.c).catch(function () {}); else y.ice.push(m.c); }
+    else if (m.t === 'answer') { var x = st.peers[m.from]; if (x && x.pc.signalingState === 'have-local-offer') x.pc.setRemoteDescription(m.sdp).then(function () { flushIce(x); }).catch(function (e) { console.warn('answer', e); }); }
+    else if (m.t === 'ice') { var y = st.peers[m.from]; if (!y || st.hold[m.from]) { (st.early[m.from] = st.early[m.from] || []).push(m.c); return; } if (y.pc.remoteDescription) y.pc.addIceCandidate(m.c).catch(function () {}); else y.ice.push(m.c); }
+    else if (m.t === 're') { var z = st.peers[m.from]; if (z) recover(z, true); } // the answering side asks the offerer to repair the connection
     else if (m.t === 'bye') dropPeer(m.from);
   }
   function flushIce(x) { var q = x.ice; x.ice = []; q.forEach(function (c) { x.pc.addIceCandidate(c).catch(function () {}); }); }
-  function newPeer(p) {
-    var pc = new RTCPeerConnection({ iceServers: C.iceServers(turnCfg()) }), x = { id: p.id, name: p.name, meta: p, pc: pc, ice: st.early[p.id] || [], stream: new MediaStream(), state: 'new', t0: Date.now() };
+  function forceRelay() { try { return localStorage.getItem('orthothessaly.relay') === '1'; } catch (e) { return false; } } // diagnostics/tests: always relay
+  function pcConfig(relay) { return { iceServers: C.iceServers(turnCfg(), st.ice && st.ice.servers), iceTransportPolicy: relay || forceRelay() ? 'relay' : 'all', bundlePolicy: 'max-bundle' }; }
+  /** short-lived TURN credentials from the 'turn-credentials' Edge Function (doctors only); cached until 30 min before expiry; never blocks > 8 s */
+  function loadIce(force) {
+    var now = Date.now() / 1000;
+    if (!st.cloud || !CL || !CL.req) return Promise.resolve(null);
+    if (!force && st.ice && st.ice.expiresAt - 1800 > now) return Promise.resolve(st.ice);
+    if (!st.iceP) st.iceP = CL.req('POST', '/functions/v1/turn-credentials', {}).then(function (j) {
+      if (j && j.iceServers) st.ice = { servers: j.iceServers, relay: C.hasRelay(j.iceServers), providers: j.providers || [], expiresAt: j.expiresAt || now + 3600 };
+      return st.ice;
+    }, function (e) { console.warn('turn-credentials', e && e.message || e); st.iceErr = String(e && e.message || e); return st.ice; }).then(function (r) { st.iceP = null; paintIceMode(); return r; });
+    var p = st.iceP;
+    return Promise.race([p, new Promise(function (res) { setTimeout(function () { res(st.ice); }, 8000); })]);
+  }
+  function refreshIce() { // long calls: renew credentials before they expire and hand them to the live connections
+    if (!st.inCall || !st.ice || st.ice.expiresAt - 1800 > Date.now() / 1000) return;
+    loadIce(true).then(function () { Object.keys(st.peers).forEach(function (id) { var x = st.peers[id]; try { x.pc.setConfiguration(pcConfig(x.relay)); } catch (e) {} }); });
+  }
+  function newPeer(p, relay, attempt) {
+    var pc = new RTCPeerConnection(pcConfig(relay)), x = { id: p.id, name: p.name, meta: p, pc: pc, ice: st.early[p.id] || [], stream: new MediaStream(), state: 'new', t0: Date.now(), relay: !!relay || forceRelay(), attempt: attempt || 0, route: '' };
     st.peers[p.id] = x; delete st.early[p.id];
     pc.onicecandidate = function (e) { if (e.candidate) sig(p.id, { t: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate }); };
     pc.ontrack = function (e) { if (x.stream.getTracks().indexOf(e.track) < 0) x.stream.addTrack(e.track); e.track.onunmute = function () { paintTile(p.id); }; paintTile(p.id); watchLevel(x); };
-    pc.onconnectionstatechange = function () { x.state = pc.connectionState; if (x.state === 'connected') x.failed = false; if (x.state === 'failed') { x.failed = true; warnIce(); } paintTile(p.id); };
-    pc.oniceconnectionstatechange = function () { if (pc.iceConnectionState === 'failed') { x.failed = true; warnIce(); paintTile(p.id); } };
-    x.timer = setTimeout(function () { if (st.peers[p.id] === x && pc.connectionState !== 'connected') { x.failed = true; warnIce(); paintTile(p.id); } }, 25000);
-    addTile(p.id); return x;
+    var cur = function () { return st.peers[p.id] === x; };
+    pc.onconnectionstatechange = function () {
+      if (!cur()) return; x.state = pc.connectionState;
+      if (x.state === 'connected') { x.failed = false; x.everConnected = true; clearTimeout(x.timer); clearTimeout(x.dTimer); checkRoute(x); setTimeout(function () { if (cur()) checkRoute(x); }, 2500); warnIce(); }
+      if (x.state === 'failed') recover(x);
+      paintTile(p.id);
+    };
+    pc.oniceconnectionstatechange = function () {
+      if (!cur()) return; var s = pc.iceConnectionState;
+      if (s === 'failed') recover(x);
+      else if (s === 'disconnected') { clearTimeout(x.dTimer); x.dTimer = setTimeout(function () { if (cur() && /disconnected|failed/.test(pc.iceConnectionState)) recover(x); }, 5000); } // network switch (Wi-Fi ↔ 4G)
+      else if (s === 'connected' || s === 'completed') { clearTimeout(x.dTimer); checkRoute(x); }
+      paintTile(p.id);
+    };
+    arm(x); addTile(p.id); return x;
   }
-  function call(p) {
-    var x = newPeer(p), pc = x.pc;
+  function arm(x) { clearTimeout(x.timer); x.timer = setTimeout(function () { if (st.peers[x.id] === x && x.pc.connectionState !== 'connected') recover(x); }, C.deadline(x.attempt, x.relay)); }
+  /** automatic repair (never gives up while the peer is in the call): ICE restart → relay-only rebuild → alternate. Only the offerer acts; the other side asks it. */
+  function recover(x, asked) {
+    if (st.peers[x.id] !== x || !st.inCall) return;
+    var now = Date.now(); if (now - (x.lastRe || 0) < 6000) return; x.lastRe = now;
+    if (!C.isOfferer(st.me, x.id)) { x.attempt++; x.failed = x.attempt >= 3; x.state = 'retry'; if (!st.ice) loadIce(true); sig(x.id, { t: 're' }); arm(x); warnIce(); paintTile(x.id); return; }
+    x.attempt++; x.failed = x.attempt >= 3; warnIce();
+    var plan = C.recovery(x.attempt);
+    loadIce(!st.ice).then(function () {
+      if (st.peers[x.id] !== x) return;
+      if (plan.restart && x.pc.signalingState === 'stable' && x.pc.connectionState !== 'closed') {
+        x.state = 'retry'; x.lastRe = Date.now(); arm(x); paintTile(x.id);
+        try { x.pc.setConfiguration(pcConfig(x.relay)); } catch (e) {}
+        x.pc.createOffer({ iceRestart: true }).then(function (o) { return x.pc.setLocalDescription(o); }).then(function () { sig(x.id, { t: 'offer', re: 1, sdp: { type: 'offer', sdp: x.pc.localDescription.sdp } }); }).catch(function (e) { console.warn('ice restart', e); });
+      } else { var p = x.meta || { id: x.id, name: x.name }; dropPeer(x.id, true); call(p, plan.relay || plan.restart && x.relay, x.attempt); }
+    });
+  }
+  function checkRoute(x) {
+    if (!x.pc.getStats) return;
+    x.pc.getStats().then(function (r) { var a = []; r.forEach(function (v) { a.push(v); }); var rt = C.routeOf(a); if (rt && rt !== x.route) { x.route = rt; paintTile(x.id); } }).catch(function () {});
+  }
+  function call(p, relay, attempt) {
+    var x = newPeer(p, relay, attempt), pc = x.pc;
     pc.addTransceiver(st.micTrack || 'audio', { direction: 'sendrecv', streams: st.local ? [st.local] : [] });
     pc.addTransceiver(curVideo() || 'video', { direction: 'sendrecv', streams: st.local ? [st.local] : [] });
-    pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).then(function () { sig(p.id, { t: 'offer', sdp: { type: 'offer', sdp: pc.localDescription.sdp } }); }).catch(function (e) { console.warn('offer', e); });
+    pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).then(function () { sig(p.id, { t: 'offer', relay: x.relay ? 1 : 0, sdp: { type: 'offer', sdp: pc.localDescription.sdp } }); }).catch(function (e) { console.warn('offer', e); });
   }
   function answer(m) {
-    var p = C.people(st.pres).filter(function (q) { return q.id === m.from; })[0] || { id: m.from, name: '—' };
-    if (st.peers[m.from]) dropPeer(m.from, true);
-    var x = newPeer(p), pc = x.pc;
+    if (st.cloud && !st.ice && !m.w) { st.hold[m.from] = 1; m.w = 1; loadIce(true).then(function () { delete st.hold[m.from]; if (st.inCall) answer(m); }); return; } // no relay credentials yet: fetch them first (ICE queued meanwhile)
+    var p = C.people(st.pres).filter(function (q) { return q.id === m.from; })[0] || { id: m.from, name: '—' }, old = st.peers[m.from];
+    if (m.re && old && old.pc.signalingState === 'stable' && old.pc.connectionState !== 'closed') { // ICE restart on the same connection (tracks kept)
+      old.state = 'retry'; old.lastRe = Date.now(); arm(old); paintTile(old.id); old.ice = old.ice.concat(st.early[m.from] || []); delete st.early[m.from];
+      try { old.pc.setConfiguration(pcConfig(old.relay)); } catch (e) {}
+      old.pc.setRemoteDescription(m.sdp).then(function () { return old.pc.createAnswer(); }).then(function (a) { return old.pc.setLocalDescription(a); }).then(function () { sig(m.from, { t: 'answer', sdp: { type: 'answer', sdp: old.pc.localDescription.sdp } }); flushIce(old); }).catch(function (e) { console.warn('restart answer', e); });
+      return;
+    }
+    var attempt = old ? old.attempt : 0; if (old) dropPeer(m.from, true);
+    var x = newPeer(p, !!m.relay, attempt), pc = x.pc;
     pc.setRemoteDescription(m.sdp).then(function () {
       pc.getTransceivers().forEach(function (tr) { var k = tr.receiver && tr.receiver.track && tr.receiver.track.kind; tr.direction = 'sendrecv'; var tk = k === 'audio' ? st.micTrack : k === 'video' ? curVideo() : null; if (tk) { tr.sender.replaceTrack(tk); if (tr.sender.setStreams && st.local) tr.sender.setStreams(st.local); } });
       return pc.createAnswer();
     }).then(function (a) { return pc.setLocalDescription(a); }).then(function () { sig(m.from, { t: 'answer', sdp: { type: 'answer', sdp: pc.localDescription.sdp } }); flushIce(x); }).catch(function (e) { console.warn('answer', e); });
   }
-  function dropPeer(id, quiet) { var x = st.peers[id]; if (!x) return; clearTimeout(x.timer); try { x.pc.close(); } catch (e) {} if (x.level) clearInterval(x.level); delete st.peers[id]; if (!quiet) { var tl = $('vt-' + id); if (tl) tl.remove(); layout(); } }
+  function dropPeer(id, quiet) { var x = st.peers[id]; if (!x) return; clearTimeout(x.timer); clearTimeout(x.dTimer); try { x.pc.close(); } catch (e) {} if (x.level) clearInterval(x.level); delete st.peers[id]; if (!quiet) { if (st.spot === id) st.spot = ''; var tl = $('vt-' + id); if (tl) tl.remove(); layout(); } }
   function curVideo() { return st.screen || st.camTrack; }
   function videoSenders() { var out = []; Object.keys(st.peers).forEach(function (id) { st.peers[id].pc.getSenders().forEach(function (s) { var tr = st.peers[id].pc.getTransceivers().filter(function (x) { return x.sender === s; })[0]; if ((s.track && s.track.kind === 'video') || (tr && tr.receiver.track && tr.receiver.track.kind === 'video')) out.push(s); }); }); return out; }
-  function warnIce() { var bad = Object.keys(st.peers).map(function (k) { return st.peers[k]; }).filter(function (x) { return x.failed; }).map(function (x) { return x.name; }); st.warn = bad.length ? f('iceFail', bad.join(', ')) : ''; var w = $('vWarn'); if (w) { w.textContent = st.warn; w.classList.toggle('hidden', !st.warn); } }
+  // banner only after the automatic repairs (ICE restart + relay) did not help yet; no action asked from the user
+  function warnIce() { var bad = Object.keys(st.peers).map(function (k) { return st.peers[k]; }).filter(function (x) { return x.failed && x.pc.connectionState !== 'connected'; }).map(function (x) { return x.name; }); st.warn = bad.length ? f('iceFail', bad.join(', ')) : ''; var w = $('vWarn'); if (w) { w.textContent = st.warn; w.classList.toggle('hidden', !st.warn); } }
   // speaking indicator (Web Audio level meter)
   function watchLevel(x) {
     if (x.level || !x.stream.getAudioTracks().length) return;
@@ -9190,9 +9304,9 @@ window.OrthoQRGen = qrcode; })();
     if (!root.RTCPeerConnection) { st.err = t('noRtc'); return render(); }
     if (st.cloud && !C.canJoin(st.pres, st.me)) { st.err = f('full', C.MAX); return render(); }
     st.err = ''; var starting = st.cloud && !others().length;
-    getMedia().then(function (s) {
+    Promise.all([getMedia(), loadIce()]).then(function (r) { var s = r[0];
       st.local = s || new MediaStream(); st.micTrack = s ? s.getAudioTracks()[0] || null : null; st.camTrack = s ? s.getVideoTracks()[0] || null : null;
-      if (!s) st.err = t('noMedia'); st.mic = !!st.micTrack; st.cam = !!st.camTrack;
+      if (!s) st.err = t('noMedia'); st.mic = !!st.micTrack; st.cam = !!st.camTrack; wake(true);
       if (!st.cloud) { st.preview = true; render(); return; }
       st.inCall = true; render(); merge(); announce(); onPeople(); badge();
       var a = api(); if (a && a.audit) a.audit('video-join', C.ROOM);
@@ -9200,9 +9314,14 @@ window.OrthoQRGen = qrcode; })();
     });
   }
   function leave() {
+    exitFs(); wake(false); st.spot = '';
     Object.keys(st.peers).forEach(function (id) { sig(id, { t: 'bye' }); dropPeer(id, true); });
     stopLocal(); st.inCall = false; st.preview = false; st.warn = ''; merge(); announce(); render(); badge();
   }
+  function wake(on) { // keep the phone screen on during the call
+    try { if (on && navigator.wakeLock && !st.wake) navigator.wakeLock.request('screen').then(function (w) { st.wake = w; }, function () {}); else if (!on && st.wake) { st.wake.release(); st.wake = null; } } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (st.inCall || st.preview)) { st.wake = null; wake(true); } });
   function stopLocal() { [st.local, st.screenStream].forEach(function (s) { if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} }); }); st.local = st.camTrack = st.micTrack = st.screen = st.screenStream = null; }
   function toggleMic() { if (!st.micTrack) return; st.mic = !st.mic; st.micTrack.enabled = st.mic; merge(); announce(); paintControls(); paintTile('me'); }
   function toggleCam() { if (!st.camTrack) return; st.cam = !st.cam; st.camTrack.enabled = st.cam; merge(); announce(); paintControls(); paintTile('me'); }
@@ -9224,20 +9343,29 @@ window.OrthoQRGen = qrcode; })();
   function render() {
     if (!st.user) { pane.innerHTML = ''; return; }
     var live = st.inCall || st.preview, n = others().length;
+    if (!live && st.fs) exitFs();
     var h = '<div class="card vcard"><div class="vhead"><h2>' + esc(t('T')) + '</h2><span class="pill">' + esc(t('room')) + '</span>' + (st.cloud ? ' <span class="vsig" id="vSig"></span>' : ' <span class="pill demo">DEMO</span>') + '</div><p class="muted small">' + esc(t('lead')) + ' ' + esc(f('max', C.MAX)) + '</p>' +
       (st.cloud ? '' : '<p class="vdemo" id="vDemo">' + esc(t('demo')) + '</p>') +
       '<p class="verr' + (st.err ? '' : ' hidden') + '" id="vErr" role="alert">' + esc(st.err) + '</p><p class="vwarn' + (st.warn ? '' : ' hidden') + '" id="vWarn" role="alert">' + esc(st.warn) + '</p>';
     if (!live) h += '<div class="vjoinrow"><button class="primary vbig" id="vJoin">' + esc(st.cloud ? (n ? t('join') + ' (' + n + ')' : t('start')) : t('preview')) + '</button></div>';
-    else h += '<div class="vgrid" id="vGrid"></div><div class="vctl" id="vCtl"></div>';
+    else h += '<div class="vstage" id="vStage"><div class="vgrid" id="vGrid"></div><button class="vfsx" id="vFsExit" title="' + esc(t('fsExitT')) + '" aria-label="' + esc(t('fsExitT')) + '">✕</button><div class="vctl" id="vCtl"></div></div><p class="muted small vhint" id="vHint">' + esc(t('spotHint')) + '</p>';
     if (st.cloud) h += '<div class="vpeople" id="vPeople"></div>';
     var tc = turnCfg() || {};
-    h += '<details class="vturn" id="vTurn"><summary>' + esc(t('turnT')) + '</summary><p class="muted small">' + esc(t('turnLead')) + '</p><p class="small" id="vIceMode">' + esc(tc.urls ? t('turnOn') : t('stunOnly')) + '</p>' +
-      '<label class="fld">' + esc(t('turnUrls')) + '<input id="vTurnUrls" placeholder="turn:host:3478?transport=udp, turns:host:443" value="' + esc(tc.urls || '') + '" autocomplete="off"></label><div class="row"><label class="fld">' + esc(t('turnUser')) + '<input id="vTurnUser" value="' + esc(tc.username || '') + '" autocomplete="off"></label><label class="fld">' + esc(t('turnPw')) + '<input id="vTurnPw" type="password" value="' + esc(tc.credential || '') + '" autocomplete="new-password"></label></div><button class="small" id="vTurnSave">' + esc(t('save')) + '</button> <span class="muted small" id="vTurnMsg"></span></details></div>';
+    h += '<details class="vturn" id="vTurn"><summary>' + esc(t('turnT')) + '</summary><p class="muted small">' + esc(t('turnLead')) + '</p><p class="small" id="vIceMode"></p>' +
+      '<label class="fld">' + esc(t('turnUrls')) + '<input id="vTurnUrls" placeholder="turn:host:3478?transport=udp, turns:host:443?transport=tcp" value="' + esc(tc.urls || '') + '" autocomplete="off"></label><div class="row"><label class="fld">' + esc(t('turnUser')) + '<input id="vTurnUser" value="' + esc(tc.username || '') + '" autocomplete="off"></label><label class="fld">' + esc(t('turnPw')) + '<input id="vTurnPw" type="password" value="' + esc(tc.credential || '') + '" autocomplete="new-password"></label></div><button class="small" id="vTurnSave">' + esc(t('save')) + '</button> <span class="muted small" id="vTurnMsg"></span></details></div>';
     pane.innerHTML = h;
     if ($('vJoin')) $('vJoin').onclick = join;
-    $('vTurnSave').onclick = function () { var v = { urls: $('vTurnUrls').value.trim(), username: $('vTurnUser').value.trim(), credential: $('vTurnPw').value }; try { if (v.urls) localStorage.setItem(TKEY, JSON.stringify(v)); else localStorage.removeItem(TKEY); } catch (e) {} $('vTurnMsg').textContent = t('saved'); $('vIceMode').textContent = v.urls ? t('turnOn') : t('stunOnly'); };
-    if (live) { addTile('me'); Object.keys(st.peers).forEach(addTile); paintControls(); }
-    paintStatus(); paintPeople();
+    $('vTurnSave').onclick = function () { var v = { urls: $('vTurnUrls').value.trim(), username: $('vTurnUser').value.trim(), credential: $('vTurnPw').value }; try { if (v.urls) localStorage.setItem(TKEY, JSON.stringify(v)); else localStorage.removeItem(TKEY); } catch (e) {} $('vTurnMsg').textContent = t('saved'); paintIceMode(); };
+    if (live) {
+      $('vFsExit').onclick = exitFs; $('vGrid').onclick = tileTap;
+      if (st.fs) { $('vStage').classList.add('vfs'); if (st.fsMode === 'css') $('vStage').classList.add('vimm'); }
+      addTile('me'); Object.keys(st.peers).forEach(addTile); paintControls();
+    }
+    paintStatus(); paintPeople(); paintIceMode();
+  }
+  function paintIceMode() {
+    var e = $('vIceMode'); if (!e) return; var own = !!(turnCfg() || {}).urls;
+    e.textContent = own ? t('turnOn') : !st.cloud || st.ice && st.ice.relay ? t('stunOnly') : st.ice || st.iceErr ? t('relayNo') : t('relayChk');
   }
   function paintErr() { var e = $('vErr'); if (e) { e.textContent = st.err; e.classList.toggle('hidden', !st.err); } }
   function paintStatus() { var e = $('vSig'); if (!e) return; var s = st.sig; e.className = 'vsig ' + s; e.textContent = s === 'live' ? '● ' + t('live') : s === 'denied' ? '⛔ ' + t('denied') : s === 'error' ? '⚠ ' + t('sigErr') : '… ' + t('connecting'); }
@@ -9247,14 +9375,45 @@ window.OrthoQRGen = qrcode; })();
     e.innerHTML = '<div><b>' + esc(f('inCallN', ic.length, C.MAX)) + '</b><ul id="vInCall">' + (ic.length ? ic.map(function (p) { return '<li data-vp="' + esc(p.id) + '">' + nm(p) + '</li>'; }).join('') : '<li class="muted">' + esc(t('nobody')) + '</li>') + '</ul></div>' +
       '<div><b>' + esc(t('online')) + '</b><ul id="vOnline">' + on.map(function (p) { return '<li>' + nm(p) + '</li>'; }).join('') + '</ul></div>';
   }
+  // button label "🎙 Μικρόφωνο" → icon + text (text hidden on narrow full-screen layouts)
+  function lbl(s, extra) { var i = s.indexOf(' '); return '<span class="vi" aria-hidden="true">' + esc(s.slice(0, i)) + '</span><span class="vtx">' + esc(s.slice(i + 1)) + (extra || '') + '</span>'; }
   function paintControls() {
     var e = $('vCtl'); if (!e) return;
-    e.innerHTML = '<button id="vMic" class="vbtn' + (st.mic ? ' on' : ' off') + '" aria-pressed="' + st.mic + '"' + (st.micTrack ? '' : ' disabled') + '>' + esc(t('mic')) + (st.mic ? '' : ' ✕') + '</button>' +
-      '<button id="vCam" class="vbtn' + (st.cam ? ' on' : ' off') + '" aria-pressed="' + st.cam + '"' + (st.camTrack ? '' : ' disabled') + '>' + esc(t('cam')) + (st.cam ? '' : ' ✕') + '</button>' +
-      (st.cloud ? '<button id="vShare" class="vbtn' + (st.screen ? ' on' : '') + '">' + esc(st.screen ? t('unshare') : t('share')) + '</button>' : '') +
-      '<button id="vLeave" class="vbtn danger">' + esc(st.cloud ? t('leave') : t('stopPrev')) + '</button>';
-    $('vMic').onclick = toggleMic; $('vCam').onclick = toggleCam; if ($('vShare')) $('vShare').onclick = share; $('vLeave').onclick = leave;
+    e.innerHTML = '<button id="vMic" class="vbtn' + (st.mic ? ' on' : ' off') + '" aria-pressed="' + st.mic + '" title="' + esc(t('mic')) + '"' + (st.micTrack ? '' : ' disabled') + '>' + lbl(t('mic'), st.mic ? '' : ' ✕') + '</button>' +
+      '<button id="vCam" class="vbtn' + (st.cam ? ' on' : ' off') + '" aria-pressed="' + st.cam + '" title="' + esc(t('cam')) + '"' + (st.camTrack ? '' : ' disabled') + '>' + lbl(t('cam'), st.cam ? '' : ' ✕') + '</button>' +
+      (st.cloud ? '<button id="vShare" class="vbtn' + (st.screen ? ' on' : '') + '" title="' + esc(st.screen ? t('unshare') : t('share')) + '">' + lbl(st.screen ? t('unshare') : t('share')) + '</button>' : '') +
+      '<button id="vFs" class="vbtn" aria-pressed="' + !!st.fs + '" title="' + esc(st.fs ? t('fsExitT') : t('fs')) + '">' + lbl(st.fs ? t('fsExit') : t('fs')) + '</button>' +
+      '<button id="vLeave" class="vbtn danger" title="' + esc(st.cloud ? t('leave') : t('stopPrev')) + '">' + (st.cloud ? lbl(t('leave')) : esc(t('stopPrev'))) + '</button>';
+    $('vMic').onclick = toggleMic; $('vCam').onclick = toggleCam; if ($('vShare')) $('vShare').onclick = share; $('vLeave').onclick = leave; $('vFs').onclick = function () { if (st.fs) exitFs(); else enterFs(); };
   }
+  // ---------- full screen (Fullscreen API, webkit prefix; CSS immersive full-viewport mode where element full screen is unavailable, e.g. iPhone Safari) ----------
+  function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  function enterFs() {
+    var s = $('vStage'); if (!s || st.fs) return; st.fs = true; s.classList.add('vfs');
+    var css = function () { if (!st.fs) return; st.fsMode = 'css'; var g = $('vStage'); if (g) g.classList.add('vimm'); document.documentElement.classList.add('vimm-on'); paintControls(); layout(); };
+    var rq = s.requestFullscreen || s.webkitRequestFullscreen;
+    if (rq && !root.__videoNoFsApi) { st.fsMode = 'api'; try { var r = rq.call(s, { navigationUI: 'hide' }); if (r && r.then) r.then(function () { try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }, css); } catch (e) { css(); } }
+    else css();
+    paintControls(); layout(); setTimeout(layout, 300);
+  }
+  function exitFs() {
+    if (!st.fs) return; st.fs = false; var mode = st.fsMode; st.fsMode = '';
+    var s = $('vStage'); if (s) s.classList.remove('vfs', 'vimm'); document.documentElement.classList.remove('vimm-on');
+    if (mode === 'api' && fsEl()) { var x = document.exitFullscreen || document.webkitExitFullscreen; try { var r = x && x.call(document); if (r && r.catch) r.catch(function () {}); } catch (e) {} }
+    paintControls(); layout();
+  }
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) { document.addEventListener(ev, function () { if (st.fs && st.fsMode === 'api' && !fsEl()) exitFs(); setTimeout(layout, 50); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && st.fs && st.fsMode === 'css') exitFs(); });
+  window.addEventListener('resize', function () { layout(); });
+  window.addEventListener('orientationchange', function () { setTimeout(layout, 300); });
+  // tap a tile = spotlight it (tap again = back to the grid); double-tap = spotlight + full screen
+  var tapT = 0, tapId = '';
+  function tileTap(e) {
+    var tl = e.target.closest && e.target.closest('.vtile'); if (!tl) return; var id = tl.dataset.peer;
+    if (tapT && tapId === id) { clearTimeout(tapT); tapT = 0; st.spot = id; if (!st.fs) enterFs(); layout(); return; }
+    clearTimeout(tapT); tapId = id; tapT = setTimeout(function () { tapT = 0; st.spot = st.spot === id ? '' : id; layout(); }, 280);
+  }
+  function spotlight(id) { st.spot = id || ''; layout(); }
   function addTile(id) {
     var g = $('vGrid'); if (!g || $('vt-' + id)) { paintTile(id); return; }
     var d = document.createElement('div'); d.className = 'vtile' + (id === 'me' ? ' me' : ''); d.id = 'vt-' + id; d.dataset.peer = id;
@@ -9262,16 +9421,30 @@ window.OrthoQRGen = qrcode; })();
     if (id === 'me') g.insertBefore(d, g.firstChild); else g.appendChild(d);
     paintTile(id); layout();
   }
+  function peerStatus(x) {
+    if (!x) return ['', ''];
+    if (x.pc.connectionState === 'connected') return x.route === 'relay' ? ['relay', '🛰 ' + t('viaRelay')] : x.route === 'direct' ? ['direct', '⇄ ' + t('direct')] : ['', ''];
+    if (x.failed) return ['bad', '⚠ ' + t('retrying')];
+    if (x.attempt || x.state === 'retry' || x.state === 'disconnected' || x.everConnected) return ['wait', '↻ ' + t('reconnecting')];
+    return ['wait', '… ' + t('waiting')];
+  }
   function paintTile(id) {
     var d = $('vt-' + id); if (!d) return; var v = d.querySelector('video'), me = id === 'me', x = st.peers[id];
     var s = me ? (st.screen ? st.screenStream : st.local) : x && x.stream; if (s && v.srcObject !== s) { v.srcObject = s; var pp = v.play(); if (pp && pp.catch) pp.catch(function () {}); }
     var meta = me ? myMeta() : x && x.meta || {};
     d.classList.toggle('share', !!meta.share); d.classList.toggle('nocam', me ? !st.cam && !st.screen : meta.cam === false && !meta.share);
     d.querySelector('.vlabel').textContent = (me ? t('you') : (x && x.name) || '—') + (meta.share ? ' · 🖥 ' + t('screen') : '') + (meta.mic === false ? ' · 🔇' : '') + (meta.cam === false && !meta.share ? ' · ' + t('camOff') : '');
-    d.querySelector('.vstate').textContent = me || !x ? '' : x.failed ? '⚠' : x.state === 'connected' ? '' : x.state === 'disconnected' ? t('reconnecting') : t('waiting');
+    var ps = me ? ['', ''] : peerStatus(x), vs = d.querySelector('.vstate'); vs.textContent = ps[1]; vs.className = 'vstate ' + ps[0]; d.dataset.route = me ? '' : x && x.route || '';
     layout();
   }
-  function layout() { var g = $('vGrid'); if (!g) return; var n = g.children.length; g.style.setProperty('--vcols', C.gridCols(n)); g.classList.toggle('hasshare', !!g.querySelector('.vtile.share')); }
+  function layout() {
+    var g = $('vGrid'); if (!g) return; var n = g.children.length;
+    if (st.spot && !$('vt-' + st.spot)) st.spot = '';
+    [].forEach.call(g.children, function (c) { c.classList.toggle('spot', c.dataset.peer === st.spot); c.title = c.dataset.peer === st.spot ? t('unspot') : t('spotHint'); });
+    g.classList.toggle('spot', !!st.spot);
+    g.style.setProperty('--vcols', C.gridCols(n)); g.classList.toggle('hasshare', !!g.querySelector('.vtile.share'));
+    if (st.fs) { var c = C.fitCols(n, g.clientWidth, g.clientHeight); g.style.setProperty('--vfcols', c); g.style.setProperty('--vfrows', Math.ceil(n / c)); }
+  }
 
   // ---------- lifecycle ----------
   function sync(user, cloud) {
@@ -9288,8 +9461,8 @@ window.OrthoQRGen = qrcode; })();
   function show() { render(); }
   window.addEventListener('beforeunload', function () { if (st.inCall) Object.keys(st.peers).forEach(function (id) { sig(id, { t: 'bye' }); }); });
   new MutationObserver(function () { badge(); if (visible() && !st.inCall && !st.preview) render(); else if (visible()) { paintControls(); paintPeople(); Object.keys(st.peers).concat(['me']).forEach(paintTile); } }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-  root.__video = { sync: sync, show: show, render: render, join: join, leave: leave, share: share, unshare: unshare, toggleMic: toggleMic, toggleCam: toggleCam, get state() { return st; },
-    stats: function () { return Object.keys(st.peers).map(function (id) { var x = st.peers[id], v = document.querySelector('#vt-' + id + ' video'); return { id: id, name: x.name, state: x.pc.connectionState, ice: x.pc.iceConnectionState, kinds: x.stream.getTracks().map(function (k) { return k.kind; }).sort(), w: v ? v.videoWidth : 0, h: v ? v.videoHeight : 0, failed: !!x.failed }; }); } };
+  root.__video = { sync: sync, show: show, render: render, join: join, leave: leave, share: share, unshare: unshare, toggleMic: toggleMic, toggleCam: toggleCam, enterFs: enterFs, exitFs: exitFs, spotlight: spotlight, loadIce: loadIce, get state() { return st; },
+    stats: function () { return Object.keys(st.peers).map(function (id) { var x = st.peers[id], v = document.querySelector('#vt-' + id + ' video'); return { id: id, name: x.name, state: x.pc.connectionState, ice: x.pc.iceConnectionState, route: x.route, relayOnly: x.relay, attempt: x.attempt, kinds: x.stream.getTracks().map(function (k) { return k.kind; }).sort(), w: v ? v.videoWidth : 0, h: v ? v.videoHeight : 0, failed: !!x.failed }; }); } };
   var a0 = api(); if (a0 && a0.currentUser) sync(a0.currentUser(), a0.cloud && a0.cloud.mode === 'cloud');
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
