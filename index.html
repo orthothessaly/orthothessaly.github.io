@@ -313,6 +313,10 @@ button.small{padding:6px 10px;font-size:.82rem}
 
 .ptabbr{font-weight:600;font-size:.82em;color:#4a5d66;white-space:nowrap}
 .ptbig .ptabbr{color:inherit;opacity:.85}
+/* Patient lockdown: no doctor signed in → only the questionnaire flow (and, on request, the doctor sign-in) */
+body.ptonly #tabs,body.ptonly #resetDemo,body.ptonly #tabMeasureBtn{display:none!important}
+body.ptonly main,body.ptonly #measCtx{display:none!important}
+.gback{margin:0 0 10px}
 /* ---- X-rays tab ---- */
 .xgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:12px;max-width:1200px;margin:0 auto}
 @media (max-width:900px){.xgrid{grid-template-columns:1fr}}
@@ -650,6 +654,27 @@ body.qr-open{overflow:hidden}
   .qrprint *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .qrbtnrow,#qrDashBtn{display:none!important}
 }
+/* ===== Doctors-only video call ===== */
+.vbadge{display:inline-block;margin-left:5px;border-radius:999px;padding:0 6px;font-size:.7rem;font-weight:800;background:#c0392b;color:#fff;line-height:1.5;vertical-align:middle}.vbadge.on{background:#126b3a}
+.vhead{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}.vhead h2{margin:0}
+.vsig{font-size:.78rem;font-weight:700;color:#5d6f78}.vsig.live{color:#126b3a}.vsig.denied,.vsig.error{color:#9b1c1c}
+.vdemo{background:#f3e8fb;border:1px solid #c9a6e4;border-radius:8px;padding:6px 10px;font-size:.88rem}
+.verr,.vwarn{border-radius:8px;padding:8px 10px;font-size:.9rem;margin:6px 0}.verr{background:#fde2e2;color:#7d1414}.vwarn{background:#fff1cc;color:#5a4300}
+.vjoinrow{margin:10px 0}.vbig{font-size:1.05rem;padding:12px 18px}
+.vgrid{--vcols:1;display:grid;grid-template-columns:repeat(var(--vcols),minmax(0,1fr));gap:8px;margin:10px 0}
+.vtile{position:relative;background:#0b1f26;border-radius:10px;overflow:hidden;aspect-ratio:4/3;border:3px solid transparent;transition:border-color .2s}
+.vtile video{width:100%;height:100%;object-fit:cover;display:block;background:#0b1f26}.vtile.me video{transform:scaleX(-1)}.vtile.me.share video,.vtile.share video{object-fit:contain;transform:none}
+.vtile.nocam video{opacity:0}.vtile.nocam:before{content:'📷✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9fb3bb;font-size:1.6rem}
+.vtile.speaking{border-color:#2e9d5b}
+.vlabel{position:absolute;left:6px;bottom:6px;right:6px;color:#fff;font-size:.8rem;font-weight:700;text-shadow:0 1px 3px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vstate{position:absolute;top:6px;right:8px;color:#ffd27a;font-size:.78rem;font-weight:700;text-shadow:0 1px 3px #000}
+.vgrid.hasshare .vtile.share{grid-column:1/-1;aspect-ratio:16/9}
+.vctl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 10px}
+.vbtn{border-radius:999px;padding:9px 14px;font-weight:700;border:1px solid #c9d7dd;background:#fff}.vbtn.off{background:#fde2e2;border-color:#e7b1ab;color:#7d1414}.vbtn.on{background:#e8f4f6;border-color:#0b5f73}
+.vbtn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
+.vpeople{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;font-size:.9rem;margin-top:6px}.vpeople ul{margin:4px 0 0;padding-left:18px}
+.vturn{margin-top:12px}.vturn summary{cursor:pointer;color:var(--brand)}.vturn .fld{flex:1 1 180px}.vturn input{width:100%;box-sizing:border-box}
+@media (max-width:640px){.vgrid{--vcols:2!important}.vgrid .vtile:only-child{grid-column:1/-1}.vbtn{flex:1 1 40%;padding:10px 8px;font-size:.88rem}.vctl{position:sticky;bottom:0;background:#fff;padding:6px 0;z-index:5}}
 </style>
 </head>
 <body>
@@ -3908,11 +3933,61 @@ body.qr-open{overflow:hidden}
     open();
     return { close: function () { closed = true; clearInterval(hb); if (ws) try { ws.close(); } catch (e) {} } };
   }
+  /** Supabase Realtime PRIVATE channel (Realtime Authorization: RLS on realtime.messages) with broadcast + presence. No SDK.
+      h = { onBroadcast(event, payload), onPresence(stateObj {key:[meta…]}), onStatus('connecting'|'live'|'denied'|'error'|'closed') }; opt.key = presence key.
+      Returns { send(event, payload), track(meta), untrack(), close(), get status() }. Reconnects with backoff (not after 'denied'). */
+  function channel(name, opt, h) {
+    opt = opt || {}; h = h || {};
+    var ws = null, ref = 0, hb = null, closed = false, joinRef = null, tok = null, wait = 2000, topic = 'realtime:' + name, pres = {}, meta = null, st = '';
+    var status = function (s) { st = s; try { if (h.onStatus) h.onStatus(s); } catch (e) {} };
+    var send = function (o) { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; } return false; };
+    var emitP = function () { try { if (h.onPresence) h.onPresence(pres); } catch (e) {} };
+    // one connection per presence key → keep only its newest meta; a late 'leave' of an older meta (re-track) is ignored
+    function applyDiff(d) {
+      Object.keys(d.leaves || {}).forEach(function (k) { var ids = (d.leaves[k].metas || []).map(function (m) { return m.phx_ref; }); if (pres[k] && pres[k].some(function (m) { return ids.indexOf(m.phx_ref) >= 0; })) delete pres[k]; });
+      Object.keys(d.joins || {}).forEach(function (k) { var ms = d.joins[k].metas || []; if (ms.length) pres[k] = [ms[ms.length - 1]]; });
+    }
+    function doTrack() { if (meta && st === 'live') send({ topic: topic, event: 'presence', payload: { type: 'presence', event: 'track', payload: meta }, ref: String(++ref), join_ref: joinRef }); }
+    function open() {
+      if (closed) return; status('connecting');
+      fresh().catch(function () { return null; }).then(function () {
+        if (closed) return;
+        try { ws = new WebSocket(CFG.url.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + enc(CFG.key) + '&vsn=1.0.0'); } catch (e) { status('error'); return; }
+        ws.onopen = function () {
+          tok = session ? session.access_token : null; joinRef = String(++ref); pres = {};
+          send({ topic: topic, event: 'phx_join', ref: joinRef, join_ref: joinRef, payload: { config: { broadcast: { self: false, ack: false }, presence: { key: opt.key || '' }, private: true }, access_token: tok || CFG.key } });
+          hb = setInterval(function () {
+            send({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(++ref) });
+            fresh().then(function () { if (session && session.access_token !== tok) { tok = session.access_token; send({ topic: topic, event: 'access_token', payload: { access_token: tok }, ref: String(++ref), join_ref: joinRef }); } }, function () {});
+          }, 25000);
+        };
+        ws.onmessage = function (e) {
+          var m; try { m = JSON.parse(e.data); } catch (er) { return; } if (m.topic !== topic) return;
+          var pl = m.payload || {};
+          if (m.event === 'phx_reply' && m.ref === joinRef) { if (pl.status === 'ok') { wait = 2000; status('live'); doTrack(); } else { closed = /unauthori|denied|forbidden|rls|policy|permission/i.test(JSON.stringify(pl.response || pl)) || closed; status(closed ? 'denied' : 'error'); if (closed) try { ws.close(); } catch (er) {} } }
+          else if (m.event === 'broadcast') { try { if (h.onBroadcast) h.onBroadcast(pl.event, pl.payload || {}); } catch (er) {} }
+          else if (m.event === 'presence_state') { pres = {}; Object.keys(pl).forEach(function (k) { var ms = pl[k].metas || []; if (ms.length) pres[k] = [ms[ms.length - 1]]; }); emitP(); }
+          else if (m.event === 'presence_diff') { applyDiff(pl); emitP(); }
+          else if (m.event === 'system' && pl.status === 'error') { if (/unauthori|denied/i.test(pl.message || '')) { closed = true; status('denied'); try { ws.close(); } catch (er) {} } else status('error'); }
+          else if (m.event === 'phx_error' || m.event === 'phx_close') status('error');
+        };
+        ws.onerror = function () { if (st !== 'denied') status('error'); };
+        ws.onclose = function () { clearInterval(hb); hb = null; if (closed) { if (st !== 'denied') status('closed'); return; } status('error'); setTimeout(open, wait); wait = Math.min(wait * 2, 30000); };
+      });
+    }
+    open();
+    return {
+      send: function (event, payload) { return st === 'live' && send({ topic: topic, event: 'broadcast', payload: { type: 'broadcast', event: event, payload: payload }, ref: String(++ref), join_ref: joinRef }); },
+      track: function (m) { meta = m; doTrack(); }, untrack: function () { meta = null; send({ topic: topic, event: 'presence', payload: { type: 'presence', event: 'untrack' }, ref: String(++ref), join_ref: joinRef }); },
+      close: function () { closed = true; clearInterval(hb); if (ws) { send({ topic: topic, event: 'phx_leave', payload: {}, ref: String(++ref), join_ref: joinRef }); try { ws.close(); } catch (e) {} } },
+      get status() { return st; }, get presence() { return pres; }
+    };
+  }
   root.OrthoCloud = { CFG: CFG, signIn: signIn, signUp: signUp, signOut: signOut, restore: restore, get user() { return me; }, get session() { return session; },
     loadAll: loadAll, sync: sync, idle: idle, reset: reset, onState: function (f) { listeners.push(f); }, get state() { return state; },
     listInvites: listInvites, createInvite: createInvite, revokeInvite: revokeInvite, listDoctors: listDoctors, listAudit: listAudit, audit: audit,
     filmPath: filmPath, uploadFilm: uploadFilm, downloadFilm: downloadFilm, deleteFilms: deleteFilms,
-    chatList: chatList, chatPost: chatPost, chatEdit: chatEdit, chatDelete: chatDelete, chatUpload: chatUpload, chatFile: chatFile, chatRemoveFiles: chatRemoveFiles, doctorsList: doctorsList, setMyName: setMyName, realtime: realtime, uuid: uuid,
+    chatList: chatList, chatPost: chatPost, chatEdit: chatEdit, chatDelete: chatDelete, chatUpload: chatUpload, chatFile: chatFile, chatRemoveFiles: chatRemoveFiles, doctorsList: doctorsList, setMyName: setMyName, realtime: realtime, channel: channel, uuid: uuid,
     portal: portal, submit: submit, submitRom: submitRom, inviteStatus: inviteStatus,
     // pure helpers (unit-tested in Node)
     _M: M, _storeRows: storeRows, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
@@ -4623,13 +4698,23 @@ body.qr-open{overflow:hidden}
 
   // ---------- tabs ----------
   var curTab = 'proms';
+  // Patient lockdown: without a signed-in doctor only the questionnaire flow exists (patient sign-in → PROMs → thank-you).
+  // The doctor sign-in screen ('dash' gate) is reachable only through '🩺 Σύνδεση ιατρού' or a doctor invite link.
+  var docGate = false; // set from the invite link at start-up
+  function isDoc() { return !!currentUser(); }
+  function lockSync() {
+    var lock = !isDoc(); document.body.classList.toggle('ptonly', lock); document.body.classList.toggle('ptgate', lock && docGate);
+    return lock;
+  }
   function showTab(name) {
+    if (!isDoc()) { if (name === 'dash' && docGate) { /* doctor sign-in only */ } else { name = 'proms'; docGate = false; } }
     if (name === 'measure' && !measCtx) name = 'proms';
+    lockSync();
     curTab = name;
     [].forEach.call($('tabs').children, function (b) { b.classList.toggle('active', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
     var m = document.querySelector('main'); if (m) m.classList.toggle('hidden', name !== 'measure'); if ($('measCtx')) $('measCtx').classList.toggle('hidden', name !== 'measure');
     if (name === 'measure') window.dispatchEvent(new Event('ortho-measure-open'));
-    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show();
+    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-video')) $('tab-video').classList.toggle('hidden', name !== 'video'); if (name === 'video' && window.__video) window.__video.show(); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show();
     if (name === 'proms') renderProms(); if (name === 'dash') renderDash(); if (name === 'xray' && window.__xray) window.__xray.render();
   }
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
@@ -4637,12 +4722,12 @@ body.qr-open{overflow:hidden}
 
   // ---------- Optional camera range-of-motion measurement (per patient) ----------
   var S3 = {
-    el: { camT: 'Μέτρηση εύρους κίνησης με κάμερα', camHint: 'Προαιρετικό ανά ασθενή (προεπιλογή: ανενεργό). Όταν είναι ενεργό, ο ασθενής βλέπει την καρτέλα «Μέτρηση» στη ροή του· οι ειδοποιήσεις προφυλάξεων ισχίου ακολουθούν την ίδια ρύθμιση. Η άδεια κάμερας ζητείται μόνο όταν ο χρήστης πατήσει «Έναρξη κάμερας».',
+    el: { camT: 'Μέτρηση εύρους κίνησης με κάμερα', measClinic: 'Μέτρηση στο ιατρείο', clinicSrc: 'ιατρείο', camHint: 'Προαιρετικό ανά ασθενή (προεπιλογή: ανενεργό). Όταν είναι ενεργό, ο ιατρός μετρά το εύρος κίνησης στο ιατρείο («📷 Μέτρηση στο ιατρείο»)· ο ασθενής δεν έχει πρόσβαση στη μέτρηση. Οι ειδοποιήσεις προφυλάξεων ισχίου ακολουθούν την ίδια ρύθμιση. Η άδεια κάμερας ζητείται μόνο όταν ο χρήστης πατήσει «Έναρξη κάμερας».',
       camUL: 'Δεν διατίθεται για επεμβάσεις άνω άκρου (η μέτρηση υποστηρίζει γόνατο και ισχίο).', camOn: 'ενεργό', camOff: 'ανενεργό', romT: 'Εύρος κίνησης (κάμερα)', romNone: 'Δεν υπάρχουν ακόμη μετρήσεις.', romMax: 'Μέγιστη κάμψη', romMin: 'Ελάχ. κάμψη (έκταση)',
       romJoint: 'Άρθρωση', romSide: 'Πλευρά', romReps: 'Επαναλ.', romWarn: 'Ειδοπ. ισχίου', romDay: 'Ημέρα μετά την επέμβαση', knee: 'Γόνατο', hip: 'Ισχίο', left: 'Αριστερό', right: 'Δεξί',
       measFor: 'Μέτρηση για τον ασθενή', measDemo: 'Demo μέτρηση ιατρού (δοκιμή) – τα αποτελέσματα δεν αποθηκεύονται σε φάκελο ασθενή.', measJoint: 'Άρθρωση', measSave: 'Τα αποτελέσματα κάθε συνεδρίας αποθηκεύονται στο dashboard του ασθενή.',
       measHip: 'Ενεργές ειδοποιήσεις προφυλάξεων ισχίου (όριο κάμψης).', measSaved: 'Αποθηκεύτηκε στον φάκελο του ασθενή: μέγιστη κάμψη', measNoSave: 'Η συνεδρία δεν είχε έγκυρες μετρήσεις – δεν αποθηκεύτηκε.', demoMeas: '🎥 Demo μέτρηση', openMeas: '📷 Μέτρηση εύρους κίνησης', closeMeas: 'Κλείσιμο μέτρησης', camPill: 'κάμερα' },
-    en: { camT: 'Camera range-of-motion measurement', camHint: 'Optional per patient (default: off). When on, the patient sees the "Measurement" tab in their flow; hip-precaution alerts follow the same setting. Camera permission is requested only when the user presses "Start camera".',
+    en: { camT: 'Camera range-of-motion measurement', measClinic: 'Measure in the clinic', clinicSrc: 'clinic', camHint: 'Optional per patient (default: off). When on, the doctor measures the range of motion in the clinic ("📷 Measure in the clinic"); patients have no access to the measurement. Hip-precaution alerts follow the same setting. Camera permission is requested only when the user presses "Start camera".',
       camUL: 'Not available for upper-limb procedures (measurement supports knee and hip).', camOn: 'on', camOff: 'off', romT: 'Range of motion (camera)', romNone: 'No measurements yet.', romMax: 'Max flexion', romMin: 'Min flexion (extension)',
       romJoint: 'Joint', romSide: 'Side', romReps: 'Reps', romWarn: 'Hip alerts', romDay: 'Day after surgery', knee: 'Knee', hip: 'Hip', left: 'Left', right: 'Right',
       measFor: 'Measurement for patient', measDemo: 'Doctor demo measurement (testing) – results are not saved to a patient record.', measJoint: 'Joint', measSave: 'Each session\u2019s results are saved to the patient\u2019s dashboard.',
@@ -4677,6 +4762,7 @@ body.qr-open{overflow:hidden}
   }
   /** Called whenever the patient flow identifies a patient. */
   function syncPatientMeasure(pt) {
+    if (!isDoc()) { if (measCtx && !measCtx.demo) setMeasCtx(null); return; } // no camera measurement on the patient side (doctor only, in the clinic)
     if (camAllowed(pt)) { if (!measCtx || measCtx.demo || measCtx.pid !== pt.id) setMeasCtx({ pid: pt.id, procedure: pt.procedure, mode: jointFor(pt.procedure), demo: false }); }
     else if (measCtx && !measCtx.demo) setMeasCtx(null);
   }
@@ -4685,11 +4771,8 @@ body.qr-open{overflow:hidden}
     var d = e.detail || {}, pt = patientById(measCtx.pid); if (!pt) return;
     if (!(d.n > 0) || !isFinite(d.max)) { measMsg = t('measNoSave'); updateMeasureTab(); return; }
     store.rom = store.rom || [];
-    var rec = { id: 'r' + Math.random().toString(36).slice(2, 10), patientId: pt.id, date: today(), joint: d.mode, side: d.side, max: Math.round(d.max), min: isFinite(d.min) ? Math.round(d.min) : null, reps: d.reps, hipWarn: d.hipWarn || 0, target: d.target, n: d.n, durationSec: d.durationSec, source: 'patient' };
-    if (CLOUD && !cloudUser) { // patient's own device: send through the patient RPC
-      CL.submitRom(portalKey || pt.id, rec).then(function (id) { if (!id) throw new Error('not found'); rec.id = id; store.rom.push(rec); measMsg = t('measSaved') + ' ' + Math.round(d.max) + '°'; updateMeasureTab(); }, function () { measMsg = t('cSendFail'); updateMeasureTab(); });
-      return;
-    }
+    var rec = { id: 'r' + Math.random().toString(36).slice(2, 10), patientId: pt.id, date: today(), joint: d.mode, side: d.side, max: Math.round(d.max), min: isFinite(d.min) ? Math.round(d.min) : null, reps: d.reps, hipWarn: d.hipWarn || 0, target: d.target, n: d.n, durationSec: d.durationSec, source: 'clinic' };
+    if (!isDoc()) return; // measurements are taken by a signed-in doctor only
     store.rom.push(rec);
     persist(); measMsg = t('measSaved') + ' ' + Math.round(d.max) + '°'; updateMeasureTab();
   });
@@ -4713,15 +4796,17 @@ body.qr-open{overflow:hidden}
   function cameraHtml(p) {
     var ul = p.procedure === 'UL', recs = (store.rom || []).filter(function (r) { return r.patientId === p.id; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     var h = '<div class="camtoggle"><label class="switch"><input type="checkbox" id="camToggle"' + (p.camera && !ul ? ' checked' : '') + (ul ? ' disabled' : '') + '><span class="slider"></span></label><div><b>📷 ' + esc(t('camT')) + '</b> <span class="pill ' + (p.camera && !ul ? 'yes' : '') + '" id="camState">' + esc(p.camera && !ul ? t('camOn') : t('camOff')) + '</span><div class="muted">' + esc(ul ? t('camUL') : t('camHint')) + '</div></div></div>';
+    if (camAllowed(p)) h += '<div class="row" style="margin:8px 0 0"><button class="primary" id="dMeasPt">📷 ' + esc(t('measClinic')) + '</button></div>';
     if (p.camera || recs.length) {
       h += '<h3 style="margin-top:12px">' + esc(t('romT')) + '</h3>';
       if (!recs.length) h += '<p class="muted">' + esc(t('romNone')) + '</p>';
       else h += '<div class="romwrap" id="romChart">' + romChart(recs, p) + '</div><div class="tblwrap"><table class="tbl" id="romTable"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('romDay')) + '</th><th>' + esc(t('romJoint')) + '</th><th>' + esc(t('romSide')) + '</th><th>' + esc(t('romMax')) + '</th><th>' + esc(t('romMin')) + '</th><th>' + esc(t('romReps')) + '</th><th>' + esc(t('romWarn')) + '</th><th>' + esc(t('source')) + '</th></tr>' +
-        recs.slice().reverse().map(function (r) { return '<tr><td>' + esc(r.date) + '</td><td>' + P.daysBetween(p.surgeryDate || r.date, r.date) + '</td><td>' + esc(t(r.joint)) + '</td><td>' + esc(t(r.side) || '–') + '</td><td><b>' + r.max + '°</b></td><td>' + (r.min != null ? r.min + '°' : '–') + '</td><td>' + (r.reps != null ? r.reps : '–') + '</td><td>' + (r.joint === 'hip' ? '<span class="' + (r.hipWarn ? 'err' : 'ok') + '">' + r.hipWarn + '</span>' : '–') + '</td><td>' + esc(r.source === 'patient' ? t('patientSrc') : t('seedSrc')) + '</td></tr>'; }).join('') + '</table></div>';
+        recs.slice().reverse().map(function (r) { return '<tr><td>' + esc(r.date) + '</td><td>' + P.daysBetween(p.surgeryDate || r.date, r.date) + '</td><td>' + esc(t(r.joint)) + '</td><td>' + esc(t(r.side) || '–') + '</td><td><b>' + r.max + '°</b></td><td>' + (r.min != null ? r.min + '°' : '–') + '</td><td>' + (r.reps != null ? r.reps : '–') + '</td><td>' + (r.joint === 'hip' ? '<span class="' + (r.hipWarn ? 'err' : 'ok') + '">' + r.hipWarn + '</span>' : '–') + '</td><td>' + esc(r.source === 'patient' ? t('patientSrc') : r.source === 'clinic' ? t('clinicSrc') : t('seedSrc')) + '</td></tr>'; }).join('') + '</table></div>';
     }
     return h;
   }
   function bindCamera(p) {
+    if ($('dMeasPt')) $('dMeasPt').onclick = function () { audit('clinic-measurement', p.id); openMeasure({ pid: p.id, procedure: p.procedure, mode: jointFor(p.procedure), demo: false }); };
     var cb = $('camToggle'); if (!cb) return;
     cb.onchange = function () { p.camera = cb.checked; persist(); audit(cb.checked ? 'camera-rom-on' : 'camera-rom-off', p.id); if (!cb.checked && measCtx && !measCtx.demo && measCtx.pid === p.id) setMeasCtx(null); renderDash(); };
   }
@@ -4979,7 +5064,7 @@ body.qr-open{overflow:hidden}
   function bindDocLink() {
     if ($('ptDocLib')) $('ptDocLib').onclick = function () { showTab('lib'); window.scrollTo(0, 0); };
     if ($('ptDocLogin')) $('ptDocLogin').onclick = function () {
-      libAfterLogin = true; showTab('dash'); renderDash(); window.scrollTo(0, 0);
+      libAfterLogin = true; docGate = true; showTab('dash'); renderDash(); window.scrollTo(0, 0);
       setTimeout(function () { var f = $('cEmail') || $('gEmail'); if (f) f.focus(); }, 30);
     };
   }
@@ -5000,14 +5085,13 @@ body.qr-open{overflow:hidden}
       }).join('') + '</div>';
       if (nDone < list.length) h += '<p class="pthow">ℹ️ ' + esc(t('ptHow')) + '</p>';
     } else h += allDoneNextHtml(pt);
-    if (camAllowed(pt)) h += '<article class="ptcard meas"><div class="ptcnum" aria-hidden="true">📷</div><div class="ptcbody"><h2 class="ptctitle">' + esc(t('ptMeasT')) + '</h2><div class="ptcmeta">' + esc(t('ptMeasLead')) + '</div></div><button class="ptbig alt" id="pMeasure">' + esc(t('ptMeasBtn')) + ' →</button></article>';
+    if (false) h += '<article class="ptcard meas"><div class="ptcnum" aria-hidden="true">📷</div><div class="ptcbody"><h2 class="ptctitle">' + esc(t('ptMeasT')) + '</h2><div class="ptcmeta">' + esc(t('ptMeasLead')) + '</div></div><button class="ptbig alt" id="pMeasure">' + esc(t('ptMeasBtn')) + ' →</button></article>';
     h += '<div class="ptfoot"><button class="ptlink" id="ptSwitch">' + esc(t('ptNotYou')) + '</button>' +
-      '<details class="ptdemo"><summary>' + esc(t('ptDemoT')) + '</summary><label class="ptfld" for="pTp">' + esc(t('ptDemoTp')) + '</label><select id="pTp" class="ptinput">' + opt('', '—', !ctx.tp) + TPS.map(function (x) { return opt(x.id, tpName(x.id), ctx.tp === x.id); }).join('') + '</select></details></div>';
+      (isDoc() ? '<details class="ptdemo"><summary>' + esc(t('ptDemoT')) + '</summary><label class="ptfld" for="pTp">' + esc(t('ptDemoTp')) + '</label><select id="pTp" class="ptinput">' + opt('', '—', !ctx.tp) + TPS.map(function (x) { return opt(x.id, tpName(x.id), ctx.tp === x.id); }).join('') + '</select></details>' : '') + '</div>';
     el.innerHTML = h;
     el.querySelectorAll('[data-start]').forEach(function (b) { b.onclick = function () { ptOpen(b.dataset.start); }; });
     $('ptSwitch').onclick = function () { ctx.pid = ''; ctx.tp = ''; if (CLOUD && !cloudUser) { portalKey = ''; try { sessionStorage.removeItem(PKEY); } catch (e) {} } prun = null; savePst(); renderProms(); ptFocus(el); };
-    $('pTp').onchange = function () { ctx.tp = this.value; prun = null; savePst(); renderProms(); };
-    if ($('pMeasure')) $('pMeasure').onclick = function () { syncPatientMeasure(pt); openMeasure(measCtx); };
+    if ($('pTp')) $('pTp').onchange = function () { ctx.tp = this.value; prun = null; savePst(); renderProms(); };
   }
   function allDoneNextHtml(pt) { var nd = nextTpDate(pt); return '<p class="ptdonemsg" id="ptAllDoneNext">🎉 ' + esc(t('ptAllDoneNext')) + (nd ? '<br>📅 ' + esc(fmtT('ptNextOn', fmtDay(nd))) : '') + '</p>'; }
   function ptOpen(id) {
@@ -5144,6 +5228,11 @@ body.qr-open{overflow:hidden}
     return { ok: true, inv: inv };
   }
   var urlInvite = (function () { try { return new URLSearchParams(location.search).get('invite'); } catch (e) { return null; } })();
+  function gateBack() {
+    var en = lang() === 'en', g = $('dashGate'); if (!g || $('gBackPt')) return;
+    g.insertAdjacentHTML('afterbegin', '<div class="gback"><button class="ptlink" id="gBackPt">← ' + esc(en ? 'Back to the patient questionnaires' : 'Πίσω στα ερωτηματολόγια ασθενή') + '</button></div>');
+    $('gBackPt').onclick = function () { docGate = false; libAfterLogin = false; clearInviteUrl(); showTab('proms'); window.scrollTo(0, 0); };
+  }
   function renderGate() {
     if (CLOUD) return renderCloudGate();
     var tok = urlInvite || '';
@@ -5336,7 +5425,7 @@ body.qr-open{overflow:hidden}
     if (u && libAfterLogin && !(CLOUD && cloudBusy)) { libAfterLogin = false; setTimeout(function () { showTab('lib'); window.scrollTo(0, 0); }, 0); }
     $('dashGate').classList.toggle('hidden', !!u); $('dashBody').classList.toggle('hidden', !u);
     if (!u && CLOUD && cloudBusy) { $('dashGate').innerHTML = '<div class="card" id="cLoading">⏳ ' + esc(t('cLoading')) + '</div>'; $('dashBody').innerHTML = ''; return; }
-    if (!u) { $('dashBody').innerHTML = ''; closeRun(); renderGate(); return; }
+    if (!u) { $('dashBody').innerHTML = ''; closeRun(); renderGate(); gateBack(); return; }
     $('dashGate').innerHTML = '';
     var td = today(), subs = store.submissions;
     var pts = store.patients.filter(function (p) { return (!dsel.proc || p.procedure === dsel.proc) && ptMatches(p, dq); });
@@ -5498,10 +5587,15 @@ body.qr-open{overflow:hidden}
   function siteBase() { return /^https?:$/.test(location.protocol) ? location.href.split('#')[0].split('?')[0] : 'https://orthothessaly.github.io/'; }
   function cloudInviteLink(tok) { return siteBase() + '?invite=' + tok; }
   function clearInviteUrl() { if (urlInvite) { urlInvite = null; try { history.replaceState(null, '', location.pathname); } catch (er) {} } }
+  var hadDoc = false;
   function chatSync(u) { // doctors-only team chat: tab visible only to a signed-in doctor
     if (u === undefined) u = currentUser();
-    if (!u && (curTab === 'chat' || curTab === 'lib')) showTab('proms');
+    if (hadDoc && !u) docGate = false; hadDoc = !!u; // signing out → back to the locked patient view
+    if (!u && curTab !== 'proms' && !(curTab === 'dash' && docGate)) showTab('proms');
+    if (!u && measCtx && !measCtx.demo) setMeasCtx(null);
+    lockSync();
     if (window.__chat) window.__chat.sync(u, CLOUD);
+    if (window.__video) window.__video.sync(u, CLOUD);
     if (window.__qlib) window.__qlib.sync(u);
   }
   function afterLogin(u) {
@@ -5705,12 +5799,12 @@ body.qr-open{overflow:hidden}
     try { var su = new URL(location.href); su.searchParams.delete('pt'); history.replaceState(null, '', su.pathname + (su.search || '') + su.hash); } catch (e) {}
   }
   i18nStatic();
-  showTab(urlInvite ? 'dash' : 'proms');
+  docGate = !!urlInvite; showTab(urlInvite ? 'dash' : 'proms');
   cloudInit();
   if (urlPt) [0, 300, 900].forEach(function (ms, k) { setTimeout(function () { // late re-renders (language, cloud start-up) are re-checked; never steals focus once the patient typed
     if (curTab !== 'proms' && !k) showTab('proms'); var i = $('pPid'); if (!i || i.value || document.activeElement === i) return; if (!k) window.scrollTo(0, 0); try { i.focus({ preventScroll: true }); } catch (e) { i.focus(); }
   }, ms); });
-  window.__orthoProms = { openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
+  window.__orthoProms = { goDash: function () { if (!isDoc()) docGate = true; showTab('dash'); renderDash(); }, openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
     lib: { I: I, P: P, PR: PR, PROC: PROC, ROLE: ROLE, TPS: TPS, TP_ORDER: TP_ORDER, tx: tx, jt: jt, setJoint: function (j) { JOVR = j || ''; }, variant: variant, srcNote: srcNote, thrText: thrText, tpName: tpName,
       fmtScore: fmtScore, subsHtml: subsHtml, bandHtml: bandHtml, actLabel: actLabel, ptTitle: ptTitle, ptInstr: function (id) { return PT_INSTR[id] || I[id].instructions; }, abbr: PT_ABBR, noSec: PT_NOSEC, srcLab: srcLab, esc: esc, lang: lang,
       get curTab() { return curTab; }, patientById: function (id) { return patientById(id); } }, refreshUser: function () { chatSync(); if (curTab === 'dash') renderDash(); },
@@ -8755,6 +8849,7 @@ window.OrthoQRGen = qrcode; })();
     var h = '<article class="chatmsg' + (mine ? ' mine' : '') + (m._pending ? ' pending' : '') + '" data-mid="' + esc(m.id) + '"><div class="chathead"><b class="chatwho">' + esc(who) + '</b> <span class="chattime" title="' + esc(C.dayOf(m.created_at)) + '">' + esc(C.timeOf(m.created_at)) + '</span>' + (m.edited_at ? ' <span class="muted chated">(' + esc(t('edited')) + ')</span>' : '') + (m._pending ? ' <span class="muted">' + esc(m._failed ? t('failed') : t('sending')) + '</span>' : '') + '</div>';
     if (ed) h += '<textarea class="chatedit" id="chatEditTa" rows="3">' + esc(m.body) + '</textarea><div class="row"><button class="small primary" data-csave="' + esc(m.id) + '">' + esc(t('save')) + '</button><button class="small" data-ccancel="1">' + esc(t('cancel')) + '</button></div>';
     else if (m.body) h += '<div class="chatbody">' + esc(m.body).replace(/\n/g, '<br>') + '</div>';
+    if (!ed && m.body && root.OrthoVideoCore && root.OrthoVideoCore.NOTICE_RE.test(m.body)) h += '<button class="small primary chatvjoin" data-cvjoin="1">📹 ' + esc(document.documentElement.lang === 'en' ? 'Join the video call' : 'Σύνδεση στη βιντεοκλήση') + '</button>';
     if ((m.attachments || []).length) h += '<div class="chatimgs">' + m.attachments.map(function (a, i) {
       var src = a.thumb && /^data:|^blob:/.test(a.thumb) ? ' src="' + esc(a.thumb) + '"' : '', dp = a.t ? ' data-cpath="' + esc(a.t) + '"' : '';
       return '<button class="chatthumb" data-cfull="' + esc(m.id) + '|' + i + '" aria-label="' + esc(t('imgAlt')) + '"><img alt="' + esc(t('imgAlt')) + '" loading="lazy"' + src + dp + (a.w && a.h ? ' width="' + Math.round(C.fit(a.w, a.h, 240).w) + '" height="' + Math.round(C.fit(a.w, a.h, 240).h) + '"' : '') + '></button>';
@@ -8809,6 +8904,7 @@ window.OrthoQRGen = qrcode; })();
     bindFeed();
   }
   function bindFeed() {
+    pane.querySelectorAll('[data-cvjoin]').forEach(function (b) { b.onclick = function () { var A = api(); if (A && A.showTab) A.showTab('video'); window.scrollTo(0, 0); }; });
     pane.querySelectorAll('[data-cfull]').forEach(function (b) { b.onclick = function () { var p = b.dataset.cfull.split('|'); openFull(p[0], +p[1]); }; });
     pane.querySelectorAll('[data-cedit]').forEach(function (b) { b.onclick = function () { st.editing = b.dataset.cedit; renderFeed(); var ta = $('chatEditTa'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }; });
     pane.querySelectorAll('[data-ccancel]').forEach(function (b) { b.onclick = function () { st.editing = ''; renderFeed(); }; });
@@ -8881,6 +8977,267 @@ window.OrthoQRGen = qrcode; })();
   function show() { render(); markSeen(); var ta = $('chatText'); if (ta && !('ontouchstart' in window)) ta.focus(); }
   new MutationObserver(function () { badge(); if (!pane.classList.contains('hidden')) render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   root.__chat = { sync: sync, show: show, render: render, get state() { return st; }, reload: function () { if (st.cloud && st.user) return cloudLoad(); } };
+  var a0 = api(); if (a0 && a0.currentUser) sync(a0.currentUser(), a0.cloud && a0.cloud.mode === 'cloud');
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<!-- ===== Doctors-only video call (Βιντεοκλήση): WebRTC mesh, signaling over a private Supabase Realtime channel; no recording ===== -->
+<script id="ortho-video">
+(function (root) {
+  'use strict';
+  // ===== Doctors-only video call (📹 Βιντεοκλήση): WebRTC mesh (peer-to-peer, DTLS-SRTP), max 5 people, no recording, nothing stored =====
+  // Signaling (offer/answer/ICE) + presence over a Supabase Realtime PRIVATE channel 'video:<room>' (Realtime Authorization: doctors only).
+  // ---------- pure core (unit-tested in Node) ----------
+  var MAX = 5, ROOM = 'aithousa';
+  /** presence {key:[meta…]} → [{id, uid, name, inCall, mic, cam, share, at}] (one per key, newest meta) */
+  function people(pres) { return Object.keys(pres || {}).map(function (k) { var ms = pres[k] || [], m = ms[ms.length - 1] || {}; return { id: k, uid: m.uid || '', name: m.name || '—', inCall: !!m.inCall, mic: m.mic !== false, cam: m.cam !== false, share: !!m.share, at: m.at || '' }; }).sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : a.id < b.id ? -1 : 1; }); }
+  function inCall(pres) { return people(pres).filter(function (p) { return p.inCall; }); }
+  /** mesh rule: the peer with the smaller id makes the offer (no glare) */
+  function isOfferer(me, other) { return me < other; }
+  function canJoin(pres, me) { var n = inCall(pres).filter(function (p) { return p.id !== me; }).length; return n < MAX; }
+  /** ICE servers: public Google STUN + optional TURN typed by the doctor (kept on this device only) */
+  function iceServers(turn) {
+    var s = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+    if (turn && turn.urls) { var u = String(turn.urls).split(/[\s,]+/).filter(function (x) { return /^turns?:/.test(x); }); if (u.length) s.push({ urls: u, username: turn.username || '', credential: turn.credential || '' }); }
+    return s;
+  }
+  function gridCols(n) { return n <= 1 ? 1 : n <= 4 ? 2 : 3; }
+  var NOTICE_RE = /^📹 .+(ξεκίνησε βιντεοκλήση|started a video call)/;
+  root.OrthoVideoCore = { MAX: MAX, ROOM: ROOM, people: people, inCall: inCall, isOfferer: isOfferer, canJoin: canJoin, iceServers: iceServers, gridCols: gridCols, NOTICE_RE: NOTICE_RE };
+  if (typeof document === 'undefined') return;
+
+  // ---------- UI ----------
+  var C = root.OrthoVideoCore, CL = root.OrthoCloud;
+  var api = function () { return root.__orthoProms; };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var S = {
+    el: { tab: '📹 Βιντεοκλήση', T: '📹 Βιντεοκλήση μεταξύ ιατρών', room: 'Αίθουσα ιατρών', lead: '🔒 Μόνο για προσκεκλημένους ιατρούς. Η εικόνα και ο ήχος πηγαίνουν απευθείας από υπολογιστή σε υπολογιστή (peer-to-peer, κρυπτογράφηση DTLS-SRTP). Δεν γίνεται εγγραφή και δεν αποθηκεύεται τίποτα. Χωρίς σύνδεση με ασθενείς.',
+      start: '📹 Έναρξη βιντεοκλήσης', join: '📹 Σύνδεση στην κλήση', leave: '⏏ Αποσύνδεση', mic: '🎙 Μικρόφωνο', cam: '📷 Κάμερα', share: '🖥 Κοινή χρήση οθόνης', unshare: '🖥 Διακοπή κοινής χρήσης', you: 'Εσείς', inCallN: 'Στην κλήση τώρα ({0}/{1})', online: 'Συνδεδεμένοι ιατροί', nobody: 'Κανείς στην κλήση.',
+      full: 'Η αίθουσα είναι πλήρης ({0} άτομα). Δοκιμάστε αργότερα.', noMedia: 'Δεν επιτράπηκε η πρόσβαση σε κάμερα/μικρόφωνο – συμμετέχετε μόνο με προβολή. Ελέγξτε τις άδειες του browser.', noRtc: 'Ο browser δεν υποστηρίζει βιντεοκλήσεις (WebRTC).',
+      denied: 'Δεν επιτρέπεται η σύνδεση στην αίθουσα (μόνο για ιατρούς).', sigErr: 'Σύνδεση με τον διακομιστή σηματοδότησης… (επανασύνδεση)', live: 'συνδεδεμένο', connecting: 'σύνδεση…',
+      iceFail: 'Δεν ήταν δυνατή η απευθείας σύνδεση με: {0}. Πιθανώς αυστηρό δίκτυο/firewall (π.χ. νοσοκομείου). Δοκιμάστε άλλο δίκτυο (π.χ. 4G) ή ορίστε διακομιστή TURN στις «Ρυθμίσεις δικτύου».', reconnecting: 'επανασύνδεση…', connected: 'συνδέθηκε', waiting: 'σύνδεση…',
+      turnT: '⚙️ Ρυθμίσεις δικτύου (TURN – προαιρετικό)', turnLead: 'Χωρίς TURN, ορισμένα αυστηρά δίκτυα (νοσοκομεία) μπλοκάρουν την απευθείας σύνδεση. Μπορείτε να βάλετε έναν δωρεάν/δικό σας TURN (π.χ. Open Relay, Metered, Cloudflare). Αποθηκεύεται μόνο σε αυτή τη συσκευή.', turnUrls: 'TURN URL(s)', turnUser: 'Όνομα χρήστη', turnPw: 'Κωδικός', save: 'Αποθήκευση', saved: '✓ Αποθηκεύτηκε', stunOnly: 'Τώρα: μόνο δημόσιοι STUN (Google)', turnOn: 'Τώρα: STUN + TURN',
+      demo: 'DEMO: μόνο τοπική προεπισκόπηση κάμερας – καμία σύνδεση με άλλους ιατρούς. Στη δημοσιευμένη σελίδα η κλήση γίνεται μεταξύ των προσκεκλημένων ιατρών.', preview: '📷 Προεπισκόπηση κάμερας', stopPrev: 'Διακοπή προεπισκόπησης',
+      notice: '📹 Ο/Η Δρ. {0} ξεκίνησε βιντεοκλήση — Σύνδεση', active: 'Βιντεοκλήση σε εξέλιξη', screen: 'οθόνη', muted: 'σίγαση', max: 'Έως {0} συμμετέχοντες.', camOff: 'κάμερα κλειστή', shareFail: 'Η κοινή χρήση οθόνης δεν ξεκίνησε.' },
+    en: { tab: '📹 Video call', T: '📹 Doctors-only video call', room: 'Doctors’ room', lead: '🔒 Invited doctors only. Video and audio go directly between computers (peer-to-peer, DTLS-SRTP encrypted). No recording, nothing is stored. Not linked to patients.',
+      start: '📹 Start video call', join: '📹 Join the call', leave: '⏏ Leave', mic: '🎙 Microphone', cam: '📷 Camera', share: '🖥 Share screen', unshare: '🖥 Stop sharing', you: 'You', inCallN: 'In the call now ({0}/{1})', online: 'Doctors online', nobody: 'Nobody in the call.',
+      full: 'The room is full ({0} people). Please try later.', noMedia: 'Camera/microphone access was not allowed – you joined view-only. Check the browser permissions.', noRtc: 'This browser does not support video calls (WebRTC).',
+      denied: 'Not allowed to join the room (doctors only).', sigErr: 'Connecting to the signaling server… (retrying)', live: 'connected', connecting: 'connecting…',
+      iceFail: 'Could not connect directly to: {0}. Probably a strict network/firewall (e.g. hospital). Try another network (e.g. 4G) or set a TURN server in “Network settings”.', reconnecting: 'reconnecting…', connected: 'connected', waiting: 'connecting…',
+      turnT: '⚙️ Network settings (TURN – optional)', turnLead: 'Without TURN some strict networks (hospitals) block direct connections. You can add a free/own TURN server (e.g. Open Relay, Metered, Cloudflare). Stored on this device only.', turnUrls: 'TURN URL(s)', turnUser: 'Username', turnPw: 'Password', save: 'Save', saved: '✓ Saved', stunOnly: 'Now: public STUN only (Google)', turnOn: 'Now: STUN + TURN',
+      demo: 'DEMO: local camera preview only – no connection to other doctors. On the published site the call connects the invited doctors.', preview: '📷 Camera preview', stopPrev: 'Stop preview',
+      notice: '📹 Dr {0} started a video call — Join', active: 'Video call in progress', screen: 'screen', muted: 'muted', max: 'Up to {0} participants.', camOff: 'camera off', shareFail: 'Screen sharing did not start.' }
+  };
+  var t = function (k) { var v = S[lang()][k]; return v == null ? k : v; };
+  var f = function (k) { var a = arguments; return t(k).replace(/\{(\d)\}/g, function (m, i) { return a[+i + 1]; }); };
+  var TKEY = 'orthothessaly.turn.v1';
+  var turnCfg = function () { try { return JSON.parse(localStorage.getItem(TKEY)) || null; } catch (e) { return null; } };
+
+  var btn = document.createElement('button'); btn.setAttribute('role', 'tab'); btn.dataset.tab = 'video'; btn.id = 'tabVideoBtn'; btn.className = 'hidden';
+  var tabs = $('tabs'); if (tabs) { var mb = $('tabMeasureBtn'); tabs.insertBefore(btn, mb || null); }
+  var pane = document.createElement('section'); pane.className = 'pane hidden'; pane.id = 'tab-video'; pane.setAttribute('aria-label', 'Video call');
+  var cp = $('tab-chat') || $('tab-xray'); if (cp && cp.parentNode) cp.parentNode.insertBefore(pane, cp.nextSibling); else document.body.appendChild(pane);
+
+  var st = fresh(null, false);
+  function fresh(user, cloud) { return { user: user, cloud: cloud, me: 'p' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36), ch: null, sig: '', pres: {}, raw: {}, states: {}, tick: 0, inCall: false, local: null, camTrack: null, micTrack: null, screen: null, mic: true, cam: true, peers: {}, early: {}, dbg: {}, warn: '', err: '', preview: false, built: false, audio: null }; }
+  var visible = function () { return !pane.classList.contains('hidden'); };
+  function others() { return C.inCall(st.pres).filter(function (p) { return p.id !== st.me; }); }
+  function badge() {
+    var n = st.user && st.cloud && !st.inCall ? others().length : 0;
+    btn.innerHTML = esc(t('tab')) + (n ? ' <span class="vbadge" id="videoBadge" title="' + esc(t('active')) + '">● ' + n + '</span>' : '') + (st.inCall ? ' <span class="vbadge on" id="videoOn">●</span>' : '');
+  }
+  function myMeta() { return { uid: st.user ? st.user.id || st.user.email : '', name: st.user ? st.user.name || st.user.email : '', inCall: st.inCall, mic: st.mic, cam: st.cam, share: !!st.screen, at: st.at || (st.at = new Date().toISOString()) }; }
+
+  // ---------- signaling ----------
+  function startSignaling() {
+    if (!CL || !CL.channel) return;
+    st.sig = 'connecting';
+    st.ch = CL.channel('video:' + C.ROOM, { key: st.me }, {
+      onStatus: function (s) { st.sig = s; if (s === 'live') { st.ch.track(myMeta()); announce(); } paintStatus(); },
+      onPresence: function (p) {
+        var fresh = Object.keys(p).some(function (k) { return k !== st.me && !st.raw[k]; });
+        Object.keys(st.states).forEach(function (k) { if (!p[k]) delete st.states[k]; });
+        st.raw = p; merge(); onPeople(); if (fresh) announce();
+      },
+      onBroadcast: function (ev, m) {
+        if (ev === 'st' && m && m.from && m.from !== st.me && m.s) { st.states[m.from] = m.s; merge(); onPeople(); return; }
+        st.dbg['r_' + (m && m.t)] = (st.dbg['r_' + (m && m.t)] || 0) + 1; if (ev === 'sig' && m && m.to === st.me) onSignal(m);
+      }
+    });
+    st.tick = setInterval(announce, 15000);
+  }
+  // presence = who is connected (tracked once); call state (inCall/mic/cam/share) travels as a 'st' broadcast,
+  // because re-tracking presence makes Realtime emit a late 'leave' that would drop a live peer
+  function announce() { if (st.ch && st.sig === 'live') st.ch.send('st', { from: st.me, s: myMeta() }); }
+  function merge() {
+    var out = {}; Object.keys(st.raw).forEach(function (k) { var ms = st.raw[k] || [], m = ms[ms.length - 1] || {}, x = k === st.me ? myMeta() : st.states[k];
+      out[k] = [x ? Object.assign({}, m, x, { uid: m.uid || x.uid, at: m.at || x.at }) : m]; });
+    st.pres = out;
+  }
+  function sig(to, m) { m.to = to; m.from = st.me; var okS = st.ch && st.ch.send('sig', m); st.dbg[(okS ? 's_' : 'x_') + m.t] = (st.dbg[(okS ? 's_' : 'x_') + m.t] || 0) + 1; }
+  function onPeople() {
+    badge(); if (visible()) { paintPeople(); }
+    if (!st.inCall) return;
+    var ids = others().map(function (p) { return p.id; });
+    Object.keys(st.peers).forEach(function (id) { var x = st.peers[id]; if (ids.indexOf(id) >= 0) { x.goneAt = 0; return; } if (!x.goneAt) { x.goneAt = Date.now(); setTimeout(onPeople, 4000); } else if (Date.now() - x.goneAt >= 3500) dropPeer(id); }); // presence meta updates may briefly look like leave+join
+    others().forEach(function (p) { var x = st.peers[p.id]; if (x) { x.name = p.name; x.meta = p; paintTile(p.id); } else if (C.isOfferer(st.me, p.id)) call(p); });
+  }
+  function onSignal(m) {
+    if (!st.inCall) return;
+    if (m.t === 'offer') answer(m);
+    else if (m.t === 'answer') { var x = st.peers[m.from]; if (x) x.pc.setRemoteDescription(m.sdp).then(function () { flushIce(x); }).catch(function (e) { console.warn('answer', e); }); }
+    else if (m.t === 'ice') { var y = st.peers[m.from]; if (!y) { (st.early[m.from] = st.early[m.from] || []).push(m.c); return; } if (y.pc.remoteDescription) y.pc.addIceCandidate(m.c).catch(function () {}); else y.ice.push(m.c); }
+    else if (m.t === 'bye') dropPeer(m.from);
+  }
+  function flushIce(x) { var q = x.ice; x.ice = []; q.forEach(function (c) { x.pc.addIceCandidate(c).catch(function () {}); }); }
+  function newPeer(p) {
+    var pc = new RTCPeerConnection({ iceServers: C.iceServers(turnCfg()) }), x = { id: p.id, name: p.name, meta: p, pc: pc, ice: st.early[p.id] || [], stream: new MediaStream(), state: 'new', t0: Date.now() };
+    st.peers[p.id] = x; delete st.early[p.id];
+    pc.onicecandidate = function (e) { if (e.candidate) sig(p.id, { t: 'ice', c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate }); };
+    pc.ontrack = function (e) { if (x.stream.getTracks().indexOf(e.track) < 0) x.stream.addTrack(e.track); e.track.onunmute = function () { paintTile(p.id); }; paintTile(p.id); watchLevel(x); };
+    pc.onconnectionstatechange = function () { x.state = pc.connectionState; if (x.state === 'connected') x.failed = false; if (x.state === 'failed') { x.failed = true; warnIce(); } paintTile(p.id); };
+    pc.oniceconnectionstatechange = function () { if (pc.iceConnectionState === 'failed') { x.failed = true; warnIce(); paintTile(p.id); } };
+    x.timer = setTimeout(function () { if (st.peers[p.id] === x && pc.connectionState !== 'connected') { x.failed = true; warnIce(); paintTile(p.id); } }, 25000);
+    addTile(p.id); return x;
+  }
+  function call(p) {
+    var x = newPeer(p), pc = x.pc;
+    pc.addTransceiver(st.micTrack || 'audio', { direction: 'sendrecv', streams: st.local ? [st.local] : [] });
+    pc.addTransceiver(curVideo() || 'video', { direction: 'sendrecv', streams: st.local ? [st.local] : [] });
+    pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).then(function () { sig(p.id, { t: 'offer', sdp: { type: 'offer', sdp: pc.localDescription.sdp } }); }).catch(function (e) { console.warn('offer', e); });
+  }
+  function answer(m) {
+    var p = C.people(st.pres).filter(function (q) { return q.id === m.from; })[0] || { id: m.from, name: '—' };
+    if (st.peers[m.from]) dropPeer(m.from, true);
+    var x = newPeer(p), pc = x.pc;
+    pc.setRemoteDescription(m.sdp).then(function () {
+      pc.getTransceivers().forEach(function (tr) { var k = tr.receiver && tr.receiver.track && tr.receiver.track.kind; tr.direction = 'sendrecv'; var tk = k === 'audio' ? st.micTrack : k === 'video' ? curVideo() : null; if (tk) { tr.sender.replaceTrack(tk); if (tr.sender.setStreams && st.local) tr.sender.setStreams(st.local); } });
+      return pc.createAnswer();
+    }).then(function (a) { return pc.setLocalDescription(a); }).then(function () { sig(m.from, { t: 'answer', sdp: { type: 'answer', sdp: pc.localDescription.sdp } }); flushIce(x); }).catch(function (e) { console.warn('answer', e); });
+  }
+  function dropPeer(id, quiet) { var x = st.peers[id]; if (!x) return; clearTimeout(x.timer); try { x.pc.close(); } catch (e) {} if (x.level) clearInterval(x.level); delete st.peers[id]; if (!quiet) { var tl = $('vt-' + id); if (tl) tl.remove(); layout(); } }
+  function curVideo() { return st.screen || st.camTrack; }
+  function videoSenders() { var out = []; Object.keys(st.peers).forEach(function (id) { st.peers[id].pc.getSenders().forEach(function (s) { var tr = st.peers[id].pc.getTransceivers().filter(function (x) { return x.sender === s; })[0]; if ((s.track && s.track.kind === 'video') || (tr && tr.receiver.track && tr.receiver.track.kind === 'video')) out.push(s); }); }); return out; }
+  function warnIce() { var bad = Object.keys(st.peers).map(function (k) { return st.peers[k]; }).filter(function (x) { return x.failed; }).map(function (x) { return x.name; }); st.warn = bad.length ? f('iceFail', bad.join(', ')) : ''; var w = $('vWarn'); if (w) { w.textContent = st.warn; w.classList.toggle('hidden', !st.warn); } }
+  // speaking indicator (Web Audio level meter)
+  function watchLevel(x) {
+    if (x.level || !x.stream.getAudioTracks().length) return;
+    try { st.audio = st.audio || new (root.AudioContext || root.webkitAudioContext)(); var src = st.audio.createMediaStreamSource(x.stream), an = st.audio.createAnalyser(); an.fftSize = 256; src.connect(an); var buf = new Uint8Array(an.fftSize);
+      x.level = setInterval(function () { an.getByteTimeDomainData(buf); var mx = 0; for (var i = 0; i < buf.length; i++) mx = Math.max(mx, Math.abs(buf[i] - 128)); var sp = mx > 12; if (sp !== x.speaking) { x.speaking = sp; var tl = $('vt-' + x.id); if (tl) tl.classList.toggle('speaking', sp); paintPeople(); } }, 250);
+    } catch (e) {}
+  }
+
+  // ---------- media ----------
+  function getMedia() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(null);
+    return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24 } } })
+      .catch(function () { return navigator.mediaDevices.getUserMedia({ audio: true }).catch(function () { return null; }); });
+  }
+  function join() {
+    if (!root.RTCPeerConnection) { st.err = t('noRtc'); return render(); }
+    if (st.cloud && !C.canJoin(st.pres, st.me)) { st.err = f('full', C.MAX); return render(); }
+    st.err = ''; var starting = st.cloud && !others().length;
+    getMedia().then(function (s) {
+      st.local = s || new MediaStream(); st.micTrack = s ? s.getAudioTracks()[0] || null : null; st.camTrack = s ? s.getVideoTracks()[0] || null : null;
+      if (!s) st.err = t('noMedia'); st.mic = !!st.micTrack; st.cam = !!st.camTrack;
+      if (!st.cloud) { st.preview = true; render(); return; }
+      st.inCall = true; render(); merge(); announce(); onPeople(); badge();
+      var a = api(); if (a && a.audit) a.audit('video-join', C.ROOM);
+      if (starting && CL && CL.chatPost) CL.chatPost({ id: CL.uuid(), body: f('notice', st.user.name || st.user.email), attachments: [] }).catch(function () {});
+    });
+  }
+  function leave() {
+    Object.keys(st.peers).forEach(function (id) { sig(id, { t: 'bye' }); dropPeer(id, true); });
+    stopLocal(); st.inCall = false; st.preview = false; st.warn = ''; merge(); announce(); render(); badge();
+  }
+  function stopLocal() { [st.local, st.screenStream].forEach(function (s) { if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} }); }); st.local = st.camTrack = st.micTrack = st.screen = st.screenStream = null; }
+  function toggleMic() { if (!st.micTrack) return; st.mic = !st.mic; st.micTrack.enabled = st.mic; merge(); announce(); paintControls(); paintTile('me'); }
+  function toggleCam() { if (!st.camTrack) return; st.cam = !st.cam; st.camTrack.enabled = st.cam; merge(); announce(); paintControls(); paintTile('me'); }
+  function share() {
+    if (st.screen) return unshare();
+    var gd = navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia; if (!gd) { st.err = t('shareFail'); return paintErr(); }
+    navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }).then(function (s) {
+      st.screenStream = s; st.screen = s.getVideoTracks()[0]; st.screen.onended = unshare;
+      videoSenders().forEach(function (snd) { snd.replaceTrack(st.screen); });
+      merge(); announce(); paintControls(); paintTile('me');
+    }, function () { st.err = t('shareFail'); paintErr(); });
+  }
+  function unshare() {
+    if (!st.screen) return; var s = st.screenStream; st.screen = null; st.screenStream = null; if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} });
+    videoSenders().forEach(function (snd) { snd.replaceTrack(st.camTrack || null); }); merge(); announce(); paintControls(); paintTile('me');
+  }
+
+  // ---------- render ----------
+  function render() {
+    if (!st.user) { pane.innerHTML = ''; return; }
+    var live = st.inCall || st.preview, n = others().length;
+    var h = '<div class="card vcard"><div class="vhead"><h2>' + esc(t('T')) + '</h2><span class="pill">' + esc(t('room')) + '</span>' + (st.cloud ? ' <span class="vsig" id="vSig"></span>' : ' <span class="pill demo">DEMO</span>') + '</div><p class="muted small">' + esc(t('lead')) + ' ' + esc(f('max', C.MAX)) + '</p>' +
+      (st.cloud ? '' : '<p class="vdemo" id="vDemo">' + esc(t('demo')) + '</p>') +
+      '<p class="verr' + (st.err ? '' : ' hidden') + '" id="vErr" role="alert">' + esc(st.err) + '</p><p class="vwarn' + (st.warn ? '' : ' hidden') + '" id="vWarn" role="alert">' + esc(st.warn) + '</p>';
+    if (!live) h += '<div class="vjoinrow"><button class="primary vbig" id="vJoin">' + esc(st.cloud ? (n ? t('join') + ' (' + n + ')' : t('start')) : t('preview')) + '</button></div>';
+    else h += '<div class="vgrid" id="vGrid"></div><div class="vctl" id="vCtl"></div>';
+    if (st.cloud) h += '<div class="vpeople" id="vPeople"></div>';
+    var tc = turnCfg() || {};
+    h += '<details class="vturn" id="vTurn"><summary>' + esc(t('turnT')) + '</summary><p class="muted small">' + esc(t('turnLead')) + '</p><p class="small" id="vIceMode">' + esc(tc.urls ? t('turnOn') : t('stunOnly')) + '</p>' +
+      '<label class="fld">' + esc(t('turnUrls')) + '<input id="vTurnUrls" placeholder="turn:host:3478?transport=udp, turns:host:443" value="' + esc(tc.urls || '') + '" autocomplete="off"></label><div class="row"><label class="fld">' + esc(t('turnUser')) + '<input id="vTurnUser" value="' + esc(tc.username || '') + '" autocomplete="off"></label><label class="fld">' + esc(t('turnPw')) + '<input id="vTurnPw" type="password" value="' + esc(tc.credential || '') + '" autocomplete="new-password"></label></div><button class="small" id="vTurnSave">' + esc(t('save')) + '</button> <span class="muted small" id="vTurnMsg"></span></details></div>';
+    pane.innerHTML = h;
+    if ($('vJoin')) $('vJoin').onclick = join;
+    $('vTurnSave').onclick = function () { var v = { urls: $('vTurnUrls').value.trim(), username: $('vTurnUser').value.trim(), credential: $('vTurnPw').value }; try { if (v.urls) localStorage.setItem(TKEY, JSON.stringify(v)); else localStorage.removeItem(TKEY); } catch (e) {} $('vTurnMsg').textContent = t('saved'); $('vIceMode').textContent = v.urls ? t('turnOn') : t('stunOnly'); };
+    if (live) { addTile('me'); Object.keys(st.peers).forEach(addTile); paintControls(); }
+    paintStatus(); paintPeople();
+  }
+  function paintErr() { var e = $('vErr'); if (e) { e.textContent = st.err; e.classList.toggle('hidden', !st.err); } }
+  function paintStatus() { var e = $('vSig'); if (!e) return; var s = st.sig; e.className = 'vsig ' + s; e.textContent = s === 'live' ? '● ' + t('live') : s === 'denied' ? '⛔ ' + t('denied') : s === 'error' ? '⚠ ' + t('sigErr') : '… ' + t('connecting'); }
+  function paintPeople() {
+    var e = $('vPeople'); if (!e) return; var all = C.people(st.pres), ic = all.filter(function (p) { return p.inCall; }), on = all.filter(function (p) { return !p.inCall; });
+    var nm = function (p) { var x = st.peers[p.id]; return esc(p.id === st.me ? t('you') : p.name) + (p.share ? ' 🖥' : '') + (!p.mic ? ' 🔇' : x && x.speaking ? ' 🔊' : ''); };
+    e.innerHTML = '<div><b>' + esc(f('inCallN', ic.length, C.MAX)) + '</b><ul id="vInCall">' + (ic.length ? ic.map(function (p) { return '<li data-vp="' + esc(p.id) + '">' + nm(p) + '</li>'; }).join('') : '<li class="muted">' + esc(t('nobody')) + '</li>') + '</ul></div>' +
+      '<div><b>' + esc(t('online')) + '</b><ul id="vOnline">' + on.map(function (p) { return '<li>' + nm(p) + '</li>'; }).join('') + '</ul></div>';
+  }
+  function paintControls() {
+    var e = $('vCtl'); if (!e) return;
+    e.innerHTML = '<button id="vMic" class="vbtn' + (st.mic ? ' on' : ' off') + '" aria-pressed="' + st.mic + '"' + (st.micTrack ? '' : ' disabled') + '>' + esc(t('mic')) + (st.mic ? '' : ' ✕') + '</button>' +
+      '<button id="vCam" class="vbtn' + (st.cam ? ' on' : ' off') + '" aria-pressed="' + st.cam + '"' + (st.camTrack ? '' : ' disabled') + '>' + esc(t('cam')) + (st.cam ? '' : ' ✕') + '</button>' +
+      (st.cloud ? '<button id="vShare" class="vbtn' + (st.screen ? ' on' : '') + '">' + esc(st.screen ? t('unshare') : t('share')) + '</button>' : '') +
+      '<button id="vLeave" class="vbtn danger">' + esc(st.cloud ? t('leave') : t('stopPrev')) + '</button>';
+    $('vMic').onclick = toggleMic; $('vCam').onclick = toggleCam; if ($('vShare')) $('vShare').onclick = share; $('vLeave').onclick = leave;
+  }
+  function addTile(id) {
+    var g = $('vGrid'); if (!g || $('vt-' + id)) { paintTile(id); return; }
+    var d = document.createElement('div'); d.className = 'vtile' + (id === 'me' ? ' me' : ''); d.id = 'vt-' + id; d.dataset.peer = id;
+    d.innerHTML = '<video autoplay playsinline' + (id === 'me' ? ' muted' : '') + '></video><div class="vlabel"></div><div class="vstate"></div>';
+    if (id === 'me') g.insertBefore(d, g.firstChild); else g.appendChild(d);
+    paintTile(id); layout();
+  }
+  function paintTile(id) {
+    var d = $('vt-' + id); if (!d) return; var v = d.querySelector('video'), me = id === 'me', x = st.peers[id];
+    var s = me ? (st.screen ? st.screenStream : st.local) : x && x.stream; if (s && v.srcObject !== s) { v.srcObject = s; var pp = v.play(); if (pp && pp.catch) pp.catch(function () {}); }
+    var meta = me ? myMeta() : x && x.meta || {};
+    d.classList.toggle('share', !!meta.share); d.classList.toggle('nocam', me ? !st.cam && !st.screen : meta.cam === false && !meta.share);
+    d.querySelector('.vlabel').textContent = (me ? t('you') : (x && x.name) || '—') + (meta.share ? ' · 🖥 ' + t('screen') : '') + (meta.mic === false ? ' · 🔇' : '') + (meta.cam === false && !meta.share ? ' · ' + t('camOff') : '');
+    d.querySelector('.vstate').textContent = me || !x ? '' : x.failed ? '⚠' : x.state === 'connected' ? '' : x.state === 'disconnected' ? t('reconnecting') : t('waiting');
+    layout();
+  }
+  function layout() { var g = $('vGrid'); if (!g) return; var n = g.children.length; g.style.setProperty('--vcols', C.gridCols(n)); g.classList.toggle('hasshare', !!g.querySelector('.vtile.share')); }
+
+  // ---------- lifecycle ----------
+  function sync(user, cloud) {
+    var key = user ? (cloud ? 'c:' + user.id : 'd:' + user.email) : '', prev = st.user ? (st.cloud ? 'c:' + st.user.id : 'd:' + st.user.email) : '';
+    btn.classList.toggle('hidden', !user);
+    if (key !== prev) {
+      if (st.inCall || st.preview) leave(); if (st.ch) st.ch.close(); if (st.tick) clearInterval(st.tick);
+      st = fresh(user ? { id: user.id, email: user.email, name: user.name, role: user.role } : null, !!cloud);
+      if (user && cloud) startSignaling();
+      if (!user) pane.innerHTML = ''; else if (visible()) render();
+    } else if (user) { st.user.name = user.name; merge(); announce(); }
+    badge();
+  }
+  function show() { render(); }
+  window.addEventListener('beforeunload', function () { if (st.inCall) Object.keys(st.peers).forEach(function (id) { sig(id, { t: 'bye' }); }); });
+  new MutationObserver(function () { badge(); if (visible() && !st.inCall && !st.preview) render(); else if (visible()) { paintControls(); paintPeople(); Object.keys(st.peers).concat(['me']).forEach(paintTile); } }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  root.__video = { sync: sync, show: show, render: render, join: join, leave: leave, share: share, unshare: unshare, toggleMic: toggleMic, toggleCam: toggleCam, get state() { return st; },
+    stats: function () { return Object.keys(st.peers).map(function (id) { var x = st.peers[id], v = document.querySelector('#vt-' + id + ' video'); return { id: id, name: x.name, state: x.pc.connectionState, ice: x.pc.iceConnectionState, kinds: x.stream.getTracks().map(function (k) { return k.kind; }).sort(), w: v ? v.videoWidth : 0, h: v ? v.videoHeight : 0, failed: !!x.failed }; }); } };
   var a0 = api(); if (a0 && a0.currentUser) sync(a0.currentUser(), a0.cloud && a0.cloud.mode === 'cloud');
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
