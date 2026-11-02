@@ -9079,7 +9079,7 @@ window.OrthoQRGen = qrcode; })();
   // ---------- pure core (unit-tested in Node) ----------
   var MAX = 5, ROOM = 'aithousa';
   /** presence {key:[meta…]} → [{id, uid, name, inCall, mic, cam, share, at}] (one per key, newest meta) */
-  function people(pres) { return Object.keys(pres || {}).map(function (k) { var ms = pres[k] || [], m = ms[ms.length - 1] || {}; return { id: k, uid: m.uid || '', name: m.name || '—', inCall: !!m.inCall, mic: m.mic !== false, cam: m.cam !== false, share: !!m.share, at: m.at || '' }; }).sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : a.id < b.id ? -1 : 1; }); }
+  function people(pres) { return Object.keys(pres || {}).map(function (k) { var ms = pres[k] || [], m = ms[ms.length - 1] || {}; return { id: k, uid: m.uid || '', name: m.name || '—', inCall: !!m.inCall, mic: m.mic !== false, cam: m.cam !== false, share: !!m.share, shareKind: m.share ? m.shareKind || 'screen' : '', at: m.at || '' }; }).sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : a.id < b.id ? -1 : 1; }); }
   function inCall(pres) { return people(pres).filter(function (p) { return p.inCall; }); }
   /** mesh rule: the peer with the smaller id makes the offer (no glare) */
   function isOfferer(me, other) { return me < other; }
@@ -9107,6 +9107,9 @@ window.OrthoQRGen = qrcode; })();
     var l = by[pair.localCandidateId] || {}, rm = by[pair.remoteCandidateId] || {};
     return l.candidateType === 'relay' || rm.candidateType === 'relay' ? 'relay' : l.candidateType || rm.candidateType ? 'direct' : '';
   }
+  var SHARE_BITRATE = 2500000; // bps for shared screen/X-ray (sharp text and bone edges; TURN-relay safe)
+  /** scale an image to fit inside maxW×maxH (never upscale), even dimensions for video encoders */
+  function fitImage(w, h, maxW, maxH) { if (!(w > 0) || !(h > 0)) return { w: 2, h: 2 }; var k = Math.min(1, maxW / w, maxH / h); return { w: Math.max(2, Math.round(w * k / 2) * 2), h: Math.max(2, Math.round(h * k / 2) * 2) }; }
   function gridCols(n) { return n <= 1 ? 1 : n <= 4 ? 2 : 3; }
   /** fullscreen grid: number of columns that gives the largest 4:3 tiles for n tiles in a W×H area (portrait → stacked, landscape → side by side) */
   function fitCols(n, W, H) {
@@ -9115,7 +9118,7 @@ window.OrthoQRGen = qrcode; })();
     return best;
   }
   var NOTICE_RE = /^📹 .+(ξεκίνησε βιντεοκλήση|started a video call)/;
-  root.OrthoVideoCore = { MAX: MAX, ROOM: ROOM, people: people, inCall: inCall, isOfferer: isOfferer, canJoin: canJoin, iceServers: iceServers, hasRelay: hasRelay, recovery: recovery, deadline: deadline, routeOf: routeOf, gridCols: gridCols, fitCols: fitCols, NOTICE_RE: NOTICE_RE };
+  root.OrthoVideoCore = { MAX: MAX, ROOM: ROOM, people: people, inCall: inCall, isOfferer: isOfferer, canJoin: canJoin, iceServers: iceServers, hasRelay: hasRelay, recovery: recovery, deadline: deadline, routeOf: routeOf, gridCols: gridCols, fitCols: fitCols, fitImage: fitImage, SHARE_BITRATE: SHARE_BITRATE, NOTICE_RE: NOTICE_RE };
   if (typeof document === 'undefined') return;
 
   // ---------- UI ----------
@@ -9133,7 +9136,7 @@ window.OrthoQRGen = qrcode; })();
       turnT: '⚙️ Ρυθμίσεις δικτύου (για προχωρημένους)', turnLead: 'Δεν χρειάζεται καμία ρύθμιση: όταν ένα δίκτυο (π.χ. νοσοκομείου, 4G) μπλοκάρει την απευθείας σύνδεση, η κλήση περνά αυτόματα από ασφαλή διακομιστή αναμετάδοσης (TURN, και μέσω θύρας 443/TLS). Προαιρετικά μπορείτε να προσθέσετε δικό σας TURN – αποθηκεύεται μόνο σε αυτή τη συσκευή.', turnUrls: 'TURN URL(s)', turnUser: 'Όνομα χρήστη', turnPw: 'Κωδικός', save: 'Αποθήκευση', saved: '✓ Αποθηκεύτηκε', stunOnly: 'Τώρα: αυτόματη αναμετάδοση (TURN)', turnOn: 'Τώρα: αυτόματη αναμετάδοση + δικός σας TURN', relayNo: 'Τώρα: η αυτόματη αναμετάδοση δεν είναι διαθέσιμη – μόνο απευθείας σύνδεση (STUN)', relayChk: 'Τώρα: έλεγχος αναμετάδοσης…',
       fs: '⛶ Πλήρης οθόνη', fsExit: '✕ Έξοδος', fsExitT: 'Έξοδος από πλήρη οθόνη', spotHint: 'Πατήστε ένα πλακίδιο για μεγέθυνση · διπλό πάτημα = πλήρης οθόνη', unspot: 'Πατήστε ξανά για επιστροφή',
       demo: 'DEMO: μόνο τοπική προεπισκόπηση κάμερας – καμία σύνδεση με άλλους ιατρούς. Στη δημοσιευμένη σελίδα η κλήση γίνεται μεταξύ των προσκεκλημένων ιατρών.', preview: '📷 Προεπισκόπηση κάμερας', stopPrev: 'Διακοπή προεπισκόπησης',
-      notice: '📹 Ο/Η Δρ. {0} ξεκίνησε βιντεοκλήση — Σύνδεση', active: 'Βιντεοκλήση σε εξέλιξη', screen: 'οθόνη', muted: 'σίγαση', max: 'Έως {0} συμμετέχοντες.', camOff: 'κάμερα κλειστή', shareFail: 'Η κοινή χρήση οθόνης δεν ξεκίνησε.' },
+      notice: '📹 Ο/Η Δρ. {0} ξεκίνησε βιντεοκλήση — Σύνδεση', active: 'Βιντεοκλήση σε εξέλιξη', screen: 'οθόνη', muted: 'σίγαση', max: 'Έως {0} συμμετέχοντες.', camOff: 'κάμερα κλειστή', shareFail: 'Η κοινή χρήση οθόνης δεν ξεκίνησε.', noScreen: 'Η κοινοποίηση οθόνης δεν υποστηρίζεται σε κινητά – χρησιμοποιήστε υπολογιστή. Από κινητό μπορείτε να δείξετε φωτογραφία ή ακτινογραφία με «🖼️ Κοινοποίηση εικόνας».', shareSys: 'Ο υπολογιστής δεν επιτρέπει την καταγραφή οθόνης στον browser (π.χ. macOS: Ρυθμίσεις συστήματος → Απόρρητο → Εγγραφή οθόνης → ενεργοποιήστε τον browser).', image: 'εικόνα', imgShare: '🖼️ Κοινοποίηση εικόνας', imgAgain: '🖼️ Άλλη εικόνα', stopShare: '⏹ Διακοπή κοινοποίησης', noImage: 'Ο browser δεν μπορεί να κοινοποιήσει εικόνα.', imgFail: 'Η εικόνα δεν άνοιξε (δοκιμάστε JPG ή PNG).' },
     en: { tab: '📹 Video call', T: '📹 Doctors-only video call', room: 'Doctors’ room', lead: '🔒 Invited doctors only. Video and audio go directly between computers (peer-to-peer, DTLS-SRTP encrypted). No recording, nothing is stored. Not linked to patients.',
       start: '📹 Start video call', join: '📹 Join the call', leave: '⏏ Leave', mic: '🎙 Microphone', cam: '📷 Camera', share: '🖥 Share screen', unshare: '🖥 Stop sharing', you: 'You', inCallN: 'In the call now ({0}/{1})', online: 'Doctors online', nobody: 'Nobody in the call.',
       full: 'The room is full ({0} people). Please try later.', noMedia: 'Camera/microphone access was not allowed – you joined view-only. Check the browser permissions.', noRtc: 'This browser does not support video calls (WebRTC).',
@@ -9142,7 +9145,7 @@ window.OrthoQRGen = qrcode; })();
       turnT: '⚙️ Network settings (advanced)', turnLead: 'Nothing to configure: when a network (hospital, 4G) blocks direct connections, the call automatically goes through a secure relay server (TURN, also over port 443/TLS). Optionally add your own TURN server – stored on this device only.', turnUrls: 'TURN URL(s)', turnUser: 'Username', turnPw: 'Password', save: 'Save', saved: '✓ Saved', stunOnly: 'Now: automatic relay (TURN)', turnOn: 'Now: automatic relay + your own TURN', relayNo: 'Now: automatic relay unavailable – direct connections only (STUN)', relayChk: 'Now: checking relay…',
       fs: '⛶ Full screen', fsExit: '✕ Exit', fsExitT: 'Exit full screen', spotHint: 'Tap a tile to enlarge · double-tap = full screen', unspot: 'Tap again to go back',
       demo: 'DEMO: local camera preview only – no connection to other doctors. On the published site the call connects the invited doctors.', preview: '📷 Camera preview', stopPrev: 'Stop preview',
-      notice: '📹 Dr {0} started a video call — Join', active: 'Video call in progress', screen: 'screen', muted: 'muted', max: 'Up to {0} participants.', camOff: 'camera off', shareFail: 'Screen sharing did not start.' }
+      notice: '📹 Dr {0} started a video call — Join', active: 'Video call in progress', screen: 'screen', muted: 'muted', max: 'Up to {0} participants.', camOff: 'camera off', shareFail: 'Screen sharing did not start.', noScreen: 'Screen sharing is not supported on phones – use a computer. From a phone you can show a photo or X-ray with “🖼️ Share image”.', shareSys: 'The computer does not allow screen capture for the browser (e.g. macOS: System Settings → Privacy → Screen Recording → enable the browser).', image: 'image', imgShare: '🖼️ Share image', imgAgain: '🖼️ Another image', stopShare: '⏹ Stop sharing', noImage: 'This browser cannot share an image.', imgFail: 'The image could not be opened (try JPG or PNG).' }
   };
   var t = function (k) { var v = S[lang()][k]; return v == null ? k : v; };
   var f = function (k) { var a = arguments; return t(k).replace(/\{(\d)\}/g, function (m, i) { return a[+i + 1]; }); };
@@ -9162,7 +9165,7 @@ window.OrthoQRGen = qrcode; })();
     var n = st.user && st.cloud && !st.inCall ? others().length : 0;
     btn.innerHTML = esc(t('tab')) + (n ? ' <span class="vbadge" id="videoBadge" title="' + esc(t('active')) + '">● ' + n + '</span>' : '') + (st.inCall ? ' <span class="vbadge on" id="videoOn">●</span>' : '');
   }
-  function myMeta() { return { uid: st.user ? st.user.id || st.user.email : '', name: st.user ? st.user.name || st.user.email : '', inCall: st.inCall, mic: st.mic, cam: st.cam, share: !!st.screen, at: st.at || (st.at = new Date().toISOString()) }; }
+  function myMeta() { return { uid: st.user ? st.user.id || st.user.email : '', name: st.user ? st.user.name || st.user.email : '', inCall: st.inCall, mic: st.mic, cam: st.cam, share: !!st.screen, shareKind: st.screen ? st.shareKind || 'screen' : '', at: st.at || (st.at = new Date().toISOString()) }; }
 
   // ---------- signaling ----------
   function startSignaling() {
@@ -9233,7 +9236,7 @@ window.OrthoQRGen = qrcode; })();
     var cur = function () { return st.peers[p.id] === x; };
     pc.onconnectionstatechange = function () {
       if (!cur()) return; x.state = pc.connectionState;
-      if (x.state === 'connected') { x.failed = false; x.everConnected = true; clearTimeout(x.timer); clearTimeout(x.dTimer); checkRoute(x); setTimeout(function () { if (cur()) checkRoute(x); }, 2500); warnIce(); }
+      if (x.state === 'connected') { x.failed = false; x.everConnected = true; if (st.screen) videoSenders(x).forEach(tune); clearTimeout(x.timer); clearTimeout(x.dTimer); checkRoute(x); setTimeout(function () { if (cur()) checkRoute(x); }, 2500); warnIce(); }
       if (x.state === 'failed') recover(x);
       paintTile(p.id);
     };
@@ -9291,7 +9294,8 @@ window.OrthoQRGen = qrcode; })();
   }
   function dropPeer(id, quiet) { var x = st.peers[id]; if (!x) return; clearTimeout(x.timer); clearTimeout(x.dTimer); try { x.pc.close(); } catch (e) {} if (x.level) clearInterval(x.level); delete st.peers[id]; if (!quiet) { if (st.spot === id) st.spot = ''; var tl = $('vt-' + id); if (tl) tl.remove(); layout(); } }
   function curVideo() { return st.screen || st.camTrack; }
-  function videoSenders() { var out = []; Object.keys(st.peers).forEach(function (id) { st.peers[id].pc.getSenders().forEach(function (s) { var tr = st.peers[id].pc.getTransceivers().filter(function (x) { return x.sender === s; })[0]; if ((s.track && s.track.kind === 'video') || (tr && tr.receiver.track && tr.receiver.track.kind === 'video')) out.push(s); }); }); return out; }
+  /** video senders of one peer (or all peers): by sender track kind, else by the transceiver's receiver kind (sender may hold no track: camera off / audio-only) */
+  function videoSenders(x) { var out = []; (x ? [x] : Object.keys(st.peers).map(function (id) { return st.peers[id]; })).forEach(function (y) { if (y.pc.connectionState === 'closed') return; y.pc.getTransceivers().forEach(function (tr) { var s = tr.sender; if (tr.stopped || tr.currentDirection === 'stopped') return; if ((s.track && s.track.kind === 'video') || (tr.receiver && tr.receiver.track && tr.receiver.track.kind === 'video')) out.push(s); }); }); return out; }
   // banner only after the automatic repairs (ICE restart + relay) did not help yet; no action asked from the user
   function warnIce() { var bad = Object.keys(st.peers).map(function (k) { return st.peers[k]; }).filter(function (x) { return x.failed && x.pc.connectionState !== 'connected'; }).map(function (x) { return x.name; }); st.warn = bad.length ? f('iceFail', bad.join(', ')) : ''; var w = $('vWarn'); if (w) { w.textContent = st.warn; w.classList.toggle('hidden', !st.warn); } }
   // speaking indicator (Web Audio level meter)
@@ -9330,21 +9334,67 @@ window.OrthoQRGen = qrcode; })();
     try { if (on && navigator.wakeLock && !st.wake) navigator.wakeLock.request('screen').then(function (w) { st.wake = w; }, function () {}); else if (!on && st.wake) { st.wake.release(); st.wake = null; } } catch (e) {}
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (st.inCall || st.preview)) { st.wake = null; wake(true); } });
-  function stopLocal() { [st.local, st.screenStream].forEach(function (s) { if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} }); }); st.local = st.camTrack = st.micTrack = st.screen = st.screenStream = null; }
+  function stopLocal() { clearInterval(st.imgTimer); st.imgCanvas = null; st.shareKind = ''; [st.local, st.screenStream].forEach(function (s) { if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} }); }); st.local = st.camTrack = st.micTrack = st.screen = st.screenStream = null; }
   function toggleMic() { if (!st.micTrack) return; st.mic = !st.mic; st.micTrack.enabled = st.mic; merge(); announce(); paintControls(); paintTile('me'); }
   function toggleCam() { if (!st.camTrack) return; st.cam = !st.cam; st.camTrack.enabled = st.cam; merge(); announce(); paintControls(); paintTile('me'); }
+  // ---------- sharing: screen (getDisplayMedia, desktop) or an image/X-ray from the device (canvas → video track; works on phones) ----------
+  function canScreen() { return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function'); }
+  function canImage() { return typeof HTMLCanvasElement !== 'undefined' && !!HTMLCanvasElement.prototype.captureStream; }
+  /** put a share track on every peer's video sender; tune encodings for sharp still content (resolution over frame rate, higher bitrate) */
+  function startShare(track, stream, kind) {
+    var old = st.screenStream; st.screenStream = stream; st.screen = track; st.shareKind = kind;
+    if (old && old !== stream) old.getTracks().forEach(function (k) { if (k !== track) try { k.stop(); } catch (e) {} });
+    try { track.contentHint = 'detail'; } catch (e) {}
+    track.onended = function () { if (st.screen === track) unshare(); }; // browser "Stop sharing" bar / permission revoked
+    Object.keys(st.peers).forEach(function (id) { putVideo(st.peers[id]); });
+    if (st.err === t('shareFail') || st.err === t('noScreen')) { st.err = ''; paintErr(); }
+    merge(); announce(); paintControls(); paintTile('me');
+  }
+  /** the peer's outgoing video = current share or camera; guarantees a video sender exists (else the connection is rebuilt with one) */
+  function putVideo(x) {
+    var snd = videoSenders(x);
+    if (!snd.length) { if (C.isOfferer(st.me, x.id)) { var p = x.meta || { id: x.id, name: x.name }; dropPeer(x.id, true); call(p, x.relay, x.attempt); } else sig(x.id, { t: 're' }); return; }
+    snd.forEach(function (s) { s.replaceTrack(curVideo()).catch(function (e) { console.warn('replaceTrack', e); }); tune(s); });
+  }
+  function tune(s) {
+    if (!s.getParameters || !s.setParameters) return;
+    try { var p = s.getParameters(); if (!p.encodings || !p.encodings.length) return;
+      p.encodings.forEach(function (e) { if (st.screen) { e.maxBitrate = C.SHARE_BITRATE; e.maxFramerate = 15; e.scaleResolutionDownBy = 1; } else { delete e.maxBitrate; delete e.maxFramerate; } });
+      p.degradationPreference = st.screen ? 'maintain-resolution' : 'balanced';
+      s.setParameters(p).catch(function () {});
+    } catch (e) {}
+  }
   function share() {
     if (st.screen) return unshare();
-    var gd = navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia; if (!gd) { st.err = t('shareFail'); return paintErr(); }
-    navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }).then(function (s) {
-      st.screenStream = s; st.screen = s.getVideoTracks()[0]; st.screen.onended = unshare;
-      videoSenders().forEach(function (snd) { snd.replaceTrack(st.screen); });
-      merge(); announce(); paintControls(); paintTile('me');
-    }, function () { st.err = t('shareFail'); paintErr(); });
+    if (!canScreen()) { st.err = t('noScreen'); paintErr(); return; }
+    // must run directly inside the click (user activation) – no awaits before this call
+    navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 }, width: { max: 1920 }, height: { max: 1080 } }, audio: false }).then(function (s) {
+      var tr = s.getVideoTracks()[0]; if (!tr) { st.err = t('shareFail'); return paintErr(); }
+      if (!st.inCall && !st.preview) { s.getTracks().forEach(function (k) { k.stop(); }); return; }
+      startShare(tr, s, 'screen');
+    }, function (e) { if (e && e.name === 'NotAllowedError' && /denied by system|permission denied by system/i.test(e.message || '')) st.err = t('shareSys'); else if (e && e.name === 'NotAllowedError') st.err = ''; else st.err = t('shareFail'); paintErr(); });
+  }
+  // 🖼️ image share: the doctor picks a photo/radiograph; it is drawn on a canvas whose captureStream() replaces the outgoing video
+  function pickImage() { var i = $('vImgPick'); if (i) { i.value = ''; i.click(); } }
+  function shareImage(file) {
+    if (!file || !/^image\//.test(file.type || 'image/')) return;
+    if (!canImage()) { st.err = t('noImage'); return paintErr(); }
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var sz = C.fitImage(img.naturalWidth, img.naturalHeight, 1920, 1920), c = st.imgCanvas || document.createElement('canvas'), first = !st.imgCanvas || st.shareKind !== 'image';
+      c.width = sz.w; c.height = sz.h; var g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, sz.w, sz.h); g.drawImage(img, 0, 0, sz.w, sz.h); URL.revokeObjectURL(url);
+      st.imgCanvas = c; st.imgName = file.name || '';
+      clearInterval(st.imgTimer); // keep frames flowing (encoders/receivers need periodic frames for a static picture)
+      st.imgTimer = setInterval(function () { var s = st.screen; if (!s || st.shareKind !== 'image') return clearInterval(st.imgTimer); g.globalAlpha = 0.004; g.fillStyle = (st.imgTick = !st.imgTick) ? '#000' : '#010101'; g.fillRect(0, 0, 1, 1); g.globalAlpha = 1; if (s.requestFrame) s.requestFrame(); }, 250);
+      if (first) { var s = c.captureStream(5), tr = s.getVideoTracks()[0]; startShare(tr, s, 'image'); } else { paintTile('me'); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); st.err = t('imgFail'); paintErr(); };
+    img.src = url;
   }
   function unshare() {
-    if (!st.screen) return; var s = st.screenStream; st.screen = null; st.screenStream = null; if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} });
-    videoSenders().forEach(function (snd) { snd.replaceTrack(st.camTrack || null); }); merge(); announce(); paintControls(); paintTile('me');
+    if (!st.screen) return; var s = st.screenStream; st.screen = null; st.screenStream = null; st.shareKind = ''; clearInterval(st.imgTimer); st.imgCanvas = null;
+    if (s) s.getTracks().forEach(function (k) { try { k.stop(); } catch (e) {} });
+    Object.keys(st.peers).forEach(function (id) { putVideo(st.peers[id]); }); merge(); announce(); paintControls(); paintTile('me');
   }
 
   // ---------- render ----------
@@ -9356,7 +9406,7 @@ window.OrthoQRGen = qrcode; })();
       (st.cloud ? '' : '<p class="vdemo" id="vDemo">' + esc(t('demo')) + '</p>') +
       '<p class="verr' + (st.err ? '' : ' hidden') + '" id="vErr" role="alert">' + esc(st.err) + '</p><p class="vwarn' + (st.warn ? '' : ' hidden') + '" id="vWarn" role="alert">' + esc(st.warn) + '</p>';
     if (!live) h += '<div class="vjoinrow"><button class="primary vbig" id="vJoin">' + esc(st.cloud ? (n ? t('join') + ' (' + n + ')' : t('start')) : t('preview')) + '</button></div>';
-    else h += '<div class="vstage" id="vStage"><div class="vgrid" id="vGrid"></div><button class="vfsx" id="vFsExit" title="' + esc(t('fsExitT')) + '" aria-label="' + esc(t('fsExitT')) + '">✕</button><div class="vctl" id="vCtl"></div></div><p class="muted small vhint" id="vHint">' + esc(t('spotHint')) + '</p>';
+    else h += '<div class="vstage" id="vStage"><div class="vgrid" id="vGrid"></div><button class="vfsx" id="vFsExit" title="' + esc(t('fsExitT')) + '" aria-label="' + esc(t('fsExitT')) + '">✕</button><div class="vctl" id="vCtl"></div><input type="file" accept="image/*" id="vImgPick" hidden></div><p class="muted small vhint hidden" id="vNoScreen">' + esc(t('noScreen')) + '</p><p class="muted small vhint" id="vHint">' + esc(t('spotHint')) + '</p>';
     if (st.cloud) h += '<div class="vpeople" id="vPeople"></div>';
     var tc = turnCfg() || {};
     h += '<details class="vturn" id="vTurn"><summary>' + esc(t('turnT')) + '</summary><p class="muted small">' + esc(t('turnLead')) + '</p><p class="small" id="vIceMode"></p>' +
@@ -9365,7 +9415,7 @@ window.OrthoQRGen = qrcode; })();
     if ($('vJoin')) $('vJoin').onclick = join;
     $('vTurnSave').onclick = function () { var v = { urls: $('vTurnUrls').value.trim(), username: $('vTurnUser').value.trim(), credential: $('vTurnPw').value }; try { if (v.urls) localStorage.setItem(TKEY, JSON.stringify(v)); else localStorage.removeItem(TKEY); } catch (e) {} $('vTurnMsg').textContent = t('saved'); paintIceMode(); };
     if (live) {
-      $('vFsExit').onclick = exitFs; $('vGrid').onclick = tileTap;
+      $('vFsExit').onclick = exitFs; $('vGrid').onclick = tileTap; $('vImgPick').onchange = function () { var f = this.files && this.files[0]; if (f) shareImage(f); };
       if (st.fs) { $('vStage').classList.add('vfs'); if (st.fsMode === 'css') $('vStage').classList.add('vimm'); }
       addTile('me'); Object.keys(st.peers).forEach(addTile); paintControls();
     }
@@ -9389,10 +9439,12 @@ window.OrthoQRGen = qrcode; })();
     var e = $('vCtl'); if (!e) return;
     e.innerHTML = '<button id="vMic" class="vbtn' + (st.mic ? ' on' : ' off') + '" aria-pressed="' + st.mic + '" title="' + esc(t('mic')) + '"' + (st.micTrack ? '' : ' disabled') + '>' + lbl(t('mic'), st.mic ? '' : ' ✕') + '</button>' +
       '<button id="vCam" class="vbtn' + (st.cam ? ' on' : ' off') + '" aria-pressed="' + st.cam + '" title="' + esc(t('cam')) + '"' + (st.camTrack ? '' : ' disabled') + '>' + lbl(t('cam'), st.cam ? '' : ' ✕') + '</button>' +
-      (st.cloud ? '<button id="vShare" class="vbtn' + (st.screen ? ' on' : '') + '" title="' + esc(st.screen ? t('unshare') : t('share')) + '">' + lbl(st.screen ? t('unshare') : t('share')) + '</button>' : '') +
+      (st.cloud && st.screen ? '<button id="vShare" class="vbtn on" title="' + esc(st.shareKind === 'image' ? t('stopShare') : t('unshare')) + '">' + lbl(st.shareKind === 'image' ? t('stopShare') : t('unshare')) + '</button>' : st.cloud && canScreen() ? '<button id="vShare" class="vbtn" title="' + esc(t('share')) + '">' + lbl(t('share')) + '</button>' : '') +
+      (st.cloud && canImage() ? '<button id="vImg" class="vbtn' + (st.shareKind === 'image' ? ' on' : '') + '" title="' + esc(st.shareKind === 'image' ? t('imgAgain') : t('imgShare')) + '">' + lbl(st.shareKind === 'image' ? t('imgAgain') : t('imgShare')) + '</button>' : '') +
       '<button id="vFs" class="vbtn" aria-pressed="' + !!st.fs + '" title="' + esc(st.fs ? t('fsExitT') : t('fs')) + '">' + lbl(st.fs ? t('fsExit') : t('fs')) + '</button>' +
       '<button id="vLeave" class="vbtn danger" title="' + esc(st.cloud ? t('leave') : t('stopPrev')) + '">' + (st.cloud ? lbl(t('leave')) : esc(t('stopPrev'))) + '</button>';
-    $('vMic').onclick = toggleMic; $('vCam').onclick = toggleCam; if ($('vShare')) $('vShare').onclick = share; $('vLeave').onclick = leave; $('vFs').onclick = function () { if (st.fs) exitFs(); else enterFs(); };
+    $('vMic').onclick = toggleMic; $('vCam').onclick = toggleCam; if ($('vShare')) $('vShare').onclick = share; if ($('vImg')) $('vImg').onclick = pickImage;
+    var nh = $('vNoScreen'); if (nh) nh.classList.toggle('hidden', !st.cloud || canScreen()); $('vLeave').onclick = leave; $('vFs').onclick = function () { if (st.fs) exitFs(); else enterFs(); };
   }
   // ---------- full screen (Fullscreen API, webkit prefix; CSS immersive full-viewport mode where element full screen is unavailable, e.g. iPhone Safari) ----------
   function fsEl() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
@@ -9418,6 +9470,7 @@ window.OrthoQRGen = qrcode; })();
   var tapT = 0, tapId = '';
   function tileTap(e) {
     var tl = e.target.closest && e.target.closest('.vtile'); if (!tl) return; var id = tl.dataset.peer;
+    st.autoSpot = false;
     if (tapT && tapId === id) { clearTimeout(tapT); tapT = 0; st.spot = id; if (!st.fs) enterFs(); layout(); return; }
     clearTimeout(tapT); tapId = id; tapT = setTimeout(function () { tapT = 0; st.spot = st.spot === id ? '' : id; layout(); }, 280);
   }
@@ -9441,7 +9494,8 @@ window.OrthoQRGen = qrcode; })();
     var s = me ? (st.screen ? st.screenStream : st.local) : x && x.stream; if (s && v.srcObject !== s) { v.srcObject = s; var pp = v.play(); if (pp && pp.catch) pp.catch(function () {}); }
     var meta = me ? myMeta() : x && x.meta || {};
     d.classList.toggle('share', !!meta.share); d.classList.toggle('nocam', me ? !st.cam && !st.screen : meta.cam === false && !meta.share);
-    d.querySelector('.vlabel').textContent = (me ? t('you') : (x && x.name) || '—') + (meta.share ? ' · 🖥 ' + t('screen') : '') + (meta.mic === false ? ' · 🔇' : '') + (meta.cam === false && !meta.share ? ' · ' + t('camOff') : '');
+    d.querySelector('.vlabel').textContent = (me ? t('you') : (x && x.name) || '—') + (meta.share ? (meta.shareKind === 'image' ? ' · 🖼️ ' + t('image') : ' · 🖥 ' + t('screen')) : '') + (meta.mic === false ? ' · 🔇' : '') + (meta.cam === false && !meta.share ? ' · ' + t('camOff') : '');
+    if (!me && x) { var sh = !!meta.share; if (sh && !x.wasShare && (!st.spot || st.autoSpot)) { st.spot = id; st.autoSpot = true; } else if (!sh && x.wasShare && st.autoSpot && st.spot === id) { st.spot = ''; st.autoSpot = false; } x.wasShare = sh; } // a remote share is enlarged automatically
     var ps = me ? ['', ''] : peerStatus(x), vs = d.querySelector('.vstate'); vs.textContent = ps[1]; vs.className = 'vstate ' + ps[0]; d.dataset.route = me ? '' : x && x.route || '';
     layout();
   }
@@ -9469,8 +9523,8 @@ window.OrthoQRGen = qrcode; })();
   function show() { render(); }
   window.addEventListener('beforeunload', function () { if (st.inCall) Object.keys(st.peers).forEach(function (id) { sig(id, { t: 'bye' }); }); });
   new MutationObserver(function () { badge(); if (visible() && !st.inCall && !st.preview) render(); else if (visible()) { paintControls(); paintPeople(); Object.keys(st.peers).concat(['me']).forEach(paintTile); } }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-  root.__video = { sync: sync, show: show, render: render, join: join, leave: leave, share: share, unshare: unshare, toggleMic: toggleMic, toggleCam: toggleCam, enterFs: enterFs, exitFs: exitFs, spotlight: spotlight, loadIce: loadIce, get state() { return st; },
-    stats: function () { return Object.keys(st.peers).map(function (id) { var x = st.peers[id], v = document.querySelector('#vt-' + id + ' video'); return { id: id, name: x.name, state: x.pc.connectionState, ice: x.pc.iceConnectionState, route: x.route, relayOnly: x.relay, attempt: x.attempt, kinds: x.stream.getTracks().map(function (k) { return k.kind; }).sort(), w: v ? v.videoWidth : 0, h: v ? v.videoHeight : 0, failed: !!x.failed }; }); } };
+  root.__video = { sync: sync, show: show, render: render, join: join, leave: leave, share: share, unshare: unshare, shareImage: shareImage, canScreen: canScreen, reconnect: function (id, attempt) { var x = st.peers[id]; if (!x) return false; x.lastRe = 0; if (attempt != null) x.attempt = attempt; recover(x, true); return true; }, toggleMic: toggleMic, toggleCam: toggleCam, enterFs: enterFs, exitFs: exitFs, spotlight: spotlight, loadIce: loadIce, get state() { return st; },
+    stats: function () { return Object.keys(st.peers).map(function (id) { var x = st.peers[id], v = document.querySelector('#vt-' + id + ' video'); return { id: id, name: x.name, share: !!(x.meta && x.meta.share), state: x.pc.connectionState, ice: x.pc.iceConnectionState, route: x.route, relayOnly: x.relay, attempt: x.attempt, kinds: x.stream.getTracks().map(function (k) { return k.kind; }).sort(), w: v ? v.videoWidth : 0, h: v ? v.videoHeight : 0, failed: !!x.failed }; }); } };
   var a0 = api(); if (a0 && a0.currentUser) sync(a0.currentUser(), a0.cloud && a0.cloud.mode === 'cloud');
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
