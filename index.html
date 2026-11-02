@@ -762,6 +762,15 @@ body.hto-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
 .xhto label.btn:focus-visible{outline:3px solid #67e8f9}
 .xhup{font-size:1.08rem;padding:14px 22px!important;margin:4px 0 6px;box-shadow:0 2px 8px rgba(14,116,144,.3)}
 .xhfilm{gap:8px;align-items:center;margin:4px 0}
+/* alignment-landmark editor on the HTO tab */
+.xhedit h3{margin:0 0 6px}
+.xhprompt{font-weight:700;font-size:1.05em;background:#ecfeff;border:1px solid #67e8f9;color:#0b3d4a;border-radius:8px;padding:8px 10px;margin:6px 0}
+.xhchips{gap:6px;flex-wrap:wrap;margin:6px 0}.xhchip i,.xhchips i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.xhchip.armed{outline:2px solid #0e7490;background:#cffafe}
+.xhzoom{gap:6px;flex-wrap:wrap;margin:6px 0}
+.xhlmwrap{width:100%}.xhlmwrap canvas{display:block;width:100%;border-radius:8px;background:#000;touch-action:none;cursor:crosshair}
+.xhnopt{font-weight:600;border-left:4px solid #f59e0b;padding:6px 8px;background:#fffbeb;border-radius:6px}
+.xtrain{margin:6px 0;padding:6px 8px;border-radius:6px;background:#f0f9ff;color:#0b3d4a}.xtrain .chk{display:block;margin-top:3px}
 </style>
 </head>
 <body>
@@ -3559,6 +3568,72 @@ body.hto-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   }
 
   root.OrthoXrayAuto = { VERSION: VERSION, LOW: LOW, detect: detect, detectAsync: detectAsync, start: start, prepOnly: prepOnly, step: step, grayFromRGBA: grayFromRGBA, _ransacLine: ransacLine, _bitangent: bitangent, _circleFit: circleFit };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<!-- ===== Phone-photo helpers for the detector: film region + contrast/glare normalisation (pure; tested in Node) ===== -->
+<script id="ortho-xray-photo">
+// ===== OrthoThessaly · phone-photo helpers for the X-ray detector (pure; unit-tested in Node) =====
+// filmBox: the film inside a phone photo (lightbox, monitor, desk around it) = bounding box of what differs from the photo's border.
+// normalize: percentile contrast stretch with glare clipping (in place) for washed-out / low-contrast photos of films.
+(function (root) {
+  'use strict';
+  function median(a) { var b = Array.prototype.slice.call(a).sort(function (x, y) { return x - y; }); return b.length ? b[b.length >> 1] : 0; }
+  function run(f, n, m, frac) { var best = null, s = -1, gap = 0, maxGap = Math.max(1, Math.round(0.12 * n)); // bridges bright bones on a bright surround
+    for (var i = 0; i <= n; i++) { var on = i < n && f[i] / m > frac;
+      if (on) { if (s < 0) s = i; gap = 0; } else if (s >= 0) { gap++; if (gap > maxGap || i === n) { var e = i - gap; if (!best || e - s > best[1] - best[0]) best = [s, e]; s = -1; gap = 0; } } }
+    return best; }
+  function span(f, n, m, frac) { var a = -1, b = -1; for (var i = 0; i < n; i++) if (f[i] / m > frac) { if (a < 0) a = i; b = i; } return a < 0 ? null : [a, b]; }
+  function ranges(g, w, h, hit, fx, fy, union) { var col = new Float32Array(w), row = new Float32Array(h), x, y;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) if (hit(g[y * w + x])) { col[x]++; row[y]++; }
+    return union ? { xr: span(col, w, h, fx), yr: span(row, h, w, fy) } : { xr: run(col, w, h, fx), yr: run(row, h, w, fy) }; }
+  /** g: grey Float32Array/Uint8 (w×h); sx, sy: scale back to image px.
+   *  Returns {x, y, w, h, angle, tight, mode} in image px, or null when the whole image already is the film.
+   *  mode 'film': region that differs from the photo's border (lightbox/desk/wall around the film; tight crop + deskew when the surround is bright);
+   *  mode 'bright': fallback for dark surrounds (monitor, scan with black air) = bounding box of the bright tissue, generous side margins, full height kept. */
+  function filmBox(g, w, h, sx, sy) {
+    sx = sx || 1; sy = sy || 1; var b = Math.max(2, Math.round(0.04 * Math.min(w, h))), ring = [], all = [], x, y, i;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) { var v = g[y * w + x]; if (x < b || y < b || x >= w - b || y >= h - b) ring.push(v); if (!((x + y) & 3)) all.push(v); }
+    var bm = median(ring), mad = median(ring.map(function (v) { return Math.abs(v - bm); })), thr = Math.max(20, 3 * mad), tight = bm > 60;
+    var R = ranges(g, w, h, function (v) { return Math.abs(v - bm) > thr; }, 0.2, 0.08), mode = 'film', xr = R.xr, yr = R.yr;
+    var cover = function (a, n) { return a ? (a[1] - a[0] + 1) / n : 0; };
+    if (!tight || !xr || !yr || (cover(xr, w) > 0.9 && cover(yr, h) > 0.9)) {
+      all.sort(function (p, q) { return p - q; }); var p97 = all[Math.floor(0.97 * all.length)] || 0, tb = Math.max(bm + 35, bm + 0.5 * (p97 - bm));
+      var B = ranges(g, w, h, function (v) { return v > tb; }, 0.04, 0.02, true);
+      if (B.xr && B.yr && cover(B.xr, w) < 0.85) { xr = B.xr; yr = [0, h - 1]; mode = 'bright'; tight = false; } else if (!xr || !yr) return null;
+    }
+    filmBox.dbg = { bm: bm, thr: thr, xr: xr, yr: yr, w: w, h: h, mode: mode };
+    var bw = xr[1] - xr[0] + 1, bh = yr[1] - yr[0] + 1;
+    if (bw * bh < 0.08 * w * h) return null;
+    // bright surround (lightbox, desk, wall) is not film: crop tight (inset) so no bright frame confuses the detector; otherwise keep margins
+    var mx = tight ? -Math.round(0.015 * bw) : Math.round(0.08 * bw), my = tight ? -Math.round(0.01 * bh) : mode === 'bright' ? 0 : Math.round(0.04 * bh);
+    var x0 = Math.max(0, xr[0] - mx), x1 = Math.min(w - 1, xr[1] + mx), y0 = Math.max(0, yr[0] - my), y1 = Math.min(h - 1, yr[1] + my);
+    if ((x1 - x0 + 1) > 0.94 * w && (y1 - y0 + 1) > 0.94 * h) return null;
+    var ang = 0;
+    if (tight) { // tilt of a photographed film: its straight left & right edges must agree (tapering legs disagree → no deskew)
+      var L = [], Rt = [], ya = yr[0] + Math.round(0.1 * bh), yb = yr[1] - Math.round(0.1 * bh), sx0 = Math.max(0, xr[0] - Math.round(0.05 * bw)), sx1 = Math.min(w - 1, xr[1] + Math.round(0.05 * bw));
+      for (y = ya; y <= yb; y++) { var l = -1, r = -1; for (x = sx0; x <= sx1; x++) if (Math.abs(g[y * w + x] - bm) > thr) { if (l < 0) l = x; r = x; } if (l >= 0) { L.push([y, l]); Rt.push([y, r]); } }
+      var slope = function (P) { var n = P.length >> 1, s = []; for (i = 0; i < n; i++) { var a = P[i], c = P[i + n]; if (c[0] !== a[0]) s.push((c[1] - a[1]) / (c[0] - a[0])); } if (s.length < 8) return null;
+        var m = median(s); return { m: m, ok: median(s.map(function (v) { return Math.abs(v - m); })) < 0.02 }; };
+      var sl = slope(L), sr = slope(Rt);
+      if (sl && sr && sl.ok && sr.ok && Math.abs(Math.atan(sl.m) - Math.atan(sr.m)) < 1.5 * Math.PI / 180) { ang = Math.atan((sl.m + sr.m) / 2 * sx / sy); if (Math.abs(ang) < 0.4 * Math.PI / 180 || Math.abs(ang) > 15 * Math.PI / 180) ang = 0; }
+    }
+    // film edges run x = x0 + tan(ang)·y → the detector sees the photo rotated by −ang (film upright)
+    var BX = x0 * sx, BY = y0 * sy, BW = (x1 - x0 + 1) * sx, BH = (y1 - y0 + 1) * sy;
+    if (ang) { var c = Math.cos(ang), sn = Math.abs(Math.sin(ang)), d = c * c - sn * sn, fw = (BW * c - BH * sn) / d, fh = (BH * c - BW * sn) / d;
+      if (fw > 0.3 * BW && fh > 0.3 * BH) { BX += (BW - fw) / 2; BY += (BH - fh) / 2; BW = fw; BH = fh; } else ang = 0; }
+    return { x: Math.round(BX), y: Math.round(BY), w: Math.round(BW), h: Math.round(BH), angle: ang, tight: tight, mode: mode };
+  }
+  /** In-place percentile stretch: p1 → 0, p99.5 → 255 (glare above clipped). Returns {lo, hi}. */
+  function normalize(gray, W, H) {
+    var n = W * H, hist = new Uint32Array(256), i; for (i = 0; i < n; i++) hist[gray[i] | 0]++;
+    var acc = 0, lo = 0, hi = 255; for (i = 0; i < 256; i++) { acc += hist[i]; if (acc >= 0.01 * n) { lo = i; break; } }
+    acc = 0; for (i = 255; i >= 0; i--) { acc += hist[i]; if (acc >= 0.005 * n) { hi = i; break; } }
+    if (hi - lo < 8) return { lo: lo, hi: hi };
+    var k = 255 / (hi - lo), lut = new Uint8Array(256); for (i = 0; i < 256; i++) lut[i] = Math.max(0, Math.min(255, Math.round((i - lo) * k)));
+    for (i = 0; i < n; i++) gray[i] = lut[gray[i] | 0];
+    return { lo: lo, hi: hi };
+  }
+  root.OrthoXrayPhoto = { filmBox: filmBox, normalize: normalize };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== Learned landmark localisers ml-1.0 (femoral head) / ml-1.1 (knee, ankle): runtime + models loaded lazily; model files hip-ml-1.0.model.js, knee-ml-1.1.model.js, ankle-ml-1.1.model.js next to this page ===== -->
@@ -9528,6 +9603,93 @@ window.OrthoQRGen = qrcode; })();
   var a0 = api(); if (a0 && a0.currentUser) sync(a0.currentUser(), a0.cloud && a0.cloud.mode === 'cloud');
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<!-- ===== Anonymous learning loop for the landmark detector (doctor-only, cloud; pure helpers tested in Node) ===== -->
+<script id="ortho-xray-train">
+// ===== OrthoThessaly · anonymous learning loop for the landmark detector (doctor-only; cloud mode) =====
+// When a doctor confirms (or corrects) the alignment landmarks of a REAL film side, one training case is stored:
+// the confirmed landmarks in the coordinates of a downscaled grey crop of that limb + the crop itself (private 'training' bucket).
+// Anonymised by construction: crop to the limb's landmark box (film corners with names/labels are usually outside), greyscale, ≤ 1024 px,
+// re-encoded JPEG (no EXIF/DICOM tags), no patient id / study / file name / date. film_hash = SHA-256 of a 64×64 thumbnail (de-duplication only).
+// DEMO films are never sent. Opt-out per device (localStorage 'ortho.trainOptOut' = '1'). Pure helpers are unit-tested in Node.
+(function (root) {
+  'use strict';
+  var KEYS = ['FH1', 'FH2', 'FH3', 'FC1', 'FC2', 'KF', 'TP1', 'TP2', 'KT', 'AN1', 'AN2'], MAXPX = 1024;
+  /** Crop box (image px) around one limb's landmarks: side margin 35 % of the box width (≥ 4 % of the film height), 4 % top/bottom. */
+  function cropFor(lm, W, H) {
+    var ks = KEYS.filter(function (k) { return lm && lm[k] && isFinite(lm[k].x) && isFinite(lm[k].y); }); if (ks.length < KEYS.length) return null;
+    var xs = ks.map(function (k) { return lm[k].x; }), ys = ks.map(function (k) { return lm[k].y; });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var mx = Math.max(0.35 * (x1 - x0), 0.04 * H), my = 0.04 * (y1 - y0) + 0.06 * Math.abs(lm.FH1.x - lm.FH2.x);
+    x0 = Math.max(0, Math.floor(x0 - mx)); x1 = Math.min(W, Math.ceil(x1 + mx)); y0 = Math.max(0, Math.floor(y0 - my)); y1 = Math.min(H, Math.ceil(y1 + my));
+    var w = x1 - x0, h = y1 - y0; if (w < 8 || h < 8) return null; var s = Math.min(1, MAXPX / Math.max(w, h));
+    return { x: x0, y: y0, w: w, h: h, scale: s, outW: Math.max(16, Math.round(w * s)), outH: Math.max(16, Math.round(h * s)) };
+  }
+  /** Landmarks in crop-image coordinates (rounded to 0.1 px). */
+  function toCrop(lm, box) { var o = {}; KEYS.forEach(function (k) { if (lm[k]) o[k] = { x: Math.round((lm[k].x - box.x) * box.scale * 10) / 10, y: Math.round((lm[k].y - box.y) * box.scale * 10) / 10 }; }); return o; }
+  // SHA-256 (small, synchronous; crypto.subtle is unavailable on file:// and some in-app browsers)
+  function sha256(bytes) {
+    var K = [], H = [], i, j; var P = function (n) { for (var f = 2; f * f <= n; f++) if (n % f === 0) return false; return true; }, fr = function (x) { return ((x - Math.floor(x)) * 4294967296) | 0; };
+    for (i = 2, j = 0; j < 64; i++) if (P(i)) { if (j < 8) H[j] = fr(Math.pow(i, 1 / 2)); K[j++] = fr(Math.pow(i, 1 / 3)); }
+    var l = bytes.length, n = ((l + 9 + 63) >> 6) << 6, m = new Uint8Array(n); m.set(bytes); m[l] = 0x80; var bl = l * 8; for (i = 0; i < 8; i++) m[n - 1 - i] = (i < 4 ? (bl >>> (8 * i)) : Math.floor(bl / 4294967296) >>> (8 * (i - 4))) & 255;
+    var w = new Int32Array(64), r = function (x, c) { return (x >>> c) | (x << (32 - c)); };
+    for (var o = 0; o < n; o += 64) {
+      for (i = 0; i < 16; i++) w[i] = (m[o + 4 * i] << 24) | (m[o + 4 * i + 1] << 16) | (m[o + 4 * i + 2] << 8) | m[o + 4 * i + 3];
+      for (i = 16; i < 64; i++) { var a0 = w[i - 15], a1 = w[i - 2]; w[i] = (w[i - 16] + (r(a0, 7) ^ r(a0, 18) ^ (a0 >>> 3)) + w[i - 7] + (r(a1, 17) ^ r(a1, 19) ^ (a1 >>> 10))) | 0; }
+      var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (i = 0; i < 64; i++) { var t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0, t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0; h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0; }
+      H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0; H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+    }
+    return H.map(function (v) { return ('00000000' + (v >>> 0).toString(16)).slice(-8); }).join('');
+  }
+  var api = { KEYS: KEYS, cropFor: cropFor, toCrop: toCrop, sha256: sha256, count: null, last: null };
+  root.OrthoXrayTrain = api;
+  if (typeof document === 'undefined') return;
+
+  // ---------- browser side ----------
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var S = { el: { cnt: '🧠 Ανώνυμες περιπτώσεις εκπαίδευσης αυτόματης ανίχνευσης: {n} (δικές σας: {m})', opt: 'Συμβολή ανώνυμα (απόκομμα σκέλους + επιβεβαιωμένα σημεία, χωρίς στοιχεία ασθενή)', sent: '🧠 Η περίπτωση προστέθηκε ανώνυμα στην εκπαίδευση.', fail: '🧠 Η ανώνυμη περίπτωση εκπαίδευσης δεν στάλθηκε: ' },
+    en: { cnt: '🧠 Anonymous training cases for automatic detection: {n} (yours: {m})', opt: 'Contribute anonymously (limb crop + confirmed points, no patient data)', sent: '🧠 Case added anonymously to the training set.', fail: '🧠 Anonymous training case not sent: ' } };
+  var t = function (k) { return S[lang()][k]; };
+  var CL = function () { return root.OrthoCloud; }, P = function () { return root.__orthoProms; };
+  function active() { var p = P(), c = CL(); return !!(p && p.cloud && p.cloud.mode === 'cloud' && c && c.user && c.user.id); }
+  function optedOut() { try { return localStorage.getItem('ortho.trainOptOut') === '1'; } catch (e) { return false; } }
+  function setOpt(on) { try { if (on) localStorage.removeItem('ortho.trainOptOut'); else localStorage.setItem('ortho.trainOptOut', '1'); } catch (e) {} }
+  function refreshCount() {
+    if (!active()) return Promise.resolve(null);
+    return CL().rpc('training_case_count', {}).then(function (r) { api.count = r; paint(); return r; }, function () { return null; });
+  }
+  function html(id) {
+    if (!active()) return '';
+    if (!api.count && !api._asked) { api._asked = true; setTimeout(refreshCount, 0); }
+    var c = api.count, line = c ? t('cnt').replace('{n}', c.total).replace('{m}', c.mine) : '🧠 …';
+    return '<div class="xtrain small" id="' + id + '"><span data-train-count="1">' + line + '</span> <label class="chk"><input type="checkbox" data-train-opt="1"' + (optedOut() ? '' : ' checked') + '> ' + t('opt') + '</label></div>';
+  }
+  function paint() { var c = api.count; if (!c) return; document.querySelectorAll('[data-train-count]').forEach(function (e) { e.textContent = t('cnt').replace('{n}', c.total).replace('{m}', c.mine); }); }
+  document.addEventListener('change', function (e) { if (e.target && e.target.dataset && e.target.dataset.trainOpt) { setOpt(e.target.checked); document.querySelectorAll('[data-train-opt]').forEach(function (x) { x.checked = e.target.checked; }); } });
+  function filmHash(img) { var c = document.createElement('canvas'); c.width = c.height = 64; var g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, 64, 64); var d = g.getImageData(0, 0, 64, 64).data, b = new Uint8Array(4096 + 8); for (var i = 0; i < 4096; i++) b[i] = (d[4 * i] * 77 + d[4 * i + 1] * 150 + d[4 * i + 2] * 29) >> 8; var dims = img.width + 'x' + img.height; for (i = 0; i < 8; i++) b[4096 + i] = dims.charCodeAt(i) || 0; return sha256(b); }
+  /** Store the confirmed landmarks of side sd (state st of the X-ray tab). Resolves {ok} / {skipped: reason} / {error}. */
+  function contribute(st, sd) {
+    if (!active()) return Promise.resolve({ skipped: 'not-cloud' }); if (optedOut()) return Promise.resolve({ skipped: 'opt-out' });
+    if (!st || !st.img || st.demo) return Promise.resolve({ skipped: st && st.demo ? 'demo' : 'no-film' });
+    var lm = st.lm[sd], box = cropFor(lm, st.W, st.H); if (!box) return Promise.resolve({ skipped: 'incomplete' });
+    var c = document.createElement('canvas'); c.width = box.outW; c.height = box.outH; var g = c.getContext('2d');
+    g.filter = 'grayscale(1)' + (st.invert ? ' invert(1)' : ''); g.imageSmoothingQuality = 'high'; g.drawImage(st.img, box.x, box.y, box.w, box.h, 0, 0, box.outW, box.outH);
+    var hash = filmHash(st.img), uid = CL().user.id, path = uid + '/' + hash + '-' + sd + '.jpg', d = st.det[sd] || {};
+    var origin = {}; KEYS.forEach(function (k) { origin[k] = (st.origin[sd] || {})[k] || 'manual'; });
+    var detector = { version: d.version || null, status: d.status || null, info: (d.info || []).slice(0, 30), conf: d.conf || {}, ms: d.ms || null, error: d.error || null, inverted: !!st.invert };
+    var mirror = !!st.mirror, postop = st.phase === 'post';
+    return new Promise(function (res) { c.toBlob(res, 'image/jpeg', 0.85); }).then(function (blob) {
+      if (!blob) throw new Error('jpeg');
+      return CL().req('POST', '/storage/v1/object/training/' + path, blob, { 'x-upsert': 'true', 'Content-Type': 'image/jpeg' });
+    }).then(function () {
+      var row = { film_hash: hash, side: sd, landmarks: toCrop(lm, box), origin: origin, detector: Object.assign(detector, { mirror: mirror }), img_path: path, img_w: box.outW, img_h: box.outH, scale: box.scale, postop: postop };
+      return CL().req('POST', '/rest/v1/training_cases?on_conflict=film_hash,side', row, { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    }).then(function () { api.last = { ok: true, path: path, hash: hash, side: sd, box: box }; if (root.__xray && root.__xray.msg) root.__xray.msg(t('sent')); return refreshCount().then(function () { return api.last; }); },
+      function (e) { api.last = { error: String(e && (e.message || e.code) || e) }; if (root.console) console.warn('training case not stored', e); return api.last; });
+  }
+  api.contribute = contribute; api.html = html; api.refreshCount = refreshCount; api.active = active; api.setOpt = setOpt; api.filmHash = filmHash;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
 <!-- ===== X-rays tab UI ===== -->
 <script id="ortho-xray-app">
 (function () {
@@ -9560,6 +9722,7 @@ window.OrthoQRGen = qrcode; })();
       cpakHeld: 'μετά τον έλεγχο των πορτοκαλί σημείων', gateHdr: 'Απορρίφθηκαν από έλεγχο αληθοφάνειας (δεν χρησιμοποιούνται για γωνίες/CPAK):', noCalc: 'Για αυτή την πλευρά δεν εμφανίζονται γωνίες ή CPAK μέχρι να τοποθετηθούν/διορθωθούν τα σημεία.',
       part_head: 'κεφαλή μηριαίου', part_knee: 'γόνατο (κόνδυλοι/κνημιαίο πλατό)', part_ankle: 'ποδοκνημική',
       gate_border: 'στο όριο του φιλμ', gate_outsideBone: 'εκτός οστού', gate_femurLength: 'απίθανο μήκος μηριαίου', gate_lengthRatio: 'λόγος μηριαίου/κνήμης εκτός 1,0–1,5', gate_tibiaLength: 'απίθανο μήκος κνήμης', gate_angleRange: 'mLDFA/MPTA εκτός 75–105° ή JLCA > 10°', gate_hkaRange: 'HKA εκτός 150–210°', gate_noEvidence: 'χωρίς επαρκή ένδειξη',
+      infPhoto: 'Φωτογραφία φιλμ: έγινε 2η ανίχνευση μόνο στην περιοχή του φιλμ με ενισχυμένη αντίθεση.', infAutoErr: 'Η αυτόματη ανίχνευση απέτυχε σε αυτή τη συσκευή – τοποθετήστε τα σημεία με το χέρι.', infAutoTimeout: 'Η αυτόματη ανίχνευση άργησε υπερβολικά και διακόπηκε – τοποθετήστε τα σημεία με το χέρι.', downscaled: 'Η φωτογραφία ({a}) μειώθηκε σε {b} για να λειτουργεί στο κινητό.', imgErr: 'Η εικόνα δεν μπορεί να ανοίξει (υποστηρίζονται JPEG/PNG/DICOM· για HEIC αποθηκεύστε ως JPEG): ',
       infBorder: 'Χάρακας/λωρίδα στο άκρο του φιλμ αγνοήθηκαν.', infPad: 'Μαύρο περιθώριο αγνοήθηκε.' },
     en: { title: 'X-rays – lower-limb alignment (full-length standing AP)', lead: 'Upload a full-length standing AP lower-limb radiograph (hip to ankle). Images are processed on this device only and are neither uploaded nor stored; only the landmarks and angles are saved to the record.',
       file: 'File (JPG, PNG or uncompressed DICOM)', demo: 'Load DEMO image', patient: 'Patient', date: 'X-ray date', phase: 'Phase', pre: 'Pre-operative', post: 'Post-operative', side: 'Side', R: 'Right', L: 'Left',
@@ -9582,6 +9745,7 @@ window.OrthoQRGen = qrcode; })();
       cpakHeld: 'after checking the orange points', gateHdr: 'Rejected by plausibility checks (not used for angles/CPAK):', noCalc: 'No angles or CPAK are shown for this side until the landmarks are placed/corrected.',
       part_head: 'femoral head', part_knee: 'knee (condyles/tibial plateau)', part_ankle: 'ankle',
       gate_border: 'at the film border', gate_outsideBone: 'outside bone', gate_femurLength: 'implausible femoral length', gate_lengthRatio: 'femur/tibia ratio outside 1.0–1.5', gate_tibiaLength: 'implausible tibial length', gate_angleRange: 'mLDFA/MPTA outside 75–105° or JLCA > 10°', gate_hkaRange: 'HKA outside 150–210°', gate_noEvidence: 'no sufficient evidence',
+      infPhoto: 'Photo of a film: a 2nd detection ran on the film region only with enhanced contrast.', infAutoErr: 'Automatic detection failed on this device – place the points by hand.', infAutoTimeout: 'Automatic detection took too long and was stopped – place the points by hand.', downscaled: 'The photo ({a}) was downscaled to {b} to work on the phone.', imgErr: 'The image cannot be opened (JPEG/PNG/DICOM supported; save HEIC as JPEG): ',
       infBorder: 'Ruler/strip at the film edge ignored.', infPad: 'Black padding ignored.' }
   };
   var t = function (k) { return S[lang()][k] != null ? S[lang()][k] : k; };
@@ -9783,13 +9947,26 @@ window.OrthoQRGen = qrcode; })();
     if (st.autoOn && XA) setTimeout(function () { if (st.img === canvas) runAuto('both'); }, 30);
     renderTabs();
   }
+  var MAXPX = 4096, MAXAREA = 16e6;
   function loadFile(file) {
     if (!file) return;
     var isDcm = /\.dcm$/i.test(file.name) || file.type === 'application/dicom' || !/^image\//.test(file.type);
     if (!isDcm) {
       var url = URL.createObjectURL(file), im = new Image();
-      im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(url); setImage(c, file.name, false, null, file); };
-      im.onerror = function () { URL.revokeObjectURL(url); st.msg = t('dicomErr') + 'image'; renderSide(); };
+      // EXIF orientation is applied by the browser (image-orientation: from-image). Phone photos (12–50 MP) exceed mobile canvas/memory
+      // limits: they are downscaled to ≤ MAXPX on the long side and the stored film becomes that JPEG, so saved landmarks match on reload.
+      im.onload = function () {
+        URL.revokeObjectURL(url);
+        try {
+          var w0 = im.naturalWidth, h0 = im.naturalHeight, k = Math.min(1, MAXPX / Math.max(w0, h0), Math.sqrt(MAXAREA / (w0 * h0))), c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(w0 * k)); c.height = Math.max(1, Math.round(h0 * k)); var cx = c.getContext('2d');
+          if (k < 1) { cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high'; } cx.drawImage(im, 0, 0, c.width, c.height);
+          if (k >= 1) { setImage(c, file.name, false, null, file); return; }
+          var fin = function (b) { setImage(c, file.name, false, null, b || null); if (st.img === c) { st.msg = t('downscaled').replace('{a}', w0 + '×' + h0).replace('{b}', c.width + '×' + c.height); renderSide(); } };
+          if (c.toBlob) c.toBlob(fin, 'image/jpeg', 0.92); else fin(null);
+        } catch (e) { st.msg = t('imgErr') + (e && e.message || ''); renderSide(); }
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); st.msg = t('imgErr') + (file.type || file.name); renderSide(); };
       im.src = url; return;
     }
     var fr = new FileReader();
@@ -9934,59 +10111,104 @@ window.OrthoQRGen = qrcode; })();
   function halfFor(sd) { return (sd === 'R') !== !!st.mirror ? 'left' : 'right'; }
 
   // ---------- automatic landmark proposal (classical image analysis, on device) ----------
+  /** Film region inside a phone photo (lightbox / monitor / desk around the film): bounding box of the area that differs from the photo's
+   *  border, + 3 % margin, in image px; null when the whole image is the film. Pure on a small grey copy (≤ 320 px). */
+  function filmBox(img) {
+    var W = img.width, H = img.height, k = Math.min(1, 320 / Math.max(W, H)), w = Math.max(8, Math.round(W * k)), h = Math.max(8, Math.round(H * k));
+    var c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h);
+    var d = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h); for (var i = 0; i < w * h; i++) g[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
+    return XH && XH.filmBox ? XH.filmBox(g, w, h, W / w, H / h) : null;
+  }
+  var XH = window.OrthoXrayPhoto;
+  // ---------- automatic landmark proposal (classical image analysis + learned localisers, on device) ----------
+  // Pass 1 on the whole film. Phone photos of films (lightbox/monitor around the film, glare, low contrast) often fail the head or knee
+  // gates: pass 2 then runs on the film region only, contrast-normalised (glare clipped), and the pass with more / surer points wins.
+  // Every failure (exception, ML model unavailable, watchdog) ends in a visible 'fail' status so the doctor places the points by hand.
   function runAuto(scope) {
     if (!st.img || !XA || (st.autoRun && st.autoRun.img === st.img)) return; // a run for a previous image is abandoned
-    var sides = scope === 'current' ? [st.side] : ['R', 'L'], t0 = performance.now(), fa = Math.min(1, 2400 / st.H);
-    var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(st.W * fa)); c.height = Math.max(1, Math.round(st.H * fa));
-    var cx = c.getContext('2d', { willReadFrequently: true }); cx.drawImage(st.img, 0, 0, c.width, c.height);
-    var gray = XA.grayFromRGBA(cx.getImageData(0, 0, c.width, c.height).data, c.width * c.height, c.width);
-    var img = st.img, opts = { halves: sides.map(halfFor), postop: tkaOn() ? true : undefined }, mlInfo = null, ctx; if (gray.overlay) opts.overlay = true;
-    st.autoRun = { p: 0.02, ml: true, img: img }; updAuto();
-    var tick = function () {
-      var own = ownerOf(img); if (!own) return; // image replaced: run abandoned
-      var t1 = performance.now(); while (!ctx.done && !ctx.pause && performance.now() - t1 < 35) XA.step(ctx);
-      if (ctx.pause) { mlJoint(ctx).then(function () { setTimeout(tick, 0); }); return; }
-      if (own.autoRun) own.autoRun.p = 0.05 + 0.95 * ctx.progress; if (own === st) updAuto();
-      if (!ctx.done) { setTimeout(tick, 0); return; }
-      var ms = Math.round(performance.now() - t0), res = ctx.res;
-      if (mlInfo) { res.ml = mlInfo; if (mlInfo.error || mlInfo.fallback) res.info.push(mlInfo.error ? 'mlUnavailable' : 'mlFallback'); }
+    var sides = scope === 'current' ? [st.side] : ['R', 'L'], t0 = performance.now(), img = st.img, ML = window.OrthoXrayML, useMl = !!ML && !st.mlOff && !(st.demo && !st.mlForce);
+    st.autoRun = { p: 0.02, ml: useMl, img: img }; updAuto();
+    var setP = function (v) { var own = ownerOf(img); if (own && own.autoRun) { own.autoRun.p = v; if (own === st) updAuto(); } };
+    var ABANDON = 'abandoned', done = false;
+    var attempt = function (box, enhance, p0, p1) {
+      return new Promise(function (resolve, reject) {
+        var bx = box || { x: 0, y: 0, w: img.width, h: img.height }, fa = Math.min(1, 2400 / bx.h, 4000 / bx.w);
+        var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(bx.w * fa)); c.height = Math.max(1, Math.round(bx.h * fa));
+        var cx = c.getContext('2d', { willReadFrequently: true });
+        if (bx.angle) { cx.fillStyle = '#000'; cx.fillRect(0, 0, c.width, c.height); cx.translate(c.width / 2, c.height / 2); cx.rotate(-bx.angle); cx.scale(fa, fa); cx.drawImage(img, -(bx.x + bx.w / 2), -(bx.y + bx.h / 2)); cx.setTransform(1, 0, 0, 1, 0, 0); }
+        else cx.drawImage(img, bx.x, bx.y, bx.w, bx.h, 0, 0, c.width, c.height);
+        var W2 = c.width, H2 = c.height, gray = XA.grayFromRGBA(cx.getImageData(0, 0, W2, H2).data, W2 * H2, W2); c.width = c.height = 1;
+        if (enhance && XH) XH.normalize(gray, W2, H2);
+        var opts = { halves: sides.map(halfFor), postop: tkaOn() ? true : undefined }, mlInfo = null, ctx; if (gray.overlay) opts.overlay = true;
+        var input = { gray: gray, W: W2, H: H2 };
+        var fail = function (e) { reject(e); };
+        var tick = function () {
+          try {
+            if (done || !ownerOf(img)) return reject(ABANDON);
+            var t1 = performance.now(); while (!ctx.done && !ctx.pause && performance.now() - t1 < 35) XA.step(ctx);
+            if (ctx.pause) { mlJoint(ctx).then(function () { setTimeout(tick, 0); }); return; }
+            setP(p0 + (p1 - p0) * (0.1 + 0.9 * ctx.progress));
+            if (!ctx.done) { setTimeout(tick, 0); return; }
+            var res = ctx.res; if (mlInfo) { res.ml = mlInfo; if (mlInfo.error || mlInfo.fallback) res.info.push(mlInfo.error ? 'mlUnavailable' : 'mlFallback'); }
+            if (box) res.info.push('photoCrop'); if (box && box.angle) res.info.push('photoDeskew'); if (enhance) res.info.push('photoEnhanced');
+            resolve({ res: res, fa: fa, box: bx, overlay: !!gray.overlay });
+          } catch (e) { fail(e); }
+        };
+        var mlJoint = function (c2) {
+          var kind = c2.pause, tm2 = performance.now(), pr = { gray: c2.gray, W: c2.W, H: c2.H, inverted: !!c2.inv }; c2.pause = false;
+          return ML.load({ which: kind }).then(function (M) {
+            var multi = function (fn, G0, key) { opts[key] = {}; return Object.keys(G0).reduce(function (pp, hf) { var G = G0[hf]; return pp.then(function () { return fn(M, pr.gray, pr.W, pr.H, [G].concat(G.alt || []), { inverted: pr.inverted }).then(function (r) { opts[key][hf] = r; }); }); }, Promise.resolve()); };
+            return kind === 'knee' ? multi(ML.findKneeMulti, c2.kneeGuess, 'mlKnees') : multi(ML.findAnkleMulti, c2.ankleGuess, 'mlAnkles');
+          }).then(function () { if (mlInfo) mlInfo[kind + 'Ms'] = Math.round(performance.now() - tm2); }).catch(function (e) { c2.res.info.push(kind === 'knee' ? 'mlKneeUnavailable' : 'mlAnkleUnavailable'); if (mlInfo) mlInfo[kind + 'Error'] = String(e && e.message || e); });
+        };
+        var go = function () { try { if (!ownerOf(img)) return reject(ABANDON); ctx = XA.start(input, opts); var own = ownerOf(img); if (own.autoRun) own.autoRun.ml = false; setP(p0 + (p1 - p0) * 0.1); setTimeout(tick, 0); } catch (e) { fail(e); } };
+        // built-in synthetic DEMO films are drawn for the classical detector; the learned model is for real radiographs (uploads)
+        if (!useMl) { go(); return; }
+        var tm = performance.now();
+        ML.load().then(function (M) { var pr = XA.prepOnly(input); return ML.findHeads(M, pr.gray, pr.W, pr.H, pr.box, { inverted: pr.inverted }); }).then(function (hd) {
+          if (!ownerOf(img)) return reject(ABANDON);
+          var ok = hd.pairOk && Math.min(hd.left.peak, hd.right.peak) > 0.3;
+          mlInfo = { version: hd.version, ms: Math.round(performance.now() - tm), peaks: [hd.left.peak, hd.right.peak].map(function (v) { return Math.round(v * 100) / 100; }), fallback: !ok };
+          opts.mlHeads = ok ? hd : { declined: true }; if (!st.mlJointsOff) { opts.mlKneeHook = true; opts.mlAnkleHook = true; ML.load({ which: 'knee' }).catch(function () {}); ML.load({ which: 'ankle' }).catch(function () {}); }
+          go(); // declined: no head proposal rather than a classical guess (the surgeon places it)
+        }).catch(function (e) { mlInfo = { error: String(e && e.message || e) }; go(); });
+      });
+    };
+    var score = function (A) { return sides.reduce(function (s, sd) { var o = A.res.halves[halfFor(sd)]; if (!o) return s; var n = Object.keys(o.lm || {}).length, cf = 0; Object.keys(o.conf || {}).forEach(function (k) { cf += o.conf[k] || 0; }); return s + n * 10 + (o.status === 'fail' ? 0 : 50) + cf; }, 0); };
+    var good = function (A) { return sides.every(function (sd) { var o = A.res.halves[halfFor(sd)]; return o && o.status !== 'fail'; }); };
+    var apply = function (A) {
+      if (done) return; done = true; var own = ownerOf(img); if (!own) return;
+      var ms = Math.round(performance.now() - t0), res = A.res, fa = A.fa, bx = A.box, ca = Math.cos(bx.angle || 0), sa = Math.sin(bx.angle || 0), cw = Math.max(1, Math.round(bx.w * fa)), ch = Math.max(1, Math.round(bx.h * fa));
+      // detector px → image px (inverse of crop + scale + deskew)
+      var back = function (q) { if (!bx.angle) return { x: q.x / fa + bx.x, y: q.y / fa + bx.y }; var u = (q.x - cw / 2) / fa, v = (q.y - ch / 2) / fa; return { x: ca * u - sa * v + bx.x + bx.w / 2, y: sa * u + ca * v + bx.y + bx.h / 2 }; };
       sides.forEach(function (sd) {
         var o = res.halves[halfFor(sd)] || { lm: {}, conf: {}, reasons: {}, missing: ['limb'], status: 'fail', low: [] };
         own.lm[sd] = {}; own.auto[sd] = {}; own.origin[sd] = {}; own.confirmed[sd] = null;
-        Object.keys(o.lm).forEach(function (k) { own.lm[sd][k] = { x: o.lm[k].x / fa, y: o.lm[k].y / fa }; own.origin[sd][k] = 'auto'; });
+        Object.keys(o.lm).forEach(function (k) { var q = back(o.lm[k]); if (!(q.x >= 0 && q.y >= 0 && q.x < img.width && q.y < img.height)) return; own.lm[sd][k] = q; own.origin[sd][k] = 'auto'; }); // off-film proposals are dropped
         if (own.lm[sd].KF) own.auto[sd].KF = true; if (own.lm[sd].KT) own.auto[sd].KT = true;
-        own.det[sd] = { status: o.status, conf: o.conf, reasons: o.reasons, missing: o.missing || [], gates: o.gates || [], content: res.content, ms: ms, info: res.info.slice().concat(gray.overlay ? ['overlaySuppressed'] : []), version: res.version + (o.tka ? ' + ' + o.tka.version : ''), tka: o.tka || null };
+        own.det[sd] = { status: o.status, conf: o.conf, reasons: o.reasons, missing: o.missing || [], gates: o.gates || [], content: res.content, ms: ms, info: res.info.slice().concat(A.overlay ? ['overlaySuppressed'] : []), version: res.version + (o.tka ? ' + ' + o.tka.version : ''), tka: o.tka || null };
         own.cur[sd] = nextStepOf(own.lm[sd]);
       });
       if (res.inverted) own.invert = true;
-      own.autoRun = null; own.arm = null; own.dirty = true; window.__lastAuto = { res: res, ms: ms, scale: fa };
+      own.autoRun = null; own.arm = null; own.dirty = true; window.__lastAuto = { res: res, ms: ms, scale: fa, box: bx };
       if (own !== st) { renderTabs(); return; }
       var inv = $('xInv'); if (inv) inv.checked = st.invert;
       renderSide(); draw(); updAuto(); renderTabs();
     };
-    // ml-1.0: learned femoral-head localiser first (lazy: onnxruntime-web from the CDN + model file next to the page), then the
-    // classical stages (knee, ankle, gates). Any failure → classical head detection (info 'mlUnavailable' / 'mlFallback').
-    var ML = window.OrthoXrayML, input = { gray: gray, W: c.width, H: c.height };
-    var go = function () { var own = ownerOf(img); if (!own) return; ctx = XA.start(input, opts); own.autoRun = { p: 0.1, img: img }; if (own === st) updAuto(); setTimeout(tick, 0); };
-    // ml-1.1: learned knee / ankle points (models loaded lazily next to the page); the detector pauses for them after the head stage
-    var mlJoint = function (c2) {
-      var kind = c2.pause, tm2 = performance.now(), pr = { gray: c2.gray, W: c2.W, H: c2.H, inverted: !!c2.inv }; c2.pause = false;
-      return ML.load({ which: kind }).then(function (M) {
-        var multi = function (fn, G0, key) { opts[key] = {}; return Object.keys(G0).reduce(function (pp, hf) { var G = G0[hf]; return pp.then(function () { return fn(M, pr.gray, pr.W, pr.H, [G].concat(G.alt || []), { inverted: pr.inverted }).then(function (r) { opts[key][hf] = r; }); }); }, Promise.resolve()); };
-        return kind === 'knee' ? multi(ML.findKneeMulti, c2.kneeGuess, 'mlKnees')
-          : multi(ML.findAnkleMulti, c2.ankleGuess, 'mlAnkles');
-      }).then(function () { if (mlInfo) mlInfo[kind + 'Ms'] = Math.round(performance.now() - tm2); }).catch(function (e) { c2.res.info.push(kind === 'knee' ? 'mlKneeUnavailable' : 'mlAnkleUnavailable'); if (mlInfo) mlInfo[kind + 'Error'] = String(e && e.message || e); });
+    var failAll = function (why) {
+      if (done) return; done = true; var own = ownerOf(img); if (!own) return; var ms = Math.round(performance.now() - t0);
+      sides.forEach(function (sd) { own.lm[sd] = own.lm[sd] || {}; own.det[sd] = { status: 'fail', conf: {}, reasons: {}, missing: X.STEPS.filter(function (k) { return !own.lm[sd][k]; }), gates: [], content: null, ms: ms, info: [why], version: XA.VERSION, tka: null, error: why }; own.cur[sd] = nextStepOf(own.lm[sd]); });
+      own.autoRun = null; own.arm = null; window.__lastAuto = { res: null, error: why, ms: ms };
+      if (own !== st) { renderTabs(); return; } renderSide(); draw(); updAuto(); renderTabs();
     };
-    // built-in synthetic DEMO films are drawn for the classical detector; the learned model is for real radiographs (uploads)
-    if (!ML || st.mlOff || (st.demo && !st.mlForce)) { go(); return; }
-    var tm = performance.now();
-    ML.load().then(function (M) { var pr = XA.prepOnly(input); return ML.findHeads(M, pr.gray, pr.W, pr.H, pr.box, { inverted: pr.inverted }); }).then(function (hd) {
-      if (!ownerOf(img)) return;
-      var ok = hd.pairOk && Math.min(hd.left.peak, hd.right.peak) > 0.3;
-      mlInfo = { version: hd.version, ms: Math.round(performance.now() - tm), peaks: [hd.left.peak, hd.right.peak].map(function (v) { return Math.round(v * 100) / 100; }), fallback: !ok };
-      opts.mlHeads = ok ? hd : { declined: true }; if (!st.mlJointsOff) { opts.mlKneeHook = true; opts.mlAnkleHook = true; ML.load({ which: 'knee' }).catch(function () {}); ML.load({ which: 'ankle' }).catch(function () {}); }
-      go(); // declined: no head proposal rather than a classical guess (the surgeon places it)
-    }).catch(function (e) { mlInfo = { error: String(e && e.message || e) }; go(); });
+    var dog = setTimeout(function () { failAll('autoTimeout'); }, st.autoTimeoutMs || 150000);
+    var second = function (A) {
+      if (good(A) || st.photoPassOff) return A;
+      var box = null; try { box = filmBox(img); } catch (e) { box = null; }
+      return attempt(box, true, 0.55, 1).then(function (B) { window.__autoPasses = [{ score: score(A), info: A.res.info }, { score: score(B), info: B.res.info, box: box }]; return score(B) > score(A) ? B : A; }, function (e) { if (e === ABANDON) throw e; window.__autoPasses = [{ score: score(A) }, { error: String(e && e.message || e) }]; return A; });
+    };
+    attempt(null, false, 0, 0.55).then(second, function (e) { if (e === ABANDON) throw e; var box = null; try { box = filmBox(img); } catch (e2) {} return attempt(box, true, 0.55, 1); })
+      .then(function (A) { clearTimeout(dog); apply(A); }, function (e) { clearTimeout(dog); if (e === ABANDON) return; if (window.console) console.warn('auto-detection failed', e); failAll('autoError'); });
   }
   function reasonText(sd, k) { var d = st.det[sd], r = d && d.reasons[k] || []; return r.map(function (x) { return t('r_' + x); }).join(', '); }
   function autoStatusHtml(sd) {
@@ -9997,11 +10219,12 @@ window.OrthoQRGen = qrcode; })();
       h += '<p class="small">' + esc(t('noCalc')) + '</p>'; }
     else h += '<b>' + (low.length ? '⚠️ ' + esc(t('stCheck').replace('{n}', low.length)) : '✅ ' + esc(t('stOk'))) + '</b>';
     if (low.length) h += '<ul class="lowlist">' + low.map(function (k) { return '<li data-low="' + k + '"><span class="dot lowc">!</span> ' + esc(tx(STEP[k])) + ' – ' + esc(t('conf')) + ' ' + Math.round(d.conf[k] * 100) + '/100' + (reasonText(sd, k) ? ' · ' + esc(reasonText(sd, k)) : '') + '</li>'; }).join('') + '</ul>';
-    var inf = []; if (d.info.indexOf('inverted') >= 0) inf.push(t('infInv')); if (d.info.indexOf('lowContrast') >= 0) inf.push(t('infLow')); if (d.info.indexOf('borderMaskedLeft') >= 0 || d.info.indexOf('borderMaskedRight') >= 0) inf.push(t('infBorder')); if (d.tka) inf.unshift(t('infTka')); else if (d.info.indexOf('tkaNotFound') >= 0) inf.unshift(t('infTkaNF')); else if (d.info.indexOf('tkaPossible') >= 0) inf.unshift(t('infTkaPossible')); if (d.info.indexOf('overlaySuppressed') >= 0) inf.push(t('infOverlay')); inf.push(t('infMarkers'));
+    var inf = []; if (d.info.indexOf('inverted') >= 0) inf.push(t('infInv')); if (d.info.indexOf('lowContrast') >= 0) inf.push(t('infLow')); if (d.info.indexOf('borderMaskedLeft') >= 0 || d.info.indexOf('borderMaskedRight') >= 0) inf.push(t('infBorder')); if (d.tka) inf.unshift(t('infTka')); else if (d.info.indexOf('tkaNotFound') >= 0) inf.unshift(t('infTkaNF')); else if (d.info.indexOf('tkaPossible') >= 0) inf.unshift(t('infTkaPossible')); if (d.info.indexOf('overlaySuppressed') >= 0) inf.push(t('infOverlay')); if (d.info.indexOf('photoCrop') >= 0 || d.info.indexOf('photoEnhanced') >= 0) inf.push(t('infPhoto')); if (d.info.indexOf('autoError') >= 0) inf.unshift(t('infAutoErr')); if (d.info.indexOf('autoTimeout') >= 0) inf.unshift(t('infAutoTimeout')); inf.push(t('infMarkers'));
     h += '<p class="muted small">' + inf.map(esc).join(' ') + '</p><p class="muted small">🧠 ' + esc(t('infMethod')) + ' ' + esc(t('took')) + ': ' + d.ms + ' ms.</p></div>';
     return h;
   }
   function updAuto() {
+    if (st.sub === 'hto' && st.autoRun) { var hr = $('htoReason'); if (hr) hr.textContent = '🤖 ' + (lang() === 'en' ? 'Automatic landmark detection…' : 'Αυτόματη ανίχνευση σημείων…') + ' ' + Math.round(st.autoRun.p * 100) + '%'; }
     var pr = $('xProg'), b = $('xAuto'), bn = $('xBanner'); if (pr) { pr.classList.toggle('hidden', !st.autoRun); pr.value = st.autoRun ? st.autoRun.p : 0; }
     if (b) { b.disabled = !!st.autoRun || !st.img; b.textContent = st.autoRun ? '⏳ ' + t('running') + ' ' + Math.round(st.autoRun.p * 100) + '%' : '🤖 ' + t('autoBtn'); }
     if (!bn) return;
@@ -10018,6 +10241,7 @@ window.OrthoQRGen = qrcode; })();
     st.confirmed[sd] = { by: u.email, name: u.name, at: new Date().toISOString(), lowAccepted: low }; st.arm = null;
     if (api.audit) api.audit('xray-confirm', (st.pid || '—') + ' ' + sd + ' ' + landmarkSource(sd));
     renderSide(); draw(); updAuto(); msg(t('confirmedMsg'));
+    if (window.OrthoXrayTrain) window.OrthoXrayTrain.contribute(st, sd); // anonymous learning loop (cloud, real films, opt-out per device)
   }
   function hit(scr) { var lm = st.lm[st.side], best = null, bd = 18; X.STEPS.forEach(function (k) { if (!lm[k]) return; var s = toScr(lm[k]), d = Math.hypot(s.x - scr.x, s.y - scr.y); if (d < bd) { bd = d; best = k; } }); return best; }
 
@@ -10101,7 +10325,7 @@ window.OrthoQRGen = qrcode; })();
     var sd = st.side, lm = st.lm[sd], cur = st.cur[sd];
     var h = '<div class="seg" id="xSideSeg">' + ['R', 'L'].map(function (k) { return '<button data-xside="' + k + '" class="' + (k === sd ? 'active' : '') + '">' + esc(t(k)) + (X.compute(st.lm[k], X.medialFor(k, st.mirror)).complete ? ' ✓' : '') + '</button>'; }).join('') + '</div>';
     h += '<div class="xauto"><div class="row"><button class="primary" id="xAuto">🤖 ' + esc(t('autoBtn')) + '</button><select id="xAutoScope" aria-label="' + esc(t('autoBtn')) + '"><option value="both"' + (st.scope === 'both' ? ' selected' : '') + '>' + esc(t('scopeBoth')) + '</option><option value="current"' + (st.scope === 'current' ? ' selected' : '') + '>' + esc(t('scopeCur')) + '</option></select>' +
-      '<label class="chk"><input type="checkbox" id="xAutoOn"' + (st.autoOn ? ' checked' : '') + '> ' + esc(t('autoRun')) + '</label></div><progress id="xProg" class="hidden" max="1" value="0"></progress>' + autoStatusHtml(sd) + '</div>';
+      '<label class="chk"><input type="checkbox" id="xAutoOn"' + (st.autoOn ? ' checked' : '') + '> ' + esc(t('autoRun')) + '</label></div><progress id="xProg" class="hidden" max="1" value="0"></progress>' + autoStatusHtml(sd) + (window.OrthoXrayTrain ? window.OrthoXrayTrain.html('xTrain') : '') + '</div>';
     h += '<h3>' + esc(t('steps')) + '</h3><ol class="xsteps" id="xSteps">' + X.STEPS.map(function (k, i) {
       var done = !!lm[k], au = st.auto[sd][k], o = st.origin[sd][k], low = isLow(sd, k), d = st.det[sd], cf = d && o === 'auto' && !au && d.conf[k] != null ? Math.round(d.conf[k] * 100) : null;
       var dot = !done ? i + 1 : o === 'auto' ? 'A' : o === 'auto-corrected' ? '✎' : au ? 'A' : '✓';
@@ -10276,10 +10500,10 @@ window.OrthoQRGen = qrcode; })();
     return h + (cmp ? '</details>' : '') + '<p class="muted small">' + esc(lang() === 'el' ? 'Γωνίες από σημεία που τοποθέτησε ή επιβεβαίωσε ο ιατρός (αποθηκεύεται μόνο μια μικρή μικρογραφία στη συσκευή αυτή για τη σύγκριση). Μετά από αρθροπλαστική, τα mLDFA/MPTA αφορούν τα εμφυτεύματα· η ταξινόμηση CPAK έχει οριστεί για το φυσικό γόνατο.' : 'Angles from clinician-placed or clinician-confirmed landmarks (only a small thumbnail is kept on this device for the comparison). After arthroplasty, mLDFA/MPTA refer to the components; CPAK is defined for the native knee.') + '</p>';
   }
 
-  window.__xray = { tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
+  window.__xray = { filmBox: function () { return st.img ? filmBox(st.img) : null; }, tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
     activateTab: activateTab, newPostTab: newPostTab, getFilm: function (k) { return idbGet(k); }, selectPatient: selectPatient, idbIdle: function () { return Promise.all(idbPending); },
     clearFilms: function () { WS = {}; stored = {}; var s0 = newSlot('', 'pre', today()); loadSlot(s0); st.pid = ''; idbReq('readwrite', function (os) { return os.clear(); }).catch(function () {}); }, tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
-    fit: fit, centreOn: centreOn, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile, saveSide: saveSide, setSub: setSub, openStudy: openStudy, msg: function (m) { msg(m); }, draw: function () { draw(); } };
+    fit: fit, centreOn: centreOn, moveLandmark: function (sd, k, p, final) { if (!st.lm[sd][k]) return; st.lm[sd][k] = p; if (AUTO[k]) st.auto[sd][k] = false; moved(sd, k); autoCentres(sd); if (final) { renderSide(); draw(); updAuto(); } }, removeLandmark: function (sd, k) { delete st.lm[sd][k]; delete st.origin[sd][k]; if (AUTO[k]) st.auto[sd][k] = false; changed(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile, saveSide: saveSide, setSub: setSub, openStudy: openStudy, msg: function (m) { msg(m); }, draw: function () { draw(); } };
 })();
 </script>
 <!-- ===== 🦴 HTO planning sub-tab: core (Miniaci, JLCA compensation, ESSKA 2024 flags; pure, tested in Node) + UI ===== -->
@@ -10480,7 +10704,17 @@ window.OrthoQRGen = qrcode; })();
   var S = {
     el: { title: 'Σχεδιασμός HTO', sub: 'Ανοικτή σφηνοειδής υψηλή κνημιαία οστεοτομία (έσω) – σχεδιασμός κατά Miniaci στην ακτινογραφία φόρτισης κάτω άκρων (ορθοστατική, μετωπιαία).',
       R: 'Δεξιά', L: 'Αριστερά', needFilm: 'Ανοίξτε πρώτα μια ακτινογραφία (ή 🧪 DEMO) και τοποθετήστε τα σημεία στην «🩻 Ευθυγράμμιση».', goAlign: '🩻 Μετάβαση στην Ευθυγράμμιση', upload: 'Ανεβάστε Ακτινογραφία', change: '📁 Αλλαγή ακτινογραφίας', noFilmT: 'Δεν έχει ανοιχτεί ακτινογραφία', steps: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε ολόσωμη ορθοστατική ακτινογραφία κάτω άκρων (PNG, JPEG ή DICOM).', 'Ελέγξτε τα σημεία – μετά εμφανίζεται ο σχεδιασμός.'], noPt: 'Χωρίς επιλεγμένο ασθενή η ακτινογραφία δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.', fileTypes: 'PNG, JPEG ή DICOM (χωρίς συμπίεση) · η εικόνα μένει σε αυτή τη συσκευή', detecting: '🤖 Αυτόματη ανίχνευση σημείων…',
-      needLm: 'Δεν υπολογίζεται σχέδιο: λείπουν σημεία ευθυγράμμισης', head: 'Δεν υπολογίζεται σχέδιο: τα 3 σημεία της μηριαίας κεφαλής δεν ορίζουν κύκλο.',
+      lmT: 'Σημεία ευθυγράμμισης', lmHelp: 'Πατήστε πάνω στην εικόνα για να τοποθετήσετε το σημείο · σύρετε ένα σημείο για διόρθωση · δύο δάχτυλα (ή ροδέλα) για μεγέθυνση και μετακίνηση.',
+      autoFail: '⛔ Η αυτόματη ανίχνευση δεν βρήκε: {m}. Τοποθετήστε τα σημεία με το χέρι πάνω στην εικόνα.', autoErr: '⛔ Η αυτόματη ανίχνευση απέτυχε σε αυτή τη συσκευή. Τοποθετήστε τα σημεία με το χέρι πάνω στην εικόνα.',
+      autoNone: 'Τοποθετήστε τα σημεία πάνω στην εικόνα (ή πατήστε «🤖 Αυτόματη ανίχνευση ξανά»).', lmMissing: 'Λείπουν: {m}.', lmPick: 'Ποιο σημείο τοποθετείτε:',
+      redo: '🤖 Αυτόματη ανίχνευση ξανά', editLm: '✏️ Έλεγχος / διόρθωση σημείων', backPlan: '✔ Επιστροφή στον σχεδιασμό', lmDone: '✅ Όλα τα σημεία τοποθετήθηκαν.', zin: 'Μεγέθυνση', zout: 'Σμίκρυνση', zfit: 'Όλη η εικόνα',
+      noPtHto: '⚠️ Δεν έχει επιλεγεί ασθενής: το σχέδιο και η ακτινογραφία ΔΕΝ αποθηκεύονται μέχρι να επιλέξετε ασθενή (πάνω, «Ασθενής»).', lmDel: '🗑 Αφαίρεση σημείου',
+      n_FH: 'κεφαλή μηριαίου', n_FC: 'μηριαίοι κόνδυλοι', n_TP: 'κνημιαίο plateau', n_AN: 'ποδοκνημική', n_KF: 'κέντρο γόνατος (μηριαίο)', n_KT: 'κέντρο γόνατος (κνημιαίο)',
+      p_FH1: 'Πατήστε στο περίγραμμα της μηριαίας κεφαλής (σημείο 1 από 3).', p_FH2: 'Πατήστε σε άλλο σημείο του περιγράμματος της μηριαίας κεφαλής (2 από 3).', p_FH3: 'Πατήστε σε τρίτο σημείο του περιγράμματος της μηριαίας κεφαλής (3 από 3) – το κέντρο υπολογίζεται αυτόματα.',
+      p_FC1: 'Πατήστε στο πιο κάτω σημείο του ενός μηριαίου κονδύλου.', p_FC2: 'Πατήστε στο πιο κάτω σημείο του άλλου μηριαίου κονδύλου.', p_KF: 'Πατήστε στην κορυφή της μεσοκονδύλιας εντομής.',
+      p_TP1: 'Πατήστε στο ένα άκρο της αρθρικής επιφάνειας της κνήμης (plateau).', p_TP2: 'Πατήστε στο άλλο άκρο του κνημιαίου plateau.', p_KT: 'Πατήστε στο μέσο των κνημιαίων ακανθών.',
+      p_AN1: 'Πατήστε στο ένα άκρο της αρθρικής επιφάνειας της κνήμης στην ποδοκνημική.', p_AN2: 'Πατήστε στο άλλο άκρο της αρθρικής επιφάνειας στην ποδοκνημική (το κέντρο = μέσο).',
+      needLm: 'Δεν υπολογίζεται ακόμη σχέδιο: λείπουν σημεία ευθυγράμμισης', head: 'Δεν υπολογίζεται σχέδιο: τα 3 σημεία της μηριαίας κεφαλής δεν ορίζουν κύκλο.',
       wbl: 'Δεν υπολογίζεται σχέδιο: η γραμμή φόρτισης είναι παράλληλη με το κνημιαίο plateau.', hinge: 'Τοποθετήστε το σημείο άρθρωσης (hinge) για να υπολογιστεί το σχέδιο.',
       nosolution: 'Δεν υπολογίζεται σχέδιο: ο στόχος δεν επιτυγχάνεται με περιστροφή έως ±35° γύρω από αυτό το hinge. Ελέγξτε στόχο και θέση hinge.',
       conf: 'Σημεία επιβεβαιωμένα από ιατρό', notConf: '🤖 Τα σημεία δεν έχουν επιβεβαιωθεί – ελέγξτε τα και επιβεβαιώστε πριν την αποθήκευση.', confirm: '✔ Επιβεβαίωση σημείων',
@@ -10520,6 +10754,16 @@ window.OrthoQRGen = qrcode; })();
       post2: 'μετεγχειρητική ακτινογραφία' },
     en: { title: 'HTO planning', sub: 'Medial opening-wedge high tibial osteotomy – Miniaci planning on the standing long-leg AP film.',
       R: 'Right', L: 'Left', needFilm: 'Open a film first (or 🧪 DEMO) and place the landmarks in “🩻 Alignment”.', goAlign: '🩻 Go to Alignment', upload: 'Upload X-ray', change: '📁 Change X-ray', noFilmT: 'No X-ray open yet', steps: ['Select the patient (above, “Patient”).', 'Upload a full-length standing lower-limb X-ray (PNG, JPEG or DICOM).', 'Check the landmarks – the plan then appears.'], noPt: 'With no patient selected the X-ray is not saved; select a patient to keep it.', fileTypes: 'PNG, JPEG or DICOM (uncompressed) · the image stays on this device', detecting: '🤖 Detecting landmarks…',
+      lmT: 'Alignment landmarks', lmHelp: 'Tap on the image to place the point · drag a point to correct it · two fingers (or the wheel) to zoom and pan.',
+      autoFail: '⛔ Automatic detection did not find: {m}. Place the points by hand on the image.', autoErr: '⛔ Automatic detection failed on this device. Place the points by hand on the image.',
+      autoNone: 'Place the points on the image (or tap “🤖 Run automatic detection again”).', lmMissing: 'Missing: {m}.', lmPick: 'Point to place:',
+      redo: '🤖 Run automatic detection again', editLm: '✏️ Check / correct landmarks', backPlan: '✔ Back to the plan', lmDone: '✅ All points placed.', zin: 'Zoom in', zout: 'Zoom out', zfit: 'Whole image',
+      noPtHto: '⚠️ No patient selected: the plan and the film are NOT saved until you choose a patient (top, “Patient”).', lmDel: '🗑 Remove point',
+      n_FH: 'femoral head', n_FC: 'femoral condyles', n_TP: 'tibial plateau', n_AN: 'ankle', n_KF: 'femoral knee centre', n_KT: 'tibial knee centre',
+      p_FH1: 'Tap on the outline of the femoral head (point 1 of 3).', p_FH2: 'Tap another point on the femoral head outline (2 of 3).', p_FH3: 'Tap a third point on the femoral head outline (3 of 3) – the centre is computed.',
+      p_FC1: 'Tap the most distal point of one femoral condyle.', p_FC2: 'Tap the most distal point of the other femoral condyle.', p_KF: 'Tap the top of the intercondylar notch.',
+      p_TP1: 'Tap one end of the tibial plateau joint surface.', p_TP2: 'Tap the other end of the tibial plateau.', p_KT: 'Tap the centre of the tibial spines.',
+      p_AN1: 'Tap one end of the tibial joint surface at the ankle.', p_AN2: 'Tap the other end of the ankle joint surface (centre = midpoint).',
       needLm: 'Plan cannot be computed: missing alignment landmarks', head: 'Plan cannot be computed: the 3 femoral-head points do not define a circle.',
       wbl: 'Plan cannot be computed: the weight-bearing line is parallel to the tibial plateau.', hinge: 'Place the hinge point to compute the plan.',
       nosolution: 'Plan cannot be computed: the target cannot be reached by rotating up to ±35° about this hinge. Check the target and hinge position.',
@@ -10560,7 +10804,7 @@ window.OrthoQRGen = qrcode; })();
       post2: 'post-op film' }
   };
   var t = function (k) { var v = S[lang()][k]; return v != null ? v : k; };
-  var ui = { arm: null, drag: null, views: {}, last: null, msg: '', pending: false };
+  var ui = { arm: null, drag: null, views: {}, last: null, msg: '', pending: false, edit: false, lv: null, pick: null, sel: null };
   var XR = function () { return window.__xray; }, API = function () { return window.__orthoProms; };
   function st() { return XR() && XR().state; }
   function hs(sd) { var s = st(); if (!s.hto) s.hto = { R: {}, L: {} }; var o = s.hto[sd] || (s.hto[sd] = {}); o.pts = o.pts || {}; o.opt = o.opt || {}; o.org = o.org || {}; return o; }
@@ -10580,7 +10824,9 @@ window.OrthoQRGen = qrcode; })();
   }
   function vvTxt(mhka) { return tx(H.vv(mhka)); }
   function madTxt(m, mmpp) { if (!m || m.madPx == null) return '–'; var v = mmpp ? m.madPx * mmpp : m.madPx, u = mmpp ? ' mm' : ' ' + t('px'), sd = H.madSide(v); return f1(Math.abs(v)) + u + ' ' + (sd === 'neutral' ? '(' + t('neutral') + ')' : t(sd === 'medial' ? 'med' : 'lat')); }
-  function reasonTxt(p) { if (!p) return t('needFilm'); if (p.reason === 'landmarks') return t('needLm') + ': ' + (p.missing || []).join(', ') + '.'; return t(p.reason) || p.reason; }
+  /** Plain names for landmark codes, grouped (FH1–3 → 'femoral head'); never raw codes in messages. */
+  function lmNames(ks) { var seen = {}, out = []; (ks || []).forEach(function (k) { var g = /^(FH|FC|TP|AN)/.test(k) ? k.slice(0, 2) : k, n = t('n_' + g); if (n === 'n_' + g) n = k; if (!seen[n]) { seen[n] = 1; out.push(n); } }); return out.join(', '); }
+  function reasonTxt(p) { if (!p) return t('needFilm'); if (p.reason === 'landmarks') return t('needLm') + ': ' + lmNames(p.missing) + '.'; return t(p.reason) || p.reason; }
 
   // ---------- render ----------
   function render() { if (ui.pending) return; ui.pending = true; requestAnimationFrame(function () { ui.pending = false; renderNow(); }); }
@@ -10598,12 +10844,11 @@ window.OrthoQRGen = qrcode; })();
         upBtn('htoUpload', 'primary xhup', 'upload') + '<p class="muted small">' + esc(t('fileTypes')) + '</p>' + (!s.pid ? '<p class="small xhwarn" id="htoNoPt">' + esc(t('noPt')) + '</p>' : '') + '<p class="small"><button id="htoGoAlign" class="small">' + esc(t('goAlign')) + '</button></p></div>';
       bindHead(); bindUpload(); $('htoGoAlign').onclick = function () { XR().setSub('align'); }; ui.last = null; return;
     }
-    if (!m.ok) {
-      el.innerHTML = head + '<p class="' + (s.autoRun ? 'muted' : 'xhwarn') + '" id="htoReason" role="status">' + esc(s.autoRun ? t('detecting') : reasonTxt({ reason: m.reason === 'head' ? 'head' : 'landmarks', missing: m.missing })) + '</p><div class="row">' + upBtn('htoChange', '', 'change') + '<button id="htoGoAlign">' + esc(t('goAlign')) + '</button></div></div>';
-      bindHead(); bindUpload(); $('htoGoAlign').onclick = function () { XR().setSub('align'); }; ui.last = null; return;
-    }
+    var noPt = !s.pid ? '<p class="small xhwarn xhnopt" id="htoNoPt" role="note">' + esc(t('noPtHto')) + '</p>' : '';
+    noPt += window.OrthoXrayTrain ? window.OrthoXrayTrain.html('htoTrain') : '';
+    if (!m.ok || ui.edit) { el.innerHTML = head + '<div class="row xhfilm"><span class="muted small">' + esc(s.name || '') + '</span>' + upBtn('htoChange', 'small', 'change') + '</div>' + noPt + '</div>' + editorHtml(sd, m); bindHead(); bindUpload(); bindEditor(sd, m); ui.last = null; return; }
     var p = compute(sd), h = hs(sd), o = p.opt, cfd = s.confirmed[sd];
-    head += '<div class="row xhfilm"><span class="muted small">' + esc(s.name || '') + '</span>' + upBtn('htoChange', 'small', 'change') + '</div><p class="small ' + (cfd ? 'xhok' : 'xhwarn') + '" id="htoConf">' + (cfd ? '✔ ' + esc(t('conf')) + ' · ' + esc(cfd.name || cfd.by || '') : esc(t('notConf')) + ' <button id="htoConfirm" class="small">' + esc(t('confirm')) + '</button>') + '</p></div>';
+    head += '<div class="row xhfilm"><span class="muted small">' + esc(s.name || '') + '</span>' + upBtn('htoChange', 'small', 'change') + '<button id="htoEditLm" class="small">' + esc(t('editLm')) + '</button></div>' + noPt + '<p class="small ' + (cfd ? 'xhok' : 'xhwarn') + '" id="htoConf">' + (cfd ? '✔ ' + esc(t('conf')) + ' · ' + esc(cfd.name || cfd.by || '') : esc(t('notConf')) + ' <button id="htoConfirm" class="small">' + esc(t('confirm')) + '</button>') + '</p></div>';
     var tools = '<div class="row xhtools" role="toolbar">' + PTS.map(function (k) { var c = h.pts[k] ? ' set' : ''; return '<button class="xhpt' + c + (ui.arm === k ? ' armed' : '') + '" data-htoarm="' + k + '" title="' + esc(t('place') + ': ' + t(k)) + '"><i style="background:' + COL[k] + '"></i>' + esc(t(k)) + (h.org[k] === 'auto' ? ' 🤖' : '') + '</button>'; }).join('') + '<button id="htoPropose">' + esc(t('propose')) + '</button></div>';
     var view = '<div class="card xhview">' + tools + '<p class="muted small" id="htoHint">' + esc(ui.arm ? t('armed') + t(ui.arm) : t('drag')) + '</p><div class="xhcanv"><div class="xhknee"><canvas id="htoKnee" aria-label="' + esc(t('title') + ' – knee') + '"></canvas></div><div class="xhleg"><canvas id="htoLeg" aria-label="' + esc(t('title') + ' – limb') + '"></canvas></div></div><p class="muted small">' + esc(t('legend')) + '</p></div>';
     var tgt = '<div class="xhsec"><h3>🎯 ' + esc(t('target')) + '</h3><div class="seg" id="htoMode"><button data-htomode="wbl" class="' + (o.mode === 'wbl' ? 'active' : '') + '">' + esc(t('mWbl')) + '</button><button data-htomode="hka" class="' + (o.mode === 'hka' ? 'active' : '') + '">' + esc(t('mHka')) + '</button></div>';
@@ -10614,7 +10859,7 @@ window.OrthoQRGen = qrcode; })();
     var panel = '<div class="card xhpanel">' + tgt + '<div id="htoRes">' + resultsHtml(p) + '</div>' +
       '<div class="row xhact"><button id="htoSave" class="primary">' + esc(t('save')) + '</button><button id="htoPrint">' + esc(t('print')) + '</button></div><p class="small" id="htoMsg" role="status" aria-live="polite">' + esc(ui.msg || (h.saved ? t('savedOn') + ' · ' + (typeof h.saved === 'string' ? h.saved : '') : '')) + '</p>' + achievedHtml(sd) + '</div>';
     el.innerHTML = head + '<div class="xhgrid">' + view + panel + '</div>';
-    ui.last = p; bindHead(); bindUpload(); bindPane(sd); drawAll();
+    ui.last = p; bindHead(); bindUpload(); bindPane(sd); drawAll(); $('htoEditLm').onclick = function () { ui.edit = true; ui.lv = null; renderNow(); };
   }
   function row(lab, a, b, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + esc(lab) + '</td><td>' + a + '</td>' + (b === undefined ? '' : '<td>' + b + '</td>') + '</tr>'; }
   function resultsHtml(p) {
@@ -10735,6 +10980,80 @@ window.OrthoQRGen = qrcode; })();
     cv.onpointerup = cv.onpointercancel = function () { if (ui.drag) { ui.drag = null; ui.msg = ''; renderNow(); } };
   }
 
+  // ---------- alignment-landmark editor on the HTO tab (always shows the film; tap-to-place the missing points; drag; pinch/wheel zoom) ----------
+  var LCOL = { FH: '#f472b6', FC: '#38bdf8', KF: '#38bdf8', TP: '#facc15', KT: '#facc15', AN: '#4ade80' };
+  var lcol = function (k) { return LCOL[k.slice(0, 2)] || '#fff'; };
+  var MAN = ['FH1', 'FH2', 'FH3', 'FC1', 'FC2', 'TP1', 'TP2', 'AN1', 'AN2']; // knee centres KF/KT follow from FC1/FC2 and TP1/TP2 (draggable afterwards)
+  function missOf(sd) { var lm = st().lm[sd] || {}, m = MAN.filter(function (k) { return !lm[k]; }); ['KF', 'KT'].forEach(function (k) { if (!lm[k] && m.length === 0) m.push(k); }); return m; }
+  function nextLm(sd) { var lm = st().lm[sd] || {}; if (ui.pick && !lm[ui.pick]) return ui.pick; return missOf(sd)[0] || null; }
+  function editorHtml(sd, m) {
+    var s = st(), d = s.det[sd], lm = s.lm[sd] || {}, miss = missOf(sd), nx = nextLm(sd), run = s.autoRun;
+    var stat;
+    if (run) stat = '<p class="muted" id="htoReason" role="status">' + esc(t('detecting')) + ' ' + Math.round((run.p || 0) * 100) + '%</p>';
+    else if (!miss.length) stat = '<p class="small xhok" id="htoReason" role="status">' + esc(t('lmDone')) + (m.ok ? '' : ' ' + esc(reasonTxt({ reason: m.reason }))) + '</p>';
+    else if (d && d.error) stat = '<p class="xhwarn" id="htoReason" role="status">' + esc(t('autoErr')) + '</p>';
+    else if (d && d.status === 'fail') stat = '<p class="xhwarn" id="htoReason" role="status">' + esc(t('autoFail').replace('{m}', lmNames(miss))) + '</p>';
+    else stat = '<p class="xhwarn" id="htoReason" role="status">' + esc(t('needLm')) + ': ' + esc(lmNames(miss)) + '. ' + esc(t('autoNone')) + '</p>';
+    var prompt = nx && !run ? '<p class="xhprompt" id="htoPrompt" data-k="' + nx + '">👉 ' + esc(t('p_' + nx)) + '</p>' : '';
+    var chips = miss.length ? '<div class="row xhchips" id="htoMiss"><span class="muted small">' + esc(t('lmPick')) + '</span>' + miss.map(function (k) { return '<button class="small xhchip' + (k === nx ? ' armed' : '') + '" data-htolm="' + k + '"><i style="background:' + lcol(k) + '"></i>' + esc(lmLabel(k)) + '</button>'; }).join('') + '</div>' : '';
+    var tools = '<div class="row xhzoom"><button id="htoZin" class="small" aria-label="' + esc(t('zin')) + '">＋</button><button id="htoZout" class="small" aria-label="' + esc(t('zout')) + '">－</button><button id="htoZfit" class="small" aria-label="' + esc(t('zfit')) + '">⤢</button>' +
+      '<button id="htoRedo" class="small"' + (run ? ' disabled' : '') + '>' + esc(t('redo')) + '</button>' + (ui.sel && lm[ui.sel] ? '<button id="htoDel" class="small">' + esc(t('lmDel')) + ' · ' + esc(lmLabel(ui.sel)) + '</button>' : '') + (m.ok ? '<button id="htoBack" class="primary small">' + esc(t('backPlan')) + '</button>' : '') + '</div>';
+    return '<div class="card xhedit" id="htoEditor"><h3>📍 ' + esc(t('lmT')) + ' · ' + esc(t(sd)) + '</h3>' + stat + prompt + chips + tools +
+      '<div class="xhlmwrap"><canvas id="htoLm" aria-label="' + esc(t('lmT')) + '"></canvas></div><p class="muted small">' + esc(t('lmHelp')) + '</p></div>';
+  }
+  function lmLabel(k) { var g = k.slice(0, 2), n = t('n_' + (/^(FH|FC|TP|AN)/.test(k) ? g : k)); var dg = k.match(/\d$/); return n + (dg && g !== 'KF' && g !== 'KT' ? ' ' + dg[0] : ''); }
+  function lmFit(cv) { var s = st(), w = cv.width / (window.devicePixelRatio || 1), h = cv.height / (window.devicePixelRatio || 1), k = Math.min(w / s.W, h / s.H) * 0.97; return { s: k, tx: (w - s.W * k) / 2, ty: (h - s.H * k) / 2 }; }
+  function lmSize(cv) { var wrap = cv.parentNode, w = Math.max(160, wrap.getBoundingClientRect().width), h = Math.round(Math.min(window.innerHeight * 0.72, Math.max(360, w * 1.25), 760)), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; } }
+  function drawLm() {
+    var cv = $('htoLm'), s = st(); if (!cv || !s.img) return; lmSize(cv); var dpr = window.devicePixelRatio || 1, g = cv.getContext('2d'); if (!ui.lv || ui.lv.img !== s.img) { ui.lv = lmFit(cv); ui.lv.img = s.img; }
+    var v = ui.lv, sd = s.side === 'L' ? 'L' : 'R', P = function (q) { return { x: q.x * v.s + v.tx, y: q.y * v.s + v.ty }; };
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
+    g.save(); g.filter = 'brightness(' + (s.bright || 100) + '%) contrast(' + (s.contrast || 100) + '%)' + (s.invert ? ' invert(1)' : ''); g.translate(v.tx, v.ty); g.scale(v.s, v.s); g.drawImage(s.img, 0, 0); g.restore();
+    ['R', 'L'].forEach(function (k2) { var lm = s.lm[k2] || {}, act = k2 === sd, line = function (a, b, c) { if (!lm[a] || !lm[b]) return; var A = P(lm[a]), B = P(lm[b]); g.strokeStyle = c; g.lineWidth = act ? 2 : 1; g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke(); };
+      g.save(); g.globalAlpha = act ? 1 : 0.4;
+      if (lm.FH1 && lm.FH2 && lm.FH3 && X.circle3) { var cc = X.circle3(lm.FH1, lm.FH2, lm.FH3); if (cc && isFinite(cc.r)) { var C = P(cc); g.strokeStyle = LCOL.FH; g.lineWidth = act ? 2 : 1; g.beginPath(); g.arc(C.x, C.y, cc.r * v.s, 0, 7); g.stroke(); } }
+      line('FC1', 'FC2', LCOL.FC); line('TP1', 'TP2', LCOL.TP); line('AN1', 'AN2', LCOL.AN);
+      X.STEPS.forEach(function (k) { if (!lm[k]) return; var A = P(lm[k]), sel = act && ui.sel === k, low = act && XR().lowList && XR().lowList(k2).indexOf(k) >= 0; g.beginPath(); g.arc(A.x, A.y, sel ? 9 : act ? 7 : 4, 0, 7); g.fillStyle = lcol(k); g.fill(); g.lineWidth = 2; g.strokeStyle = low ? '#f97316' : '#000'; g.stroke();
+        if (act) { g.font = '600 11px system-ui,sans-serif'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.fillStyle = '#fff'; var lab = lmLabel(k) + (low ? ' ?' : ''); g.strokeText(lab, A.x + 10, A.y - 8); g.fillText(lab, A.x + 10, A.y - 8); } });
+      g.restore(); });
+  }
+  function lmZoom(f, c) { var v = ui.lv; if (!v) return; var ns = Math.max(0.02, Math.min(40, v.s * f)), k = ns / v.s; v.tx = c.x - (c.x - v.tx) * k; v.ty = c.y - (c.y - v.ty) * k; v.s = ns; drawLm(); }
+  function bindEditor(sd, m) {
+    var cv = $('htoLm'); if (!cv) return; drawLm();
+    var center = function () { return { x: cv.width / (window.devicePixelRatio || 1) / 2, y: cv.height / (window.devicePixelRatio || 1) / 2 }; };
+    $('htoZin').onclick = function () { lmZoom(1.5, center()); }; $('htoZout').onclick = function () { lmZoom(1 / 1.5, center()); }; $('htoZfit').onclick = function () { ui.lv = null; drawLm(); };
+    $('htoRedo').onclick = function () { ui.pick = null; ui.sel = null; var s = st(); s.autoRun = null; XR().runAuto('both'); renderNow(); };
+    if ($('htoBack')) $('htoBack').onclick = function () { ui.edit = false; ui.sel = null; renderNow(); };
+    if ($('htoDel')) $('htoDel').onclick = function () { XR().removeLandmark(sd, ui.sel); ui.pick = ui.sel; ui.sel = null; renderNow(); };
+    document.querySelectorAll('[data-htolm]').forEach(function (b) { b.onclick = function () { ui.pick = b.dataset.htolm; renderNow(); }; });
+    var ptr = {}, gest = null, rel = function (e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    var toImg = function (q) { var v = ui.lv; return { x: (q.x - v.tx) / v.s, y: (q.y - v.ty) / v.s }; };
+    var hitLm = function (q) { var lm = st().lm[sd] || {}, best = null, bd = 22; X.STEPS.forEach(function (k) { if (!lm[k]) return; var v = ui.lv, d = Math.hypot(lm[k].x * v.s + v.tx - q.x, lm[k].y * v.s + v.ty - q.y); if (d < bd) { bd = d; best = k; } }); return best; };
+    cv.onpointerdown = function (e) {
+      if (!st().img || !ui.lv) return; try { cv.setPointerCapture(e.pointerId); } catch (_) {} var q = rel(e); ptr[e.pointerId] = q; e.preventDefault();
+      var ids = Object.keys(ptr); if (ids.length === 2) { var a = ptr[ids[0]], b = ptr[ids[1]]; gest = { type: 'pinch', d: Math.hypot(a.x - b.x, a.y - b.y), c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }; return; }
+      var h = hitLm(q); gest = h ? { type: 'maybe', k: h, start: q } : { type: 'tap', start: q, last: q };
+    };
+    cv.onpointermove = function (e) {
+      if (!gest) return; var q = rel(e); if (ptr[e.pointerId]) ptr[e.pointerId] = q;
+      if (gest.type === 'pinch') { var ids = Object.keys(ptr); if (ids.length < 2) return; var a = ptr[ids[0]], b = ptr[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; ui.lv.tx += c.x - gest.c.x; ui.lv.ty += c.y - gest.c.y; lmZoom(d / (gest.d || d), c); gest.d = d; gest.c = c; return; }
+      if (gest.type === 'maybe' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 5) gest = { type: 'drag', k: gest.k };
+      if (gest.type === 'drag') { XR().moveLandmark(sd, gest.k, toImg(q), false); drawLm(); return; }
+      if (gest.type === 'tap' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 9) gest.type = 'pan';
+      if (gest.type === 'pan') { ui.lv.tx += q.x - gest.last.x; ui.lv.ty += q.y - gest.last.y; drawLm(); }
+      if (gest.last) gest.last = q;
+    };
+    var up = function (e) {
+      var q = rel(e); delete ptr[e.pointerId]; var gs = gest; gest = null; if (!gs || gs.type === 'pinch') { if (Object.keys(ptr).length) gest = { type: 'pan', last: ptr[Object.keys(ptr)[0]] }; return; }
+      if (gs.type === 'maybe') { if (!nextLm(sd)) { ui.sel = gs.k; renderNow(); return; } gs = { type: 'tap' }; } // a tap on a handle places the pending point (as in Alignment); with none pending it selects
+      if (gs.type === 'drag') { XR().moveLandmark(sd, gs.k, toImg(q), true); ui.sel = gs.k; renderNow(); return; }
+      if (gs.type === 'tap') { var k = nextLm(sd); if (!k) { ui.sel = null; renderNow(); return; } var p = toImg(q), s = st(); if (p.x < 0 || p.y < 0 || p.x > s.W || p.y > s.H) return; ui.pick = null; ui.sel = null; XR().setLandmark(sd, k, p); renderNow(); }
+    };
+    cv.onpointerup = up; cv.onpointercancel = function (e) { delete ptr[e.pointerId]; gest = null; };
+    cv.onwheel = function (e) { e.preventDefault(); lmZoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, rel(e)); };
+  }
+
   // ---------- save / timeline / print ----------
   function summary(p) {
     var r2 = function (v) { return v == null || !isFinite(v) ? null : Math.round(v * 100) / 100; }, m = p.pre, q = p.post;
@@ -10783,6 +11102,7 @@ window.OrthoQRGen = qrcode; })();
     void h;
   }
   window.__xhto = { render: render, renderNow: renderNow, compute: compute, savePlan: savePlan, openSheet: openSheet, closeSheet: closeSheet, headline: headline, achievedPair: achievedPair,
+    editor: function () { return { open: !!$('htoEditor'), next: nextLm(st().side === 'L' ? 'L' : 'R'), view: ui.lv && { s: ui.lv.s, tx: ui.lv.tx, ty: ui.lv.ty } }; }, setEdit: function (v) { ui.edit = !!v; renderNow(); },
     setPoint: function (sd, k, p) { var h = hs(sd); h.pts[k] = p; h.org[k] = 'manual'; if (k === 'HINGE') h.noAuto = true; renderNow(); }, setOpt: function (sd, k, v) { setOpt(sd, k, v); }, get last() { return ui.last; }, DEMO_PX_PER_MM: DEMO_PX_PER_MM };
 })();
 </script>
