@@ -818,6 +818,8 @@ body.pts-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   body.pts-print .noprint{display:none!important}
 }
 .ptsopt summary{cursor:pointer;color:#41545c;margin:4px 0}
+.ptslvl{display:inline-block;margin-left:.4em;padding:0 .45em;border-radius:.6em;font-size:.85em;font-weight:600;white-space:nowrap}
+.ptslvl-high{background:#d7f5df;color:#14532d}.ptslvl-medium{background:#fff1c2;color:#6b4e00}.ptslvl-low{background:#ffd9d6;color:#7f1d1d}
 </style>
 </head>
 <body>
@@ -11534,6 +11536,339 @@ window.OrthoQRGen = qrcode; })();
 </script>
 <!-- ===== 📐 Posterior tibial slope (PTS) sub-tab: core (methods PAA/ATC/PTC/FSA, classical detection; pure, tested in Node) + UI ===== -->
 <script id="ortho-xray-pts">
+// Rotation-robust automatic PTS landmarks (classical, no ML). Searches the knee orientation (any rotation, both polarities),
+// finds the tibial shaft as a chain of parallel cortical edge pairs, the joint gap / plateau above it, the rims, and the cortex
+// midpoints; returns points + a confidence. Low confidence → the points are suggestions (never nothing when anything is found).
+(function (root) {
+  'use strict';
+  var R2D = 180 / Math.PI, D2R = Math.PI / 180;
+  function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+  function pct(a, p) { var s = Array.prototype.slice.call(a).sort(function (x, y) { return x - y; }); return s[Math.min(s.length - 1, Math.max(0, Math.floor(p * s.length)))]; }
+  function toGray(img) { var n = img.W * img.H, g = new Float32Array(n), d = img.data;
+    if (d.length >= 4 * n) for (var i = 0; i < n; i++) g[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2]; else for (var j = 0; j < n; j++) g[j] = d[j]; return g; }
+  function downscale(g, W, H, maxDim) { // area average
+    var f = Math.min(1, maxDim / Math.max(W, H)); if (f >= 1) return { g: g, W: W, H: H, f: 1 };
+    var w = Math.max(1, Math.round(W * f)), h = Math.max(1, Math.round(H * f)), o = new Float32Array(w * h), fx = W / w, fy = H / h;
+    for (var y = 0; y < h; y++) { var y0 = Math.floor(y * fy), y1 = Math.max(y0 + 1, Math.min(H, Math.floor((y + 1) * fy)));
+      for (var x = 0; x < w; x++) { var x0 = Math.floor(x * fx), x1 = Math.max(x0 + 1, Math.min(W, Math.floor((x + 1) * fx))), s = 0, c = 0;
+        for (var yy = y0; yy < y1; yy++) for (var xx = x0; xx < x1; xx++) { s += g[yy * W + xx]; c++; } o[y * w + x] = s / c; } }
+    return { g: o, W: w, H: h, f: w / W };
+  }
+  function blur(g, W, H, r) { var t = new Float32Array(W * H), o = new Float32Array(W * H), y, x, s, k, n = 2 * r + 1;
+    for (y = 0; y < H; y++) { s = 0; for (k = -r; k <= r; k++) s += g[y * W + Math.min(W - 1, Math.max(0, k))];
+      for (x = 0; x < W; x++) { t[y * W + x] = s / n; s += g[y * W + Math.min(W - 1, x + r + 1)] - g[y * W + Math.max(0, x - r)]; } }
+    for (x = 0; x < W; x++) { s = 0; for (k = -r; k <= r; k++) s += t[Math.min(H - 1, Math.max(0, k)) * W + x];
+      for (y = 0; y < H; y++) { o[y * W + x] = s / n; s += t[Math.min(H - 1, y + r + 1) * W + x] - t[Math.max(0, y - r) * W + x]; } }
+    return o; }
+  function normalize(g) { var n = g.length, st = Math.max(1, Math.floor(n / 30000)), s = []; for (var i = 0; i < n; i += st) s.push(g[i]); s.sort(function (a, b) { return a - b; });
+    var lo = s[Math.floor(s.length * 0.01)], hi = s[Math.floor(s.length * 0.995)], k = hi > lo ? 255 / (hi - lo) : 1, o = new Float32Array(n);
+    for (var j = 0; j < n; j++) { var v = (g[j] - lo) * k; o[j] = v < 0 ? 0 : v > 255 ? 255 : v; } return o; }
+  // local contrast equalisation (CLAHE-like: subtract a large blur, rescale by local std) – tames glare / vignetting of phone photos
+  function localNorm(g, W, H, r) { var m = blur(g, W, H, r), sq = new Float32Array(W * H), i; for (i = 0; i < g.length; i++) sq[i] = g[i] * g[i];
+    var m2 = blur(sq, W, H, r), o = new Float32Array(W * H); for (i = 0; i < g.length; i++) { var sd = Math.sqrt(Math.max(1, m2[i] - m[i] * m[i])); o[i] = 128 + 45 * (g[i] - m[i]) / (sd + 8); }
+    for (i = 0; i < o.length; i++) o[i] = 0.5 * o[i] + 0.5 * g[i]; return normalize(o); }
+  // rotate g (W×H) by ang (rad) about the centre into a square canvas S×S; returns { g, S, fwd(x,y), back(x,y) }
+  function rotate(g, W, H, ang) { var S = Math.ceil(Math.hypot(W, H)), c = Math.cos(ang), s = Math.sin(ang), o = new Float32Array(S * S), cx = W / 2, cy = H / 2, h = S / 2;
+    for (var y = 0; y < S; y++) { var dy = y - h; for (var x = 0; x < S; x++) { var dx = x - h, sx = c * dx + s * dy + cx, sy = -s * dx + c * dy + cy;
+      if (sx < 0 || sy < 0 || sx > W - 1.001 || sy > H - 1.001) { o[y * S + x] = -1; continue; }
+      var x0 = sx | 0, y0 = sy | 0, fx = sx - x0, fy = sy - y0, i0 = y0 * W + x0; o[y * S + x] = (g[i0] * (1 - fx) + g[i0 + 1] * fx) * (1 - fy) + (g[i0 + W] * (1 - fx) + g[i0 + W + 1] * fx) * fy; } }
+    return { g: o, S: S, fwd: function (p) { var X = p.x - cx, Y = p.y - cy; return { x: c * X - s * Y + h, y: s * X + c * Y + h }; }, back: function (p) { var dx = p.x - h, dy = p.y - h; return { x: c * dx + s * dy + cx, y: -s * dx + c * dy + cy }; } }; }
+
+
+  /** Femoral condyle: best bright disc by gradient-direction voting. Returns [{x,y,r,v}] (best first) in g coordinates. */
+  function circles(g, W, H, o) {
+    o = o || {}; var M = Math.max(W, H), rmin = Math.max(5, Math.round((o.rmin || 0.03) * M)), rmax = Math.round((o.rmax || 0.16) * M), nr = rmax - rmin + 1;
+    var gb = blur(g, W, H, 1), mags = new Float32Array(W * H), gxs = new Float32Array(W * H), gys = new Float32Array(W * H), x, y, i;
+    for (y = 1; y < H - 1; y++) for (x = 1; x < W - 1; x++) { i = y * W + x;
+      var gx = (gb[i - W + 1] + 2 * gb[i + 1] + gb[i + W + 1]) - (gb[i - W - 1] + 2 * gb[i - 1] + gb[i + W - 1]), gy = (gb[i + W - 1] + 2 * gb[i + W] + gb[i + W + 1]) - (gb[i - W - 1] + 2 * gb[i - W] + gb[i - W + 1]);
+      gxs[i] = gx; gys[i] = gy; mags[i] = Math.hypot(gx, gy); }
+    var thr = pct(mags.filter(function (_, k) { return k % 7 === 0; }), 0.9), acc = new Float32Array(nr * W * H);
+    for (y = 2; y < H - 2; y++) for (x = 2; x < W - 2; x++) { i = y * W + x; var m = mags[i]; if (m < thr || g[i] < 0) continue; var dx = gxs[i] / m, dy = gys[i] / m;
+      for (var r = rmin; r <= rmax; r++) { var cx = Math.round(x + dx * r), cy = Math.round(y + dy * r); if (cx < 0 || cy < 0 || cx >= W || cy >= H) break; acc[(r - rmin) * W * H + cy * W + cx] += 1; } }
+    // smooth spatially per radius (3x3) and normalise by circumference
+    var best = [];
+    for (var rr = 0; rr < nr; rr++) { var base = rr * W * H, R = rr + rmin, norm = 2 * Math.PI * R;
+      for (y = 2; y < H - 2; y += 1) for (x = 2; x < W - 2; x += 1) { var s = 0; for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) s += acc[base + (y + yy) * W + x + xx];
+        var v = s / norm; if (v > 0.25) best.push({ x: x, y: y, r: R, v: v }); } }
+    best.sort(function (p, q) { return q.v - p.v; });
+    var out = []; best.forEach(function (c) { if (out.length >= 6) return; if (out.every(function (q) { return Math.hypot(q.x - c.x, q.y - c.y) > 0.6 * Math.max(q.r, c.r); })) out.push(c); });
+    return out;
+  }
+  /** Canonical-frame core: tibia roughly vertical, proximal end up. g: S×S (−1 = outside the film). Returns a candidate or null. */
+  function core(g, S, o) {
+    var at = function (x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= S || y >= S) return -1; return g[y * S + x]; };
+    var nb = 48, bh = S / nb, bands = [];
+    // ---- 1. per horizontal band: pairs of a rising and a falling edge with a brighter inside (cortical edge pairs) ----
+    var prof = new Float32Array(S), cnt = new Float32Array(S), d = new Float32Array(S), gmaxAll = [], ridgeAll = [];
+    for (var b = 0; b < nb; b++) {
+      var y0 = Math.floor(b * bh), y1 = Math.floor((b + 1) * bh); prof.fill(0); cnt.fill(0);
+      for (var y = y0; y < y1; y++) for (var x = 0; x < S; x++) { var v = g[y * S + x]; if (v >= 0) { prof[x] += v; cnt[x]++; } }
+      var valid = new Uint8Array(S); for (x = 0; x < S; x++) { if (cnt[x] >= 0.8 * (y1 - y0)) { prof[x] /= cnt[x]; valid[x] = 1; } else prof[x] = 0; }
+      for (x = 2; x < S - 2; x++) d[x] = valid[x - 2] && valid[x + 2] ? (prof[x + 2] - prof[x - 2]) / 4 : 0;
+      var L = [], Rr = [];
+      for (x = 3; x < S - 3; x++) { if (d[x] > 0 && d[x] >= d[x - 1] && d[x] > d[x + 1]) L.push({ x: x, g: d[x] }); if (d[x] < 0 && d[x] <= d[x - 1] && d[x] < d[x + 1]) Rr.push({ x: x, g: -d[x] }); }
+      var kr = Math.max(3, Math.round(S / 110)), Rg = [];
+      for (x = kr + 1; x < S - kr - 1; x++) { if (!valid[x - kr] || !valid[x + kr]) continue; var rv = prof[x] - 0.5 * (prof[x - kr] + prof[x + kr]), rvl = prof[x - 1] - 0.5 * (prof[x - 1 - kr] + prof[x - 1 + kr]), rvr = prof[x + 1] - 0.5 * (prof[x + 1 - kr] + prof[x + 1 + kr]); if (rv > 0 && rv >= rvl && rv > rvr) Rg.push({ x: x, g: rv }); }
+      bands.push({ y: (y0 + y1) / 2, L: L, R: Rr, Rg: Rg, prof: Float32Array.from(prof), valid: valid }); Rg.forEach(function (e) { ridgeAll.push(e.g); });
+      L.forEach(function (e) { gmaxAll.push(e.g); }); Rr.forEach(function (e) { gmaxAll.push(e.g); });
+    }
+    if (!gmaxAll.length) return null;
+    var gref = pct(gmaxAll, 0.97) || 1, rref = pct(ridgeAll.length ? ridgeAll : [1], 0.97) || 1, rthr = 0.25 * rref, thr = 0.18 * gref, wmin = 0.04 * S, wmax = 0.30 * S;
+    bands.forEach(function (B) {
+      var L = B.L.filter(function (e) { return e.g > thr; }), Rr = B.R.filter(function (e) { return e.g > thr; }), P = B.prof, C = [];
+      L.forEach(function (l) { Rr.forEach(function (r) { var w = r.x - l.x; if (w < wmin || w > wmax) return;
+        var inn = 0, n1 = 0; for (var x = Math.round(l.x + 0.1 * w); x <= r.x - 0.1 * w; x++) { inn += P[x]; n1++; } inn /= n1 || 1;
+        var k = Math.max(3, Math.round(0.25 * w)), oL = 0, oR = 0, nL = 0, nR = 0; for (var j = 2; j <= k; j++) { if (B.valid[l.x - j]) { oL += P[l.x - j]; nL++; } if (B.valid[r.x + j]) { oR += P[r.x + j]; nR++; } }
+        if (!nL || !nR) return; oL /= nL; oR /= nR; if (!(inn > oL + 4 && inn > oR + 4)) return;
+        var oMax = Math.max(oL, oR), mn = 1e9; for (var x2 = Math.round(l.x + 0.08 * w); x2 <= r.x - 0.08 * w - 4; x2++) { var m5 = (P[x2] + P[x2 + 1] + P[x2 + 2] + P[x2 + 3] + P[x2 + 4]) / 5; if (m5 < mn) mn = m5; }
+        if (mn < oMax + 0.25 * (inn - oMax)) return; // a soft-tissue gap inside = two bones (tibia + fibula), not one
+        C.push({ l: l.x, r: r.x, c: (l.x + r.x) / 2, w: w, s: Math.min(l.g, r.g) / gref + 0.15 * Math.min(1, (inn - Math.max(oL, oR)) / 40) }); }); });
+      // ridge pairs: two bright cortical lines (low-contrast photos where the medulla is not brighter than soft tissue)
+      var Rg2 = B.Rg.filter(function (e) { return e.g > rthr; });
+      for (var i1 = 0; i1 < Rg2.length; i1++) for (var i2 = i1 + 1; i2 < Rg2.length; i2++) { var l = Rg2[i1], r = Rg2[i2], w = r.x - l.x; if (w < wmin || w > wmax) continue;
+        var mid = 0, nm = 0; for (var x3 = Math.round(l.x + 0.25 * w); x3 <= r.x - 0.25 * w; x3++) { mid += P[x3]; nm++; } mid /= nm || 1;
+        var kk = Math.max(3, Math.round(0.3 * w)), oL2 = B.valid[l.x - kk] ? P[l.x - kk] : 0, oR2 = B.valid[r.x + kk] ? P[r.x + kk] : 0; if (mid < Math.min(oL2, oR2) - 6) continue;
+        C.push({ l: l.x, r: r.x, c: (l.x + r.x) / 2, w: w, s: 0.8 * Math.min(1, Math.min(l.g, r.g) / rref), ridge: true }); }
+      C.sort(function (a, b) { return b.s - a.s; }); B.C = C.slice(0, 8);
+    });
+    // ---- 2. chain the pairs over bands (bottom → top), DP; the longest strong chain = the tibial shaft ----
+    var best = null;
+    for (var i = nb - 1; i >= 0; i--) bands[i].C.forEach(function (c) { c.acc = c.s; c.prev = null; c.len = 1;
+      for (var j = i + 1; j <= Math.min(nb - 1, i + 2); j++) bands[j].C.forEach(function (p) { if (Math.abs(p.c - c.c) > 0.025 * S * (j - i) || Math.abs(p.w - c.w) > 0.18 * Math.max(p.w, c.w)) return;
+        var a = p.acc + c.s - (j - i - 1) * 0.3; if (a > c.acc) { c.acc = a; c.prev = p; c.len = p.len + 1; } });
+      c.band = i; if (!best || c.acc > best.acc) best = c; });
+    if (!best || best.len < 5) return null;
+    var chain = []; for (var q = best; q; q = q.prev) chain.push({ y: bands[q.band].y, c: q.c, w: q.w, l: q.l, r: q.r, s: q.s });
+    // line fit x = a*y + b on the centres
+    var my = 0, mx = 0; chain.forEach(function (p) { my += p.y; mx += p.c; }); my /= chain.length; mx /= chain.length;
+    var syy = 0, sxy = 0; chain.forEach(function (p) { syy += (p.y - my) * (p.y - my); sxy += (p.y - my) * (p.c - mx); }); var a = syy > 0 ? sxy / syy : 0, bb = mx - a * my;
+    var h0 = median(chain.map(function (p) { return p.w; })) / 2, yTop = chain[0].y, yBot = chain[chain.length - 1].y;
+    var ux = a / Math.hypot(a, 1), uy = 1 / Math.hypot(a, 1), nx = uy, ny = -ux; // distal unit vector, perpendicular // perpendicular (image right-ish)
+    var Pt = function (base, s, t) { return { x: base.x + nx * s + ux * t, y: base.y + ny * s + uy * t }; };
+    var top = { x: a * yTop + bb, y: yTop };
+    // ---- 3. joint gap: walking up the axis from the distal end of the chain, the first dark dip with bone on both sides ----
+    var bot = { x: a * yBot + bb, y: yBot };
+    var soft = median(chain.map(function (p) { var B = bands.filter(function (B2) { return Math.abs(B2.y - p.y) < 1; })[0], xs = [Math.round(p.l - 0.35 * p.w), Math.round(p.r + 0.35 * p.w)].filter(function (x) { return x >= 0 && x < S && B.valid[x]; }); return xs.length ? Math.min.apply(null, xs.map(function (x) { return B.prof[x]; })) : 0; }));
+    var cp = []; for (var t = 0; t >= -S; t--) { var sI = 0, n2 = 0; for (var s = -0.5 * h0; s <= 0.5 * h0; s += 1) { var qq = Pt(bot, s, t), vv = at(qq.x, qq.y); if (vv >= 0) { sI += vv; n2++; } } if (!n2) break; cp.push({ t: t, v: sI / n2 }); }
+    var smv = function (k, r) { var s2 = 0, c2 = 0; for (var m = k - r; m <= k + r; m++) if (m >= 0 && m < cp.length && cp[m].v >= 0) { s2 += cp[m].v; c2++; } return c2 ? s2 / c2 : -1; };
+    var shaftV = median(cp.slice(0, Math.max(3, Math.round(2 * h0))).map(function (e) { return e.v; })), gapK = null, gbest = 0;
+    for (var k = Math.round(2.5 * h0); k < cp.length - 2; k++) { var v0 = smv(k, 1); if (!(v0 <= smv(k - 1, 1) && v0 <= smv(k + 1, 1))) continue;
+      var below = 0, above = 0; for (var z = 2; z <= 1.2 * h0; z++) { if (k - z >= 0) below = Math.max(below, smv(k - z, 1)); if (k + z < cp.length) above = Math.max(above, smv(k + z, 1)); }
+      var depth = Math.min(below, above) - v0, half = v0 + depth / 2, wdt = 0; for (var z2 = k; z2 < cp.length && smv(z2, 0) < half; z2++) wdt++; for (var z3 = k - 1; z3 >= 0 && smv(z3, 0) < half; z3--) wdt++;
+      var ok = depth > 0.12 * (Math.max(shaftV, below) - soft) && wdt <= 0.8 * h0 && below > 0.5 * shaftV;
+      if (ok && depth > gbest) { gbest = depth; gapK = k; }
+      if (gapK != null && k > gapK + 1.0 * h0) break; }
+    if (gapK == null) return { fail: 'noJoint', chain: chain, h0: h0, a: a, b: bb, dbg: { soft: soft, shaftV: shaftV, cp: cp.filter(function (_, i) { return i % 4 === 0; }).map(function (e) { return Math.round(e.v); }) } };
+    var G = Pt(bot, 0, cp[gapK].t);
+    // tibia part of the chain only (below the gap), refit the axis
+    chain = chain.filter(function (p) { return p.y > G.y + 0.8 * h0; });
+    if (chain.length < 4) return { fail: 'noShaft', chain: chain, h0: h0, a: a, b: bb, G: G };
+    (function () { var my2 = 0, mx2 = 0; chain.forEach(function (p) { my2 += p.y; mx2 += p.c; }); my2 /= chain.length; mx2 /= chain.length; var s1 = 0, s2 = 0; chain.forEach(function (p) { s1 += (p.y - my2) * (p.y - my2); s2 += (p.y - my2) * (p.c - mx2); }); a = s1 > 0 ? s2 / s1 : 0; bb = mx2 - a * my2; })();
+    h0 = median(chain.map(function (p) { return p.w; })) / 2; yTop = chain[0].y; yBot = chain[chain.length - 1].y;
+    ux = a / Math.hypot(a, 1); uy = 1 / Math.hypot(a, 1); nx = uy; ny = -ux;
+    G = (function () { var gx = a * G.y + bb; return { x: gx, y: G.y }; })();
+    // ---- 4. plateau contour: per column across the axis, the first strong dark→bright step going distal from the gap ----
+    var run, Lp, contour, lo, hi;
+    if (!o.vit) {
+    contour = [];
+    for (var s3 = -2.6 * h0; s3 <= 2.6 * h0; s3 += 1) { var bestG = 0, bestD = null, prev = null;
+      for (var d3 = -0.8 * h0; d3 <= 1.4 * h0; d3 += 1) { var q1 = Pt(G, s3, d3 - 1.5), q2 = Pt(G, s3, d3 + 1.5), v1 = at(q1.x, q1.y), v2 = at(q2.x, q2.y); if (v1 < 0 || v2 < 0) continue;
+        var gr = v2 - v1; if (gr > bestG) {
+          var q3 = Pt(G, s3, d3 + 0.35 * h0), v3 = at(q3.x, q3.y); if (v3 > v1 + 0.5 * gr) { bestG = gr; bestD = d3; } } }
+      if (bestD != null) contour.push({ s: s3, d: bestD, g: bestG }); }
+    (function () { if (!contour.length) return; var gq = pct(contour.map(function (p) { return p.g; }), 0.8); contour = contour.filter(function (p) { return p.g > 0.3 * gq && p.g > 6; }); })();
+    if (contour.length < 1.5 * h0) return { fail: 'noPlateau', chain: chain, h0: h0, a: a, b: bb, G: G };
+    contour.sort(function (p, q2) { return p.s - q2.s; });
+    (function () { var ds = contour.map(function (p) { return p.d; }); contour.forEach(function (p, i) { var w = []; for (var j = Math.max(0, i - 4); j <= Math.min(contour.length - 1, i + 4); j++) if (Math.abs(contour[j].s - p.s) <= 6) w.push(ds[j]); p.d = median(w); }); })();
+    var ci = 0, bd = 1e9; contour.forEach(function (p, idx) { if (Math.abs(p.s) < bd) { bd = Math.abs(p.s); ci = idx; } });
+    lo = ci; hi = ci; while (lo > 0 && contour[lo].s - contour[lo - 1].s <= 6 && Math.abs(contour[lo].d - contour[lo - 1].d) <= 0.22 * h0) lo--;
+    while (hi < contour.length - 1 && contour[hi + 1].s - contour[hi].s <= 6 && Math.abs(contour[hi + 1].d - contour[hi].d) <= 0.22 * h0) hi++;
+    run = contour.slice(lo, hi + 1); Lp = run[run.length - 1].s - run[0].s;
+    if (!(Lp > 1.6 * h0)) return { fail: 'noPlateau', chain: chain, h0: h0, a: a, b: bb, G: G };
+    } else {
+    // Viterbi over columns: a continuous superior tibial surface (dark above → bright bone below), smoothness-penalised
+    var dLo = Math.round(-0.8 * h0), dHi = Math.round(1.4 * h0), nd = dHi - dLo + 1, sLo0 = Math.round(-2.6 * h0), sHi0 = Math.round(2.6 * h0), ns = sHi0 - sLo0 + 1, GR = new Float32Array(ns * nd);
+    for (var is = 0; is < ns; is++) for (var id = 0; id < nd; id++) { var s3 = sLo0 + is, d3 = dLo + id, q1 = Pt(G, s3, d3 - 1.5), q2 = Pt(G, s3, d3 + 1.5), v1 = at(q1.x, q1.y), v2 = at(q2.x, q2.y); if (v1 < 0 || v2 < 0) continue;
+      var gr = v2 - v1; if (gr <= 0) continue; var q3 = Pt(G, s3, d3 + 0.35 * h0), v3 = at(q3.x, q3.y); if (v3 > v1 + 0.5 * gr) GR[is * nd + id] = gr; }
+    var gq0 = (function () { var mx = []; for (var is2 = 0; is2 < ns; is2++) { var m = 0; for (var id2 = 0; id2 < nd; id2++) m = Math.max(m, GR[is2 * nd + id2]); mx.push(m); } return pct(mx, 0.8) || 1; })();
+    var lam = 0.25 * gq0, Dp = new Float32Array(ns * nd), Bk = new Int16Array(ns * nd);
+    for (var id3 = 0; id3 < nd; id3++) Dp[id3] = GR[id3];
+    for (var is3 = 1; is3 < ns; is3++) for (var id4 = 0; id4 < nd; id4++) { var bv = -1e9, bi = id4; for (var dd2 = -2; dd2 <= 2; dd2++) { var j2 = id4 + dd2; if (j2 < 0 || j2 >= nd) continue; var v4 = Dp[(is3 - 1) * nd + j2] - lam * Math.abs(dd2); if (v4 > bv) { bv = v4; bi = j2; } } Dp[is3 * nd + id4] = bv + GR[is3 * nd + id4] - 0.05 * gq0; Bk[is3 * nd + id4] = bi; }
+    var path = new Int16Array(ns); (function () { var bi2 = 0, bv2 = -1e9; for (var id5 = 0; id5 < nd; id5++) if (Dp[(ns - 1) * nd + id5] > bv2) { bv2 = Dp[(ns - 1) * nd + id5]; bi2 = id5; } for (var is4 = ns - 1; is4 >= 0; is4--) { path[is4] = bi2; bi2 = Bk[is4 * nd + bi2]; } })();
+    contour = []; for (var is5 = 0; is5 < ns; is5++) contour.push({ s: sLo0 + is5, d: dLo + path[is5], g: GR[is5 * nd + path[is5]] });
+    // the plateau = the strong part of the path around the axis (smoothed strength above 30 % of the typical)
+    var sm2 = contour.map(function (p, i) { var t2 = 0, c3 = 0; for (var j3 = Math.max(0, i - 3); j3 <= Math.min(ns - 1, i + 3); j3++) { t2 += contour[j3].g; c3++; } return t2 / c3; });
+    var ci2 = -sLo0, gref2 = pct(sm2.slice(Math.max(0, ci2 - Math.round(h0)), ci2 + Math.round(h0)), 0.5) || 1; lo = ci2; hi = ci2;
+    while (lo > 0 && sm2[lo - 1] > 0.3 * gref2) lo--; while (hi < ns - 1 && sm2[hi + 1] > 0.3 * gref2) hi++;
+    if (hi - lo < 1.5 * h0) return { fail: 'noPlateau', why: ['run', hi - lo, h0], chain: chain, h0: h0, a: a, b: bb, G: G };
+    run = contour.slice(lo, hi + 1); Lp = run[run.length - 1].s - run[0].s;
+    }
+
+    if (!(Lp > 1.6 * h0)) return { fail: 'noPlateau', why: ['Lp', Lp, h0, contour.length, run.length], chain: chain, h0: h0, a: a, b: bb, G: G, contour: contour.map(function (p) { return Pt(G, p.s, p.d); }) };
+    // rims: robust ends (2nd/98th percentile of s) with the d of the contour there
+    var e1 = run[Math.min(run.length - 1, Math.round(0.02 * run.length))], e2 = run[Math.max(0, Math.round(0.98 * run.length) - 1)];
+    // plateau line by RANSAC over the run (tangent of the superior surface): take points at the extreme 30 % on each side
+    var r1 = run.filter(function (p) { return p.s < run[0].s + 0.3 * Lp; }), r2 = run.filter(function (p) { return p.s > run[run.length - 1].s - 0.3 * Lp; });
+    var top1 = r1.reduce(function (m, p) { return p.d < m.d ? p : m; }, r1[0]), top2 = r2.reduce(function (m, p) { return p.d < m.d ? p : m; }, r2[0]);
+    var rimL, rimR; (function () { var c0 = run.filter(function (p) { return p.s > run[0].s + 0.2 * Lp && p.s < run[run.length - 1].s - 0.2 * Lp; }); if (c0.length < 5) c0 = run;
+      var ms = 0, md = 0; c0.forEach(function (p) { ms += p.s; md += p.d; }); ms /= c0.length; md /= c0.length; var ss = 0, sd = 0; c0.forEach(function (p) { ss += (p.s - ms) * (p.s - ms); sd += (p.s - ms) * (p.d - md); }); var kk = ss ? sd / ss : 0;
+      var near = run.filter(function (p) { var r = p.d - (md + kk * (p.s - ms)); return r < 0.09 * Lp && r > -0.12 * Lp; }); if (near.length < 3) near = run;
+      // the angle comes from the tangent of the superior surface fitted over the whole near-top contour (robust to the rims); rims sit on that line
+      var fit2 = (function () { var a0 = 0, b0 = 0, n0 = near.length; near.forEach(function (p) { a0 += p.s; b0 += p.d; }); a0 /= n0; b0 /= n0; var s1 = 0, s2 = 0; near.forEach(function (p) { s1 += (p.s - a0) * (p.s - a0); s2 += (p.s - a0) * (p.d - b0); }); return { ms: a0, md: b0, k: s1 ? s2 / s1 : 0 }; })();
+      // upper tangent: shift the line up to the highest points (superior envelope, 90th percentile of the residuals)
+      var res2 = near.map(function (p) { return p.d - (fit2.md + fit2.k * (p.s - fit2.ms)); }).sort(function (x, y) { return x - y; }), off = res2[Math.floor(0.1 * res2.length)] || 0;
+      var lineAt = function (s0) { return fit2.md + off + fit2.k * (s0 - fit2.ms); };
+      rimL = { s: near[0].s, d: lineAt(near[0].s) }; rimR = { s: near[near.length - 1].s, d: lineAt(near[near.length - 1].s) };
+      if (o.vit && o.rimMode === 'corner') { var cr = function (sign) { var bst = null, bv = -1e9; run.forEach(function (p) { var v = sign * p.s * 0.6 - p.d; if (v > bv) { bv = v; bst = p; } }); return bst; }; rimL = cr(-1); rimR = cr(1); }
+      if (o.vit && (o.rimMode || 'run') === 'run') { rimL = { s: run[0].s, d: run[0].d }; rimR = { s: run[run.length - 1].s, d: run[run.length - 1].d }; }
+      if (o.vit && o.rimMode === 'ext') { // rims at the outer cortical edges of the proximal tibia, on the continuous surface path
+        var ext2 = function (sign) { var vals = []; for (var dd = 0.3 * h0; dd <= 0.8 * h0; dd += 0.1 * h0) { var c = Pt(G, 0, fit2.md + dd), bestE = null, bm = 0;
+            for (var k4 = 0.7 * h0; k4 <= 2.6 * h0; k4 += 0.5) { var qa = Pt(c, sign * (k4 + 1.5), 0), qb = Pt(c, sign * (k4 - 1.5), 0), va = at(qa.x, qa.y), vb = at(qb.x, qb.y); if (va < 0 || vb < 0) continue; var gg = vb - va; if (gg > bm) { bm = gg; bestE = k4; } }
+            if (bestE != null) vals.push(sign * bestE); } return vals.length >= 3 ? median(vals) : null; };
+        var pathD = function (s0) { var w = contour.filter(function (p) { return Math.abs(p.s - s0) <= 3; }).map(function (p) { return p.d; }); return w.length ? median(w) : null; };
+        var eL = ext2(-1), eR = ext2(1);
+        [[eL, 'L'], [eR, 'R']].forEach(function (e) { if (e[0] == null) return; var cur = e[1] === 'L' ? rimL : rimR, inset = e[1] === 'L' ? 0.03 * Lp : -0.03 * Lp, s0 = e[0] + inset, d0 = pathD(s0);
+          if (d0 == null || Math.abs(d0 - lineAt(s0)) > 0.35 * h0) return; if (Math.abs(s0 - cur.s) > 0.7 * Lp) return; if (e[1] === 'L') rimL = { s: s0, d: d0, ext: true }; else rimR = { s: s0, d: d0, ext: true }; });
+      }
+    })();
+    Lp = Math.max(Lp, rimR.s - rimL.s);
+    // flatness (femur condyles are round, the tibial plateau is flat): residual of a line fit
+    var fit = (function () { var ms = 0, md = 0; run.forEach(function (p) { ms += p.s; md += p.d; }); ms /= run.length; md /= run.length; var ss = 0, sd = 0; run.forEach(function (p) { ss += (p.s - ms) * (p.s - ms); sd += (p.s - ms) * (p.d - md); }); var k2 = sd / ss, res = 0; run.forEach(function (p) { var e = p.d - (md + k2 * (p.s - ms)); res += e * e; }); return { k: k2, rms: Math.sqrt(res / run.length) }; })();
+    // convexity: parabola d = c0 + c1 s + c2 s² over the run; femoral condyles bulge toward the gap (sagitta ≫ plateau)
+    var sag = (function () { var n = run.length, S0 = 0, S1 = 0, S2 = 0, S3 = 0, S4 = 0, T0 = 0, T1 = 0, T2 = 0, ms = (run[0].s + run[n - 1].s) / 2;
+      run.forEach(function (p) { var x = (p.s - ms) / Lp, y = p.d / Lp; S0++; S1 += x; S2 += x * x; S3 += x * x * x; S4 += x * x * x * x; T0 += y; T1 += x * y; T2 += x * x * y; });
+      var M3 = [[S0, S1, S2], [S1, S2, S3], [S2, S3, S4]], V = [T0, T1, T2];
+      var det = function (m) { return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]); };
+      var D = det(M3); if (!D) return 0; var M2 = M3.map(function (r, i) { return r.map(function (v, j) { return j === 2 ? V[i] : v; }); }); return det(M2) / D * 0.25; })(); // c2·(1/2)² = sagitta / Lp
+    // ---- 5. anterior side: fibula = a separate bright edge pair beside the shaft (posterior); tubercle = bulge just below the plateau ----
+    // fibula: a narrow bright edge pair beside the shaft over many bands (only the tibia has one; the femur does not)
+    var fibL = 0, fibR = 0, fibN = 0; chain.forEach(function (p) { var B = bands.filter(function (B2) { return Math.abs(B2.y - p.y) < 1; })[0]; if (!B) return; fibN++;
+        var Lx = B.L.filter(function (e) { return e.g > 0.08 * gref; }), Rx = B.R.filter(function (e) { return e.g > 0.08 * gref; }), P2 = B.prof;
+        var has = function (side) { // side -1: left of the shaft, +1: right
+          return Lx.some(function (l) { return Rx.some(function (r) { var w = r.x - l.x; if (w < 0.1 * p.w || w > 0.65 * p.w) return false;
+            if (side < 0 ? !(r.x <= p.l + 0.2 * p.w && l.x >= p.l - 1.3 * p.w) : !(l.x >= p.r - 0.2 * p.w && r.x <= p.r + 1.3 * p.w)) return false;
+            var inn = 0, n1 = 0; for (var x = l.x + 1; x < r.x; x++) { inn += P2[x]; n1++; } inn /= n1 || 1; var oL = P2[Math.max(0, l.x - 3)], oR = P2[Math.min(S - 1, r.x + 3)]; return inn > oL + 3 && inn > oR + 3; }); }); };
+        if (has(-1)) fibL++; if (has(1)) fibR++; });
+    var fibSide = fibN ? (fibR - fibL) / fibN : 0, fibEv = fibN ? Math.max(fibL, fibR) / fibN : 0;
+    var ext = function (t2) { var c = Pt(G, 0, t2), l = 0, r = 0; var base = at(c.x, c.y); if (base < 0) return null; var thr2 = 0.5 * (base + 0);
+      for (var s5 = 0; s5 < 3 * h0; s5++) { var q5 = Pt(G, s5, t2); if (at(q5.x, q5.y) < 0.55 * shaftV) break; r = s5; } for (var s6 = 0; s6 < 3 * h0; s6++) { var q6 = Pt(G, -s6, t2); if (at(q6.x, q6.y) < 0.55 * shaftV) break; l = s6; } void thr2; return { l: l, r: r }; };
+    var tub = 0; (function () { var near = [], far = ext(4 * h0) || { l: h0, r: h0 }; for (var t3 = 0.6 * h0; t3 <= 2.2 * h0; t3 += 2) { var e = ext(t3); if (e) near.push(e); } if (!near.length) return;
+      var mr = Math.max.apply(null, near.map(function (e) { return e.r; })) - far.r, ml = Math.max.apply(null, near.map(function (e) { return e.l; })) - far.l; tub = (mr - ml) / h0; })();
+    var antScore = -fibSide * 1.5 + tub * 0.5; // >0: anterior = +s (right in the canonical frame)
+    var ant = antScore >= 0 ? 1 : -1;
+    var PA = ant > 0 ? rimR : rimL, PP = ant > 0 ? rimL : rimR;
+    // ---- 6. cortex points at two levels (5 / 15 cm with the plateau-length scale; shorter if the shaft ends) ----
+    var pxPerMm = o.pxPerMm || Lp / 47, pm = { s: (PA.s + PP.s) / 2, d: (PA.d + PP.d) / 2 }, pmI = Pt(G, pm.s, pm.d);
+    var chainEndT = (function () { var e = { x: a * yBot + bb, y: yBot }; return (e.x - pmI.x) * ux + (e.y - pmI.y) * uy; })();
+    var l1 = 50 * pxPerMm, l2 = 150 * pxPerMm, short = false;
+    if (l2 > chainEndT) { short = true; l2 = Math.max(l1 + 25 * pxPerMm, chainEndT); }
+    var edgeAt = function (c, dir) { // outer edge = last strong drop going outward within 1.6 h0
+      var best2 = null, bm = 0; for (var k3 = 0.5 * h0; k3 <= 1.6 * h0; k3 += 0.5) { var qa = { x: c.x + dir * nx * (k3 + 1.5), y: c.y + dir * ny * (k3 + 1.5) }, qb = { x: c.x + dir * nx * (k3 - 1.5), y: c.y + dir * ny * (k3 - 1.5) }, va = at(qa.x, qa.y), vb = at(qb.x, qb.y); if (va < 0 || vb < 0) continue; var gg = vb - va; if (gg > bm) { bm = gg; best2 = k3; } }
+      return best2 == null ? null : { x: c.x + dir * nx * best2, y: c.y + dir * ny * best2, g: bm }; };
+    var fitX = function (key) { var pts2 = chain.map(function (p) { return { y: p.y, x: p[key] }; }), A0 = 0, B0 = 0;
+      for (var it = 0; it < 3; it++) { var my3 = 0, mx3 = 0; pts2.forEach(function (p) { my3 += p.y; mx3 += p.x; }); my3 /= pts2.length; mx3 /= pts2.length; var s1 = 0, s2 = 0; pts2.forEach(function (p) { s1 += (p.y - my3) * (p.y - my3); s2 += (p.y - my3) * (p.x - mx3); }); A0 = s1 ? s2 / s1 : 0; B0 = mx3 - A0 * my3;
+        var rs = pts2.map(function (p) { return Math.abs(p.x - (A0 * p.y + B0)); }), th = Math.max(1.5, 2.5 * (median(rs) || 0)); var keep = pts2.filter(function (p, i) { return rs[i] <= th; }); if (keep.length >= 4) pts2 = keep; }
+      return function (y) { return A0 * y + B0; }; };
+    var xL = fitX('l'), xR = fitX('r');
+    var lev = function (L2) { var y = pmI.y + uy * L2, l = { x: xL(y), y: y }, r = { x: xR(y), y: y }; return ant > 0 ? { A: r, P: l } : { A: l, P: r }; };
+    var v1 = lev(l1), v2 = lev(l2);
+    if (!v1 || !v2) return { fail: 'noCortex', chain: chain, h0: h0, a: a, b: bb, G: G };
+    var pts = { PA: Pt(G, PA.s, PA.d), PP: Pt(G, PP.s, PP.d), A1: v1.A, P1: v1.P, A2: v2.A, P2: v2.P };
+    // ---- 7. score ----
+    var chainScore = Math.min(1, best.acc / 10), gapScore = Math.min(1, gbest / 40), ratio = Lp / (2 * h0), ratioScore = ratio > 1.1 && ratio < 2.2 ? 1 : 0.3,
+      flat = Math.max(0, 1 - fit.rms / (0.12 * Lp)), cont = Math.min(1, run.length / Lp);
+    var convex = Math.max(0, Math.min(1, (sag - 0.04) / 0.12));
+    var score = chainScore * 0.3 + gapScore * 0.15 + ratioScore * 0.1 + flat * 0.1 + cont * 0.1 + 0.35 * Math.min(1, fibEv / 0.5) - 0.5 * convex;
+    return { pts: pts, score: score, parts: { chain: chainScore, gap: gapScore, ratio: ratio, flat: flat, cont: cont, len: chain.length, fibEv: fibEv, sag: sag, antScore: antScore, fib: fibSide, tub: tub }, short: short, h0: h0, chain: chain, a: a, b: bb, G: G, Lp: Lp, chainEndT: chainEndT, pxPerMm: pxPerMm, plateauSlope: fit.k, contour: run.map(function (p) { return Pt(G, p.s, p.d); }) };
+  }
+
+  function prepare(img, maxDim) {
+    var g0 = toGray(img), ds = downscale(g0, img.W, img.H, maxDim), g = normalize(blur(ds.g, ds.W, ds.H, 1));
+    return { g: g, W: ds.W, H: ds.H, f: ds.f };
+  }
+  function searchAt(img, maxDim, o) {
+    var P = prepare(img, maxDim), cands = [];
+    var variants = [{ g: P.g, inv: false }], inv = new Float32Array(P.g.length); for (var i = 0; i < inv.length; i++) inv[i] = 255 - P.g[i]; variants.push({ g: inv, inv: true });
+    var step = o.step || 15;
+    variants.forEach(function (V) { for (var ad = 0; ad < 360; ad += step) { var R = rotate(V.g, P.W, P.H, ad * D2R), c = core(R.g, R.S, o); if (c && c.pts) { c.ang = ad; c.inv = V.inv; c.R = R; cands.push(c); } } });
+    var circ = circles(P.g, P.W, P.H), M0 = Math.max(P.W, P.H);
+    var kneeTerm = function (c) { var G = c.G, ux = c.a / Math.hypot(c.a, 1), uy = 1 / Math.hypot(c.a, 1), sAbove = 0, sBelow = 0, dmin = 1e9;
+      circ.forEach(function (q) { var p = c.R.fwd(q), d = Math.hypot(p.x - G.x, p.y - G.y); dmin = Math.min(dmin, d); if (d > 0.25 * M0) return; var t = (p.x - G.x) * ux + (p.y - G.y) * uy; if (t < 0) sAbove += q.v; else sBelow += q.v; });
+      var near = dmin < 0.15 * M0 ? 1 : dmin < 0.25 * M0 ? 0.5 : 0, side = sAbove + sBelow > 0 ? (sAbove - sBelow) / (sAbove + sBelow) : 0; return { near: near, side: side }; };
+    cands.forEach(function (c) { var k = kneeTerm(c); c.parts.knee = k; c.score += 0.3 * k.near + 0.35 * k.side; });
+    cands.sort(function (x, y) { return y.score - x.score; });
+    // refine around the best few: finer angle (the chain must be near vertical in the canonical frame)
+    var top = cands.slice(0, 3), fine = [];
+    top.forEach(function (c0) { var V = c0.inv ? inv : P.g; var tilt = Math.atan(c0.a) * R2D; [-tilt, -tilt - 4, -tilt + 4].forEach(function (dd) { var ad = c0.ang + dd, R = rotate(V, P.W, P.H, ad * D2R), c = core(R.g, R.S, o); if (c && c.pts) { c.ang = ad; c.inv = c0.inv; c.R = R; fine.push(c); } }); });
+    fine.forEach(function (c) { var k = kneeTerm(c); c.parts.knee = k; c.score += 0.3 * k.near + 0.35 * k.side; });
+    cands = cands.concat(fine).sort(function (x, y) { return y.score - x.score; });
+    return { P: P, inv: inv, cands: cands };
+  }
+  /** detectAuto(img, o): img {W,H,data}; o { mmPerPx, maxDim (default 420), angles }. */
+  function detectAuto(img, o) {
+    o = o || {}; var t0 = Date.now();
+    // multi-scale consensus: the search runs at several working resolutions; candidates from all of them are clustered by the
+    // position of both plateau rims, and the cluster that most scales agree on wins (a single scale is fragile on phone photos)
+    var dims = o.maxDim ? [o.maxDim] : (o.dims || [360, 400, 440, 480, 520]), runs = dims.map(function (md) { return searchAt(img, md, o); });
+    var M1x = Math.max(img.W, img.H), pool = [];
+    runs.forEach(function (rn, ri) { rn.cands.slice(0, 6).forEach(function (c, k) { var a = c.R.back(c.pts.PA), p = c.R.back(c.pts.PP); var Q = {}; Object.keys(c.pts).forEach(function (kk) { var q = c.R.back(c.pts[kk]); Q[kk] = { x: q.x / rn.P.f, y: q.y / rn.P.f }; }); var mm = root.OrthoPTS && root.OrthoPTS.measure ? root.OrthoPTS.measure(Q) : null, vv = mm && mm.pts != null ? mm.pts : null;
+      pool.push({ c: c, P: rn.P, inv: rn.inv, ri: ri, k: k, pl: vv != null && vv > -5 && vv < 22 ? 1 : 0.3, pa: { x: a.x / rn.P.f, y: a.y / rn.P.f }, pp: { x: p.x / rn.P.f, y: p.y / rn.P.f } }); }); });
+    var near2 = function (u, v) { return Math.hypot(u.pa.x - v.pa.x, u.pa.y - v.pa.y) < 0.06 * M1x && Math.hypot(u.pp.x - v.pp.x, u.pp.y - v.pp.y) < 0.06 * M1x; };
+    var bestCl = null, bestW = -1e9; pool.forEach(function (u) { var mem = pool.filter(function (v) { return near2(u, v); }), byRun = {}; mem.forEach(function (v) { var w = Math.max(0, v.c.score) * (v.k === 0 ? 1.5 : 1) * v.pl; byRun[v.ri] = Math.max(byRun[v.ri] || 0, w); });
+      var W = 0, nr = 0; Object.keys(byRun).forEach(function (r) { W += byRun[r]; nr++; }); if (W > bestW) { bestW = W; bestCl = { u: u, mem: mem, nr: nr }; } });
+    var ens = { n: runs.length, agree: bestCl ? bestCl.nr / runs.length : 0, top1: bestCl ? bestCl.mem.filter(function (v) { return v.k === 0; }).map(function (v) { return v.ri; }).filter(function (r, i, a) { return a.indexOf(r) === i; }).length / runs.length : 0 };
+    var pick = bestCl ? bestCl.mem.reduce(function (m, v) { return v.c.score > m.c.score ? v : m; }, bestCl.mem[0]) : null;
+    var members = []; if (bestCl) bestCl.mem.slice().sort(function (x, y) { return y.c.score - x.c.score; }).forEach(function (v) { if (members.length < 4 && members.every(function (m) { return m.ri !== v.ri; })) members.push(v); });
+    if (!members.length) { var r0 = runs[0]; return finish(img, o, r0.P, r0.cands.slice(), ens, t0); }
+    var outs = members.map(function (v) { var cs = runs[v.ri].cands.slice(); cs.splice(cs.indexOf(v.c), 1); cs.unshift(v.c); return finish(img, o, runs[v.ri].P, cs, ens, t0); });
+    var val = function (r) { var m = root.OrthoPTS && root.OrthoPTS.measure ? root.OrthoPTS.measure(r.pts) : null; return m && m.pts != null ? m.pts : null; };
+    outs.forEach(function (r) { r._v = val(r); r._pl = r._v != null && r._v > -3 && r._v < 20; });
+    var okO = outs.filter(function (r) { return r._pl; }), pool2 = okO.length ? okO : outs, dd = function (r, q) { return Math.hypot(r.pts.PA.x - q.pts.PA.x, r.pts.PA.y - q.pts.PA.y) + Math.hypot(r.pts.PP.x - q.pts.PP.x, r.pts.PP.y - q.pts.PP.y); };
+    var best = pool2.length >= 3 && false ? pool2.reduce(function (m, r) { var sr = pool2.reduce(function (t, q) { return t + dd(r, q); }, 0), sm = pool2.reduce(function (t, q) { return t + dd(m, q); }, 0); return sr < sm ? r : m; }, pool2[0])
+      : pool2.reduce(function (m, r) { var pr = function (q) { return q.conf.score - (q._v == null ? 0.2 : 0.02 * Math.max(0, Math.abs(q._v - 8) - 6)); }; return pr(r) > pr(m) ? r : m; }, pool2[0]);
+    var consist = outs.filter(function (r) { return r._v != null && best._v != null && Math.abs(r._v - best._v) <= 4; }).length / Math.max(2, outs.length);
+    var c2 = Math.max(0, Math.min(1, 0.85 * best.conf.score + 0.15 * consist)); if (!best._pl) c2 = Math.min(c2, 0.45); if (ens.n > 1 && ens.agree < 0.4) c2 = Math.min(c2, 0.45); // found at one working resolution only → low
+    Object.keys(best.conf).forEach(function (k) { if (k !== 'score') best.conf[k] = best.conf[k] * (best.conf.score ? c2 / best.conf.score : 1); }); best.conf.score = c2;
+    best.confParts.consist = +consist.toFixed(2); best.ens.consist = consist; best.ens.vals = outs.map(function (r) { return r._v == null ? null : +r._v.toFixed(1); });
+    best.level = c2 >= 0.75 ? 'high' : c2 >= 0.5 ? 'medium' : 'low'; best.status = best.level === 'high' ? 'ok' : 'suggest';
+    outs.forEach(function (r) { delete r._v; delete r._pl; }); best.ms = Date.now() - t0;
+    return best;
+  }
+  function finish(img, o, P, cands, ens, t0) {
+    var res = { version: 'pts-auto-1', status: 'failed', pts: {}, conf: {}, notes: [], ms: 0 };
+    if (!cands.length) { res.reason = 'noShaft'; res.ms = Date.now() - t0; return res; }
+    var b = cands[0], bf = P.f, b0 = cands[0];
+    if (o.mmPerPx) { /* canonical px per mm at each stage */ }
+    // stage 2: same orientation at a higher resolution; kept when it lands on the same knee
+    if (o.hires !== false) { var sizes = o.maxDim2 ? [o.maxDim2] : [840, 600, 420], M1 = Math.max(img.W, img.H);
+      for (var si = 0; si < sizes.length; si++) { var P2 = prepare(img, sizes[si]), g2 = b0.inv ? P2.g.map(function (v) { return 255 - v; }) : P2.g, R2 = rotate(g2, P2.W, P2.H, b0.ang * D2R),
+          c2 = core(R2.g, R2.S, Object.assign({}, o, { vit: true, rimMode: o.rimMode || 'corner', pxPerMm: o.mmPerPx ? P2.f / o.mmPerPx : null }));
+        if (!c2 || !c2.pts) continue; var q1 = b0.R.back(b0.pts.PA), q2 = R2.back(c2.pts.PA), q3 = b0.R.back(b0.pts.PP), q4 = R2.back(c2.pts.PP);
+        if (Math.hypot(q1.x / P.f - q2.x / P2.f, q1.y / P.f - q2.y / P2.f) < 0.1 * M1 && Math.hypot(q3.x / P.f - q4.x / P2.f, q3.y / P.f - q4.y / P2.f) < 0.1 * M1) { c2.ang = b0.ang; c2.inv = b0.inv; c2.R = R2; c2.parts.knee = b0.parts.knee; c2.score = Math.max(c2.score, b0.score); c2.hires = sizes[si]; b = c2; bf = P2.f; break; } } }
+    var back = function (p) { var q = b.R.back(p); return { x: q.x / bf, y: q.y / bf }; };
+    Object.keys(b.pts).forEach(function (k) { res.pts[k] = back(b.pts[k]); });
+    // agreement among the top candidates (same knee found at different angles) raises the confidence
+    var agree = 0, nAg = 0; cands.slice(1, 6).forEach(function (c) { var pa = back.call(null, c.pts.PA); void pa; var q = c.R.back(c.pts.PA), d = Math.hypot(q.x / P.f - res.pts.PA.x, q.y / P.f - res.pts.PA.y); nAg++; if (d < 0.1 * Math.max(img.W, img.H)) agree++; });
+    // confidence: low/high-resolution agreement on the slope and the rims, anatomical plausibility, side evidence
+    var slope = function (c, R, f) { var Q = {}; ['PA', 'PP', 'A1', 'P1', 'A2', 'P2'].forEach(function (k) { var q = R.back(c.pts[k]); Q[k] = { x: q.x / f, y: q.y / f }; }); var OP = root.OrthoPTS; var m = OP && OP.measure ? OP.measure(Q) : null; return m && m.pts != null ? m.pts : null; };
+    var vHi = slope(b, b.R, bf), vLo = slope(b0, b0.R, P.f), dv = vHi != null && vLo != null ? Math.abs(vHi - vLo) : 30;
+    var dRim = (function () { var a1 = back(b.pts.PA), a2 = b0.R.back(b0.pts.PA), p1 = back(b.pts.PP), p2 = b0.R.back(b0.pts.PP), M1 = Math.max(img.W, img.H); return (Math.hypot(a1.x - a2.x / P.f, a1.y - a2.y / P.f) + Math.hypot(p1.x - p2.x / P.f, p1.y - p2.y / P.f)) / 2 / M1; })();
+    var fAgree = b.hires ? Math.max(0, 1 - dv / 8) * Math.max(0, 1 - dRim / 0.05) : 0.2, fPl = vHi != null && vHi > -3 && vHi < 20 ? 1 : 0, rt = b.parts.ratio, fRatio = rt > 1.1 && rt < 2.1 ? 1 : 0.3,
+      fSide = Math.max(0, Math.min(1, ((b.parts.knee && b.parts.knee.side) || 0) + 0.3)), fFace = Math.min(1, Math.abs(b.parts.antScore) / 0.3), fScore = Math.min(1, b0.score);
+    var fEns = ens.n > 1 ? ens.agree : 0.5, conf = Math.max(0, Math.min(1, 0.25 * fAgree + 0.15 * fEns + 0.2 * fPl + 0.15 * fRatio + 0.1 * fSide + 0.075 * fFace + 0.075 * fScore));
+    if (!fPl) conf = Math.min(conf, 0.45);
+    res.confParts = { agree: +fAgree.toFixed(2), ens: +fEns.toFixed(2), dSlope: +dv.toFixed(1), dRim: +dRim.toFixed(3), plaus: fPl, ratio: +rt.toFixed(2), side: +fSide.toFixed(2), facing: +fFace.toFixed(2), score: +fScore.toFixed(2) };
+    res.conf = { score: conf, PA: conf, PP: conf, A1: conf, P1: conf, A2: b.short ? conf * 0.7 : conf, P2: b.short ? conf * 0.7 : conf };
+    res.score = b.score; res.hires = !!b.hires;  res.parts = b.parts; res.ang = b.ang; res.inv = b.inv; res.short = b.short;
+    res.shaftMm = b.chainEndT / b.pxPerMm; res.facingConf = Math.min(1, Math.abs(b.parts.antScore));
+    res.level = conf >= 0.75 ? 'high' : conf >= 0.5 ? 'medium' : 'low'; res.status = res.level === 'high' ? 'ok' : 'suggest';
+    if (b.short) res.notes.push('short');
+    res.ens = ens; res.ms = Date.now() - t0; res.nCand = cands.length; res.cands = null;
+    return res;
+  }
+  root.OrthoPTSAuto = { detect: detectAuto, _searchAt: searchAt, _circles: circles, _core: core, _rotate: rotate, _prepare: prepare };
+})(typeof window !== 'undefined' ? window : globalThis);
+
 // ===== OrthoThessaly posterior tibial slope (PTS) core (pure; unit-tested in Node) =====
 // Lateral knee radiograph. Points (image px, y down):
 //   PA / PP  anterior / posterior rim of the MEDIAL tibial plateau (tangent line)
@@ -11683,7 +12018,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ================= automatic detection =================
   /** img: { W, H, data } (gray or RGBA). o: { mmPerPx (original px), maxDim }. Returns { status, pts (original px), conf, facing, ... }. */
-  function detect(img, o) {
+  function detectClassic(img, o) {
     o = o || {};
     var t0 = Date.now(), R = { version: VERSION, status: 'failed', pts: {}, conf: {}, notes: [] };
     try {
@@ -11823,6 +12158,31 @@ window.OrthoQRGen = qrcode; })();
     function fin() { R.ms = Date.now() - t0; return R; }
   }
 
+
+  // ================= detection entry point =================
+  // 1) the classic detector (upright, clean films); 2) otherwise the rotation-robust search (any orientation / side / polarity,
+  // phone photos of films or monitors, flexed knees, short tibia); 3) otherwise a generic layout. Points are ALWAYS returned, with a
+  // confidence level: 'high' (classic, all checks passed), 'medium' / 'low' (suggestions the doctor checks and drags).
+  function template(img) {
+    var W = img.W, H = img.H, s = Math.min(W, H), cx = W / 2, y0 = H * 0.32, pl = 0.22 * s;
+    return { PA: { x: cx + pl / 2, y: y0 + 0.02 * s }, PP: { x: cx - pl / 2, y: y0 }, A1: { x: cx + 0.33 * pl, y: y0 + 0.9 * pl }, P1: { x: cx - 0.33 * pl, y: y0 + 0.9 * pl },
+      A2: { x: cx + 0.3 * pl, y: Math.min(H * 0.95, y0 + 2.6 * pl) }, P2: { x: cx - 0.3 * pl, y: Math.min(H * 0.95, y0 + 2.6 * pl) } };
+  }
+  function detect(img, o) {
+    o = o || {}; var t0 = Date.now(), c = detectClassic(img, o);
+    if (c.status === 'ok' && !(c.checks || []).length) { c.method = 'classic'; c.level = (c.facingConf || 0) >= 0.3 ? 'high' : 'medium'; c.conf.score = c.level === 'high' ? 0.9 : 0.6; if (c.level !== 'high') c.status = 'suggest'; return c; }
+    var A = root.OrthoPTSAuto, a = null;
+    try { a = A ? A.detect(img, { mmPerPx: o.mmPerPx }) : null; } catch (e) { a = null; }
+    if (a && a.status !== 'failed' && a.pts && a.pts.PA) {
+      a.method = 'auto'; a.classicReason = c.reason || null; a.version = VERSION + '+auto-1';
+      a.level = (a.conf && a.conf.score >= 0.55) ? 'medium' : 'low'; a.status = 'suggest'; // never 'high': always checked by the doctor
+      a.ms = Date.now() - t0; return a;
+    }
+    var T = c.candidate && c.candidate.PA && c.candidate.PP ? (function () { var t = template(img), dx = (c.candidate.PA.x + c.candidate.PP.x) / 2 - (t.PA.x + t.PP.x) / 2, dy = (c.candidate.PA.y + c.candidate.PP.y) / 2 - (t.PA.y + t.PP.y) / 2;
+      Object.keys(t).forEach(function (k) { t[k] = { x: t[k].x + dx, y: t[k].y + dy }; }); t.PA = c.candidate.PA; t.PP = c.candidate.PP; return t; })() : template(img);
+    return { version: VERSION, method: 'template', status: 'suggest', level: 'low', reason: c.reason || (a && a.reason) || 'noShaft', pts: T, conf: { score: 0.1 }, notes: ['template'], ms: Date.now() - t0 };
+  }
+
   // ================= synthetic lateral knee (tests + DEMO) =================
   /** o: { theta (PTS°), ppm (px/mm), rot (° tibial tilt in the image), facing 'left'|'right', condOff (mm), shaftMm, aboveMm, widthMm, noise, seed, lateral (bool) } */
   function synth(o) {
@@ -11866,7 +12226,7 @@ window.OrthoQRGen = qrcode; })();
       C1: toImg(-2 - 24, -28), C2: toImg(-2 - o.condOff - 23.5, -27), F1: toImg(fibX(60), 60), F2: toImg(fibX(170), 170) };
     return { W: W, H: H, data: out, truth: T, theta: o.theta, mmPerPx: 1 / o.ppm, opt: o };
   }
-  root.OrthoPTS = { measure: measure, detect: detect, synth: synth, slopeDeg: slopeDeg, calibration: calibration, normRange: normRange, normStatus: normStatus, NORMS: NORMS,
+  root.OrthoPTS = { measure: measure, detect: detect, detectClassic: detectClassic, synth: synth, slopeDeg: slopeDeg, calibration: calibration, normRange: normRange, normStatus: normStatus, NORMS: NORMS,
     POINTS: POINTS, REQ: REQ, METHODS: METHODS, LEVELS_MM: LEVELS_MM, PLATEAU_MM: PLATEAU_MM, VERSION: VERSION, _u: { otsu3: otsu3, ransacLine: ransacLine, angleBetween: angleBetween } };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -11894,6 +12254,7 @@ window.OrthoQRGen = qrcode; })();
       upload: 'Ανεβάστε Ακτινογραφία', change: '📁 Άλλη ακτινογραφία', demo: '🧪 DEMO (συνθετική)', fileTypes: 'Πλάγια ακτινογραφία γόνατος · PNG, JPEG ή DICOM · τουλάχιστον 15 εκ. κνήμης αν είναι δυνατό',
       noFilmT: 'Δεν έχει ανοιχτεί πλάγια ακτινογραφία', steps: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε πλάγια ακτινογραφία γόνατος (PNG, JPEG ή DICOM).', 'Τα σημεία προτείνονται αυτόματα – ελέγξτε τα, διορθώστε και επιβεβαιώστε.'],
       noPt: 'Χωρίς επιλεγμένο ασθενή η μέτρηση δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.',
+      lvl: 'Βεβαιότητα', lv_high: 'υψηλή', lv_medium: 'μέτρια', lv_low: 'χαμηλή', sugMed: '🤖 Προτεινόμενα σημεία – ελέγξτε τα και σύρετε όσα δεν είναι στη σωστή θέση, μετά επιβεβαιώστε.', sugLow: '🤖 Προτεινόμενα σημεία με χαμηλή βεβαιότητα – ελέγξτε προσεκτικά και σύρετε κάθε σημείο στη σωστή θέση (βήματα παρακάτω), μετά επιβεβαιώστε.', shortT: '⚠️ Μικρό ορατό τμήμα κνήμης (≈{mm} χιλ.) – ο άξονας υπολογίστηκε με το διαθέσιμο μήκος.',
       detecting: '🤖 Ανίχνευση σημείων…', cancel: '✕ Ακύρωση', autoOk: '🤖 Τα σημεία προτάθηκαν αυτόματα – ελέγξτε τα (σύρετε για διόρθωση) και επιβεβαιώστε.', autoPartial: '🤖 Βρέθηκαν μόνο μερικά σημεία· τοποθετήστε τα υπόλοιπα με το χέρι.',
       autoFail: 'Η αυτόματη ανίχνευση δεν βρήκε με ασφάλεια τα σημεία σε αυτή την ακτινογραφία ({r}). Τοποθετήστε τα με το χέρι, ακολουθώντας τα βήματα:',
       r_noShaft: 'δεν αναγνωρίστηκε η διάφυση της κνήμης', r_noJoint: 'δεν αναγνωρίστηκε η άρθρωση του γόνατος', r_noPlateau: 'δεν αναγνωρίστηκε το κνημιαίο plateau', r_noCortex: 'δεν αναγνωρίστηκαν οι φλοιοί της κνήμης', r_implausible: 'τα ευρήματα δεν ήταν ανατομικά συμβατά', r_error: 'σφάλμα στη συσκευή',
@@ -11934,6 +12295,7 @@ window.OrthoQRGen = qrcode; })();
       upload: 'Upload X-ray', change: '📁 Another X-ray', demo: '🧪 DEMO (synthetic)', fileTypes: 'Lateral knee X-ray · PNG, JPEG or DICOM · at least 15 cm of tibia if possible',
       noFilmT: 'No lateral X-ray open yet', steps: ['Select the patient (above, “Patient”).', 'Upload a lateral knee X-ray (PNG, JPEG or DICOM).', 'Points are proposed automatically – check, correct and confirm them.'],
       noPt: 'Without a selected patient the measurement is not saved; select a patient to keep it.',
+      lvl: 'Confidence', lv_high: 'high', lv_medium: 'medium', lv_low: 'low', sugMed: '🤖 Suggested points – check them, drag any that are off, then confirm.', sugLow: '🤖 Low-confidence suggested points – check carefully and drag each point into place (steps below), then confirm.', shortT: '⚠️ Short visible tibia (≈{mm} mm) – the axis uses the available length.',
       detecting: '🤖 Detecting points…', cancel: '✕ Cancel', autoOk: '🤖 Points proposed automatically – check them (drag to correct) and confirm.', autoPartial: '🤖 Only some points were found; place the rest by hand.',
       autoFail: 'Automatic detection could not find the points reliably on this film ({r}). Place them by hand, following the steps:',
       r_noShaft: 'tibial shaft not recognised', r_noJoint: 'knee joint not recognised', r_noPlateau: 'tibial plateau not recognised', r_noCortex: 'tibial cortices not recognised', r_implausible: 'findings not anatomically consistent', r_error: 'device error',
@@ -12037,7 +12399,11 @@ window.OrthoQRGen = qrcode; })();
   function stHtml() {
     if (ui.running) return '<div class="xdetrow" id="ptsStatus" role="status" aria-live="polite"><span class="xspin dark" aria-hidden="true"></span><span>' + esc(t('detecting')) + '</span><button type="button" class="small" id="ptsCancel">' + esc(t('cancel')) + '</button></div>';
     var d = ui.det, miss = missing(), h = '';
-    if (!miss.length) h = '<p class="xhok small" id="ptsStatus" role="status">' + esc(d && d.status === 'ok' && !ui.confirmed && MAN.every(function (k) { return ui.org[k] === 'auto'; }) ? t('autoOk') : t('allSet')) + '</p>';
+    var lvB = d && d.level ? ' <span class="ptslvl ptslvl-' + esc(d.level) + '" id="ptsLevel" data-level="' + esc(d.level) + '">' + esc(t('lvl')) + ': ' + esc(t('lv_' + d.level)) + '</span>' : '';
+    var shortB = d && d.short && d.shaftMm ? '<p class="xhwarn small" id="ptsShort">' + esc(t('shortT').replace('{mm}', String(Math.round(d.shaftMm / 10) * 10))) + '</p>' : '';
+    var untouched = d && !ui.confirmed && MAN.every(function (k) { return ui.org[k] === 'auto'; });
+    if (d && d.status === 'suggest' && untouched) return '<div class="xhwarn" id="ptsStatus" role="status" data-level="' + esc(d.level || 'low') + '" data-reason="' + esc(d.reason || '') + '"><p>' + esc(t(d.level === 'medium' ? 'sugMed' : 'sugLow')) + lvB + '</p>' + (d.level === 'low' ? '<ol class="ptsguide" id="ptsGuide">' + t('guide').map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ol>' : '') + '</div>' + shortB;
+    if (!miss.length) h = '<p class="xhok small" id="ptsStatus" role="status">' + esc(d && d.status === 'ok' && !ui.confirmed && MAN.every(function (k) { return ui.org[k] === 'auto'; }) ? t('autoOk') : t('allSet')) + (untouched ? lvB : '') + '</p>' + (untouched ? shortB : '');
     else if (d && d.status === 'failed') h = '<div class="xhwarn" id="ptsStatus" role="status" data-reason="' + esc(d.reason || '') + '"><p>' + esc(t('autoFail').replace('{r}', t('r_' + (d.reason || 'error')))) + '</p><ol class="ptsguide" id="ptsGuide">' + t('guide').map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ol></div>';
     else if (d && d.status === 'partial') h = '<p class="xhwarn" id="ptsStatus" role="status">' + esc(t('autoPartial')) + '</p>';
     else h = '<details class="ptsman" id="ptsStatus"><summary>' + esc(t('manualT')) + '</summary><ol class="ptsguide">' + t('guide').map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ol></details>';
@@ -12200,7 +12566,7 @@ window.OrthoQRGen = qrcode; })();
       pts: { v: 1, date: today(), by: { email: u.email, name: u.name }, method: 'paa', values: vals, norms: Object.keys(m.norms).reduce(function (o, k) { o[k] = { lo: m.norms[k].range.lo, hi: m.norms[k].range.hi, status: m.norms[k].status }; return o; }, {}),
         pts: JSON.parse(JSON.stringify(ui.pts)), org: JSON.parse(JSON.stringify(ui.org)), cal: { source: m.cal.source, mmPerPx: m.cal.mmPerPx, calMm: ui.calMm }, quality: m.quality.map(function (q) { return q.code; }),
         condyle: m.condyle ? { offsetMm: r2(m.condyle.offsetMm), ratio: r2(m.condyle.ratio), grade: m.condyle.grade } : null, levels: m.levels ? { l1Mm: r2(m.levels.l1Mm), l2Mm: r2(m.levels.l2Mm) } : null, shaftMm: r2(m.shaftMm), plateauMm: r2(m.plateauMm),
-        detector: ui.det ? { version: O.VERSION, status: ui.det.status, reason: ui.det.reason || null } : null, confirmed: ui.confirmed, synth: ui.demo ? ui.demo.opt : null, dicom: ui.dicom ? { spacing: ui.dicom.spacing || null } : null } };
+        detector: ui.det ? { version: ui.det.version || O.VERSION, status: ui.det.status, reason: ui.det.reason || null, method: ui.det.method || null, level: ui.det.level || null, conf: ui.det.conf && ui.det.conf.score != null ? Math.round(ui.det.conf.score * 100) / 100 : null } : null, confirmed: ui.confirmed, synth: ui.demo ? ui.demo.opt : null, dicom: ui.dicom ? { spacing: ui.dicom.spacing || null } : null } };
     if (old && old.filmPath && old.filmId === rec.filmId) rec.filmPath = old.filmPath;
     store.xrays = store.xrays.filter(function (x) { return x.id !== rec.id; }); store.xrays.push(rec); ui.recId = rec.id;
     A.persist(); if (A.audit) A.audit('pts-save', P + ' ' + ui.side + ' ' + ui.date + ' PTS=' + f1(m.values.paa));
