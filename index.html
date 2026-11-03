@@ -436,6 +436,11 @@ body.xc-print .xcreport{display:block;position:fixed;inset:0;z-index:100000;over
 .xtopcard label.btn:focus-visible{outline:3px solid #67e8f9}
 .xdetchip,.xdetchip .btn{white-space:nowrap}
 @media (max-width:600px){.xdetchip{font-size:.8rem;gap:8px;padding:7px 10px;bottom:10px}.xdetchip .btn{padding:2px 8px}}
+.xpastewrap{display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;vertical-align:top}
+.xpastewrap .xpastehint{font-size:.72rem;line-height:1.1}
+.xpastewrap .xpastemsg{color:#b45309;max-width:22rem}.xpastewrap .xpastemsg:empty{display:none}
+@media (pointer:coarse){.xpastewrap .xpastehint{display:none}}
+#tab-xray.xdropping{outline:3px dashed #0e7490;outline-offset:-6px;background:rgba(14,116,144,.06)}
 /* ===== Operative note (doctor dashboard) ===== */
 .opn .opnbtns{white-space:nowrap}
 .opnview,.opnedit{border:1px solid #cfdde2;border-radius:12px;padding:10px 12px;margin-top:8px;background:#fbfdfe}
@@ -10845,7 +10850,77 @@ window.OrthoQRGen = qrcode; })();
     return h + (cmp ? '</details>' : '') + '<p class="muted small">' + esc(lang() === 'el' ? 'Γωνίες από σημεία που τοποθέτησε ή επιβεβαίωσε ο ιατρός (αποθηκεύεται μόνο μια μικρή μικρογραφία στη συσκευή αυτή για τη σύγκριση). Μετά από αρθροπλαστική, τα mLDFA/MPTA αφορούν τα εμφυτεύματα· η ταξινόμηση CPAK έχει οριστεί για το φυσικό γόνατο.' : 'Angles from clinician-placed or clinician-confirmed landmarks (only a small thumbnail is kept on this device for the comparison). After arthroplasty, mLDFA/MPTA refer to the components; CPAK is defined for the native knee.') + '</p>';
   }
 
-  window.__xray = { filmBox: function () { return st.img ? filmBox(st.img) : null; }, tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
+  // ---------- paste (Ctrl/Cmd+V, 📋 button) and drag & drop: the image goes into the ACTIVE sub-tab through that sub-tab's own file input ----------
+  // (same pipeline as «Ανεβάστε Ακτινογραφία»: EXIF / downscale, worker detection, independent per-sub-tab film, training opt-in)
+  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
+  var PT = {
+    el: { btn: '📋 Επικόλληση', hint: 'Ctrl+V για επικόλληση από PACS', aria: 'Επικόλληση ακτινογραφίας από το πρόχειρο', no: 'Πατήστε Ctrl+V ή χρησιμοποιήστε το «Ανεβάστε Ακτινογραφία»', empty: 'Δεν βρέθηκε εικόνα στο πρόχειρο – αντιγράψτε πρώτα την ακτινογραφία (π.χ. από το PACS).', drop: 'Αφήστε την εικόνα εδώ', notImg: 'Το αρχείο δεν είναι εικόνα ακτινογραφίας (PNG, JPEG ή DICOM).' },
+    en: { btn: '📋 Paste', hint: 'Ctrl+V to paste from PACS', aria: 'Paste X-ray from the clipboard', no: 'Press Ctrl+V or use «Upload X-ray»', empty: 'No image on the clipboard – copy the X-ray first (e.g. from PACS).', drop: 'Drop the image here', notImg: 'The file is not an X-ray image (PNG, JPEG or DICOM).' } };
+  var pt = function (k) { return PT[lang()][k]; };
+  function xrayActive() { var r = $('tab-xray'); return !!(r && !r.classList.contains('hidden') && r.getClientRects().length); }
+  function pasteInput() { var id = PASTE_IN[st.sub] || 'xFile', i = $(id); return i && i.type === 'file' && !i.disabled ? i : null; }
+  function isImgFile(f) { return !!f && (/^image\//.test(f.type || '') || /\.(dcm|dicom|png|jpe?g)$/i.test(f.name || '') || f.type === 'application/dicom'); }
+  function setPasteMsg(s) { pasteMsg = { sub: st.sub, txt: s || '', at: Date.now() }; [].forEach.call(document.querySelectorAll('#tab-xray .xpastemsg'), function (m) { m.textContent = s || ''; }); }
+  /** Feed a File/Blob into the active sub-tab exactly as if it had been chosen in its «Ανεβάστε Ακτινογραφία» input. */
+  function feedFile(file, how) {
+    if (!xrayActive()) return false;
+    if (!isImgFile(file)) { setPasteMsg(pt('notImg')); return false; }
+    if (!(file instanceof File) || how === 'pasted') { var ext = ((file.type || 'image/png').split('/')[1] || 'png').replace('jpeg', 'jpg'); file = new File([file], (how || 'pasted') + '-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.' + ext, { type: file.type || 'image/png' }); }
+    var inp = pasteInput(); setPasteMsg('');
+    if (inp) { try { var dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files; inp.dispatchEvent(new Event('change', { bubbles: true })); return true; } catch (e) { /* fall through */ } }
+    if (st.sub === 'hto') { loadHtoFile(file); return true; }
+    if (st.sub === 'align') { loadFile(file); return true; }
+    return false;
+  }
+  function imageFromItems(items) { for (var i = 0; items && i < items.length; i++) { var it = items[i]; if (it.kind === 'file' && /^image\//.test(it.type)) { var f = it.getAsFile(); if (f) return f; } } return null; }
+  function typingTarget(t) { if (!t || !t.tagName) return false; var n = t.tagName.toLowerCase(); if (n === 'textarea' || t.isContentEditable) return true; if (n === 'input') return !/^(button|checkbox|radio|range|file|submit|reset|color|image)$/i.test(t.type || ''); return n === 'select'; }
+  document.addEventListener('paste', function (e) {
+    if (!xrayActive() || typingTarget(e.target) || typingTarget(document.activeElement)) return;
+    var cd = e.clipboardData, f = cd && (imageFromItems(cd.items) || (cd.files && [].filter.call(cd.files, function (x) { return /^image\//.test(x.type); })[0]));
+    if (!f) return; // text etc.: leave it alone
+    e.preventDefault(); feedFile(f, 'pasted');
+  });
+  function pasteClick() {
+    var no = function () { setPasteMsg(pt('no')); };
+    if (!navigator.clipboard || !navigator.clipboard.read) return no();
+    navigator.clipboard.read().then(function (items) {
+      var it = items.filter(function (x) { return x.types.some(function (y) { return /^image\//.test(y); }); })[0];
+      if (!it) return setPasteMsg(pt('empty'));
+      var ty = it.types.filter(function (y) { return /^image\//.test(y); })[0];
+      return it.getType(ty).then(function (b) { feedFile(b, 'pasted'); });
+    }).catch(no);
+  }
+  var dragDepth = 0;
+  var dropOn = function (on) { var r = $('tab-xray'); if (r) r.classList.toggle('xdropping', !!on); };
+  var hasFiles = function (e) { var t = e.dataTransfer && e.dataTransfer.types; return !!t && [].indexOf.call(t, 'Files') >= 0; };
+  var inXray = function (e) { var r = $('tab-xray'); return r && e.target && r.contains(e.target) && xrayActive(); };
+  document.addEventListener('dragenter', function (e) { if (!hasFiles(e) || !inXray(e)) return; e.preventDefault(); dragDepth++; dropOn(true); });
+  document.addEventListener('dragover', function (e) { if (!hasFiles(e) || !inXray(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; dropOn(true); });
+  document.addEventListener('dragleave', function (e) { if (!hasFiles(e) || !inXray(e)) return; dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) dropOn(false); });
+  document.addEventListener('drop', function (e) {
+    if (!hasFiles(e) || !inXray(e)) return; e.preventDefault(); dragDepth = 0; dropOn(false);
+    var fs = e.dataTransfer.files, f = fs && [].filter.call(fs, isImgFile)[0];
+    if (!f) { if (fs && fs.length) setPasteMsg(pt('notImg')); return; } feedFile(f, 'dropped');
+  });
+  /** 📋 button + desktop hint next to every «Ανεβάστε Ακτινογραφία» of the active sub-tab (the sub-tab UIs re-render freely; this re-attaches). */
+  function ensurePasteUi() {
+    var r = $('tab-xray'); if (!r) return;
+    var ids = ['xFile', 'htoFile', 'ptsFile'];
+    [].forEach.call(r.querySelectorAll(ids.map(function (i) { return 'label[for="' + i + '"]'; }).join(',')), function (lab) {
+      if (lab.nextElementSibling && lab.nextElementSibling.classList.contains('xpastewrap')) return;
+      var w = document.createElement('span'); w.className = 'xpastewrap';
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'xpaste' + (/\bsmall\b/.test(lab.className) ? ' small' : ''); b.dataset.pasteFor = lab.htmlFor; b.textContent = pt('btn'); b.setAttribute('aria-label', pt('aria'));
+      b.id = lab.id ? lab.id + 'Paste' : '';
+      b.onclick = function (e) { e.preventDefault(); pasteClick(); };
+      var h = document.createElement('small'); h.className = 'xpastehint muted'; h.textContent = pt('hint');
+      var m = document.createElement('span'); m.className = 'xpastemsg small'; m.setAttribute('role', 'status'); m.setAttribute('aria-live', 'polite');
+      if (pasteMsg.txt && pasteMsg.sub === st.sub && Date.now() - pasteMsg.at < 8000) m.textContent = pasteMsg.txt;
+      w.appendChild(b); w.appendChild(h); w.appendChild(m); lab.parentNode.insertBefore(w, lab.nextSibling);
+    });
+  }
+  (function () { var r = $('tab-xray'); if (!r || !window.MutationObserver) return; var q = false; new MutationObserver(function () { if (q) return; q = true; Promise.resolve().then(function () { q = false; ensurePasteUi(); }); }).observe(r, { childList: true, subtree: true }); ensurePasteUi(); })();
+
+  window.__xray = { feedFile: feedFile, pasteClick: pasteClick, filmBox: function () { return st.img ? filmBox(st.img) : null; }, tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
     activateTab: activateTab, newPostTab: newPostTab, getFilm: function (k) { return idbGet(k); }, selectPatient: selectPatient, idbIdle: function () { return Promise.all(idbPending); },
     clearFilms: function () { WS = {}; stored = {}; var s0 = newSlot('', 'pre', today()); loadSlot(s0); st.pid = ''; idbReq('readwrite', function (os) { return os.clear(); }).catch(function () {}); }, tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, workerOff: function () { XW.off(); }, workerOn: function () { return XW.ok(); }, ptsDetect: function (img, mm) { return XW.ok() ? XW.pts(img, mm) : null; }, loadHtoFile: loadHtoFile, htoUseAlign: htoUseAlign, htoOwnActive: htoOwnActive, htoOwn: function () { var w = WS[st.pid || '']; return w && w.hto ? { uid: w.hto.uid, active: w.activeUid === w.hto.uid, linked: !!w.htoLinked, img: !!(w.activeUid === w.hto.uid ? st.img : w.hto.img), alignImg: (function () { var a = alignUidOf(w), sl = a && findSlot(w, a); return !!(sl && (w.activeUid === sl.uid ? st.img : sl.img)); })() } : null; }, cancelAuto: function () { if (st.autoRun && st.autoRun.cancel) st.autoRun.cancel(); }, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
     fit: fit, centreOn: centreOn, moveLandmark: function (sd, k, p, final) { if (!st.lm[sd][k]) return; st.lm[sd][k] = p; if (AUTO[k]) st.auto[sd][k] = false; moved(sd, k); autoCentres(sd); if (final) { renderSide(); draw(); updAuto(); } }, removeLandmark: function (sd, k) { delete st.lm[sd][k]; delete st.origin[sd][k]; if (AUTO[k]) st.auto[sd][k] = false; changed(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile, decodeFile: decodeFile, putFilm: function (k, v) { return idbPut(k, v); }, saveSide: saveSide, setSub: setSub, openStudy: openStudy, msg: function (m) { msg(m); }, draw: function () { draw(); } };
