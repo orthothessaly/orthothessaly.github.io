@@ -9849,18 +9849,21 @@ window.OrthoQRGen = qrcode; })();
 (function (root) {
   'use strict';
   var KEYS = ['FH1', 'FH2', 'FH3', 'FC1', 'FC2', 'KF', 'TP1', 'TP2', 'KT', 'AN1', 'AN2'], MAXPX = 1024;
+  var WRIST_PA_KEYS = ['RS', 'RU', 'RA1', 'RA2'], WRIST_LAT_KEYS = ['VL', 'DL', 'LA1', 'LA2'];
   /** Crop box (image px) around one limb's landmarks: side margin 35 % of the box width (≥ 4 % of the film height), 4 % top/bottom. */
-  function cropFor(lm, W, H) {
-    var ks = KEYS.filter(function (k) { return lm && lm[k] && isFinite(lm[k].x) && isFinite(lm[k].y); }); if (ks.length < KEYS.length) return null;
+  function cropFor(lm, W, H, keys) {
+    keys = keys || KEYS;
+    var ks = keys.filter(function (k) { return lm && lm[k] && isFinite(lm[k].x) && isFinite(lm[k].y); }); if (ks.length < keys.length) return null;
     var xs = ks.map(function (k) { return lm[k].x; }), ys = ks.map(function (k) { return lm[k].y; });
     var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-    var mx = Math.max(0.35 * (x1 - x0), 0.04 * H), my = 0.04 * (y1 - y0) + 0.06 * Math.abs(lm.FH1.x - lm.FH2.x);
+    var spanX = (lm.FH1 && lm.FH2) ? Math.abs(lm.FH1.x - lm.FH2.x) : 0.15 * Math.max(8, x1 - x0);
+    var mx = Math.max(0.35 * (x1 - x0), 0.04 * H), my = 0.04 * (y1 - y0) + 0.06 * spanX;
     x0 = Math.max(0, Math.floor(x0 - mx)); x1 = Math.min(W, Math.ceil(x1 + mx)); y0 = Math.max(0, Math.floor(y0 - my)); y1 = Math.min(H, Math.ceil(y1 + my));
     var w = x1 - x0, h = y1 - y0; if (w < 8 || h < 8) return null; var s = Math.min(1, MAXPX / Math.max(w, h));
     return { x: x0, y: y0, w: w, h: h, scale: s, outW: Math.max(16, Math.round(w * s)), outH: Math.max(16, Math.round(h * s)) };
   }
   /** Landmarks in crop-image coordinates (rounded to 0.1 px). */
-  function toCrop(lm, box) { var o = {}; KEYS.forEach(function (k) { if (lm[k]) o[k] = { x: Math.round((lm[k].x - box.x) * box.scale * 10) / 10, y: Math.round((lm[k].y - box.y) * box.scale * 10) / 10 }; }); return o; }
+  function toCrop(lm, box, keys) { var o = {}; (keys || KEYS).forEach(function (k) { if (lm[k]) o[k] = { x: Math.round((lm[k].x - box.x) * box.scale * 10) / 10, y: Math.round((lm[k].y - box.y) * box.scale * 10) / 10 }; }); return o; }
   // SHA-256 (small, synchronous; crypto.subtle is unavailable on file:// and some in-app browsers)
   function sha256(bytes) {
     var K = [], H = [], i, j; var P = function (n) { for (var f = 2; f * f <= n; f++) if (n % f === 0) return false; return true; }, fr = function (x) { return ((x - Math.floor(x)) * 4294967296) | 0; };
@@ -9876,14 +9879,14 @@ window.OrthoQRGen = qrcode; })();
     }
     return H.map(function (v) { return ('00000000' + (v >>> 0).toString(16)).slice(-8); }).join('');
   }
-  var api = { KEYS: KEYS, cropFor: cropFor, toCrop: toCrop, sha256: sha256, count: null, last: null };
+  var api = { KEYS: KEYS, WRIST_PA_KEYS: WRIST_PA_KEYS, WRIST_LAT_KEYS: WRIST_LAT_KEYS, cropFor: cropFor, toCrop: toCrop, sha256: sha256, count: null, last: null };
   root.OrthoXrayTrain = api;
   if (typeof document === 'undefined') return;
 
   // ---------- browser side ----------
   var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
-  var S = { el: { cnt: '🧠 Ανώνυμες περιπτώσεις εκπαίδευσης αυτόματης ανίχνευσης: {n} (δικές σας: {m})', opt: 'Συμβολή ανώνυμα (απόκομμα σκέλους + επιβεβαιωμένα σημεία, χωρίς στοιχεία ασθενή)', sent: '🧠 Η περίπτωση προστέθηκε ανώνυμα στην εκπαίδευση.', fail: '🧠 Η ανώνυμη περίπτωση εκπαίδευσης δεν στάλθηκε: ' },
-    en: { cnt: '🧠 Anonymous training cases for automatic detection: {n} (yours: {m})', opt: 'Contribute anonymously (limb crop + confirmed points, no patient data)', sent: '🧠 Case added anonymously to the training set.', fail: '🧠 Anonymous training case not sent: ' } };
+  var S = { el: { cnt: '🧠 Ανώνυμες περιπτώσεις εκπαίδευσης αυτόματης ανίχνευσης: {n} (δικές σας: {m})', opt: 'Συμβολή ανώνυμα (απόκομμα ανατομίας + επιβεβαιωμένα σημεία, χωρίς στοιχεία ασθενή)', sent: '🧠 Η περίπτωση προστέθηκε ανώνυμα στην εκπαίδευση.', fail: '🧠 Η ανώνυμη περίπτωση εκπαίδευσης δεν στάλθηκε: ' },
+    en: { cnt: '🧠 Anonymous training cases for automatic detection: {n} (yours: {m})', opt: 'Contribute anonymously (anatomy crop + confirmed points, no patient details)', sent: '🧠 Case added anonymously to the training set.', fail: '🧠 Anonymous training case not sent: ' } };
   var t = function (k) { return S[lang()][k]; };
   var CL = function () { return root.OrthoCloud; }, P = function () { return root.__orthoProms; };
   function active() { var p = P(), c = CL(); return !!(p && p.cloud && p.cloud.mode === 'cloud' && c && c.user && c.user.id); }
@@ -9923,6 +9926,34 @@ window.OrthoQRGen = qrcode; })();
       function (e) { api.last = { error: String(e && (e.message || e.code) || e) }; if (root.console) console.warn('training case not stored', e); return api.last; });
   }
   api.contribute = contribute; api.html = html; api.refreshCount = refreshCount; api.active = active; api.setOpt = setOpt; api.filmHash = filmHash;
+  /** Store confirmed wrist landmarks of a REAL (non-DEMO) PA or lateral view. view-specific hash + R/L side; rows never collide with alignment or the other wrist view. */
+  function contributeWrist(view, kind, side, phase) {
+    kind = kind === 'wrist-lat' ? 'wrist-lat' : 'wrist-pa'; side = side === 'L' ? 'L' : 'R';
+    if (!active()) return Promise.resolve({ skipped: 'not-cloud' }); if (optedOut()) return Promise.resolve({ skipped: 'opt-out' });
+    if (!view || !view.img || view.demo) return Promise.resolve({ skipped: view && view.demo ? 'demo' : 'no-film' });
+    var req = kind === 'wrist-lat' ? WRIST_LAT_KEYS : WRIST_PA_KEYS;
+    var lm = JSON.parse(JSON.stringify(view.pts || {})), all = req.slice();
+    if (kind === 'wrist-pa' && lm.UH && isFinite(lm.UH.x) && isFinite(lm.UH.y)) all.push('UH');
+    var box = cropFor(lm, view.W || view.img.width, view.H || view.img.height, all);
+    if (!box) return Promise.resolve({ skipped: 'incomplete' });
+    var c = document.createElement('canvas'); c.width = box.outW; c.height = box.outH; var g = c.getContext('2d');
+    g.filter = 'grayscale(1)' + (view.invert ? ' invert(1)' : ''); g.imageSmoothingQuality = 'high';
+    g.drawImage(view.img, box.x, box.y, box.w, box.h, 0, 0, box.outW, box.outH);
+    // Domain-separated hash prevents alignment/PA/lateral collisions without changing the R/L schema or bucket path constraints.
+    var domain = kind + ':' + filmHash(view.img), bytes = new Uint8Array(domain.length); for (var i = 0; i < domain.length; i++) bytes[i] = domain.charCodeAt(i);
+    var hash = sha256(bytes), uid = CL().user.id, path = uid + '/' + hash + '-' + side + '.jpg', d = view.det || {};
+    var origin = {}; all.forEach(function (k) { origin[k] = (view.org || {})[k] || 'manual'; });
+    var detector = { kind: kind, version: d.version || null, status: d.status || null, level: d.level || null, method: d.method || null, view: d.view || (kind === 'wrist-lat' ? 'lat' : 'pa'), conf: d.conf || {}, ms: d.ms || null, notes: (d.notes || []).slice(0, 12) };
+    return new Promise(function (res) { c.toBlob(res, 'image/jpeg', 0.85); }).then(function (blob) {
+      if (!blob) throw new Error('jpeg');
+      return CL().req('POST', '/storage/v1/object/training/' + path, blob, { 'x-upsert': 'true', 'Content-Type': 'image/jpeg' });
+    }).then(function () {
+      var row = { film_hash: hash, side: side, landmarks: toCrop(lm, box, all), origin: origin, detector: detector, img_path: path, img_w: box.outW, img_h: box.outH, scale: box.scale, postop: phase === 'post' };
+      return CL().req('POST', '/rest/v1/training_cases?on_conflict=film_hash,side', row, { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    }).then(function () { api.last = { ok: true, path: path, hash: hash, side: side, kind: kind, box: box }; return refreshCount().then(function () { return api.last; }); },
+      function (e) { api.last = { error: String(e && (e.message || e.code) || e) }; if (root.console) console.warn('wrist training case not stored', e); return api.last; });
+  }
+  api.contributeWrist = contributeWrist;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== X-rays tab UI ===== -->
@@ -10433,7 +10464,7 @@ window.OrthoQRGen = qrcode; })();
       var O = self.OrthoWrist, PH = self.OrthoXrayPhoto, f = Math.min(1, 1400 / Math.max(m.W0, m.H0)), w = Math.max(1, Math.round(m.W0 * f)), h = Math.max(1, Math.round(m.H0 * f));
       var d = draw(m, w, h), g = new Uint8ClampedArray(w * h), i; for (i = 0; i < w * h; i++) g[i] = Math.round(0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2]);
       var gf = w / m.W0, mm = m.mmPerPx ? m.mmPerPx / gf : null, r = O.detect({ W: w, H: h, data: g }, { mmPerPx: mm, hint: m.hint || null }), dx = 0, dy = 0;
-      if ((r.level === 'low' || r.status === 'failed') && PH && PH.filmBox) {
+      if ((r.level === 'low' || r.status === 'failed') && !/^cortical-photo/.test(r.method || '') && PH && PH.filmBox) {
         var b = PH.filmBox(g, w, h);
         if (b && b.w > 50 && b.h > 50) { var sub = new Uint8ClampedArray(b.w * b.h); for (var y = 0; y < b.h; y++) for (var x = 0; x < b.w; x++) sub[y * b.w + x] = g[Math.min(h - 1, y + b.y) * w + Math.min(w - 1, x + b.x)];
           PH.normalize(sub, b.w, b.h); var r2 = O.detect({ W: b.w, H: b.h, data: sub }, { mmPerPx: mm, hint: m.hint || null }); if (r2.level !== 'low') { r = r2; dx = b.x; dy = b.y; r.photo = true; } }
@@ -12720,12 +12751,14 @@ window.OrthoQRGen = qrcode; })();
 <!-- ===== 🖐 Wrist / distal radius (PA + lateral measurements; classical detection; pure, tested in Node) + UI ===== -->
 <script id="ortho-xray-wrist">
 // Distal radius / wrist radiographic measurements (PA + lateral). Classical detection, no ML.
-// PA: radial height, radial inclination, ulnar variance (method of perpendiculars).
-// Lateral: volar (palmar) tilt of the distal radial articular surface.
+// PA: radial height / length = styloid tip to the level of the ulnar head along the shaft (diagram panel IV);
+//      radial inclination = RS–RU vs the perpendicular to the radial shaft (panel V);
+//      ulnar variance = UH vs RU along the shaft, method of perpendiculars (panel III).
+// Lateral: volar tilt of the distal radial articular surface vs the shaft (panel I); dorsal tilt is negative.
 // Points are ALWAYS suggested (high/medium/low confidence); the doctor checks and drags.
 (function (root) {
   'use strict';
-  var R2D = 180 / Math.PI, D2R = Math.PI / 180, VERSION = 'wrist-1';
+  var R2D = 180 / Math.PI, D2R = Math.PI / 180, VERSION = 'wrist-3';
   var sub = function (a, b) { return { x: a.x - b.x, y: a.y - b.y }; }, add = function (a, b) { return { x: a.x + b.x, y: a.y + b.y }; };
   var mul = function (a, k) { return { x: a.x * k, y: a.y * k }; }, dot = function (a, b) { return a.x * b.x + a.y * b.y; };
   var len = function (a) { return Math.hypot(a.x, a.y); }, unit = function (a) { var l = len(a) || 1; return { x: a.x / l, y: a.y / l }; };
@@ -12766,7 +12799,7 @@ window.OrthoQRGen = qrcode; })();
     return { mmPerPx: null, source: 'none' };
   }
 
-  /** PA: radial height (mm), radial inclination (°), ulnar variance (mm, method of perpendiculars). */
+  /** PA: radial inclination (°; RS–RU vs perpendicular to shaft), radial height (mm; styloid to ulnar-head level), ulnar variance (mm; UH vs RU). */
   function measurePA(pts, o) {
     pts = pts || {}; o = o || {};
     var missing = PA_REQ.filter(function (k) { return !okP(pts[k]); });
@@ -12777,9 +12810,14 @@ window.OrthoQRGen = qrcode; })();
     if (!u) { out.reason = 'geometry'; return out; }
     out.axis = u; out.M1 = pts.RA1; out.M2 = pts.RA2;
     var v = sub(pts.RS, pts.RU), along = dot(v, u), across = Math.abs(dot(v, perp(u)));
-    out.values.radialHeightPx = along;
+    out.values.radialHeightPx = along; // RS vs RU along the shaft (inclination geometry; styloid must sit distal of RU)
     out.values.radialInclination = across > 1e-9 ? Math.atan2(Math.abs(along), across) * R2D : null;
-    if (mm) out.values.radialHeight = along * mm;
+    // Panel IV: radial length / κερκιδικό ύψος = styloid tip to the level of the ulnar head (line h), along the shaft — not RS–RU alone.
+    if (okP(pts.UH)) {
+      var rhAlong = dot(sub(pts.RS, pts.UH), u);
+      out.values.radialLengthPx = rhAlong;
+      if (mm) out.values.radialHeight = rhAlong * mm;
+    }
     out.articularMm = mm ? len(v) * mm : null;
     out.shaftMm = mm ? Math.abs(dot(sub(mid(pts.RA1, pts.RA2), toward), u)) * 2 * mm : null; // rough visible-shaft proxy
     var p1d = dot(sub(pts.RA1, toward), u), p2d = dot(sub(pts.RA2, toward), u);
@@ -12800,7 +12838,7 @@ window.OrthoQRGen = qrcode; })();
     return out;
   }
 
-  /** Lateral: volar tilt (°, positive = palmar). */
+  /** Lateral: volar tilt (°, positive = palmar: the dorsal rim projects more distally than the volar rim, diagram panel I); dorsal tilt is negative. */
   function measureLat(pts, o) {
     pts = pts || {}; o = o || {};
     var missing = LAT_REQ.filter(function (k) { return !okP(pts[k]); });
@@ -12810,7 +12848,7 @@ window.OrthoQRGen = qrcode; })();
     var mm = out.cal.mmPerPx, toward = mid(pts.VL, pts.DL), u = distalUnit(pts.LA1, pts.LA2, toward);
     if (!u) { out.reason = 'geometry'; return out; }
     out.axis = u;
-    var v = sub(pts.VL, pts.DL), along = dot(v, u), across = Math.abs(dot(v, perp(u)));
+    var v = sub(pts.DL, pts.VL), along = dot(v, u), across = Math.abs(dot(v, perp(u)));
     out.values.volarTilt = across > 1e-9 ? Math.atan2(along, across) * R2D : null;
     out.apMm = mm ? len(v) * mm : null;
     out.ok = out.values.volarTilt != null;
@@ -12967,14 +13005,14 @@ window.OrthoQRGen = qrcode; })();
     var ox = W / 2, oy = o.shaftMm * o.ppm;
     var toImg = function (x, y) { var X1 = fx * x * o.ppm, Y1 = y * o.ppm; return { x: ox + X1 * cr - Y1 * sr, y: oy + X1 * sr + Y1 * cr }; };
     var toLoc = function (px, py) { var X1 = px - ox, Y1 = py - oy, x = (X1 * cr + Y1 * sr), y = (-X1 * sr + Y1 * cr); return { x: fx * x / o.ppm, y: y / o.ppm }; };
-    var DL = { x: -ap / 2, y: 0 }, VL = { x: ap / 2, y: along };
+    var DL = { x: -ap / 2, y: along }, VL = { x: ap / 2, y: 0 }, top = Math.max(0, along);
     var LA1 = { x: 0, y: -70 }, LA2 = { x: 0, y: -28 };
     var half = function (y) { return y < -16 ? 8.2 : 8.2 + Math.max(0, y + 16) * 0.4; };
     for (var py = 0; py < H; py++) for (var px = 0; px < W; px++) {
       var L = toLoc(px, py), x = L.x, y = L.y, v = 20;
       if (x > -36 && x < 38 && y > -95 && y < 55) v = 70 + 4 * Math.sin(y / 28);
       var inB = false, dE = 0;
-      if (y >= -92 && y <= along + 2) {
+      if (y >= -92 && y <= top + 2) {
         if (y <= 0) { var h0 = half(y); if (Math.abs(x) <= h0) { inB = true; dE = h0 - Math.abs(x); } }
         else {
           var t = (x - DL.x) / (VL.x - DL.x), yArt = DL.y + t * (VL.y - DL.y);
@@ -12991,11 +13029,11 @@ window.OrthoQRGen = qrcode; })();
       // faint ulna superimposed slightly dorsal
       if (y > -80 && y < 8 && Math.abs(x + 6) < 4.2) v = Math.max(v, Math.abs(x + 6) < 1.2 ? v : 155);
       // pisiform (volar) + lunate / capitate stack
-      if (Math.hypot((x - 17) / 4.2, (y - (along + 11)) / 3.6) <= 1) v = Math.max(v, 210);
-      [{ cx: 1, cy: along + 16, rx: 8, ry: 6.5 }, { cx: 1, cy: along + 30, rx: 7, ry: 8 }].forEach(function (c) {
+      if (Math.hypot((x - 17) / 4.2, (y - (top + 11)) / 3.6) <= 1) v = Math.max(v, 210);
+      [{ cx: 1, cy: top + 16, rx: 8, ry: 6.5 }, { cx: 1, cy: top + 30, rx: 7, ry: 8 }].forEach(function (c) {
         var e = ((x - c.cx) / c.rx) * ((x - c.cx) / c.rx) + ((y - c.cy) / c.ry) * ((y - c.cy) / c.ry); if (e <= 1) v = Math.max(v, e > 0.75 ? 218 : 158);
       });
-      if (y > along + 34 && y < along + 55 && Math.abs(x - 1) < 5) v = Math.max(v, Math.abs(x - 1) < 1.4 ? 150 : 200);
+      if (y > top + 34 && y < top + 55 && Math.abs(x - 1) < 5) v = Math.max(v, Math.abs(x - 1) < 1.4 ? 150 : 200);
       v = v * o.contrast + (rnd() + rnd() + rnd() - 1.5) * o.noise * 1.4;
       out[py * W + px] = v < 0 ? 0 : v > 255 ? 255 : v;
     }
@@ -13019,12 +13057,123 @@ window.OrthoQRGen = qrcode; })();
       UH: { x: cx - 0.16 * s, y: H * 0.64 }, RA1: { x: cx + 0.02 * s, y: H * 0.28 }, RA2: { x: cx + 0.02 * s, y: H * 0.46 }
     };
   }
-  function boneMask(g, W, H) {
+  function boneMaskSimple(g, W, H) {
     var lo = pct(g, 0.50), hi = pct(g, 0.90), thr = Math.max(115, Math.min(170, 0.45 * lo + 0.55 * hi));
     var m = new Uint8Array(W * H);
     for (var i = 0; i < g.length; i++) m[i] = g[i] > thr ? 1 : 0;
     return m;
   }
+  function boneMaskLocal(g, W, H) {
+    var lo = pct(g, 0.50), hi = pct(g, 0.90), thr = Math.max(115, Math.min(170, 0.45 * lo + 0.55 * hi));
+    var rad = Math.max(5, Math.round(0.028 * Math.min(W, H))), bg = blur(g, W, H, rad);
+    var locCut = Math.max(7, 0.16 * Math.max(12, hi - lo));
+    var m = new Uint8Array(W * H);
+    for (var i = 0; i < g.length; i++) {
+      var loc = g[i] - bg[i];
+      m[i] = (g[i] > thr || loc > locCut) && g[i] > 62 ? 1 : 0;
+    }
+    return m;
+  }
+  function boneMask(g, W, H) {
+    var simple = boneMaskSimple(g, W, H), n = 0, i;
+    for (i = 0; i < simple.length; i++) if (simple[i]) n++;
+    if (n / simple.length > 0.40) return boneMaskLocal(g, W, H);
+    return simple;
+  }
+  function cropBorder(g, W, H) {
+    var thr = Math.max(16, pct(g, 0.10)), minX = W, maxX = 0, minY = H, maxY = 0, n = 0, x, y;
+    for (y = 0; y < H; y += 2) for (x = 0; x < W; x += 2) {
+      if (g[y * W + x] > thr) { n++; if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+    }
+    if (n < 30) return null;
+    var pad = Math.max(2, Math.round(0.012 * Math.min(W, H)));
+    minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+    maxX = Math.min(W - 1, maxX + pad); maxY = Math.min(H - 1, maxY + pad);
+    var w = maxX - minX + 1, h = maxY - minY + 1;
+    if (w > 0.93 * W && h > 0.93 * H) return null;
+    if (w * h < 0.18 * W * H) return null;
+    var o = new Float32Array(w * h);
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) o[y * w + x] = g[(y + minY) * W + (x + minX)];
+    return { g: o, W: w, H: h, x: minX, y: minY };
+  }
+  function filmFlags(g, W, H) {
+    var p40 = pct(g, 0.40), p70 = pct(g, 0.70), p95 = pct(g, 0.95), p995 = pct(g, 0.995);
+    var mid = 0, bright = 0, filled = 0, n = 0, i, x, y, dx, dy, c;
+    for (i = 0; i < g.length; i += 2) {
+      n++;
+      if (g[i] > p40) mid++;
+      if (g[i] > p70) bright++;
+      if (g[i] > 228) {
+        x = i % W; y = (i / W) | 0;
+        if (x > 2 && y > 2 && x < W - 3 && y < H - 3) {
+          c = 0;
+          for (dy = -2; dy <= 2; dy++) for (dx = -2; dx <= 2; dx++) if (g[(y + dy) * W + (x + dx)] > 218) c++;
+          if (c > 16) filled++;
+        }
+      }
+    }
+    var cast = (mid / n > 0.40) && (bright / Math.max(1, mid) < 0.58) && p40 > 72 && (p70 - p40) < 58;
+    var hardware = filled > 100 && p995 > 248 && (p995 - p95) > 26;
+    var notes = [];
+    if (cast) notes.push('cast');
+    if (hardware) notes.push('hardware');
+    return { notes: notes, cast: !!cast, hardware: !!hardware };
+  }
+  function rowRuns(m, W, H, y, minW) {
+    var runs = [], x = 0;
+    while (x < W) {
+      while (x < W && !m[y * W + x]) x++;
+      if (x >= W) break;
+      var a = x;
+      while (x < W && m[y * W + x]) x++;
+      if (x - a >= (minW || 2)) runs.push({ a: a, b: x - 1, c: (a + x - 1) / 2 });
+    }
+    return runs;
+  }
+  function longestPred(n, pred) {
+    var best = null, y0 = null, y;
+    for (y = 0; y <= n; y++) {
+      if (y < n && pred(y)) { if (y0 == null) y0 = y; }
+      else if (y0 != null) {
+        var run = { y0: y0, y1: y - 1, len: y - y0 };
+        if (!best || run.len > best.len) best = run;
+        y0 = null;
+      }
+    }
+    return best;
+  }
+  function findForearm(m, W, H) {
+    var minW = Math.max(2, Math.round(0.008 * W)), counts = new Int16Array(H), c1 = new Float32Array(H), c2 = new Float32Array(H), y;
+    for (y = 0; y < H; y++) {
+      var rs = rowRuns(m, W, H, y, minW);
+      counts[y] = rs.length;
+      if (rs.length >= 1) c1[y] = rs[0].c;
+      if (rs.length >= 2) c2[y] = rs[1].c;
+    }
+    var sm = new Float32Array(H), k, s, nn, yy;
+    for (y = 0; y < H; y++) {
+      s = 0; nn = 0;
+      for (k = -5; k <= 5; k++) { yy = y + k; if (yy >= 0 && yy < H) { s += counts[yy]; nn++; } }
+      sm[y] = s / nn;
+    }
+    var two = longestPred(H, function (i) { return sm[i] > 1.55 && sm[i] < 2.65; });
+    var one = longestPred(H, function (i) { return sm[i] > 0.55 && sm[i] < 1.55; });
+    var twoRaw = longestPred(H, function (i) { return counts[i] === 2; });
+    var oneRaw = longestPred(H, function (i) { return counts[i] === 1; });
+    if (twoRaw && (!two || twoRaw.len > two.len)) two = twoRaw;
+    if (oneRaw && (!one || oneRaw.len > one.len)) one = oneRaw;
+    function centers(run) {
+      if (!run) return null;
+      var xs1 = [], xs2 = [];
+      for (y = run.y0; y <= run.y1; y++) {
+        if (counts[y] >= 1 && c1[y]) xs1.push(c1[y]);
+        if (counts[y] >= 2 && c2[y]) xs2.push(c2[y]);
+      }
+      return { left: xs1.length ? median(xs1) : null, right: xs2.length ? median(xs2) : null, n2: xs2.length, n1: xs1.length };
+    }
+    return { two: two, one: one, counts: counts, centers2: centers(two), centers1: centers(one), twoShafts: !!(two && two.len >= 0.12 * H && (!one || two.len >= 0.75 * one.len)) };
+  }
+
   function seedOnBone(m, W, H, x, y, rad) {
     x = Math.round(x); y = Math.round(y);
     if (x >= 0 && y >= 0 && x < W && y < H && m[y * W + x]) return { x: x, y: y };
@@ -13126,10 +13275,22 @@ window.OrthoQRGen = qrcode; })();
     }
     return best;
   }
+  function handComplexity(m, W, H, x0, x1, ya, yb) {
+    ya = Math.max(0, ya | 0); yb = Math.min(H, yb | 0);
+    x0 = Math.max(0, x0 | 0); x1 = Math.min(W, x1 | 0);
+    if (yb <= ya || x1 <= x0) return 0;
+    var pix = 0, peaksN = 0, prof = colProfile(m, W, H, ya, yb), p = smooth1(prof, 4), mx = 0, i, y, x;
+    for (i = x0; i < x1 && i < p.length; i++) if (p[i] > mx) mx = p[i];
+    if (mx > 2) {
+      for (i = Math.max(x0 + 2, 2); i < Math.min(x1 - 2, p.length - 2); i++) if (p[i] >= p[i - 1] && p[i] > p[i + 1] && p[i] > 0.28 * mx) peaksN++;
+    }
+    for (y = ya; y < yb; y++) for (x = x0; x < x1; x++) if (m[y * W + x]) pix++;
+    return pix * (1 + 0.7 * peaksN);
+  }
   function moreHandDown(m, W, H, x0, x1, y0, y1) {
-    var below = 0, above = 0, x, y;
-    for (y = y1 + 1; y < Math.min(H, y1 + Math.round(0.16 * H) + 2); y++) for (x = Math.max(0, x0 - 16); x < Math.min(W, x1 + 16); x++) if (m[y * W + x]) below++;
-    for (y = Math.max(0, y0 - Math.round(0.16 * H)); y < y0; y++) for (x = Math.max(0, x0 - 16); x < Math.min(W, x1 + 16); x++) if (m[y * W + x]) above++;
+    var span = Math.max(8, Math.round(0.16 * H));
+    var below = handComplexity(m, W, H, x0 - 18, x1 + 18, y1 + 1, Math.min(H, y1 + span + 2));
+    var above = handComplexity(m, W, H, x0 - 18, x1 + 18, Math.max(0, y0 - span), y0);
     return below >= above;
   }
   function shaftRun(m, W, H, cx, half) {
@@ -13175,16 +13336,24 @@ window.OrthoQRGen = qrcode; })();
     }
     return last;
   }
-  function detectPA(g, W, H) {
-    var m = boneMask(g, W, H);
-    var prof = smooth1(colProfile(m, W, H, Math.round(0.20 * H), Math.round(0.62 * H)), 8);
-    var pk = peaks(prof, Math.max(14, Math.round(0.14 * W)));
-    if (pk.length < 2) return { fail: 'noShafts' };
-    pk = pk.slice(0, 2).sort(function (a, b) { return a.x - b.x; });
-    var sep = pk[1].x - pk[0].x;
-    if (sep < 0.06 * W) return { fail: 'noShafts' };
-    var half = Math.max(8, sep * 0.55);
-    var left = { cx: pk[0].x, w: half }, right = { cx: pk[1].x, w: half };
+  function detectPA(g, W, H, m0, arm0) {
+    var m = m0 || boneMask(g, W, H);
+    var arm = arm0 || findForearm(m, W, H);
+    var left, right, half, sep;
+    if (arm.two && arm.two.len >= 0.10 * H && arm.centers2 && arm.centers2.left != null && arm.centers2.right != null && Math.abs(arm.centers2.right - arm.centers2.left) >= 0.05 * W) {
+      var cxL = Math.min(arm.centers2.left, arm.centers2.right), cxR = Math.max(arm.centers2.left, arm.centers2.right);
+      sep = cxR - cxL; half = Math.max(8, sep * 0.55);
+      left = { cx: cxL, w: half }; right = { cx: cxR, w: half };
+    } else {
+      var prof = smooth1(colProfile(m, W, H, Math.round(0.16 * H), Math.round(0.86 * H)), 8);
+      var pk = peaks(prof, Math.max(14, Math.round(0.12 * W)));
+      if (pk.length < 2) return { fail: 'noShafts' };
+      pk = pk.slice(0, 2).sort(function (a, b) { return a.x - b.x; });
+      sep = pk[1].x - pk[0].x;
+      if (sep < 0.06 * W) return { fail: 'noShafts' };
+      half = Math.max(8, sep * 0.55);
+      left = { cx: pk[0].x, w: half }; right = { cx: pk[1].x, w: half };
+    }
     var rL = shaftRun(m, W, H, left.cx, left.w), rR = shaftRun(m, W, H, right.cx, right.w);
     if (!rL || !rR) return { fail: 'noShafts' };
     var seed = function (s, run) { return midAt(m, W, H, s.cx - s.w, s.cx + s.w, (run.y0 + run.y1) / 2); };
@@ -13197,7 +13366,6 @@ window.OrthoQRGen = qrcode; })();
     var downGuess = moreHandDown(m, W, H, left.cx - half, right.cx + half, Math.min(rL.y0, rR.y0), Math.max(rL.y1, rR.y1));
     var extL = downGuess ? fL.maxY : -fL.minY, extR = downGuess ? fR.maxY : -fR.minY;
     var wL = fL.maxX - fL.minX, wR = fR.maxX - fR.minX;
-    // radius = more distal projection (styloid) and/or wider component
     var radRight = (extR + 0.35 * wR) >= (extL + 0.35 * wL);
     var rad = radRight ? right : left, uln = radRight ? left : right;
     var fRad = radRight ? fR : fL, fUln = radRight ? fL : fR;
@@ -13205,9 +13373,10 @@ window.OrthoQRGen = qrcode; })();
     var radialSign = rad.cx >= uln.cx ? 1 : -1;
     var down = downGuess;
     var yJoint = down ? rRun.y1 : rRun.y0, yProx = down ? rRun.y0 : rRun.y1;
-    var yPad0 = Math.round(0.08 * H), yPad1 = Math.round(0.04 * H);
+    var yPad0 = Math.round(0.10 * H), yPad1 = Math.round(0.04 * H);
     var yLo = down ? yJoint - yPad1 : yJoint - yPad0, yHi = down ? yJoint + yPad0 : yJoint + yPad1;
     var sil = distalSilhouette(fRad.m, W, H, fRad.minX, fRad.maxX, yLo, yHi, down);
+    if (sil.length < 6) sil = distalSilhouette(m, W, H, Math.max(1, fRad.minX - 6), Math.min(W - 2, fRad.maxX + 6), yLo, yHi, down);
     if (sil.length < 6) return { fail: 'noJoint' };
     var rs = sil[0];
     sil.forEach(function (p) {
@@ -13220,14 +13389,14 @@ window.OrthoQRGen = qrcode; })();
     if (near.length < 3) near = sil;
     var ru = near[0];
     near.forEach(function (p) { if (radialSign * p.x < radialSign * ru.x) ru = p; });
-    // follow the bright subchondral line from the styloid toward the ulna
     var walkU = unit({ x: -radialSign, y: down ? -0.42 : 0.42 });
     var ruW = walkBright(g, W, H, rs, walkU.x, walkU.y, Math.round(0.28 * W));
     if (ruW && Math.abs(ruW.x - rs.x) > 8) ru = ruW;
     var uyJ = down ? uRun.y1 : uRun.y0;
-    var uyLo = down ? uyJ - Math.round(0.03 * H) : uyJ - Math.round(0.08 * H);
-    var uyHi = down ? uyJ + Math.round(0.08 * H) : uyJ + Math.round(0.03 * H);
+    var uyLo = down ? uyJ - Math.round(0.03 * H) : uyJ - Math.round(0.10 * H);
+    var uyHi = down ? uyJ + Math.round(0.10 * H) : uyJ + Math.round(0.03 * H);
     var uSil = distalSilhouette(fUln.m, W, H, fUln.minX, fUln.maxX, uyLo, uyHi, down);
+    if (uSil.length < 4) uSil = distalSilhouette(m, W, H, Math.max(1, fUln.minX - 4), Math.min(W - 2, fUln.maxX + 4), uyLo, uyHi, down);
     var uh = null;
     if (uSil.length) {
       var uMin = fUln.minX, uMax = fUln.maxX;
@@ -13235,22 +13404,31 @@ window.OrthoQRGen = qrcode; })();
       var cutR = uMax - (radialSign > 0 ? 0.32 : 0.12) * (uMax - uMin);
       var core = uSil.filter(function (p) { return p.x >= cutL && p.x <= cutR; });
       if (!core.length) core = uSil;
-      uh = core[0]; core.forEach(function (p) { if (down ? p.y > uh.y : p.y < uh.y) uh = p; });
+      var headY = median(core.map(function (p) { return p.y; })); uh = core.reduce(function (best, p) { return Math.abs(p.y-headY)<Math.abs(best.y-headY)?p:best; }, core[0]);
     }
     var y1 = yProx + 0.30 * (yJoint - yProx), y2 = yProx + 0.62 * (yJoint - yProx);
     var a1 = midAt(fRad.m, W, H, rad.cx - rad.w, rad.cx + rad.w, y1);
     var a2 = midAt(fRad.m, W, H, rad.cx - rad.w, rad.cx + rad.w, y2);
+    if (!a1) a1 = midAt(m, W, H, rad.cx - rad.w, rad.cx + rad.w, y1);
+    if (!a2) a2 = midAt(m, W, H, rad.cx - rad.w, rad.cx + rad.w, y2);
     if (!a1 || !a2) return { fail: 'noShafts', pts: { RS: rs, RU: ru, UH: uh } };
-    return { pts: { RS: { x: rs.x, y: rs.y }, RU: { x: ru.x, y: ru.y }, UH: uh ? { x: uh.x, y: uh.y } : null, RA1: { x: a1.x, y: a1.y }, RA2: { x: a2.x, y: a2.y } }, short: Math.abs(yJoint - yProx) < 0.26 * H, radialSign: radialSign, down: down };
+    return { pts: { RS: { x: rs.x, y: rs.y }, RU: { x: ru.x, y: ru.y }, UH: uh ? { x: uh.x, y: uh.y } : null, RA1: { x: a1.x, y: a1.y }, RA2: { x: a2.x, y: a2.y } }, short: Math.abs(yJoint - yProx) < 0.26 * H, radialSign: radialSign, down: down, twoShafts: true, W: W, H: H };
   }
 
-  function detectLat(g, W, H) {
-    var m = boneMask(g, W, H);
-    var prof = smooth1(colProfile(m, W, H, Math.round(0.20 * H), Math.round(0.62 * H)), 8);
-    var pk = peaks(prof, Math.max(14, Math.round(0.16 * W)));
-    if (!pk.length) return { fail: 'noShafts' };
-    var sh = pk[0], wEst = Math.max(10, Math.round(0.10 * W));
-    var run = shaftRun(m, W, H, sh.x, wEst);
+  function detectLat(g, W, H, m0, arm0) {
+    var m = m0 || boneMask(g, W, H);
+    var arm = arm0 || findForearm(m, W, H);
+    var sh, wEst, run;
+    if (arm.one && arm.one.len >= 0.10 * H && arm.centers1 && arm.centers1.left != null) {
+      sh = { x: arm.centers1.left };
+    } else {
+      var prof = smooth1(colProfile(m, W, H, Math.round(0.16 * H), Math.round(0.86 * H)), 8);
+      var pk = peaks(prof, Math.max(14, Math.round(0.16 * W)));
+      if (!pk.length) return { fail: 'noShafts' };
+      sh = pk[0];
+    }
+    wEst = Math.max(10, Math.round(0.10 * W));
+    run = shaftRun(m, W, H, sh.x, wEst);
     if (!run) return { fail: 'noShafts' };
     var midS = midAt(m, W, H, sh.x - wEst, sh.x + wEst, (run.y0 + run.y1) / 2);
     if (!midS) return { fail: 'noShafts' };
@@ -13259,60 +13437,104 @@ window.OrthoQRGen = qrcode; })();
     if (!fl) return { fail: 'noShafts' };
     var down = moreHandDown(fl.m, W, H, fl.minX, fl.maxX, fl.minY, fl.maxY);
     var yJoint = down ? run.y1 : run.y0, yProx = down ? run.y0 : run.y1;
-    var yPad = Math.round(0.035 * H);
-    var yLo = yJoint - yPad, yHi = yJoint + yPad;
-    var sil = distalSilhouette(fl.m, W, H, fl.minX, fl.maxX, yLo, yHi, down);
+    var yPadOut = Math.round(0.05 * H), yPadIn = Math.round(0.035 * H);
+    var yLo = down ? yJoint - yPadIn : yJoint - yPadOut, yHi = down ? yJoint + yPadOut : yJoint + yPadIn;
+    var x0s = Math.max(1, (fl.minX | 0) - Math.round(0.08 * W)), x1s = Math.min(W - 2, (fl.maxX | 0) + Math.round(0.08 * W));
+    var silFlood = distalSilhouette(fl.m, W, H, fl.minX, fl.maxX, yLo, yHi, down);
+    var silAll = distalSilhouette(m, W, H, x0s, x1s, yLo, yHi, down);
+    var sil = silFlood.length >= 8 ? silFlood : silAll;
     if (sil.length < 8) return { fail: 'noJoint' };
     var ys = sil.map(function (p) { return p.y; }).sort(function (a, b) { return a - b; });
-    var yMed = ys[Math.floor(ys.length / 2)], band = Math.max(5, 0.035 * H);
+    var yMed = ys[Math.floor(ys.length / 2)], band = Math.max(5, 0.04 * H);
     var bandPts = sil.filter(function (p) { return Math.abs(p.y - yMed) <= band; });
     if (bandPts.length < 6) bandPts = sil;
     var left = bandPts[0], right = bandPts[0];
     bandPts.forEach(function (p) { if (p.x < left.x) left = p; if (p.x > right.x) right = p; });
     var yTip = down ? Math.max(left.y, right.y) : Math.min(left.y, right.y);
     var countSide = function (sign) {
-      var c = 0, x, y, xa = sh.x + sign * 6, xb = sh.x + sign * Math.round(0.22 * W);
-      var x0 = Math.min(xa, xb), x1 = Math.max(xa, xb);
-      var ya = down ? yTip : Math.max(0, yTip - Math.round(0.16 * H));
-      var yb = down ? Math.min(H, yTip + Math.round(0.16 * H)) : yTip;
-      for (y = ya; y < yb; y++) for (x = Math.max(0, x0); x < Math.min(W, x1); x++) if (m[y * W + x]) c++;
+      var c = 0, x, y, xa = sh.x + sign * 2, xb = sh.x + sign * Math.round(0.36 * W);
+      var x0 = Math.max(0, Math.round(Math.min(xa, xb))), x1 = Math.min(W, Math.round(Math.max(xa, xb)));
+      var ya = down ? Math.round(yTip) : Math.max(0, Math.round(yTip - 0.18 * H));
+      var yb = down ? Math.min(H, Math.round(yTip + 0.18 * H)) : Math.round(yTip);
+      for (y = ya; y < yb; y++) for (x = x0; x < x1; x++) if (m[y * W + x]) c++;
+      if (c === 0) {
+        for (y = ya; y < yb; y++) for (x = x0; x < x1; x++) if (g[y * W + x] > 150) c++;
+      }
       return c;
     };
     var volarRight = countSide(1) >= countSide(-1);
     var VL = volarRight ? right : left, DL = volarRight ? left : right;
-    var wDir = unit({ x: volarRight ? -1 : 1, y: down ? -0.22 : 0.22 });
+    var wDir = unit({ x: volarRight ? -1 : 1, y: down ? 0.22 : -0.22 }); // dorsal rim projects distally (normal volar tilt)
     var dlW = walkBright(g, W, H, VL, wDir.x, wDir.y, Math.round(0.32 * W));
-    if (dlW && Math.hypot(dlW.x - VL.x, dlW.y - VL.y) > 10) DL = dlW;
+    if (dlW && Math.hypot(dlW.x - VL.x, dlW.y - VL.y) > 10) {
+      var cfW = chordFrac(VL, dlW, W, H);
+      if (cfW >= 0.02 && cfW <= 0.38) DL = dlW;
+    }
+    // Snap the dorsal rim onto the distal silhouette of the radius at that column (the dorsal lip is the distal-most point there).
+    var snap = null; sil.forEach(function (p) { if (Math.abs(p.x - DL.x) <= 2 && Math.abs(p.y - DL.y) <= 0.08 * H && (!snap || (down ? p.y > snap.y : p.y < snap.y))) snap = p; });
+    if (snap) DL = { x: snap.x, y: snap.y };
     var ya = yProx + 0.30 * (yJoint - yProx), yb = yProx + 0.62 * (yJoint - yProx);
     var a1 = midAt(fl.m, W, H, sh.x - wEst * 1.3, sh.x + wEst * 1.3, ya);
     var a2 = midAt(fl.m, W, H, sh.x - wEst * 1.3, sh.x + wEst * 1.3, yb);
+    if (!a1) a1 = midAt(m, W, H, sh.x - wEst * 1.3, sh.x + wEst * 1.3, ya);
+    if (!a2) a2 = midAt(m, W, H, sh.x - wEst * 1.3, sh.x + wEst * 1.3, yb);
     if (!a1 || !a2) return { fail: 'noShafts', pts: { VL: VL, DL: DL } };
-    return { pts: { VL: { x: VL.x, y: VL.y }, DL: { x: DL.x, y: DL.y }, LA1: { x: a1.x, y: a1.y }, LA2: { x: a2.x, y: a2.y } }, short: Math.abs(yJoint - yProx) < 0.26 * H, volarRight: volarRight, down: down };
+    return { pts: { VL: { x: VL.x, y: VL.y }, DL: { x: DL.x, y: DL.y }, LA1: { x: a1.x, y: a1.y }, LA2: { x: a2.x, y: a2.y } }, short: Math.abs(yJoint - yProx) < 0.26 * H, volarRight: volarRight, down: down, twoShafts: !!arm.twoShafts, W: W, H: H };
   }
 
+  function inward(p, W, H, mrg) {
+    if (!okP(p) || !W || !H) return true;
+    mrg = mrg == null ? 0.022 : mrg;
+    return p.x >= mrg * W && p.x <= (1 - mrg) * W && p.y >= mrg * H && p.y <= (1 - mrg) * H;
+  }
+  function chordFrac(a, b, W, H) {
+    if (!okP(a) || !okP(b) || !W || !H) return 0.12;
+    return len(sub(a, b)) / Math.max(1, Math.min(W, H));
+  }
   function scorePA(r) {
     if (!r || !r.pts || !r.pts.RS || !r.pts.RU || !r.pts.RA1 || !r.pts.RA2) return 0;
     var m = measurePA(r.pts, {});
     if (!m.ok) return 0.1;
-    if (!(m.values.radialHeightPx > 0)) return 0.12; // styloid must be distal to the ulnar corner
-    var ri = m.values.radialInclination, s = 0.35;
-    if (ri >= 15 && ri <= 32) s += 0.35; else if (ri >= 10 && ri <= 38) s += 0.15;
-    if (r.pts.UH && m.values.ulnarVariancePx != null && Math.abs(m.values.ulnarVariancePx) < 0.4 * len(sub(r.pts.RS, r.pts.RU))) s += 0.15;
-    else if (r.pts.UH) s += 0.08;
-    if (!r.short) s += 0.1;
-    return s;
+    if (!(m.values.radialHeightPx > 0)) return 0.12;
+    var s = 0.32, W = r.W, H = r.H, ri = m.values.radialInclination;
+    if (ri >= 8 && ri <= 40) s += 0.18;
+    if (ri >= 15 && ri <= 32) s += 0.08;
+    if (r.pts.UH && m.values.ulnarVariancePx != null && Math.abs(m.values.ulnarVariancePx) < 0.55 * len(sub(r.pts.RS, r.pts.RU))) s += 0.12;
+    else if (r.pts.UH) s += 0.05;
+    if (!r.short) s += 0.08;
+    var cf = chordFrac(r.pts.RS, r.pts.RU, W, H);
+    if (W && (cf < 0.02 || cf > 0.45)) s -= 0.28;
+    else if (W && cf >= 0.04 && cf <= 0.36) s += 0.1;
+    var borderHits = 0;
+    [r.pts.RS, r.pts.RU, r.pts.RA1, r.pts.RA2, r.pts.UH].forEach(function (p) { if (p && !inward(p, W, H, 0.02)) borderHits++; });
+    s -= 0.16 * borderHits;
+    if (m.axis) {
+      var v = sub(r.pts.RS, r.pts.RU);
+      if (Math.abs(dot(v, perp(m.axis))) > Math.abs(dot(v, m.axis))) s += 0.08;
+    }
+    if (s < 0) s = 0;
+    return Math.min(1, s);
   }
   function scoreLat(r) {
     if (!r || !r.pts || !r.pts.VL || !r.pts.DL || !r.pts.LA1 || !r.pts.LA2) return 0;
     var m = measureLat(r.pts, {});
     if (!m.ok) return 0.1;
-    var vt = m.values.volarTilt, s = 0.35;
-    if (vt >= 3 && vt <= 22) s += 0.4; else if (vt > -8 && vt < 28) s += 0.18;
-    if (!r.short) s += 0.1;
-    // lips should be separated laterally more than along the shaft
+    var vt = m.values.volarTilt, s = 0.32, W = r.W, H = r.H;
+    if (vt != null && vt > -35 && vt < 35) s += 0.16;
+    if (vt >= 3 && vt <= 22) s += 0.08;
+    if (!r.short) s += 0.08;
     var v = sub(r.pts.VL, r.pts.DL);
-    if (m.axis && Math.abs(dot(v, perp(m.axis))) > Math.abs(dot(v, m.axis))) s += 0.08;
-    return s;
+    if (m.axis && Math.abs(dot(v, perp(m.axis))) > Math.abs(dot(v, m.axis))) s += 0.1;
+    else s -= 0.12;
+    var cf = chordFrac(r.pts.VL, r.pts.DL, W, H);
+    if (W && (cf < 0.02 || cf > 0.38)) s -= 0.32;
+    else if (W && cf >= 0.03 && cf <= 0.34) s += 0.12;
+    var borderHits = 0;
+    [r.pts.VL, r.pts.DL, r.pts.LA1, r.pts.LA2].forEach(function (p) { if (p && !inward(p, W, H, 0.02)) borderHits++; });
+    s -= 0.18 * borderHits;
+    if (r.twoShafts) s -= 0.18;
+    if (s < 0) s = 0;
+    return Math.min(1, s);
   }
 
   function rotateGray(g, W, H, ang) {
@@ -13346,19 +13568,160 @@ window.OrthoQRGen = qrcode; })();
     return o;
   }
 
+  function maskNoisy(m, W, H) {
+    var cover = 0, i, y, s = 0, n = 0;
+    for (i = 0; i < m.length; i++) if (m[i]) cover++;
+    cover /= m.length || 1;
+    if (cover > 0.48 || cover < 0.015) return true;
+    for (y = 0; y < H; y += 3) { s += rowRuns(m, W, H, y, 2).length; n++; }
+    return n && (s / n) > 6.5;
+  }
+  // Photographed films: find persistent pairs of shaft cortices before looking for the joint.
+  // This pass does not reward a normal angle: displaced fractures may have pathological values.
+  function rectRotate(g, W, H, q) {
+    var w = q % 2 ? H : W, h = q % 2 ? W : H, out = new Float32Array(w * h);
+    function back(p) { return q === 1 ? { x: p.y, y: H - 1 - p.x } : q === 2 ? { x: W - 1 - p.x, y: H - 1 - p.y } : q === 3 ? { x: W - 1 - p.y, y: p.x } : p; }
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) { var p = back({x:x,y:y}); out[y*w+x] = g[p.y*W+p.x]; }
+    return {g:out,W:w,H:h,back:back};
+  }
+  function photographic(g) {
+    var hist = new Uint32Array(256), max = 0;
+    for (var i=0;i<g.length;i++) hist[Math.max(0,Math.min(255,Math.round(g[i])))]++;
+    for (i=0;i<248;i++){var band=0;for(var j=0;j<8;j++)band+=hist[i+j];max=Math.max(max,band);}
+    return max/g.length < 0.29;
+  }
+  function cortexPhoto(g0, W, H, force) {
+    if (H < W * 1.1) return null;
+    var g = blur(g0,W,H,2), p = new Float32Array(W), x,y,v, vals;
+    for (x=0;x<W;x++) { vals=[];for(y=Math.round(.65*H);y<.87*H;y+=2) vals.push(g[y*W+x]);p[x]=median(vals)||0; }
+    var grad=new Float32Array(W), pos=[],neg=[];
+    for(x=1;x<W-1;x++) grad[x]=(p[x+1]-p[x-1])/2;
+    for(x=4;x<W-4;x++) {
+      var hi=true,lo=true;for(var k=-3;k<=3;k++){if(grad[x+k]>grad[x])hi=false;if(grad[x+k]<grad[x])lo=false;}
+      if(hi&&grad[x]>.8)pos.push(x);if(lo&&grad[x]<-.8)neg.push(x);
+    }
+    var pairs=[],p0=pct(p,.04);
+    pos.forEach(function(l){neg.forEach(function(r){var w=r-l;if(w<.060*W||w>.30*W)return;
+      var strength=Math.min(grad[l],-grad[r])/(1+.008*w);
+      var interior=pos.some(function(z){return z>l+.18*w && z<r-.12*w && grad[z]>.55*grad[l];}); if(interior) strength*=.45;
+      // Persistent cortical edges, not a single bright screw or text/monitor border.
+      var count=0,total=0;
+      for(var yy=Math.round(.60*H);yy<.91*H;yy+=4){var dl=g[yy*W+l+2]-g[yy*W+l-2],dr=g[yy*W+r-2]-g[yy*W+r+2];if(dl>1&&dr>1)count++;total++;}
+      var persistence=count/Math.max(1,total); strength*=.35+.65*persistence;
+      // Cast / plaster wall: a bright band hugging the dark background outside the limb is not a bone.
+      var bgL=p[Math.max(0,Math.round(l-.045*W))],bgR=p[Math.min(W-1,Math.round(r+.045*W))],inMean=0;for(var ix=l;ix<=r;ix++)inMean+=p[ix];inMean/=Math.max(1,r-l+1);
+      if(Math.min(bgL,bgR)-p0<.3*(inMean-p0)&&w<.09*W)strength*=.15;
+      pairs.push({l:l,r:r,c:(l+r)/2,w:w,s:strength,persist:persistence});
+    });});
+    pairs.sort(function(a,b){return b.s-a.s;});var selected=[];
+    pairs.forEach(function(c){if(selected.length>=2)return;if(selected.some(function(z){return Math.min(z.r,c.r)>Math.max(z.l,c.l);}))return;selected.push(c);});
+    if(!selected.length||selected[0].s<.6)return null;
+    var two=selected.length>1&&selected[1].s>.35*selected[0].s&&Math.abs(selected[0].c-selected[1].c)>1.1*Math.max(selected[0].w,selected[1].w)&&Math.abs(selected[0].c-selected[1].c)<.45*W;
+    var rad=two?(selected[0].w>=selected[1].w?selected[0]:selected[1]):selected[0],uln=two?(rad===selected[0]?selected[1]:selected[0]):null;
+    if(two){
+      // The radius flares into the more distal articular surface; a plated ulna may look wider in the shaft.
+      function flare(c){var s=0,n=0;for(var yy=Math.round(.23*H);yy<.35*H;yy++)for(var xx=Math.max(0,Math.round(c.c-.8*c.w));xx<Math.min(W,c.c+.8*c.w);xx++){s+=g[yy*W+xx];n++;}return s/Math.max(1,n);}
+      if(Math.max(rad.w,uln.w)/Math.min(rad.w,uln.w)>1.4 && rad.w<.19*W && flare(uln)>flare(rad)*1.04){var swap=rad;rad=uln;uln=swap;}
+    }
+    var w=rad.w;
+    function edges(yy,l,r){var gl=-1e9,gr=-1e9,L=l,R=r;yy=Math.max(3,Math.min(H-4,Math.round(yy)));
+      for(var xx=Math.max(3,Math.round(l-.4*w));xx<=Math.min(W-4,Math.round(l+.4*w));xx++){var d=g[yy*W+xx+2]-g[yy*W+xx-2];if(d>gl){gl=d;L=xx;}}
+      for(var xx2=Math.max(3,Math.round(r-.4*w));xx2<=Math.min(W-4,Math.round(r+.4*w));xx2++){var d2=g[yy*W+xx2-2]-g[yy*W+xx2+2];if(d2>gr){gr=d2;R=xx2;}}
+      return {x:(L+R)/2,y:yy,L:L,R:R}; }
+    var A=edges(.85*H,rad.l,rad.r),B=edges(.62*H,rad.l,rad.r),slope=(B.x-A.x)/(B.y-A.y);
+    if(Math.abs(slope)>.55)return null;
+    function center(yy){return A.x+slope*(yy-A.y);}
+    var prof=new Float32Array(H),dy=new Float32Array(H),vmax=0;
+    for(y=0;y<H;y++){var sum=0,n=0;for(x=Math.max(0,Math.round(center(y)-w*.3));x<Math.min(W,center(y)+w*.3);x++){sum+=g[y*W+x];n++;}prof[y]=sum/Math.max(1,n);vmax=Math.max(vmax,prof[y]);}
+    var candidates=[];
+    for(y=5;y<H-5;y++)dy[y]=(prof[y+4]-prof[y-4])/8;
+    for(y=Math.round(.18*H);y<.62*H;y++){
+      var peak=true;for(k=-5;k<=5;k++)if(dy[y+k]>dy[y])peak=false;if(!peak||dy[y]<.65)continue;
+      var below=[],sum=0;for(var yy=y+8;yy<Math.min(H,y+.17*H);yy++) {below.push(prof[yy]);sum+=prof[yy];}
+      var mean=sum/Math.max(1,below.length),sd=0;below.forEach(function(z){sd+=(z-mean)*(z-mean);});sd=Math.sqrt(sd/Math.max(1,below.length));
+      candidates.push({y:y,s:dy[y]*(.6+y/H)/(1+.03*sd+Math.max(0,mean-210)/10),dy:dy[y],mean:mean});
+    }
+    if(!candidates.length)return null;
+    // A long very bright plateau after a sharp edge is fixation, not the distal joint.
+    var metal=null;
+    candidates.forEach(function(c){if(c.dy>2&&c.mean>205&&c.y>.32*H){if(!metal||c.y<metal)metal=c.y;}});
+    var jc=candidates.filter(function(c){return !metal||c.y<metal-.05*H;});if(!jc.length)jc=candidates;
+    jc.sort(function(a,b){return b.s-a.s;});var near=jc.filter(function(c){return c.s>=.78*jc[0].s;});
+    near.sort(function(a,b){return a.y-b.y;});var joint=(metal&&!two?near[near.length-1]:jc[0]).y;
+    if(joint>.52*H){B=edges(Math.min(.80*H,joint+.14*H),rad.l,rad.r);A=edges(.92*H,rad.l,rad.r);slope=(B.x-A.x)/(B.y-A.y);}
+    // Follow the visible subchondral edge, not cast's outer silhouette; each endpoint remains draggable.
+    var radialSign=uln?(rad.c>uln.c?1:-1):1;
+    var cx=center(joint), xL=Math.max(3,Math.round(cx-(two?Math.min(1.3*w,.18*W):.70*w))), xR=Math.min(W-4,Math.round(cx+(two?Math.min(1.3*w,.18*W):.70*w)));
+    function rimAt(xx, guess, tight){var best=null,bs=-1e9;
+      for(var yy=Math.max(5,Math.round(tight?guess-.025*H:joint-.075*H));yy<=Math.min(H-6,Math.round(tight?guess+.025*H:joint+.05*H));yy++){
+        var d=(g[(yy+3)*W+xx]+g[(yy+3)*W+xx-1]+g[(yy+3)*W+xx+1]-g[(yy-3)*W+xx]-g[(yy-3)*W+xx-1]-g[(yy-3)*W+xx+1])/3;
+        var sc=d-.28*Math.abs(yy-guess);if(sc>bs){bs=sc;best={x:xx,y:yy};}
+      }best.edge=bs;return best;}
+    function styloidAt(xx,guess,sign){var best=null,bs=-1e9;for(var sx=Math.max(3,Math.round(xx-.34*w));sx<=Math.min(W-4,Math.round(xx+.34*w));sx++){var z=rimAt(sx,guess);var yy=Math.min(H-1,z.y+5),sc=z.edge+.08*g[yy*W+sx]-.08*Math.abs(sx-xx);if(sc>bs){bs=sc;best=z;}}return best||rimAt(xx,guess);}
+    // The distal flare is searched around the projected shaft; styloid lies on the side away from ulna.
+    var view=force||(two?'pa':'lat');
+    if(view==='lat'){
+      // Lateral: the volar and dorsal rims sit over the metaphyseal cortices just proximal to the joint (not out in the cast/soft tissue).
+      var shift=center(joint+.06*H)-rad.c, mE=edges(joint+.06*H,rad.l+shift,rad.r+shift);
+      if(mE.R-mE.L>.6*w&&mE.R-mE.L<2.6*w){xL=Math.max(3,Math.round(mE.L-.08*w));xR=Math.min(W-4,Math.round(mE.R+.08*w));}
+    }
+    var left=rimAt(xL,joint),right=rimAt(xR,joint),pts={};
+    if(view==='pa'){
+      if(!uln){var uc=Math.max(3,Math.min(W-4,cx-1.25*w*(cx>W/2?1:-1)));uln={c:uc,l:uc-.35*w,r:uc+.35*w,w:.7*w,s:0};radialSign=rad.c>uc?1:-1;}
+      var rs=styloidAt(radialSign>0?xR:xL,joint-.045*H,radialSign),ru=radialSign>0?left:right;
+      // Corner narrower than the outer flare on the ulnar side.
+      ru=rimAt(Math.round(cx-radialSign*.65*w),joint+.025*H,true);
+      // Dome of the ulnar head on its radial half (the styloid sits on the far side).
+      var uh=rimAt(Math.max(3,Math.min(W-4,Math.round(uln.c+radialSign*.18*uln.w))),joint+.015*H,true);
+      pts={RS:rs,RU:ru,UH:uh,RA1:A,RA2:B};
+    }else{
+      // Volar side from distal hand mass (pisiform/thumb), not angle normality.
+      var massL=0,massR=0;
+      for(y=Math.max(0,Math.round(joint-.17*H));y<joint;y++)for(x=Math.max(0,Math.round(cx-2*w));x<Math.min(W,cx+2*w);x++){var val=Math.max(0,g[y*W+x]-80);if(x<cx)massL+=val;else massR+=val;}
+      var vRight=massL>massR;
+      pts={VL:vRight?right:left,DL:vRight?left:right,LA1:A,LA2:B};
+    }
+    // Orientation cue: the proximal forearm band is dominated by long longitudinal cortices (|gx| ≫ |gy|); carpus/hand is isotropic.
+    var agx=0,agy=0;for(y=Math.round(.58*H);y<.92*H;y+=2)for(x=Math.max(2,Math.round(cx-2.2*w));x<Math.min(W-2,cx+2.2*w);x+=2){agx+=Math.abs(g[y*W+x+2]-g[y*W+x-2]);agy+=Math.abs(g[(y+2)*W+x]-g[(y-2)*W+x]);}
+    var aniso=agx/Math.max(1e-6,agy); if(aniso<1.25)return null; // isotropic texture (noise, hand only): no forearm shaft here
+    var bodyWidth=0;for(x=0;x<W;x++)if(p[x]>Math.max(75,pct(p,.55)))bodyWidth++;
+    var cast=bodyWidth>rad.w*(two?2.7:2.3)&&rad.s<4;
+    var notes=[];if(cast)notes.push('cast');if(metal)notes.push('hardware');
+    Object.keys(pts).forEach(function(k){if(pts[k])delete pts[k].edge;});
+    var sc=Math.min(.69,.42+.06*Math.min(3,rad.s)+.04*(two?1:0)); if(cast||metal) sc=Math.min(sc,.49);
+    return {view:view,pts:pts,score:sc,rank:(rad.s*(.1+.9*rad.persist*rad.persist)+(two?selected[1].s*.2*selected[1].persist:0))*(two?1.7:1)*Math.pow(w/W,1.5)*Math.pow(aniso,3),aniso:aniso,notes:notes,cast:cast,hardware:!!metal,short:(H-joint)<3*w || len(sub(A,B))<1.5*w,debug:{joint:joint,rad:rad,ulna:uln,candidates:jc.slice(0,6),pairs:pairs.slice(0,6),p0:p0}};
+  }
+  function detectPhotograph(img,o){
+    var G=toGray(img),ds=downscale(G,img.W,img.H,600);if(!photographic(ds.g))return null;
+    var best=null;
+    var force=(o&&(o.hint||o.view))||null;
+    for(var q=0;q<4;q++){var rot=rectRotate(ds.g,ds.W,ds.H,q),r=cortexPhoto(rot.g,rot.W,rot.H,force);if(r&&(!best||r.rank>best.rank)){best=r;best.back=rot.back;best.q=q;}}
+    if(!best)return null;
+    var pts=mapPts(best.pts,function(p){var z=best.back(p);return{x:z.x/ds.f,y:z.y/ds.f};});
+    return {version:VERSION,method:'cortical-photo-'+best.q*90,view:best.view,status:'suggest',level:best.score>=.55?'medium':'low',pts:pts,conf:{score:best.score},viewScore:best.score,notes:best.notes,cast:best.cast,hardware:best.hardware,short:best.short};
+  }
+
   function detectAt(g, W, H, viewHint) {
+    var m = boneMask(g, W, H);
+    if (maskNoisy(m, W, H)) return { view: viewHint || 'pa', raw: { fail: 'noShafts' }, score: 0, other: 0 };
+    var arm = findForearm(m, W, H);
     var pa = null, lat = null;
-    try { pa = detectPA(g, W, H); } catch (e) { pa = { fail: 'error' }; }
-    try { lat = detectLat(g, W, H); } catch (e) { lat = { fail: 'error' }; }
+    try { pa = detectPA(g, W, H, m, arm); } catch (e) { pa = { fail: 'error' }; }
+    try { lat = detectLat(g, W, H, m, arm); } catch (e) { lat = { fail: 'error' }; }
+    if (pa && pa.pts) { pa.W = W; pa.H = H; if (arm.twoShafts) pa.twoShafts = true; }
+    if (lat && lat.pts) { lat.W = W; lat.H = H; if (arm.twoShafts) lat.twoShafts = true; }
     var spa = scorePA(pa), sl = scoreLat(lat);
     var view = viewHint;
-    if (!view) view = spa >= sl && spa >= 0.4 ? 'pa' : (sl > spa && sl >= 0.4 ? 'lat' : (spa >= sl ? 'pa' : 'lat'));
+    if (!view) view = spa >= sl && spa >= 0.35 ? 'pa' : (sl > spa && sl >= 0.35 ? 'lat' : (spa >= sl ? 'pa' : 'lat'));
     if (view === 'pa') return { view: 'pa', raw: pa, score: spa, other: sl };
     return { view: 'lat', raw: lat, score: sl, other: spa };
   }
 
   function classify(img) {
+    var photo = detectPhotograph(img, {}); if (photo) return {view: photo.view, score: photo.viewScore, pa: photo.view === "pa" ? photo.viewScore : 0.1, lat: photo.view === "lat" ? photo.viewScore : 0.1};
     var G0 = toGray(img), ds = downscale(G0, img.W, img.H, 320), g = normalize(ds.g);
+    var cropped = cropBorder(g, ds.W, ds.H);
+    if (cropped && cropped.W > 40 && cropped.H > 40) { g = normalize(cropped.g); ds = { W: cropped.W, H: cropped.H, g: g }; }
     var d = detectAt(g, ds.W, ds.H, null);
     return { view: d.view, score: d.score, pa: d.view === 'pa' ? d.score : d.other, lat: d.view === 'lat' ? d.score : d.other };
   }
@@ -13366,24 +13729,44 @@ window.OrthoQRGen = qrcode; })();
   function detect(img, o) {
     o = o || {};
     var t0 = Date.now(), hint = o.hint || o.view || null;
-    var G0 = toGray(img), ds = downscale(G0, img.W, img.H, 720), g = normalize(ds.g), f = ds.f;
-    var best = null, angs = [0, 90, 180, 270, 15, -15, 30, -30];
+    var photo = detectPhotograph(img, o); if (photo) {photo.ms=Date.now()-t0; return photo;}
+    var G0 = toGray(img), ds = downscale(G0, img.W, img.H, 720), g0 = normalize(ds.g), f = ds.f;
+    var flags = filmFlags(g0, ds.W, ds.H);
+    var g = g0, ox = 0, oy = 0, dW = ds.W, dH = ds.H, cropTag = '';
+    var cropped = cropBorder(g0, ds.W, ds.H);
+    if (cropped && cropped.W > 80 && cropped.H > 80) {
+      g = normalize(cropped.g); g = blur(g, cropped.W, cropped.H, 1);
+      ox = cropped.x; oy = cropped.y; dW = cropped.W; dH = cropped.H; cropTag = 'crop';
+      var f2 = filmFlags(g, dW, dH);
+      if (f2.cast) flags.cast = true;
+      if (f2.hardware) flags.hardware = true;
+      flags.notes = [];
+      if (flags.cast) flags.notes.push('cast');
+      if (flags.hardware) flags.notes.push('hardware');
+    }
+    var best = null;
     var tryOne = function (gray, W, H, back, tag) {
       var d = detectAt(gray, W, H, hint);
       if (!d.raw || d.raw.fail) return;
       var sc = d.score; if (hint && d.view === hint) sc += 0.05;
+      if (tag === 'upright' || tag === 'crop') sc += 0.08;
+      else if (/(?:crop|rot)90$|(?:crop|rot)270$/.test(tag)) sc += 0.03;
       if (!best || sc > best.sc) best = { sc: sc, d: d, back: back, tag: tag, W: W, H: H };
     };
-    tryOne(g, ds.W, ds.H, function (p) { return p; }, 'upright');
-    if (!best || best.sc < 0.62) {
-      angs.forEach(function (deg) {
-        if (!deg) return;
-        var R = rotateGray(g, ds.W, ds.H, deg * D2R), gg = fillOutside(R.g, R.S);
-        tryOne(gg, R.S, R.S, R.back, 'rot' + deg);
+    var backCrop = function (p) { return p ? { x: p.x + ox, y: p.y + oy } : null; };
+    tryOne(g, dW, dH, backCrop, cropTag ? 'crop' : 'upright');
+    [90, 180, 270].forEach(function (deg) {
+      var R = rotateGray(g, dW, dH, deg * D2R), gg = fillOutside(R.g, R.S);
+      tryOne(gg, R.S, R.S, function (p) { var q = R.back(p); return backCrop(q); }, (cropTag || 'rot') + deg);
+    });
+    if (!best || best.sc < 0.50) {
+      [15, -15, 30, -30].forEach(function (deg) {
+        var R = rotateGray(g, dW, dH, deg * D2R), gg = fillOutside(R.g, R.S);
+        tryOne(gg, R.S, R.S, function (p) { var q = R.back(p); return backCrop(q); }, 'rot' + deg);
       });
     }
     if (!best || best.sc < 0.50) {
-      var inv = invert(g); tryOne(inv, ds.W, ds.H, function (p) { return p; }, 'invert');
+      var inv = invert(g); tryOne(inv, dW, dH, backCrop, 'invert');
     }
     var scaleBack = function (p) { return p ? { x: p.x / f, y: p.y / f } : null; };
     if (best && best.d.raw && best.d.raw.pts) {
@@ -13394,16 +13777,18 @@ window.OrthoQRGen = qrcode; })();
       var status = level === 'high' ? 'ok' : 'suggest';
       var meas = view === 'pa' ? measurePA(pts, { mmPerPx: o.mmPerPx }) : measureLat(pts, { mmPerPx: o.mmPerPx });
       if (!meas.ok) { status = 'suggest'; if (level === 'high') level = 'medium'; }
+      var notes = (best.d.raw.short ? ['short'] : []).concat(flags.notes || []);
       return {
         version: VERSION, method: best.tag, view: view, viewScore: Math.round(best.sc * 1000) / 1000,
         status: status, level: level, pts: pts, conf: { score: Math.round(best.sc * 100) / 100 },
-        short: !!best.d.raw.short, notes: best.d.raw.short ? ['short'] : [],
-        ms: Date.now() - t0
+        short: !!best.d.raw.short, cast: !!flags.cast, hardware: !!flags.hardware,
+        notes: notes, ms: Date.now() - t0
       };
     }
     var view2 = hint || 'pa';
     return { version: VERSION, method: 'template', view: view2, status: 'suggest', level: 'low', reason: 'noShafts',
-      pts: template(img, view2), conf: { score: 0.1 }, notes: ['template'], ms: Date.now() - t0 };
+      pts: template(img, view2), conf: { score: 0.1 }, notes: ['template'].concat(flags.notes || []),
+      cast: !!flags.cast, hardware: !!flags.hardware, ms: Date.now() - t0 };
   }
 
   root.OrthoWrist = {
@@ -13413,7 +13798,7 @@ window.OrthoQRGen = qrcode; })();
     calibration: calibration, normRange: normRange, normStatus: normStatus, NORMS: NORMS,
     PA_PTS: PA_PTS, PA_REQ: PA_REQ, LAT_PTS: LAT_PTS, LAT_REQ: LAT_REQ, ALL_PTS: ALL_PTS, REQ: REQ,
     METHODS: METHODS, ARTICULAR_MM: ARTICULAR_MM, LAT_AP_MM: LAT_AP_MM, VERSION: VERSION,
-    template: template
+    template: template, _cortexPhoto: cortexPhoto, _rectRotate: rectRotate
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -13434,7 +13819,7 @@ window.OrthoQRGen = qrcode; })();
   var PA_MAN = O.PA_REQ.slice(), LAT_MAN = O.LAT_REQ.slice(), OPT = ['CAL1', 'CAL2'];
   var COL = { RS: '#22d3ee', RU: '#38bdf8', UH: '#a78bfa', RA1: '#facc15', RA2: '#a3e635', VL: '#fb7185', DL: '#60a5fa', LA1: '#facc15', LA2: '#a3e635', CAL1: '#94a3b8', CAL2: '#94a3b8' };
   var S = {
-    el: { title: 'Πηχεοκαρπική', sub: 'Πρόσθια (PA) και πλάγια ακτινογραφία καρπού · ακτινικό ύψος, ακτινική κλίση, παλαμιαία κλίση και ωλένια διαφορά.',
+    el: { title: 'Πηχεοκαρπική', sub: 'Πρόσθια (PA) και πλάγια ακτινογραφία καρπού · κερκιδικό ύψος, κερκιδική κλίση, παλαμιαία κλίση και ωλένια διαφορά.',
       upload: 'Ανεβάστε Ακτινογραφία', demoPA: '🧪 DEMO πρόσθια', demoLat: '🧪 DEMO πλάγια', fileTypes: 'Ακτινογραφία καρπού PA ή πλάγια · PNG, JPEG ή DICOM',
       noFilmT: 'Δεν έχει ανοιχτεί ακτινογραφία καρπού', steps: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε πρόσθια (PA) και/ή πλάγια ακτινογραφία καρπού.', 'Τα σημεία προτείνονται αυτόματα – ελέγξτε τα, διορθώστε και επιβεβαιώστε.'],
       noPt: 'Χωρίς επιλεγμένο ασθενή η μέτρηση δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.',
@@ -13463,20 +13848,22 @@ window.OrthoQRGen = qrcode; })();
       zin: 'Μεγέθυνση', zout: 'Σμίκρυνση', zfit: 'Ολόκληρη η εικόνα', redo: '🤖 Αυτόματη ανίχνευση ξανά', del: '🗑 Αφαίρεση', clear: '↺ Καθαρισμός σημείων',
       side: 'Πλευρά', R: 'Δεξιά', L: 'Αριστερά', date: 'Ημ/νία ακτινογραφίας', phase: 'Φάση', pre: 'Προεγχειρητικά', post: 'Μετεγχειρητικά',
       resT: 'Μετρήσεις πηχεοκαρπικής', value: 'Τιμή', normal: 'Φυσιολογικές τιμές',
-      m_radialHeight: 'Ακτινικό ύψος', m_radialInclination: 'Ακτινική κλίση', m_volarTilt: 'Παλαμιαία κλίση', m_ulnarVariance: 'Ωλένια διαφορά',
+      m_radialHeight: 'Κερκιδικό ύψος', m_radialInclination: 'Κερκιδική κλίση', m_volarTilt: 'Παλαμιαία κλίση', m_ulnarVariance: 'Ωλένια διαφορά',
       st_in: '✓ εντός', st_low: '↓ κάτω', st_high: '↑ πάνω', needPts: 'Τοποθετήστε τα σημεία για να υπολογιστούν οι μετρήσεις.',
       needPAFilm: 'Απαιτείται πρόσθια (PA) ακτινογραφία', needLatFilm: 'Απαιτείται πλάγια ακτινογραφία',
       qT: 'Έλεγχοι ποιότητας', cal: 'Κλίμακα', c_dicom: 'DICOM pixel spacing', c_marker: 'δείκτης βαθμονόμησης', c_demo: 'DEMO – συνθετική κλίμακα', c_est: 'εκτίμηση', c_none: '–', calMm: 'Μήκος δείκτη (mm)',
       q_scaleEst: 'Χωρίς βαθμονόμηση: οι αποστάσεις σε mm είναι εκτίμηση (DICOM ή δείκτης για ακριβή mm).',
-      q_needPA: 'Για ακτινικό ύψος, ακτινική κλίση και ωλένια διαφορά χρειάζεται πρόσθια (PA) ακτινογραφία.',
+      q_needPA: 'Για κερκιδικό ύψος, κερκιδική κλίση και ωλένια διαφορά χρειάζεται πρόσθια (PA) ακτινογραφία.',
       q_needLat: 'Για την παλαμιαία κλίση χρειάζεται πλάγια ακτινογραφία.',
-      q_needUH: 'Για την ωλένια διαφορά τοποθετήστε την περιφερική αρθρική επιφάνεια της κεφαλής της ωλένης.',
+      q_needUH: 'Για το κερκιδικό ύψος και την ωλένια διαφορά τοποθετήστε την περιφερική αρθρική επιφάνεια της κεφαλής της ωλένης.',
       q_shaftShort: 'Μικρό ορατό τμήμα κερκίδας – ο άξονας είναι λιγότερο αξιόπιστος.',
-      q_implausibleRH: 'Ακτινικό ύψος εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία.',
-      q_implausibleRI: 'Ακτινική κλίση εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία.',
+      q_implausibleRH: 'Κερκιδικό ύψος εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία.',
+      q_implausibleRI: 'Κερκιδική κλίση εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία.',
       q_implausibleUV: 'Ωλένια διαφορά εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία.',
       q_implausibleVT: 'Παλαμιαία κλίση εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία.',
-      q_dorsalTilt: 'Αρνητική τιμή: η αρθρική επιφάνεια κλίνει ραχιαία.',
+      q_dorsalTilt: 'Αρνητική τιμή: ραχιαία κλίση (dorsal tilt) της αρθρικής επιφάνειας.',
+      q_cast: 'Φαίνεται γύψος στην ακτινογραφία – τα σημεία μπορεί να χρειάζονται διόρθωση.',
+      q_hardware: 'Φαίνεται εσωτερική οστεοσύνθεση (πλάκα/βίδες) – ελέγξτε τα σημεία.',
       confirm: '✔ Επιβεβαίωση σημείων', conf: 'Σημεία επιβεβαιωμένα από ιατρό', notConf: 'Τα σημεία δεν έχουν επιβεβαιωθεί – ελέγξτε και επιβεβαιώστε πριν την αποθήκευση.',
       save: '💾 Αποθήκευση μέτρησης', print: '🖨 Φύλλο A4', saved: 'Η μέτρηση πηχεοκαρπικής αποθηκεύτηκε', needLogin: 'Συνδεθείτε ως ιατρός για αποθήκευση.', needPt: 'Επιλέξτε ασθενή για αποθήκευση – χωρίς ασθενή η μέτρηση δεν αποθηκεύεται.', needConf: 'Επιβεβαιώστε πρώτα τα σημεία (✔).', needMeas: 'Δεν υπάρχει υπολογισμένη μέτρηση.',
       listT: 'Αποθηκευμένες μετρήσεις πηχεοκαρπικής', open: 'Άνοιγμα', none: 'Καμία αποθηκευμένη μέτρηση για αυτόν τον ασθενή.', editing: 'Επεξεργασία αποθηκευμένης μέτρησης', newM: '＋ Νέα μέτρηση',
@@ -13520,13 +13907,15 @@ window.OrthoQRGen = qrcode; })();
       q_scaleEst: 'Not calibrated: mm distances are estimates (DICOM or a marker for exact mm).',
       q_needPA: 'Radial height, radial inclination and ulnar variance need a PA film.',
       q_needLat: 'Volar tilt needs a lateral film.',
-      q_needUH: 'For ulnar variance, place the distal articular surface of the ulnar head.',
+      q_needUH: 'For radial height and ulnar variance, place the distal articular surface of the ulnar head.',
       q_shaftShort: 'Short visible radius – the axis is less reliable.',
       q_implausibleRH: 'Radial height outside the expected range – check the points.',
       q_implausibleRI: 'Radial inclination outside the expected range – check the points.',
       q_implausibleUV: 'Ulnar variance outside the expected range – check the points.',
       q_implausibleVT: 'Volar tilt outside the expected range – check the points.',
-      q_dorsalTilt: 'Negative value: the articular surface tilts dorsally.',
+      q_dorsalTilt: 'Negative value: the articular surface has a dorsal tilt.',
+      q_cast: 'A cast is visible on the film – the points may need correction.',
+      q_hardware: 'Internal fixation (plate/screws) is visible – check the points.',
       confirm: '✔ Confirm points', conf: 'Points confirmed by a doctor', notConf: 'Points not confirmed – check and confirm before saving.',
       save: '💾 Save measurement', print: '🖨 A4 sheet', saved: 'Wrist measurement saved', needLogin: 'Sign in as a doctor to save.', needPt: 'Select a patient to save – without a patient the measurement is not saved.', needConf: 'Confirm the points first (✔).', needMeas: 'No measurement computed yet.',
       listT: 'Saved wrist measurements', open: 'Open', none: 'No saved measurement for this patient.', editing: 'Editing a saved measurement', newM: '＋ New measurement',
@@ -13553,6 +13942,17 @@ window.OrthoQRGen = qrcode; })();
   function compute() {
     var paC = calOf('pa'), latC = calOf('lat');
     ui.last = O.measure({ pa: ui.pa.pts, lat: ui.lat.pts }, { pa: { mmPerPx: paC.mmPerPx, calSource: paC.source, demoMmPerPx: ui.pa.demo && ui.pa.demo.mmPerPx }, lat: { mmPerPx: latC.mmPerPx, calSource: latC.source, demoMmPerPx: ui.lat.demo && ui.lat.demo.mmPerPx } });
+    ['pa', 'lat'].forEach(function (k) {
+      var d = ui[k].det; if (!d) return;
+      var extra = (d.notes || []).slice();
+      if (d.cast && extra.indexOf('cast') < 0) extra.push('cast');
+      if (d.hardware && extra.indexOf('hardware') < 0) extra.push('hardware');
+      extra.forEach(function (code) {
+        if (code === 'template') return; if (code === 'short') code = 'shaftShort';
+        if (ui.last.quality.some(function (q) { return q.code === code; })) return;
+        ui.last.quality.push({ code: code, lv: 'i' });
+      });
+    });
     return ui.last;
   }
   function missing(which) { return MAN(which).filter(function (k) { return !V(which).pts[k]; }); }
@@ -13573,7 +13973,7 @@ window.OrthoQRGen = qrcode; })();
   function detectOn(c, hint) {
     var G = grayOf(c, 1400), r = O.detect({ W: G.W, H: G.H, data: G.data }, { hint: hint }), dx = 0, dy = 0;
     var PH = window.OrthoXrayPhoto;
-    if (r.level === 'low' && PH && PH.filmBox) {
+    if (r.level === 'low' && !/^cortical-photo/.test(r.method || '') && PH && PH.filmBox) {
       var b = PH.filmBox(G.data, G.W, G.H);
       if (b && b.w > 50 && b.h > 50) { var sub = new Uint8ClampedArray(b.w * b.h); for (var y = 0; y < b.h; y++) for (var x = 0; x < b.w; x++) sub[y * b.w + x] = G.data[Math.min(G.H - 1, y + b.y) * G.W + Math.min(G.W - 1, x + b.x)];
         PH.normalize(sub, b.w, b.h); var r2 = O.detect({ W: b.w, H: b.h, data: sub }, { hint: hint }); if (r2.level !== 'low') { r = r2; dx = b.x; dy = b.y; r.photo = true; } }
@@ -13606,7 +14006,7 @@ window.OrthoQRGen = qrcode; })();
     var x = XR(); if (!file || !x || !x.decodeFile) return;
     x.decodeFile(file, function (c, name, dicom, blob, note) {
       var hint = ui.active, view = hint;
-      try { var G = grayOf(c, 320), cl = O.classify({ W: G.W, H: G.H, data: G.data }); if (cl && cl.score >= 0.45) view = cl.view; } catch (e) {}
+      try { var G = grayOf(c, 1400), cl = O.classify({ W: G.W, H: G.H, data: G.data }); if (cl && cl.score >= 0.6) view = cl.view; /* photos of a monitor (cast/hardware) classify weakly: keep the view tab the doctor chose */ } catch (e) {}
       setImage(view === 'lat' ? 'lat' : 'pa', c, name, dicom, blob, note, null);
     }, function (m) { ui.msg = m; renderNow(); });
   }
@@ -13660,7 +14060,7 @@ window.OrthoQRGen = qrcode; })();
     var el = $('xWristPane'); if (!el) return; var A = API();
     if (!A || (A.store && A.store.portal)) { el.innerHTML = ''; return; }
     if (ui.pid !== pid()) { if (ui.recId) { ui.pa = emptyView(); ui.lat = emptyView(); ui.recId = null; ui.confirmed = null; } ui.pid = pid(); ui.msg = ''; }
-    var P = pid(), head = '<div class="card xhhead"><h2>🖐 ' + esc(t('title')) + '</h2><p class="muted small">' + esc(t('sub')) + '</p>' + (P ? '' : '<p class="xhwarn small" id="wriNoPt">' + esc(t('noPt')) + '</p>') +
+    var P = pid(), head = '<div class="card xhhead"><h2>🖐 ' + esc(t('title')) + '</h2><p class="muted small">' + esc(t('sub')) + '</p>' + (P ? '' : '<p class="xhwarn small" id="wriNoPt">' + esc(t('noPt')) + '</p>') + (window.OrthoXrayTrain ? window.OrthoXrayTrain.html('wriTrain') : '') +
       '<div class="row xhfilm"><input type="file" id="wristFile" accept="image/*,.dcm,application/dicom" hidden><label for="wristFile" class="btn ' + (ui.pa.img || ui.lat.img ? 'small' : 'primary xhup') + '" id="wristUpload" role="button" tabindex="0">' + esc(t('upload')) + '</label>' +
       '<button id="wriDemoPA" class="small">' + esc(t('demoPA')) + '</button><button id="wriDemoLat" class="small">' + esc(t('demoLat')) + '</button>' +
       (V().img ? ' <span class="muted small">' + esc(V().name) + '</span>' : '') + '</div>' +
@@ -13712,7 +14112,15 @@ window.OrthoQRGen = qrcode; })();
     document.querySelectorAll('[data-wripick]').forEach(function (b) { b.onclick = function () { V().pick = b.dataset.wripick; V().sel = null; renderNow(); }; });
   }
   function confirmPts() { var A = API(), u = A && A.currentUser(); if (!u) { ui.msg = t('needLogin'); renderNow(); return false; } var m = compute(); if (!m.ok) { ui.msg = t('needMeas'); renderNow(); return false; }
-    ui.confirmed = { by: u.email, name: u.name, at: new Date().toISOString() }; ui.msg = ''; renderNow(); return true; }
+    ui.confirmed = { by: u.email, name: u.name, at: new Date().toISOString() }; ui.msg = '';
+    try {
+      var T = window.OrthoXrayTrain;
+      if (T && T.contributeWrist) {
+        if (ui.pa.img && !ui.pa.demo) T.contributeWrist(ui.pa, 'wrist-pa', ui.side, ui.phase);
+        if (ui.lat.img && !ui.lat.demo) T.contributeWrist(ui.lat, 'wrist-lat', ui.side, ui.phase);
+      }
+    } catch (e) { if (window.console) console.warn('wrist training', e); }
+    renderNow(); return true; }
 
   function cvSize(cv) { var w = Math.max(160, cv.parentNode.getBoundingClientRect().width), h = Math.round(Math.min(window.innerHeight * 0.72, Math.max(360, w * 1.15), 760)), dpr = window.devicePixelRatio || 1;
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; } return { w: w, h: h }; }
