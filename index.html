@@ -322,6 +322,16 @@ body.ptonly main,body.ptonly #measCtx{display:none!important}
 .cohtbl td,.cohtbl th{white-space:nowrap}.cohtbl td:first-child{white-space:normal}
 @media (max-width:640px){#mcidTable,#mcidTable tbody{display:block}#mcidTable tr:first-child{display:none}#mcidTable tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 8px;padding:8px 2px;border-bottom:1px solid #e2e8f0}#mcidTable td{display:block;border:0;padding:2px 0;white-space:normal}#mcidTable td:first-child,#mcidTable td[data-l=MCID],#mcidTable td[data-l=PASS]{grid-column:1/-1}#mcidTable td[data-l]::before{content:attr(data-l);display:block;font-size:.72rem;color:#64748b}}
 @media (max-width:640px){.cohtbl,.cohtbl tbody{display:block}.cohtbl tr:first-child{display:none}.cohtbl tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 10px;padding:8px 2px;border-bottom:1px solid #e2e8f0}.cohtbl td{display:block;border:0;padding:2px 0;white-space:normal!important}.cohtbl td:first-child,.cohtbl td:last-child{grid-column:1/-1}.cohtbl td[data-l]::before{content:attr(data-l);display:block;font-size:.72rem;color:#64748b}}
+
+/* ===== Patient consent gate ===== */
+.ptconsent{display:flex;flex-direction:column;gap:6px;max-width:760px}
+.ptconsent .ptch2{font-size:1.15em;line-height:1.3;margin:12px 0 2px;color:#0b4a5a;font-weight:800}
+.ptconsent p{margin:0 0 6px;line-height:1.55;color:#24343b;overflow-wrap:anywhere}
+.ptconsent .ptclist{margin:0 0 6px;padding-left:1.6em;line-height:1.55}
+.ptconsent .ptclist li{margin:2px 0}
+.ptconsentbtns{display:flex;flex-direction:column;gap:12px;margin:10px 0 4px}
+.ptdeclmsg{background:#fff4e5;border-radius:14px;padding:14px;font-weight:700;color:#7a4b00;margin:8px 0 10px !important}
+.ptconsentline{margin-top:2px}
 /* ---- X-rays tab ---- */
 .xgrid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:12px;max-width:1200px;margin:0 auto}
 @media (max-width:900px){.xgrid{grid-template-columns:1fr}}
@@ -4328,6 +4338,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   function portal(code) { return rpc('patient_portal', { p_code: String(code).trim() }); }
   function submit(code, s) { return rpc('patient_submit', { p_code: String(code).trim(), p_instrument: s.instrument, p_timepoint: s.timepoint, p_answers: s.answers || {}, p_total: num(s.total), p_primary: num(s.primary), p_subscales: s.subscales || null, p_valid: s.valid == null ? null : !!s.valid, p_notes: s.notes || null }); }
   function submitRom(code, r) { return rpc('patient_submit_rom', { p_code: String(code).trim(), p_rom: r }); }
+  function acceptConsent(code) { return rpc('patient_accept_consent', { p_code: String(code).trim() }); } // sets only extra.promsConsent = {at, ver}
   function inviteStatus(token) { return rpc('invite_status', { p_token: String(token).trim() }); }
 
   // ---------- team chat (doctors only; no patient data) ----------
@@ -4433,7 +4444,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     listInvites: listInvites, createInvite: createInvite, revokeInvite: revokeInvite, listDoctors: listDoctors, listAudit: listAudit, audit: audit,
     filmPath: filmPath, uploadFilm: uploadFilm, downloadFilm: downloadFilm, deleteFilms: deleteFilms,
     chatList: chatList, chatPost: chatPost, chatEdit: chatEdit, chatDelete: chatDelete, chatUpload: chatUpload, chatFile: chatFile, chatRemoveFiles: chatRemoveFiles, doctorsList: doctorsList, setMyName: setMyName, realtime: realtime, channel: channel, uuid: uuid,
-    portal: portal, submit: submit, submitRom: submitRom, inviteStatus: inviteStatus,
+    portal: portal, acceptConsent: acceptConsent, submit: submit, submitRom: submitRom, inviteStatus: inviteStatus,
     // pure helpers (unit-tested in Node)
     _M: M, _storeRows: storeRows, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -4868,6 +4879,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   })();
   var CLOUD = MODE === 'cloud', cloudUser = null, cloudBusy = false;
   function setMode(m) { try { localStorage.setItem(MKEY, m); } catch (e) {} var u = location.href.split('#')[0].split('?')[0]; location.replace(u); }
+  var CONSENT_VER = 1; // patient consent text version (see ptConsent); bump when the approved text changes → every patient is asked again
   function emptyStore() { return { version: 4, cloud: true, patients: [], submissions: [], rom: [], xrays: [], opnotes: [] }; }
   var $ = function (id) { return document.getElementById(id); };
   var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
@@ -5117,7 +5129,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
       });
     });
     var OWN = { email: 'owner@demo.orthothessaly', name: 'Owner surgeon (DEMO)' }, COL = { email: 'colleague.seed@demo.test', name: 'Dr DEMO Colleague (seed)' };
-    var st = { version: 4, rom: seedRom(td), xrays: window.OrthoXray ? window.OrthoXray.seedStudies(P.addDays, DEMO_PTS) : [], patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, optional: (DEMO_OPT[p.id] || []).slice(), camera: !!DEMO_CAM[p.id], demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate }; }), submissions: subs };
+    var st = { version: 4, rom: seedRom(td), xrays: window.OrthoXray ? window.OrthoXray.seedStudies(P.addDays, DEMO_PTS) : [], patients: DEMO_PTS.map(function (p, i) { return { id: p.id, procedure: p.procedure, surgeryDate: p.surgeryDate, age: p.age, sex: p.sex, optional: (DEMO_OPT[p.id] || []).slice(), camera: !!DEMO_CAM[p.id], demo: true, enteredBy: (i === 3 || i === 6) ? COL : OWN, created: p.surgeryDate, promsConsent: { at: P.addDays(p.surgeryDate, -30) + 'T08:00:00.000Z', ver: CONSENT_VER } }; }), consentSeed: 1, submissions: subs };
     st.opnotes = window.OrthoOpNote ? window.OrthoOpNote.seedNotes(st.patients) : [];
     save(KEY, st); return st;
   }
@@ -5136,6 +5148,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   function reanchorDemo() {
     if (CLOUD) return;
     var td = today(), changed = false, byId = {}; DEMO_PTS.forEach(function (d) { byId[d.id] = d; });
+    if (!store.consentSeed) { store.consentSeed = 1; changed = true; store.patients.forEach(function (p) { if (byId[p.id] && p.demo && !p.promsConsent) p.promsConsent = { at: P.addDays(p.surgeryDate, -30) + 'T08:00:00.000Z', ver: CONSENT_VER }; }); } // demo stores of older builds: the synthetic patients count as consented once (new / self-entered patients are asked)
     store.patients.forEach(function (p) {
       var d = byId[p.id]; if (!d || !p.demo) return;
       var delta = P.daysBetween(p.surgeryDate, d.surgeryDate);
@@ -5491,12 +5504,70 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     return '<div class="pttop">' + (home ? '<button class="ptlink" id="ptHomeBtn">' + esc(t('ptHome')) + '</button>' : '<span></span>') +
       '<button class="ptsize" id="ptSize" aria-pressed="' + (pst.large ? 'true' : 'false') + '" aria-label="' + esc(t('ptSizeL') + ': ' + (pst.large ? t('ptNormal') : t('ptBigger'))) + '"><span class="aa" aria-hidden="true">Α<span>Α</span></span> ' + esc(pst.large ? t('ptNormal') : t('ptBigger')) + '</button></div>';
   }
+
+  // ---------- Patient consent gate (approved text, v1): shown once after the ΑΜΚΑ sign-in, before any questionnaire; patient sessions only ----------
+  var CONSENT = {
+    el: { title: 'Συγκατάθεση για ερωτηματολόγια και ανώνυμη έρευνα',
+      intro: 'Καλώς ήρθατε στην εφαρμογή OrthoThessaly της ορθοπαιδικής ομάδας του Πανεπιστημιακού Γενικού Νοσοκομείου Λάρισας (ΠΓΝΛ).',
+      secs: [['Τι σας ζητάμε', ['Μετά την ορθοπαιδική σας επέμβαση σας καλούμε να συμπληρώσετε σύντομα ερωτηματολόγια για τον πόνο σας, την κίνησή σας, τις καθημερινές σας δραστηριότητες και την ποιότητα ζωής σας. Αυτό γίνεται σε συγκεκριμένες χρονικές στιγμές, για παράδειγμα πριν από την επέμβαση και στους μήνες που ακολουθούν.', 'Οι απαντήσεις σας βοηθούν τον γιατρό σας να παρακολουθεί την ανάρρωσή σας και να φροντίζει καλύτερα την υγεία σας.']],
+        ['Ποιος βλέπει τις απαντήσεις σας', ['Η ορθοπαιδική ομάδα που σας παρακολουθεί βλέπει τις απαντήσεις σας στον φάκελό σας. Δεν δημοσιεύουμε το όνομά σας, το ΑΜΚΑ σας ή τις απαντήσεις σας με τρόπο που να φαίνεται ποιος είστε.']],
+        ['Ανώνυμη χρήση για έρευνα', ['Ζητάμε επίσης τη συγκατάθεσή σας να χρησιμοποιήσουμε τις απαντήσεις σας ανώνυμα για έρευνα. Σκοπός της έρευνας είναι να μελετήσουμε τα αποτελέσματα των επεμβάσεων και να βελτιώσουμε τη φροντίδα των ασθενών στο μέλλον.', 'Για την έρευνα αφαιρούνται το ονοματεπώνυμο, το ΑΜΚΑ και κάθε άλλο στοιχείο που σας ταυτοποιεί. Τα δεδομένα εμφανίζονται μόνο με έναν κωδικό που δεν αποκαλύπτει ποιος είστε.']],
+        ['Πώς φυλάσσονται τα στοιχεία σας', ['Οι απαντήσεις φυλάσσονται με ασφάλεια σε διακομιστή εντός της Ευρωπαϊκής Ένωσης και είναι προσβάσιμες μόνο στους ιατρούς της ομάδας. Δεν δίνονται σε τρίτους μαζί με το όνομά σας ή το ΑΜΚΑ σας.', 'Αν έχετε ερωτήσεις για τα στοιχεία σας, απευθυνθείτε στον γιατρό σας.']]],
+      accH: 'Αποδοχή', accLead: 'Πατώντας «Αποδοχή» δηλώνετε ότι κατανοήσατε τα παραπάνω και συναινείτε:',
+      accList: ['να συμπληρώσετε τα ερωτηματολόγια για την παρακολούθηση της υγείας σας, και', 'να χρησιμοποιηθούν οι απαντήσεις σας ανώνυμα για έρευνα.'],
+      accTail: 'Για να συνεχίσετε στα ερωτηματολόγια χρειάζεται να πατήσετε «Αποδοχή». Αν δεν αποδέχεστε, δεν μπορείτε να συμπληρώσετε τα ερωτηματολόγια μέσω αυτής της εφαρμογής.',
+      yes: 'Αποδοχή', no: 'Δεν αποδέχομαι',
+      declined: 'Χωρίς αποδοχή δεν μπορείτε να συνεχίσετε στα ερωτηματολόγια. Αν έχετε απορίες, επικοινωνήστε με τον γιατρό σας.', back: 'Επιστροφή στην είσοδο',
+      doc: 'Συγκατάθεση ερωτηματολογίων: αποδεκτή' },
+    en: { title: 'Consent for questionnaires and anonymous research',
+      intro: 'Welcome to the OrthoThessaly app of the orthopaedic team of the University General Hospital of Larissa (UGHL).',
+      secs: [['What we are asking of you', ['After your orthopaedic operation we invite you to complete short questionnaires about your pain, your movement, your daily activities and your quality of life. This happens at specific points in time, for example before the operation and in the months that follow.', 'Your answers help your doctor follow your recovery and take better care of your health.']],
+        ['Who sees your answers', ['The orthopaedic team that looks after you sees your answers in your medical record. We do not publish your name, your AMKA or your answers in a way that shows who you are.']],
+        ['Anonymous use for research', ['We also ask for your consent to use your answers anonymously for research. The aim of the research is to study the results of operations and to improve patient care in the future.', 'For research, your full name, your AMKA and any other information that identifies you are removed. The data appear only with a code that does not reveal who you are.']],
+        ['How your information is kept', ['Your answers are stored securely on a server within the European Union and can be accessed only by the doctors of the team. They are not given to third parties together with your name or your AMKA.', 'If you have questions about your information, please ask your doctor.']]],
+      accH: 'Acceptance', accLead: 'By pressing “Accept” you confirm that you have understood the above and you agree:',
+      accList: ['to complete the questionnaires that monitor your health, and', 'to the anonymous use of your answers for research.'],
+      accTail: 'To continue to the questionnaires you need to press “Accept”. If you do not accept, you cannot complete the questionnaires through this app.',
+      yes: 'Accept', no: 'I do not accept',
+      declined: 'Without acceptance you cannot continue to the questionnaires. If you have any questions, please contact your doctor.', back: 'Back to sign-in',
+      doc: 'Questionnaire consent: accepted' }
+  };
+  function CT() { return CONSENT[lang() === 'en' ? 'en' : 'el']; }
+  function hasConsent(p) { var c = p && p.promsConsent; return !!(c && c.at && +c.ver >= CONSENT_VER); }
+  function consentDay(iso) { try { return new Intl.DateTimeFormat(lang() === 'en' ? 'en-GB' : 'el-GR', { timeZone: 'Europe/Athens', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso)); } catch (e) { return String(iso).slice(0, 10); } }
+  function consentLineHtml(p) { var c = p && p.promsConsent; return c && c.at ? '<div class="muted small ptconsentline" id="ptConsentLine">✔︎ ' + esc(CT().doc) + ' · ' + esc(consentDay(c.at)) + '</div>' : ''; }
+  var ptDeclined = false;
+  function ptConsent(el, pt) {
+    var C = CT();
+    var h = ptTop(false) + '<div class="ptconsent" id="ptConsent"><h1 class="pth1" id="ptConsentT" data-focus tabindex="-1">' + esc(C.title) + '</h1><p class="ptlead">' + esc(C.intro) + '</p>' +
+      C.secs.map(function (x) { return '<h2 class="ptch2">' + esc(x[0]) + '</h2>' + x[1].map(function (q) { return '<p>' + esc(q) + '</p>'; }).join(''); }).join('') +
+      '<h2 class="ptch2">' + esc(C.accH) + '</h2><p>' + esc(C.accLead) + '</p><ol class="ptclist">' + C.accList.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') + '</ol><p>' + esc(C.accTail) + '</p>' +
+      '<p class="ptmsg" id="ptConsentMsg" role="alert"></p><div class="ptconsentbtns"><button class="ptbig" id="ptAccept">' + esc(C.yes) + '</button><button class="ptbig alt" id="ptDecline">' + esc(C.no) + '</button></div></div>';
+    el.innerHTML = h;
+    $('ptAccept').onclick = function () {
+      var b = this; b.disabled = true; $('ptConsentMsg').textContent = '';
+      var done = function (c) { pt.promsConsent = { at: c.at, ver: +c.ver || CONSENT_VER }; if (!CLOUD) persist(); prun = null; renderProms(); ptFocus(el); };
+      if (CLOUD && !cloudUser) CL.acceptConsent(portalKey || pt.id).then(function (r) { if (!r || !r.ok || !r.at) { b.disabled = false; $('ptConsentMsg').textContent = t('cSendFail'); return; } done(r); },
+        function (e) { b.disabled = false; var m = $('ptConsentMsg'); if (m) m.textContent = e && e.code === 'ORTHO_LOCKED' ? t('ptLocked') : t('cSendFail'); });
+      else done({ at: new Date().toISOString(), ver: CONSENT_VER });
+    };
+    $('ptDecline').onclick = function () {
+      ctx.pid = ''; ctx.tp = ''; prun = null; if (CLOUD && !cloudUser) { portalKey = ''; try { sessionStorage.removeItem(PKEY); } catch (e) {} store = emptyStore(); } savePst();
+      ptDeclined = true; renderProms(); ptFocus(el);
+    };
+  }
+  function ptDeclinedView(el) {
+    var C = CT();
+    el.innerHTML = ptTop(false) + '<div class="ptconsent" id="ptDeclined"><h1 class="pth1" data-focus tabindex="-1">' + esc(C.title) + '</h1><p class="ptdeclmsg" id="ptDeclMsg" role="status">' + esc(C.declined) + '</p><button class="ptbig" id="ptBackLogin">← ' + esc(C.back) + '</button></div>';
+    $('ptBackLogin').onclick = function () { ptDeclined = false; renderProms(); ptFocus(el); var i = $('pPid'); if (i) i.focus(); };
+  }
   function ptFocus(el) { var f = el.querySelector('[data-focus]'); if (f) { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } } var hd = document.querySelector('header'), off = (hd ? hd.getBoundingClientRect().height : 56) + 8, r = el.getBoundingClientRect(); window.scrollTo(0, Math.max(0, window.scrollY + r.top - off)); }
   function renderProms() {
     var el = $('ptApp'); if (!el) return;
     JP = ctx.pid; el.classList.toggle('large', !!pst.large); document.documentElement.classList.toggle('pt-large', !!pst.large);
     var pt = patientById(ctx.pid);
-    if (!pt) { prun = null; ptLogin(el); }
+    if (!pt) { prun = null; if (ptDeclined) ptDeclinedView(el); else ptLogin(el); }
+    else if (!isDoc() && !hasConsent(pt)) { prun = null; ptDeclined = false; ptConsent(el, pt); } // consent gate: patient sessions only (doctor / clinic entry never blocked)
     else if (!prun) ptHome(el, pt);
     else if (prun.screen === 'intro') ptIntro(el);
     else if (prun.screen === 'q') ptQuestion(el);
@@ -5957,7 +6028,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   function patientView(p, td) {
     var c = P.protocolStatus(p, store.submissions, td), rec = P.patientSet(p), prot = PR[p.procedure];
     var sym = { done: '✓', due: '●', overdue: '✗', upcoming: '◦', na: '–', off: '·' };
-    var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(ptLabel(p)) + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</h2>' + (p.amka || ptName(p) ? '<div class="ptident" id="ptIdent">' + (p.amka ? esc(t('npAmka')) + ' <b id="ptAmkaFull">' + esc(p.amka) + '</b>' : '') + (p.side ? ' · ' + esc(t('npSide')) + ' ' + esc(t('side' + p.side)) : '') + (p.age ? ' · ' + esc(t('npAge')) + ' ' + esc(p.age) : '') + ' · <span class="muted">' + esc(t('npCode')) + ' ' + esc(p.id) + '</span></div>' : '') + '<div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate || '—') + '</div>';
+    var h = '<div class="card"><h2>' + esc(t('ptView')) + ': ' + esc(ptLabel(p)) + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</h2>' + (p.amka || ptName(p) ? '<div class="ptident" id="ptIdent">' + (p.amka ? esc(t('npAmka')) + ' <b id="ptAmkaFull">' + esc(p.amka) + '</b>' : '') + (p.side ? ' · ' + esc(t('npSide')) + ' ' + esc(t('side' + p.side)) : '') + (p.age ? ' · ' + esc(t('npAge')) + ' ' + esc(p.age) : '') + ' · <span class="muted">' + esc(t('npCode')) + ' ' + esc(p.id) + '</span></div>' : '') + '<div class="muted">' + esc(tx(PROC[p.procedure].name)) + ' · ' + esc(t('surgery')) + ' ' + esc(p.surgeryDate || '—') + '</div>' + consentLineHtml(p);
     if (window.__qr) h += window.__qr.ptBtn(p);
     if (window.__fu) h += window.__fu.timelineHtml(p, td);
     h += '<h3 style="margin-top:10px">' + esc(t('recSet')) + '</h3>' + schedStrip(p, td) + '<div class="tblwrap"><table class="tbl mx" id="mxTable"><tr><th></th>' + TPS.map(function (x) { var pt = prot.tps.filter(function (q) { return q.id === x.id; })[0], w = P.WINDOWS[x.id]; return '<th class="' + (pt ? '' : 'offcol') + '">' + esc(tx(x.name)) + (pt && !pt.req ? ' <span class="muted">(' + esc(t('optTp')) + ')</span>' : '') + '<br><span class="muted">' + (pt ? esc(p.surgeryDate ? P.addDays(p.surgeryDate, w.from) + ' → ' + P.addDays(p.surgeryDate, w.to) : '—') : esc(t('st_off'))) + '</span></th>'; }).join('') + '</tr>' +
@@ -6166,7 +6237,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     var clone = function (x) { return JSON.parse(JSON.stringify(x)); };
     (loc.patients || []).forEach(function (p) {
       if (!CODE_RE.test(String(p.id)) || have[String(p.id).toUpperCase()] || (!o.includeDemo && isSeedPt(p))) return;
-      var np = clone(p); np.demo = isSeedPt(p); if (!np.enteredBy) np.enteredBy = { name: cloudUser.name, email: cloudUser.email };
+      var np = clone(p); delete np.promsConsent; np.demo = isSeedPt(p); if (!np.enteredBy) np.enteredBy = { name: cloudUser.name, email: cloudUser.email };
       store.patients.push(np); ids[p.id] = 1; have[String(p.id).toUpperCase()] = 1; cnt.patients++;
     });
     var films = [];
@@ -6196,6 +6267,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   var PKEY = 'orthothessaly.portal.key', portalKey = (function () { try { return sessionStorage.getItem(PKEY) || ''; } catch (e) { return ''; } })(); // the patient's ΑΜΚΑ: this tab only, never in localStorage
   function adoptPortal(r) {
     var pt = { id: r.code, procedure: r.procedure, surgeryDate: r.surgeryDate, optional: r.optional || [], camera: !!r.camera, demo: false };
+    if (r.consent && r.consent.at) pt.promsConsent = { at: r.consent.at, ver: +r.consent.ver || 0 }; // a restored session with consent skips the form
     store = { version: 4, portal: true, patients: [pt], submissions: (r.done || []).map(function (d, i) { return { id: 'p' + i, patientId: r.code, instrument: d.instrument, timepoint: d.timepoint, date: d.date, source: 'patient' }; }), rom: [], xrays: [], opnotes: [] };
     return pt;
   }
