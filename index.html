@@ -853,6 +853,27 @@ body.wri-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
 .wriopt summary{cursor:pointer;color:#41545c;margin:4px 0}
 .wrilvl{display:inline-block;margin-left:.4em;padding:0 .45em;border-radius:.6em;font-size:.85em;font-weight:600;white-space:nowrap}
 .wrilvl-high{background:#d7f5df;color:#14532d}.wrilvl-medium{background:#fff1c2;color:#6b4e00}.wrilvl-low{background:#ffd9d6;color:#7f1d1d}
+/* ===== 🦵 Patellar instability sub-tab (pane also carries .xpts for the shared editor / table styles) ===== */
+.patsecs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.patsecs button{flex:1 1 auto}.patsecs button.active,.xpat .seg button.active{background:#0b3d4a;color:#fff}
+.xpat .patsec h3{margin:0 0 4px}.xpat .patsec .row{gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0}
+.patband{display:inline-block;font-size:.8em;padding:1px 7px;border-radius:999px;margin:1px 3px 1px 0;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}
+.patband.on{background:#0b3d4a;color:#fff;border-color:#0b3d4a;font-weight:700}
+.patsign{display:inline-flex}.patsign button{min-width:56px}
+#patSigns td{vertical-align:middle}#patSigns td:first-child{white-space:normal}
+.patsum .ptsval{font-size:1.05em}.patsum td:last-child{white-space:nowrap}
+.patcal{margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;overflow:auto;background:#fff;color:#0b1f26;padding:14px}
+.patreport .patr-main .card{box-shadow:none;border:1px solid #cbd5e1;margin:6px 0}
+.patreport .patr-figs{display:flex;flex-wrap:nowrap;gap:6px;margin:6px 0}.patreport .patr-figs figure{margin:0;flex:1 1 0;min-width:0}.patreport .patr-figs img{display:block;width:100%;height:auto;max-height:80mm;object-fit:contain;border-radius:4px;background:#000}
+.patreport .patr-det{font-size:.82em;margin:4px 0}.patreport .patq{margin:2px 0}.patreport .patq .xhflags{margin:2px 0 4px}.patreport .patr-det h3{font-size:1em;margin:6px 0 2px}
+@media print{
+  body.pat-print>*:not(#patReport){display:none!important}
+  body.pat-print .htoreport{position:static;padding:0;overflow:visible}
+  body.pat-print .noprint{display:none!important}
+  .patreport .patr-figs img{max-height:70mm}
+  .patreport .patr-det{font-size:.75em}
+}
+@media (max-width:560px){.patsecs button{font-size:.85em;padding:6px 6px}.patsum td:last-child{white-space:normal}}
 /* ===== 🧠 Quiz (doctors only) – mobile-first ===== */
 #tab-quiz h2{margin:0;font-size:1.25rem;color:var(--brand)}
 .qzbar,.qzrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.qzsp{flex:1}
@@ -6539,7 +6560,7 @@ body.wri-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     if (p.created) ev.push({ kind: 'reg', date: String(p.created).slice(0, 10), by: p.enteredBy || null });
     if (p.surgeryDate) ev.push({ kind: 'surgery', date: p.surgeryDate, procedure: p.procedure, side: p.side || '' });
     (d.opnotes || []).filter(function (n) { return n.patientId === p.id; }).forEach(function (n) { ev.push({ kind: 'opnote', date: (n.fields && n.fields.date) || String(n.createdAt || '').slice(0, 10) || p.surgeryDate || '', id: n.id, status: n.status, note: n }); });
-    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { if (x.kind === 'pts') { if (x.pts) ev.push({ kind: 'pts', date: x.pts.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', pts: x.pts }); return; } if (x.kind === 'wrist') { if (x.wrist) ev.push({ kind: 'wrist', date: x.wrist.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', wrist: x.wrist }); return; } ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} });
+    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { if (x.kind === 'pts') { if (x.pts) ev.push({ kind: 'pts', date: x.pts.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', pts: x.pts }); return; } if (x.kind === 'wrist') { if (x.wrist) ev.push({ kind: 'wrist', date: x.wrist.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', wrist: x.wrist }); return; } if (x.kind === 'patella') { if (x.patella) ev.push({ kind: 'patella', date: x.patella.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', patella: x.patella }); return; } ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} });
       if (x.hto && x.hto.result) ev.push({ kind: 'hto', date: x.hto.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', hto: x.hto }); });
     var groups = {};
     subs.forEach(function (s) { var k = s.timepoint + '|' + s.date; if (!groups[k]) { groups[k] = { kind: 'prom', date: s.date, tp: s.timepoint, subs: [] }; ev.push(groups[k]); } groups[k].subs.push(s); });
@@ -6547,7 +6568,7 @@ body.wri-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     var all = patientRows(p, subs, today, { optional: true, soon: 100000 });
     all.forEach(function (r) { ev.push({ kind: 'sched', date: r.status === 'overdue' || r.status === 'missed' ? r.to : r.from, tp: r.tp, status: r.status === 'soon' && r.days > SOON ? 'upcoming' : r.status, from: r.from, to: r.to, missing: r.missing, req: r.req, noDate: !!r.noDate, days: r.days }); });
     ev.push({ kind: 'today', date: today });
-    var RANK = { reg: 0, surgery: 1, opnote: 2, xray: 3, hto: 3.5, pts: 3.6, wrist: 3.7, prom: 4, rom: 5, sched: 6, today: 7 };
+    var RANK = { reg: 0, surgery: 1, opnote: 2, xray: 3, hto: 3.5, pts: 3.6, wrist: 3.7, patella: 3.8, prom: 4, rom: 5, sched: 6, today: 7 };
     return ev.sort(function (a, b) {
       var da = a.date || (a.kind === 'sched' ? '9999' : '0000'), db = b.date || (b.kind === 'sched' ? '9999' : '0000');
       if (da !== db) return da < db ? -1 : 1;
@@ -6668,7 +6689,7 @@ body.wri-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   function side(s) { s = String(s || '').charAt(0).toUpperCase(); return s === 'R' ? t('sR') : s === 'L' ? t('sL') : s === 'B' ? t('sB') : ''; }
   function f1(v) { return typeof v === 'number' ? (Math.round(v * 10) / 10).toFixed(1) : v; }
   function evHtml(e, p, i) {
-    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', hto: '🦴', pts: '📐', wrist: '🖐', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
+    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', hto: '🦴', pts: '📐', wrist: '🖐', patella: '🦵', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
     var rel = p.surgeryDate && e.date && e.kind !== 'today' ? P.daysBetween(p.surgeryDate, e.date) : null;
     if (e.kind === 'today') return '<li class="tl-today" data-tlk="today"><span class="tldot">' + ic + '</span><div class="tlbody"><b>' + esc(t('today')) + '</b> <span class="muted">' + esc(dmy(e.date)) + '</span></div></li>';
     if (e.kind === 'reg') { title = t('reg'); body = e.by ? esc(t('by') + ' ' + (e.by.name || e.by.email || '')) : ''; }
@@ -6679,6 +6700,7 @@ body.wri-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
       body = bits.length ? '<b class="tlxr">' + esc(bits.join(' · ')) + '</b>' : '<span class="muted">' + esc(t('notMeas')) + '</span>'; }
     if (e.kind === 'hto') { title = t('hto') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xhto ? '<b class="tlxr">' + esc(window.__xhto.headline(e.hto, en() ? 'en' : 'el')) + '</b>' + (e.filmDate && e.filmDate !== e.date ? ' <span class="muted small">(' + esc(t('xr') + ' ' + dmy(e.filmDate)) + ')</span>' : '') : ''; }
     if (e.kind === 'pts') { title = (en() ? 'Posterior tibial slope' : 'Οπίσθια κλίση κνήμης') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xpts ? '<b class="tlxr">' + esc(window.__xpts.headline(e.pts, en() ? 'en' : 'el')) + '</b>' : ''; }
+    if (e.kind === 'patella') { title = (en() ? 'Patellar instability' : 'Αστάθεια επιγονατίδας') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xpat ? '<b class="tlxr">' + esc(window.__xpat.headline(e.patella, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'wrist') { title = (en() ? 'Wrist (distal radius)' : 'Πηχεοκαρπική') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xwrist ? '<b class="tlxr">' + esc(window.__xwrist.headline(e.wrist, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'prom') { title = t('prom') + ' · ' + X.tpName(e.tp);
       body = '<div class="tlchips">' + e.subs.map(function (s) { return '<button class="tlchip" data-tlsub="' + esc(s.id) + '" title="' + esc(t('ansHint')) + '"><b>' + esc(I[s.instrument] ? I[s.instrument].short : s.instrument) + '</b> ' + esc(X.fmtScore(s.instrument, s)) + ' ' + X.bandHtml(s.instrument, s) + '</button>'; }).join('') + '</div>'; }
@@ -6704,6 +6726,7 @@ body.wri-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
         var e = lastEv[+b.dataset.tlgo]; if (!e) return;
         if (e.kind === 'prom') { if (Q()) e.subs.forEach(function (s) { Q().open[s.id] = true; }); return A.openPatient(p.id, 'sub-' + e.subs[0].id); }
         if (e.kind === 'pts' && window.__xpts && A.showTab) { A.showTab('xray'); window.__xpts.open(e.id); return; }
+        if (e.kind === 'patella' && window.__xpat && A.showTab) { A.showTab('xray'); window.__xpat.open(e.id); return; }
         if (e.kind === 'wrist' && window.__xwrist && A.showTab) { A.showTab('xray'); window.__xwrist.open(e.id); return; }
         if (e.kind === 'hto' && window.__xray && window.__xray.openStudy && A.showTab) { A.showTab('xray'); window.__xray.openStudy(e.id, 'hto'); return; }
         if (e.kind === 'opnote' && window.__opnote && window.__opnote.open) { window.__opnote.open(e.id, 'view'); return A.openPatient(p.id, 'opn'); }
@@ -9987,6 +10010,33 @@ window.OrthoQRGen = qrcode; })();
       function (e) { api.last = { error: String(e && (e.message || e.code) || e) }; if (root.console) console.warn('pts training case not stored', e); return api.last; });
   }
   api.contributePts = contributePts;
+  var PAT_KIND = { 'patella-lat': { req: ['PS', 'PI', 'TT'], opt: ['PU', 'PL', 'TA'] }, 'patella-ct-a': { req: ['C1', 'C2', 'TG'], opt: ['SM', 'SL', 'TU'] }, 'patella-ct-b': { req: ['TU'], opt: ['B1', 'B2'] } };
+  /** Store confirmed 🦵 patellar-instability landmarks of a REAL (non-DEMO) image: lateral film (PS/PI/TT …) or CT slice A (condyles, groove) / B (tuberosity).
+   *  kind-domain hash + R/L side → rows never collide with alignment, PTS, wrist or the other patella images. Same training_cases columns (no schema change). */
+  function contributeKind(kind, view, side, phase) {
+    var K = PAT_KIND[kind]; if (!K) return Promise.resolve({ skipped: 'kind' }); side = side === 'L' ? 'L' : 'R';
+    if (!active()) return Promise.resolve({ skipped: 'not-cloud' }); if (optedOut()) return Promise.resolve({ skipped: 'opt-out' });
+    if (!view || !view.img || view.demo) return Promise.resolve({ skipped: view && view.demo ? 'demo' : 'no-film' });
+    var lm = JSON.parse(JSON.stringify(view.pts || {})), ok = function (k) { return lm[k] && isFinite(lm[k].x) && isFinite(lm[k].y); };
+    if (!K.req.every(ok)) return Promise.resolve({ skipped: 'incomplete' });
+    var all = K.req.concat(K.opt.filter(ok)); if (all.length < 2) return Promise.resolve({ skipped: 'incomplete' });
+    var box = cropFor(lm, view.W || view.img.width, view.H || view.img.height, all); if (!box) return Promise.resolve({ skipped: 'incomplete' });
+    var c = document.createElement('canvas'); c.width = box.outW; c.height = box.outH; var g = c.getContext('2d');
+    g.filter = 'grayscale(1)'; g.imageSmoothingQuality = 'high'; g.drawImage(view.img, box.x, box.y, box.w, box.h, 0, 0, box.outW, box.outH);
+    var domain = kind + ':' + filmHash(view.img), bytes = new Uint8Array(domain.length); for (var i = 0; i < domain.length; i++) bytes[i] = domain.charCodeAt(i);
+    var hash = sha256(bytes), uid = CL().user.id, path = uid + '/' + hash + '-' + side + '.jpg', d = view.det || {};
+    var origin = {}; all.forEach(function (k) { origin[k] = (view.org || {})[k] || 'manual'; });
+    var detector = { kind: kind, version: d.version || null, status: d.status || null, level: d.level || null, method: d.method || null, conf: d.conf || {}, ms: d.ms || null, notes: (d.notes || []).slice(0, 12) };
+    return new Promise(function (res) { c.toBlob(res, 'image/jpeg', 0.85); }).then(function (blob) {
+      if (!blob) throw new Error('jpeg');
+      return CL().req('POST', '/storage/v1/object/training/' + path, blob, { 'x-upsert': 'true', 'Content-Type': 'image/jpeg' });
+    }).then(function () {
+      var row = { film_hash: hash, side: side, landmarks: toCrop(lm, box, all), origin: origin, detector: detector, img_path: path, img_w: box.outW, img_h: box.outH, scale: box.scale, postop: phase === 'post' };
+      return CL().req('POST', '/rest/v1/training_cases?on_conflict=film_hash,side', row, { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    }).then(function () { api.last = { ok: true, path: path, hash: hash, side: side, kind: kind, box: box }; return refreshCount().then(function () { return api.last; }); },
+      function (e) { api.last = { error: String(e && (e.message || e.code) || e) }; if (root.console) console.warn('patella training case not stored', e); return api.last; });
+  }
+  api.contributeKind = contributeKind;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== X-rays tab UI ===== -->
@@ -10322,7 +10372,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- view transform ----------
   function vsize() { var v = $('xView'); return { w: v.clientWidth, h: v.clientHeight }; }
-  function fit() { if (!st.img) return; if ((st.sub === 'hto' && window.__xhto) || (st.sub === 'pts' && window.__xpts) || (st.sub === 'wrist' && window.__xwrist)) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
+  function fit() { if (!st.img) return; if ((st.sub === 'hto' && window.__xhto) || (st.sub === 'pts' && window.__xpts) || (st.sub === 'wrist' && window.__xwrist) || (st.sub === 'patella' && window.__xpat)) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
   function toScr(p) { return { x: p.x * st.view.s + st.view.tx, y: p.y * st.view.s + st.view.ty }; }
   function toImg(p) { return { x: (p.x - st.view.tx) / st.view.s, y: (p.y - st.view.ty) / st.view.s }; }
   function zoomAt(k, c) { var a = toImg(c); st.view.s = Math.max(0.05, Math.min(12, st.view.s * k)); st.view.tx = c.x - a.x * st.view.s; st.view.ty = c.y - a.y * st.view.s; draw(); }
@@ -10505,6 +10555,11 @@ window.OrthoQRGen = qrcode; })();
       var out = {}; Object.keys(r.pts || {}).forEach(function (k) { var q = r.pts[k]; if (q && isFinite(q.x)) out[k] = { x: (q.x + dx) / gf, y: (q.y + dy) / gf }; });
       r.ptsImg = out; return JSON.parse(JSON.stringify(r));
     }
+    function patella(m) { // 🦵 patellar instability: same steps as the main-thread detectOn() of xray-patella-ui.js
+      var O = self.OrthoPatella, o = m.o || {}, mx = o.kind === 'lat' ? O.MAXDIM.lat : O.MAXDIM.ct, f = Math.min(1, mx / Math.max(m.W0, m.H0)), w = Math.max(1, Math.round(m.W0 * f)), h = Math.max(1, Math.round(m.H0 * f));
+      var d = draw(m, w, h), g = new Uint8ClampedArray(w * h), i; for (i = 0; i < w * h; i++) g[i] = Math.round(0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2]);
+      return JSON.parse(JSON.stringify(O.detectImg({ W: w, H: h, data: g }, w / m.W0, o)));
+    }
     onmessage = function (ev) {
       var m = ev.data, A = self.OrthoXrayAuto, P = self.OrthoXrayPhoto;
       try {
@@ -10517,6 +10572,7 @@ window.OrthoQRGen = qrcode; })();
         else if (m.op === 'resume') { var c2 = C[m.id]; if (!c2) return; c2.ctx.opts[m.key] = m.val; (m.info || []).forEach(function (s) { c2.ctx.res.info.push(s); }); run(m.id); }
         else if (m.op === 'pts') postMessage({ id: m.id, res: pts(m) });
         else if (m.op === 'wrist') postMessage({ id: m.id, res: wrist(m) });
+        else if (m.op === 'patella') postMessage({ id: m.id, res: patella(m) });
         else if (m.op === 'resize') { // phone photo → ≤ 4096 px / 16 MP (high-quality smoothing) + the stored JPEG
           var rc = new OffscreenCanvas(m.w, m.h), rx = rc.getContext('2d'); rx.imageSmoothingEnabled = true; rx.imageSmoothingQuality = 'high'; rx.drawImage(m.bmp, 0, 0, m.w, m.h); m.bmp.close();
           rc.convertToBlob({ type: 'image/jpeg', quality: 0.92 }).then(function (bl) { var bm = rc.transferToImageBitmap(); postMessage({ id: m.id, bmp: bm, blob: bl }, [bm]); }, function (e) { fail(m.id, e); });
@@ -10530,7 +10586,7 @@ window.OrthoQRGen = qrcode; })();
     function get() {
       if (bad) return null; if (w) return w;
       try {
-        var src = ['ortho-xray', 'ortho-xray-tka', 'ortho-xray-auto', 'ortho-xray-photo', 'ortho-xray-pts', 'ortho-xray-wrist'].map(function (id) { var s = document.getElementById(id); if (!s || !s.textContent) throw new Error('src'); return s.textContent; }).join('\n;\n') + '\n;(' + workerMain.toString() + ')();';
+        var src = ['ortho-xray', 'ortho-xray-tka', 'ortho-xray-auto', 'ortho-xray-photo', 'ortho-xray-pts', 'ortho-xray-wrist', 'ortho-xray-patella'].map(function (id) { var s = document.getElementById(id); if (!s || !s.textContent) throw new Error('src'); return s.textContent; }).join('\n;\n') + '\n;(' + workerMain.toString() + ')();';
         var u = URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); w = new Worker(u); URL.revokeObjectURL(u);
         w.onmessage = function (ev) { var m = ev.data, p = pend[m.id]; if (p) p(m); };
         w.onerror = function (e) { bad = true; var ps = pend; pend = {}; try { w.terminate(); } catch (e2) {} w = null; Object.keys(ps).forEach(function (id) { ps[id]({ id: id, error: 'worker: ' + (e && e.message || 'error') }); }); };
@@ -10552,6 +10608,10 @@ window.OrthoQRGen = qrcode; })();
       pts: function (img, mmPerPx) {
         var id = 'p' + (++seq);
         return createImageBitmap(img).then(function (bmp) { return once({ op: 'pts', id: id, bmp: bmp, W0: img.width, H0: img.height, mmPerPx: mmPerPx || null }, [bmp]); }).then(function (m) { return m.res; });
+      },
+      patella: function (img, o) {
+        var id = 'k' + (++seq);
+        return createImageBitmap(img).then(function (bmp) { return once({ op: 'patella', id: id, bmp: bmp, W0: img.width, H0: img.height, o: JSON.parse(JSON.stringify(o || {})) }, [bmp]); }).then(function (m) { return m.res; });
       },
       wrist: function (img, mmPerPx, hint) {
         var id = 'w' + (++seq);
@@ -10864,8 +10924,8 @@ window.OrthoQRGen = qrcode; })();
     var root = $('tab-xray'); if (!root) return;
     var api = P(), pts = api ? api.store.patients : [];
     if (!st.date) st.date = today();
-    var hto = window.__xhto, ptsU = window.__xpts, wriU = window.__xwrist, sub = hto && st.sub === 'hto' ? 'hto' : ptsU && st.sub === 'pts' ? 'pts' : wriU && st.sub === 'wrist' ? 'wrist' : 'align';
-    var h = hto ? '<div class="xsubbar" role="tablist" aria-label="' + esc(t('title')) + '"><button class="xsub' + (sub === 'align' ? ' on' : '') + '" id="xSubAlign" role="tab" aria-selected="' + (sub === 'align') + '" data-xsub="align">🩻 ' + esc(lang() === 'el' ? 'Ευθυγράμμιση' : 'Alignment') + '</button><button class="xsub' + (sub === 'hto' ? ' on' : '') + '" id="xSubHto" role="tab" aria-selected="' + (sub === 'hto') + '" data-xsub="hto">🦴 ' + esc(lang() === 'el' ? 'Σχεδιασμός HTO' : 'HTO planning') + '</button>' + (ptsU ? '<button class="xsub' + (sub === 'pts' ? ' on' : '') + '" id="xSubPts" role="tab" aria-selected="' + (sub === 'pts') + '" data-xsub="pts">📐 ' + esc(lang() === 'el' ? 'Οπίσθια κλίση (PTS)' : 'Posterior slope (PTS)') + '</button>' : '') + (wriU ? '<button class="xsub' + (sub === 'wrist' ? ' on' : '') + '" id="xSubWrist" role="tab" aria-selected="' + (sub === 'wrist') + '" data-xsub="wrist">🖐 ' + esc(lang() === 'el' ? 'Πηχεοκαρπική' : 'Wrist (distal radius)') + '</button>' : '') + '</div>' : '';
+    var hto = window.__xhto, ptsU = window.__xpts, wriU = window.__xwrist, patU = window.__xpat, sub = hto && st.sub === 'hto' ? 'hto' : ptsU && st.sub === 'pts' ? 'pts' : wriU && st.sub === 'wrist' ? 'wrist' : patU && st.sub === 'patella' ? 'patella' : 'align';
+    var h = hto ? '<div class="xsubbar" role="tablist" aria-label="' + esc(t('title')) + '"><button class="xsub' + (sub === 'align' ? ' on' : '') + '" id="xSubAlign" role="tab" aria-selected="' + (sub === 'align') + '" data-xsub="align">🩻 ' + esc(lang() === 'el' ? 'Ευθυγράμμιση' : 'Alignment') + '</button><button class="xsub' + (sub === 'hto' ? ' on' : '') + '" id="xSubHto" role="tab" aria-selected="' + (sub === 'hto') + '" data-xsub="hto">🦴 ' + esc(lang() === 'el' ? 'Σχεδιασμός HTO' : 'HTO planning') + '</button>' + (ptsU ? '<button class="xsub' + (sub === 'pts' ? ' on' : '') + '" id="xSubPts" role="tab" aria-selected="' + (sub === 'pts') + '" data-xsub="pts">📐 ' + esc(lang() === 'el' ? 'Οπίσθια κλίση (PTS)' : 'Posterior slope (PTS)') + '</button>' : '') + (wriU ? '<button class="xsub' + (sub === 'wrist' ? ' on' : '') + '" id="xSubWrist" role="tab" aria-selected="' + (sub === 'wrist') + '" data-xsub="wrist">🖐 ' + esc(lang() === 'el' ? 'Πηχεοκαρπική' : 'Wrist (distal radius)') + '</button>' : '') + (patU ? '<button class="xsub' + (sub === 'patella' ? ' on' : '') + '" id="xSubPatella" role="tab" aria-selected="' + (sub === 'patella') + '" data-xsub="patella">🦵 ' + esc(lang() === 'el' ? 'Αστάθεια επιγονατίδας' : 'Patellar instability') + '</button>' : '') + '</div>' : '';
     h += '<div class="card xtopcard' + (sub !== 'align' ? ' xtop-hto' : '') + '"><h2>🩻 ' + esc(t('title')) + ' <span class="pill demo">DEMO</span></h2><div class="xptrow"><label class="fld inl">' + esc(t('patient')) + ' <select id="xPid"><option value="">—</option>' + pts.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === st.pid ? ' selected' : '') + '>' + esc(p.id) + '</option>'; }).join('') + '</select></label><div id="xTabs" class="xtabswrap"></div></div><p class="muted">' + esc(t('lead')) + '</p><div class="grid2 xform">' +
       '<label class="fld">' + esc(t('date')) + '<input type="date" id="xDate" value="' + esc(st.date) + '"></label>' +
       '<label class="fld">' + esc(t('phase')) + '<select id="xPhase"><option value="pre"' + (st.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (st.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label>' +
@@ -10877,7 +10937,7 @@ window.OrthoQRGen = qrcode; })();
       '<label class="rng">☀ ' + esc(t('bright')) + '<input type="range" id="xBr" min="40" max="220" value="' + st.bright + '"></label><label class="rng">◐ ' + esc(t('contrast')) + '<input type="range" id="xCo" min="40" max="300" value="' + st.contrast + '"></label>' +
       '<label class="chk"><input type="checkbox" id="xInv"' + (st.invert ? ' checked' : '') + '> ' + esc(t('invert')) + '</label><label class="chk"><input type="checkbox" id="xMirror"' + (st.mirror ? ' checked' : '') + '> ' + esc(t('mirror')) + '</label><label class="chk"><input type="checkbox" id="xSnap"' + (st.snap ? ' checked' : '') + '> ' + esc(t('snap')) + '</label><button id="xResetSide">↺ ' + esc(t('resetSide')) + '</button></div>' +
       '<div class="xviewpair"><div class="xview" id="xView" role="tabpanel"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><div id="xBanner" class="xbanner hidden" role="status" aria-live="polite"></div><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + emptyHtml() + '</div>' + (st.img && st.imgNote === 'imgThumb' ? '<div class="ximgnote" id="xImgNote">' + esc(t('imgThumb')) + '</div>' : '') + '</div><div class="xview xview2" id="xView2" aria-hidden="true"><canvas id="xImg2"></canvas><div class="xv2lab" id="xV2Lab"></div></div></div></div>' +
-      '<div class="card xpanel" id="xSide"></div></div>' + (hto ? '<div id="xHtoPane" class="xhto' + (sub === 'hto' ? '' : ' hidden') + '"></div>' : '') + (ptsU ? '<div id="xPtsPane" class="xpts' + (sub === 'pts' ? '' : ' hidden') + '"></div>' : '') + (wriU ? '<div id="xWristPane" class="xwri' + (sub === 'wrist' ? '' : ' hidden') + '"></div>' : '');
+      '<div class="card xpanel" id="xSide"></div></div>' + (hto ? '<div id="xHtoPane" class="xhto' + (sub === 'hto' ? '' : ' hidden') + '"></div>' : '') + (ptsU ? '<div id="xPtsPane" class="xpts' + (sub === 'pts' ? '' : ' hidden') + '"></div>' : '') + (wriU ? '<div id="xWristPane" class="xwri' + (sub === 'wrist' ? '' : ' hidden') + '"></div>' : '') + (patU ? '<div id="xPatPane" class="xpat xpts' + (sub === 'patella' ? '' : ' hidden') + '"></div>' : '');
     root.innerHTML = h; renderTabs();
     root.querySelectorAll('[data-xsub]').forEach(function (b) { b.onclick = function () { setSub(b.dataset.xsub); }; });
     var syncTka = function () { var b = $('xTka'); if (b) b.checked = tkaOn(); };
@@ -10903,6 +10963,7 @@ window.OrthoQRGen = qrcode; })();
     if (sub === 'hto') { hto.render(); return; }
     if (sub === 'pts') { ptsU.render(); return; }
     if (sub === 'wrist') { wriU.render(); return; }
+    if (sub === 'patella') { patU.render(); return; }
     requestAnimationFrame(function () { if (st.img && !st.fitted) { fit(); st.fitted = true; } else draw(); });
   }
   window.addEventListener('resize', function () { if ($('xView') && !$('tab-xray').classList.contains('hidden')) draw(); });
@@ -10913,7 +10974,7 @@ window.OrthoQRGen = qrcode; })();
   /** Saves one side (as the 💾 button does) and returns the stored study, or null with the reason shown in the status line. */
   function saveSide(sd) { var keep = st.side; st.side = sd; lastSaved = null; saveStudy(); st.side = keep; return lastSaved; }
   /** Sub-tab switch: 🩻 Alignment ↔ 🦴 HTO planning (the film, patient and tabs are shared). */
-  function setSub(v) { st.sub = v === 'hto' ? 'hto' : v === 'pts' && window.__xpts ? 'pts' : v === 'wrist' && window.__xwrist ? 'wrist' : 'align'; syncSub(); render(); }
+  function setSub(v) { st.sub = v === 'hto' ? 'hto' : v === 'pts' && window.__xpts ? 'pts' : v === 'wrist' && window.__xwrist ? 'wrist' : v === 'patella' && window.__xpat ? 'patella' : 'align'; syncSub(); render(); }
   /** Opens a saved study (e.g. from the patient timeline) in its film tab, on its side, in the given sub-tab. */
   function openStudy(id, sub) {
     var api = P(), x = ((api && api.store.xrays) || []).filter(function (q) { return q.id === id; })[0]; if (!x) return false;
@@ -10937,7 +10998,7 @@ window.OrthoQRGen = qrcode; })();
     if (!st.filmId) st.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     var tkaF = st.phase === 'post' && isTkaSide(sd0), label = pt && pt.surgeryDate && window.__xcmp ? window.__xcmp.intervalLabel(pt.surgeryDate, st.date) : null;
     var prevHto = null; store.xrays.forEach(function (x) { if (x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.hto) prevHto = x.hto; });
-    store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.kind !== 'pts' && x.kind !== 'wrist'); }); // 📐 PTS / 🖐 wrist records are separate studies
+    store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella'); }); // 📐 PTS / 🖐 wrist / 🦵 patella records are separate studies
     store.xrays.push({ id: 'x' + Math.random().toString(36).slice(2, 10), patientId: st.pid, date: st.date, phase: st.phase, side: st.side, landmarks: JSON.parse(JSON.stringify(st.lm[st.side])), results: res, image: st.name + (st.demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician',
       landmarkSource: landmarkSource(sd0), origins: JSON.parse(JSON.stringify(st.origin[sd0])), autoConfidence: conf, detector: det ? det.version : null, autoStatus: det ? det.status : null, confirmed: cfd, tka: tkaF, tkaDetected: !!(det && det.tka), label: label, synth: st.demo ? st.variant : null, thumb: makeThumb(sd0), filmId: st.filmId, imgStored: !st.demo && st.imgNote !== 'imgThumb' && !!st.img });
     if (prevHto) store.xrays[store.xrays.length - 1].hto = prevHto;
@@ -10982,9 +11043,9 @@ window.OrthoQRGen = qrcode; })();
   }
 
   // ---------- dashboard section ----------
-  function dashHtml(p) { return dashAlign(p) + (window.__xpts && window.__xpts.dashHtml ? window.__xpts.dashHtml(p) : '') + (window.__xwrist && window.__xwrist.dashHtml ? window.__xwrist.dashHtml(p) : ''); }
+  function dashHtml(p) { return dashAlign(p) + (window.__xpts && window.__xpts.dashHtml ? window.__xpts.dashHtml(p) : '') + (window.__xwrist && window.__xwrist.dashHtml ? window.__xwrist.dashHtml(p) : '') + (window.__xpat && window.__xpat.dashHtml ? window.__xpat.dashHtml(p) : ''); }
   function dashAlign(p) {
-    var api = P(), xs = ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'wrist'; });
+    var api = P(), xs = ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella'; });
     if (!xs.length && p.procedure !== 'TKA') return '';
     var h = '<h3 style="margin-top:12px">🩻 ' + esc(t('dashT')) + '</h3>';
     if (!xs.length) return h + '<p class="muted">' + esc(t('dashNone')) + '</p>';
@@ -11005,7 +11066,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- paste (Ctrl/Cmd+V, 📋 button) and drag & drop: the image goes into the ACTIVE sub-tab through that sub-tab's own file input ----------
   // (same pipeline as «Ανεβάστε Ακτινογραφία»: EXIF / downscale, worker detection, independent per-sub-tab film, training opt-in)
-  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile', wrist: 'wristFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
+  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile', wrist: 'wristFile', patella: 'patFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
   var PT = {
     el: { btn: '📋 Επικόλληση', hint: 'Ctrl+V για επικόλληση από PACS', aria: 'Επικόλληση ακτινογραφίας από το πρόχειρο', no: 'Πατήστε Ctrl+V ή χρησιμοποιήστε το «Ανεβάστε Ακτινογραφία»', empty: 'Δεν βρέθηκε εικόνα στο πρόχειρο – αντιγράψτε πρώτα την ακτινογραφία (π.χ. από το PACS).', drop: 'Αφήστε την εικόνα εδώ', notImg: 'Το αρχείο δεν είναι εικόνα ακτινογραφίας (PNG, JPEG ή DICOM).' },
     en: { btn: '📋 Paste', hint: 'Ctrl+V to paste from PACS', aria: 'Paste X-ray from the clipboard', no: 'Press Ctrl+V or use «Upload X-ray»', empty: 'No image on the clipboard – copy the X-ray first (e.g. from PACS).', drop: 'Drop the image here', notImg: 'The file is not an X-ray image (PNG, JPEG or DICOM).' } };
@@ -11024,6 +11085,7 @@ window.OrthoQRGen = qrcode; })();
     if (st.sub === 'hto') { loadHtoFile(file); return true; }
     if (st.sub === 'align') { loadFile(file); return true; }
     if (st.sub === 'wrist' && window.__xwrist && window.__xwrist.loadFile) { window.__xwrist.loadFile(file); return true; }
+    if (st.sub === 'patella' && window.__xpat && window.__xpat.loadFile) { window.__xpat.loadFile(file); return true; }
     return false;
   }
   function imageFromItems(items) { for (var i = 0; items && i < items.length; i++) { var it = items[i]; if (it.kind === 'file' && /^image\//.test(it.type)) { var f = it.getAsFile(); if (f) return f; } } return null; }
@@ -11059,7 +11121,7 @@ window.OrthoQRGen = qrcode; })();
   /** 📋 button + desktop hint next to every «Ανεβάστε Ακτινογραφία» of the active sub-tab (the sub-tab UIs re-render freely; this re-attaches). */
   function ensurePasteUi() {
     var r = $('tab-xray'); if (!r) return;
-    var ids = ['xFile', 'htoFile', 'ptsFile', 'wristFile'];
+    var ids = ['xFile', 'htoFile', 'ptsFile', 'wristFile', 'patFile'];
     [].forEach.call(r.querySelectorAll(ids.map(function (i) { return 'label[for="' + i + '"]'; }).join(',')), function (lab) {
       if (lab.nextElementSibling && lab.nextElementSibling.classList.contains('xpastewrap')) return;
       var w = document.createElement('span'); w.className = 'xpastewrap';
@@ -11076,7 +11138,7 @@ window.OrthoQRGen = qrcode; })();
 
   window.__xray = { feedFile: feedFile, pasteClick: pasteClick, filmBox: function () { return st.img ? filmBox(st.img) : null; }, tabs: function () { var w = WS[st.pid || '']; if (!w) return []; return w.tabs.map(function (s) { var o = slotState(s); return { uid: s.uid, phase: o.phase, date: o.date, label: tabLabel(s, w), active: s.uid === w.activeUid, saved: s.saved, dirty: !!o.dirty, img: !!o.img, note: o.imgNote, n: { R: Object.keys(o.lm.R).length, L: Object.keys(o.lm.L).length } }; }); },
     activateTab: activateTab, newPostTab: newPostTab, getFilm: function (k) { return idbGet(k); }, selectPatient: selectPatient, idbIdle: function () { return Promise.all(idbPending); },
-    clearFilms: function () { WS = {}; stored = {}; var s0 = newSlot('', 'pre', today()); loadSlot(s0); st.pid = ''; idbReq('readwrite', function (os) { return os.clear(); }).catch(function () {}); }, tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, workerOff: function () { XW.off(); }, workerOn: function () { return XW.ok(); }, ptsDetect: function (img, mm) { return XW.ok() ? XW.pts(img, mm) : null; }, wristDetect: function (img, mm, hint) { return XW.ok() ? XW.wrist(img, mm, hint) : null; }, loadHtoFile: loadHtoFile, htoUseAlign: htoUseAlign, htoOwnActive: htoOwnActive, htoOwn: function () { var w = WS[st.pid || '']; return w && w.hto ? { uid: w.hto.uid, active: w.activeUid === w.hto.uid, linked: !!w.htoLinked, img: !!(w.activeUid === w.hto.uid ? st.img : w.hto.img), alignImg: (function () { var a = alignUidOf(w), sl = a && findSlot(w, a); return !!(sl && (w.activeUid === sl.uid ? st.img : sl.img)); })() } : null; }, cancelAuto: function () { if (st.autoRun && st.autoRun.cancel) st.autoRun.cancel(); }, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
+    clearFilms: function () { WS = {}; stored = {}; var s0 = newSlot('', 'pre', today()); loadSlot(s0); st.pid = ''; idbReq('readwrite', function (os) { return os.clear(); }).catch(function () {}); }, tkaOn: tkaOn, setTka: function (v) { st.tka = v; var b = $('xTka'); if (b) b.checked = tkaOn(); }, setMl: function (on, force) { st.mlOff = !on; st.mlForce = !!force; }, render: render, dashHtml: dashHtml, loadDemo: loadDemo, runAuto: runAuto, workerOff: function () { XW.off(); }, workerOn: function () { return XW.ok(); }, ptsDetect: function (img, mm) { return XW.ok() ? XW.pts(img, mm) : null; }, wristDetect: function (img, mm, hint) { return XW.ok() ? XW.wrist(img, mm, hint) : null; }, patDetect: function (img, o) { return XW.ok() ? XW.patella(img, o) : null; }, loadHtoFile: loadHtoFile, htoUseAlign: htoUseAlign, htoOwnActive: htoOwnActive, htoOwn: function () { var w = WS[st.pid || '']; return w && w.hto ? { uid: w.hto.uid, active: w.activeUid === w.hto.uid, linked: !!w.htoLinked, img: !!(w.activeUid === w.hto.uid ? st.img : w.hto.img), alignImg: (function () { var a = alignUidOf(w), sl = a && findSlot(w, a); return !!(sl && (w.activeUid === sl.uid ? st.img : sl.img)); })() } : null; }, cancelAuto: function () { if (st.autoRun && st.autoRun.cancel) st.autoRun.cancel(); }, confirm: confirmSide, landmarkSource: landmarkSource, lowList: lowList, state: st, toScreen: function (p) { var r = $('xOv').getBoundingClientRect(), s = toScr(p); return { x: r.left + s.x, y: r.top + s.y }; },
     fit: fit, centreOn: centreOn, moveLandmark: function (sd, k, p, final) { if (!st.lm[sd][k]) return; st.lm[sd][k] = p; if (AUTO[k]) st.auto[sd][k] = false; moved(sd, k); autoCentres(sd); if (final) { renderSide(); draw(); updAuto(); } }, removeLandmark: function (sd, k) { delete st.lm[sd][k]; delete st.origin[sd][k]; if (AUTO[k]) st.auto[sd][k] = false; changed(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, setLandmark: function (sd, k, p) { st.lm[sd][k] = p; st.origin[sd][k] = 'manual'; changed(sd); autoCentres(sd); st.cur[sd] = nextStep(sd); renderSide(); draw(); }, compute: function (sd) { return X.compute(st.lm[sd], X.medialFor(sd, st.mirror)); }, exportPng: exportPng, exportCsv: exportCsv, loadFile: loadFile, decodeFile: decodeFile, putFilm: function (k, v) { return idbPut(k, v); }, saveSide: saveSide, setSub: setSub, openStudy: openStudy, msg: function (m) { msg(m); }, draw: function () { draw(); } };
 })();
 </script>
@@ -12454,7 +12516,8 @@ window.OrthoQRGen = qrcode; })();
     var yLat = function (x) { return -x * Math.tan(latTh * D2R) - o.latConvex * (1 - (x / LH) * (x / LH)) + latLift; }; // convex lateral plateau (latLift mm proximal of the medial rims; default 1.2 mm distal)
     var half = function (y) { return 19 - (y - 45) * 0.03; };
     var smooth = function (a, b, y) { var t = Math.min(1, Math.max(0, (y - a) / (b - a))); return t * t * (3 - 2 * t); };
-    var xa = function (y) { var s = 1 - smooth(3, 45, y); return s * 27.5 + (1 - s) * half(Math.max(y, 45)) + 4.5 * Math.exp(-((y - 28) / 9) * ((y - 28) / 9)); };
+    var tbH = o.tubH != null ? o.tubH : 4.5, tbY = o.tubY != null ? o.tubY : 28, tbS = o.tubS != null ? o.tubS : 9; // tibial tuberosity bump (🦵 patella DEMO films set it)
+    var xa = function (y) { var s = 1 - smooth(3, 45, y); return s * 27.5 + (1 - s) * half(Math.max(y, 45)) + tbH * Math.exp(-((y - tbY) / tbS) * ((y - tbY) / tbS)); };
     var xp = function (y) { var s = 1 - smooth(3, 45, y); return -(s * 26.5 + (1 - s) * half(Math.max(y, 45))); };
     var cond = [{ cx: -2, cy: -28, r: 24, w: 1 }, { cx: -2 - o.condOff, cy: -27, r: 23.5, w: 0.55 }];
     var fibX = function (y) { return -20 - 0.06 * (y - 22); };
@@ -12471,7 +12534,7 @@ window.OrthoQRGen = qrcode; })();
       if (y < -28 && x > -16 - (-28 - y) * 0.05 && x < 20 + (-28 - y) * 0.02) { var dsh = Math.min(x + 16, 20 - x); fem = Math.max(fem, dsh < 4 ? 150 : 95); }
       if (fem) v = Math.min(250, (v > 60 ? 72 : v) + fem);
       // patella
-      var pxp = (x - 33) / 7.5, pyp = (y + 36) / 19; if (pxp * pxp + pyp * pyp <= 1) v = Math.min(250, 72 + 140);
+      if (o.pat) { var pv = o.pat.inside(x, y); if (pv) v = Math.min(250, 72 + pv); } else { var pxp = (x - 33) / 7.5, pyp = (y + 36) / 19; if (pxp * pxp + pyp * pyp <= 1) v = Math.min(250, 72 + 140); }
       // fibula: head + shaft (adds where it overlaps the tibia)
       var fh = Math.hypot((x + 15) / 10, (y - 24) / 10) <= 1, fsx = y > 24 && Math.abs(x - fibX(y)) < 5.5;
       if (fh || fsx) v = Math.min(250, v + (v > 120 ? 30 : 100));
@@ -12483,6 +12546,7 @@ window.OrthoQRGen = qrcode; })();
     var T = { PA: toImg(Rr, -Rr * tt), PP: toImg(-Rr, Rr * tt), A1: toImg(xa(50), 50), P1: toImg(xp(50), 50), A2: toImg(xa(150), 150), P2: toImg(xp(150), 150),
       C1: toImg(-2 - 24, -28), C2: toImg(-2 - o.condOff - 23.5, -27), F1: toImg(fibX(60), 60), F2: toImg(fibX(170), 170) };
     if (o.lateral) { T.LA = toImg(LH, yLat(LH)); T.LP = toImg(-LH, yLat(-LH)); }
+    if (o.pat && o.pat.truth) { var PT0 = o.pat.truth({ xa: xa, yTop: yTop }); Object.keys(PT0).forEach(function (k) { T[k] = toImg(PT0[k].x, PT0[k].y); }); }
     return { W: W, H: H, data: out, truth: T, theta: o.theta, mmPerPx: 1 / o.ppm, opt: o };
   }
   root.OrthoPTS = { measure: measure, detect: detect, detectClassic: detectClassic, secondPlateau: secondPlateau, addPlateaus: addPlateaus, synth: synth, slopeDeg: slopeDeg, calibration: calibration, normRange: normRange, normStatus: normStatus, NORMS: NORMS, NORMS_LAT: NORMS_LAT,
@@ -14467,6 +14531,896 @@ window.OrthoQRGen = qrcode; })();
     toScreen: function (p) { var cv = $('wriCv'), v = V(); if (!cv || !v.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * v.lv.s + v.lv.tx, y: r.top + p.y * v.lv.s + v.lv.ty }; } };
 })();
 </script>
+<!-- ===== 🦵 Patellar instability: modified Insall–Salvati (lateral film), TT–TG (CT), Dejour trochlear dysplasia (classical detection; pure, tested in Node) + UI ===== -->
+<script id="ortho-xray-patella">
+// ===== OrthoThessaly · 🦵 Patellar instability (Αστάθεια επιγονατίδας): pure core (tested in Node) =====
+// 1) Patellar height on a lateral knee film: modified Insall–Salvati index (MISI = inferior end of the patellar articular surface → tibial
+//    tuberosity ÷ articular-surface length); optional classic Insall–Salvati (patellar tendon ÷ patellar length) and Caton–Deschamps
+//    (inferior articular end → anterior-superior tibial plateau corner ÷ articular length). Ratios need no calibration.
+// 2) TT–TG distance on CT axial slices: A at the trochlear groove (posterior condylar line C1 medial → C2 lateral + deepest groove point TG),
+//    B at the tibial tuberosity (TU); both perpendiculars to the posterior condylar line; slices assumed co-registered (same series / FOV)
+//    or the doctor places the reference line on slice B too (B1 → B2). One composite image also works. mm from DICOM spacing or a marker.
+// 3) Dejour trochlear dysplasia (A–D) from the lateral-film signs (crossing sign, supratrochlear spur, double contour) + optional sulcus
+//    angle on the axial slice (SM medial facet top, TG, SL lateral facet top). The doctor can always override the derived type.
+// Classical detection only (no ML): lateral film → the 📐 PTS tibial frame + patella / tuberosity search; CT → bone mask + bitangent of
+// the posterior condyles + groove + anterior-most tuberosity. Points are ALWAYS returned with a confidence level (never 'high').
+(function (root) {
+  'use strict';
+  var VERSION = 'patella-classic-1', R2D = 180 / Math.PI, D2R = Math.PI / 180;
+  var sub = function (a, b) { return { x: a.x - b.x, y: a.y - b.y }; }, add = function (a, b) { return { x: a.x + b.x, y: a.y + b.y }; };
+  var mul = function (a, k) { return { x: a.x * k, y: a.y * k }; }, dot = function (a, b) { return a.x * b.x + a.y * b.y; };
+  var len = function (a) { return Math.hypot(a.x, a.y); }, unit = function (a) { var l = len(a) || 1; return { x: a.x / l, y: a.y / l }; };
+  var mid = function (a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }, perp = function (u) { return { x: -u.y, y: u.x }; };
+  var okP = function (p) { return !!p && isFinite(p.x) && isFinite(p.y); }, dist = function (a, b) { return len(sub(a, b)); };
+  var LAT_REQ = ['PS', 'PI', 'TT'], LAT_OPT = ['PU', 'PL', 'TA', 'CAL1', 'CAL2'];
+  var CTA_REQ = ['C1', 'C2', 'TG'], CTB_REQ = ['TU'], SULC = ['SM', 'SL'];
+  // normal ranges / cut-offs (numbers only on the page)
+  var NORMS = { misi: { lo: 1.2, hi: 2.0 }, isi: { lo: 0.8, hi: 1.2 }, cdi: { lo: 0.6, hi: 1.2 }, sulcus: { lo: 132, hi: 144, mean: 138, sd: 6 } };
+  var TTTG_CUT = [15, 20];
+  function status(k, v) { var r = NORMS[k]; if (!r || v == null || !isFinite(v)) return null; return v < r.lo ? 'low' : v > r.hi ? 'high' : 'in'; }
+  function ttBand(v) { if (v == null || !isFinite(v)) return null; return v < TTTG_CUT[0] ? 'lt15' : v < TTTG_CUT[1] ? '15to20' : 'ge20'; }
+  function calibration(o) {
+    o = o || {};
+    if (o.spacing > 0) return { mmPerPx: +o.spacing, source: 'dicom' };
+    if (okP(o.cal1) && okP(o.cal2) && o.calMm > 0 && dist(o.cal1, o.cal2) > 3) return { mmPerPx: o.calMm / dist(o.cal1, o.cal2), source: 'marker' };
+    if (o.demoMmPerPx > 0) return { mmPerPx: o.demoMmPerPx, source: 'demo' };
+    return { mmPerPx: null, source: 'none' };
+  }
+
+  // ================= 1) patellar height (lateral film) =================
+  function measureLat(p, o) {
+    p = p || {}; o = o || {}; var mm = o.mmPerPx || null;
+    var out = { ok: false, missing: LAT_REQ.filter(function (k) { return !okP(p[k]); }), quality: [], cal: { mmPerPx: mm, source: o.calSource || (mm ? 'given' : 'none') } };
+    if (okP(p.PS) && okP(p.PI)) { out.artPx = dist(p.PS, p.PI); if (mm) out.artMm = out.artPx * mm; }
+    if (okP(p.PI) && okP(p.TT) && out.artPx > 2) { out.distPx = dist(p.PI, p.TT); out.misi = out.distPx / out.artPx; if (mm) out.distMm = out.distPx * mm; }
+    if (okP(p.PU) && okP(p.PL) && okP(p.TT) && dist(p.PU, p.PL) > 2) { out.isi = dist(p.PL, p.TT) / dist(p.PU, p.PL); if (mm) { out.lpMm = dist(p.PU, p.PL) * mm; out.ltMm = dist(p.PL, p.TT) * mm; } }
+    if (okP(p.TA) && okP(p.PI) && out.artPx > 2) { out.cdi = dist(p.PI, p.TA) / out.artPx; if (mm) out.cdMm = dist(p.PI, p.TA) * mm; }
+    out.ok = out.misi != null;
+    out.norms = {}; ['misi', 'isi', 'cdi'].forEach(function (k) { if (out[k] != null) out.norms[k] = { range: NORMS[k], status: status(k, out[k]) }; });
+    var Q = out.quality;
+    if (out.ok) {
+      if (out.misi > 3 || out.misi < 0.6) Q.push({ code: 'misiOdd', lv: 'w' });
+      if (out.artMm != null && (out.artMm < 15 || out.artMm > 55)) Q.push({ code: 'artOdd', lv: 'w', v: out.artMm });
+      // the tuberosity must be distal of the inferior articular end (along PS → PI)
+      var ax = unit(sub(p.PI, p.PS)); if (dot(sub(p.TT, p.PI), ax) < 0) Q.push({ code: 'ttAbove', lv: 'w' });
+      Q.push({ code: 'ratioNoCal', lv: 'i' });
+    }
+    if (out.isi != null && (out.isi > 2.2 || out.isi < 0.5)) Q.push({ code: 'isiOdd', lv: 'w' });
+    return out;
+  }
+
+  // ================= 2) TT–TG (CT axial) =================
+  /** A = slice A points {C1 medial post. condyle, C2 lateral post. condyle, TG, (TU when composite)}, B = slice B points {TU, B1, B2}.
+   *  o: { mmA, mmB, composite, dimsA:{W,H}, dimsB:{W,H} } → TT–TG in mm (positive = tuberosity lateral of the groove). */
+  function measureCT(A, B, o) {
+    A = A || {}; B = B || {}; o = o || {};
+    var comp = !!o.composite, TU = comp ? A.TU : B.TU;
+    var miss = CTA_REQ.filter(function (k) { return !okP(A[k]); }); if (!okP(TU)) miss.push('TU');
+    var out = { ok: false, missing: miss, quality: [], composite: comp, ref: null, ttTg: null, mmA: o.mmA || null, mmB: o.mmB || null };
+    if (okP(A.C1) && okP(A.C2) && dist(A.C1, A.C2) > 3) { var u0 = unit(sub(A.C2, A.C1)); out.condTiltDeg = Math.atan2(u0.y, u0.x) * R2D; }
+    if (miss.length) { out.reason = 'missing'; return out; }
+    if (dist(A.C1, A.C2) < 3) { out.reason = 'geometry'; return out; }
+    var u = unit(sub(A.C2, A.C1)), sTG = dot(sub(A.TG, A.C1), u), mA = o.mmA || null, mB = comp ? mA : (o.mmB || null), sTU;
+    if (!comp && okP(B.B1) && okP(B.B2) && dist(B.B1, B.B2) > 3) { var uB = unit(sub(B.B2, B.B1)); sTU = dot(sub(TU, B.B1), uB); out.ref = 'own'; }
+    else { sTU = dot(sub(TU, A.C1), u); out.ref = comp ? 'composite' : 'coreg'; }
+    if (!comp && !mB && mA) { mB = mA; if (out.ref !== 'own') out.quality.push({ code: 'scaleFromA', lv: 'i' }); }
+    if (!comp && mA && o.mmB && Math.abs(o.mmB - mA) / mA > 0.02) out.quality.push({ code: 'scaleDiff', lv: 'w' });
+    if (!comp && out.ref === 'coreg' && o.dimsA && o.dimsB && (o.dimsA.W !== o.dimsB.W || o.dimsA.H !== o.dimsB.H)) out.quality.push({ code: 'dimsDiff', lv: 'w' });
+    out.ttTgPx = sTU - sTG; out.perp = { u: u, sTG: sTG, sTU: sTU };
+    if (!mA || !mB) { out.reason = 'noCal'; out.quality.push({ code: 'needCal', lv: 'x' }); return out; }
+    out.ttTg = sTU * mB - sTG * mA; out.ok = true; out.band = ttBand(out.ttTg);
+    if (Math.abs(out.ttTg) > 35) out.quality.push({ code: 'ttImplausible', lv: 'w' });
+    if (out.ttTg < 0) out.quality.push({ code: 'ttMedial', lv: 'i' });
+    if (out.condTiltDeg != null && Math.abs(out.condTiltDeg) > 25 && Math.abs(out.condTiltDeg) < 155) out.quality.push({ code: 'condTilt', lv: 'w' });
+    return out;
+  }
+  /** Sulcus angle (°) at TG between SM and SL. */
+  function sulcusAngle(SM, TG, SL) {
+    if (!okP(SM) || !okP(TG) || !okP(SL)) return null; var a = sub(SM, TG), b = sub(SL, TG), la = len(a), lb = len(b); if (la < 1 || lb < 1) return null;
+    return Math.acos(Math.max(-1, Math.min(1, dot(a, b) / (la * lb)))) * R2D;
+  }
+
+  // ================= 3) Dejour classification =================
+  /** signs: { crossing, spur, dc } (true / false / null = not assessed) → { type: 'A'|'B'|'C'|'D'|'none'|null, code } */
+  function dejour(s) {
+    s = s || {}; var c = s.crossing === true, sp = s.spur === true, dc = s.dc === true;
+    if (s.crossing == null && s.spur == null && s.dc == null) return { type: null, code: 'notAssessed' };
+    if (!c) return sp || dc ? { type: null, code: 'noCrossing' } : { type: 'none', code: 'noSigns' };
+    if (sp && dc) return { type: 'D', code: 'D' }; if (sp) return { type: 'B', code: 'B' }; if (dc) return { type: 'C', code: 'C' }; return { type: 'A', code: 'A' };
+  }
+  var DEJOUR_SIGNS = { A: { crossing: true, spur: false, dc: false }, B: { crossing: true, spur: true, dc: false }, C: { crossing: true, spur: false, dc: true }, D: { crossing: true, spur: true, dc: true } };
+
+  // ================= image helpers =================
+  function sampler(img) { var W = img.W, H = img.H, g = img.data; return function (p) { var x = Math.round(p.x), y = Math.round(p.y); if (x < 0 || y < 0 || x >= W || y >= H) return -1; return g[y * W + x]; }; }
+  function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+  function toGray(img) { if (img.data.length === img.W * img.H) return img; var g = new Uint8ClampedArray(img.W * img.H); for (var i = 0; i < g.length; i++) g[i] = Math.round(0.299 * img.data[4 * i] + 0.587 * img.data[4 * i + 1] + 0.114 * img.data[4 * i + 2]); return { W: img.W, H: img.H, data: g }; }
+
+  // ================= lateral-film detection =================
+  /** img {W,H,data gray}, o {mmPerPx} → { status, level, method, pts {PS,PI,TT,PU,PL,TA}, conf, notes, frame } (image px). */
+  function detectLat(img, o) {
+    o = o || {}; img = toGray(img); var t0 = Date.now(), PT = root.OrthoPTS, notes = [];
+    var r = PT ? PT.detect(img, { mmPerPx: o.mmPerPx, plateaus: false }) : null;
+    var tp = r && r.pts; if (!tp || !okP(tp.PA) || !okP(tp.PP) || !okP(tp.A1) || !okP(tp.P1) || !okP(tp.A2) || !okP(tp.P2)) return templateLat(img, 'noTibia', t0);
+    var pm = mid(tp.PA, tp.PP), M1 = mid(tp.A1, tp.P1), M2 = mid(tp.A2, tp.P2), u = unit(sub(M2, M1)); if (dot(sub(M1, pm), u) < 0) u = mul(u, -1);
+    var n = perp(u); if (dot(sub(tp.PA, tp.PP), n) < 0) n = mul(n, -1);
+    var mm = o.mmPerPx || 47 / Math.max(5, dist(tp.PA, tp.PP)), at = sampler(img);
+    var F = function (s, d) { return { x: pm.x + n.x * s / mm + u.x * d / mm, y: pm.y + n.y * s / mm + u.y * d / mm }; };
+    var sOf = function (p) { return dot(sub(p, pm), n) * mm; }, dOf = function (p) { return dot(sub(p, pm), u) * mm; };
+    var sA1 = sOf(tp.A1), sP1 = sOf(tp.P1), dA1 = dOf(tp.A1);
+    // bone / soft-tissue threshold from the tibial shaft and the soft tissue in front of it
+    var bs = [], ss = [], i, d, s; for (i = 0; i <= 20; i++) { var q = mid(tp.A1, tp.P1), w = sub(tp.A1, tp.P1); bs.push(at(add(q, mul(w, (i / 20 - 0.5) * 0.9)))); }
+    for (d = dA1 - 5; d <= dA1 + 25; d += 2) for (s = sA1 + 5; s <= sA1 + 12; s += 1) { var v0 = at(F(s, d)); if (v0 >= 0) ss.push(v0); }
+    var boneV = median(bs.filter(function (v) { return v >= 0; })), softV = median(ss); if (boneV == null || softV == null || boneV - softV < 8) return templateLat(img, 'lowContrast', t0, F, sA1);
+    var T = softV + 0.45 * (boneV - softV), bone = function (s2, d2) { return at(F(s2, d2)) > T; }, step = Math.max(0.25, mm * 0.9);
+    var run = function (s2, d2, dir, lim) { var k = 0; for (var e = 0; e < lim; e += step) { if (!bone(s2 + dir * e, d2)) break; k = e; } return k; };
+    // ---- tibial anterior contour + tuberosity ----
+    var aT = []; for (d = 3; d <= 66; d += 0.5) { var hit = null; for (s = sA1 + 32; s >= sA1 - 14; s -= step) { if (bone(s, d) && run(s, d, -1, 1.5) >= 0.8) { hit = s; break; } } aT.push({ d: d, s: hit }); }
+    var good = aT.filter(function (e) { return e.s != null; }), tt = null, tubH = 0;
+    if (good.length > 40) {
+      var e0 = good.filter(function (e) { return e.d <= 8; }), e1 = good.filter(function (e) { return e.d >= 56; });
+      if (e0.length && e1.length) {
+        var c0 = { d: median(e0.map(function (e) { return e.d; })), s: median(e0.map(function (e) { return e.s; })) }, c1 = { d: median(e1.map(function (e) { return e.d; })), s: median(e1.map(function (e) { return e.s; })) };
+        var res = good.map(function (e) { return { d: e.d, s: e.s, r: e.s - (c0.s + (c1.s - c0.s) * (e.d - c0.d) / (c1.d - c0.d)) }; }), mid2 = res.filter(function (e) { return e.d >= 10 && e.d <= 52; });
+        var pk = mid2.reduce(function (b, e) { return !b || e.r > b.r ? e : b; }, null);
+        if (pk && pk.r > 1) { tubH = pk.r; var j = res.indexOf(pk); while (j > 0 && res[j - 1].r >= 0.7 * pk.r && res[j - 1].d >= 6) j--; tt = F(res[j].s, res[j].d); } else notes.push('noTubBump');
+      }
+    }
+    // ---- patella: the most anterior bone above the plateau, separated from the femur by a gap ----
+    var rows = []; for (d = -125; d <= 2; d += 0.5) {
+      var a = null; for (s = sA1 + 48; s >= sA1 - 22; s -= step) if (bone(s, d) && run(s, d, -1, 1.5) >= 0.8) { a = s; break; }
+      if (a == null) { rows.push({ d: d }); continue; }
+      var th = run(a, d, -1, 34), back = a - th; // posterior edge of the first bone run
+      var gap = 0; for (var e2 = step; e2 < 20; e2 += step) { if (bone(back - e2, d)) break; gap = e2; }
+      var fem = gap > 0.6 && gap < 19.5 && bone(back - gap - step, d);
+      rows.push({ d: d, a: a, p: back, th: th, gap: gap, fem: fem });
+    }
+    var isP = function (e) { return e.a != null && e.fem && e.th >= 3 && e.th <= 32; };
+    var best = null, cur = null; rows.forEach(function (e, k) { if (isP(e)) { if (!cur) cur = { i0: k, i1: k, miss: 0 }; else { cur.i1 = k; cur.miss = 0; } } else if (cur) { if (++cur.miss > 3) { if (!best || cur.i1 - cur.i0 > best.i1 - best.i0) best = cur; cur = null; } } });
+    if (cur && (!best || cur.i1 - cur.i0 > best.i1 - best.i0)) best = cur;
+    var pat = null;
+    if (best && (best.i1 - best.i0) * 0.5 >= 18) {
+      var R = rows.slice(best.i0, best.i1 + 1).filter(isP), Lr = R.length, thMax = Math.max.apply(null, R.map(function (e) { return e.th; }));
+      var dTop = R[0].d, dBot = R[Lr - 1].d, span = dBot - dTop, k2, jd = 1.5, iw = Math.round(jd / 0.5);
+      var PU = F((R[0].a + R[0].p) / 2, dTop), PL = F((R[Lr - 1].a + R[Lr - 1].p) / 2, dBot);
+      // inferior articular end: posterior outline jumps anteriorly going distally (non-articular distal pole)
+      var jI = null, jS = null;
+      for (k2 = iw; k2 < Lr - iw; k2++) { var e3 = R[k2]; if (e3.d < dTop + 0.45 * span) continue; var dj = R[k2 + iw].p - R[k2 - iw].p; if (!jI || dj > jI.v) jI = { v: dj, k: k2 }; }
+      for (k2 = iw; k2 < Lr - iw; k2++) { var e4 = R[k2]; if (e4.d > dTop + 0.45 * span) continue; var dj2 = R[k2 - iw].p - R[k2 + iw].p; if (!jS || dj2 > jS.v) jS = { v: dj2, k: k2 }; }
+      var PI, PS, jumps = 0;
+      var sharp = function (k0, dn) { var bk = k0, bv = -1e9; for (var kk = Math.max(1, k0 - iw); kk <= Math.min(Lr - 2, k0 + iw); kk++) { var v1 = dn ? R[kk + 1].p - R[kk].p : R[kk - 1].p - R[kk].p; if (v1 > bv) { bv = v1; bk = kk; } } return bk; };
+      if (jI && jI.v >= 1.5) { var ki = sharp(jI.k, true); PI = F(R[ki].p, R[ki].d); jumps++; } else { for (k2 = Lr - 1; k2 > 0 && R[k2].th < 0.6 * thMax; k2--); PI = F(R[k2].p, R[k2].d); notes.push('piByThickness'); }
+      if (jS && jS.v >= 1.5) { var ks = sharp(jS.k, false); PS = F(R[ks].p, R[ks].d); jumps++; } else { for (k2 = 0; k2 < Lr - 1 && R[k2].th < 0.6 * thMax; k2++); PS = F(R[k2].p, R[k2].d); notes.push('psByThickness'); }
+      pat = { PS: PS, PI: PI, PU: PU, PL: PL, lenMm: span, thMm: thMax, jumps: jumps };
+    } else notes.push('noPatella');
+    if (!pat && !tt) return templateLat(img, 'noPatella', t0, F, sA1, r);
+    var sAnt = sA1 + 4, pts = {
+      PS: pat ? pat.PS : F(sAnt + 6, -62), PI: pat ? pat.PI : F(sAnt + 6, -32), TT: tt || F(sAnt + 3, 20), TA: tp.PA };
+    if (pat) { pts.PU = pat.PU; pts.PL = pat.PL; }
+    var fr = r.level === 'high' ? 1 : r.level === 'medium' ? 0.75 : 0.4;
+    var score = fr * ((pat ? 0.35 + 0.1 * pat.jumps : 0) + (tt ? 0.25 + Math.min(0.15, tubH / 30) : 0));
+    var level = score >= 0.6 && pat && tt ? 'medium' : 'low';
+    return { version: VERSION, method: 'classic', status: 'suggest', level: level, pts: pts, conf: { score: Math.round(score * 100) / 100, frame: r.level, tibia: r.method || null }, notes: notes.concat(r.notes || []).slice(0, 12),
+      frame: { pm: pm, u: u, n: n, mmPerPx: mm }, patella: pat ? { lenMm: Math.round(pat.lenMm * 10) / 10, thMm: Math.round(pat.thMm * 10) / 10, jumps: pat.jumps } : null, tubMm: Math.round(tubH * 10) / 10, ms: Date.now() - t0 };
+  }
+  function templateLat(img, reason, t0, F, sA1, r) {
+    var pts;
+    if (F) { var sA = sA1 + 4; pts = { PS: F(sA + 6, -62), PI: F(sA + 6, -32), TT: F(sA + 3, 20) }; if (r && r.pts && okP(r.pts.PA)) pts.TA = r.pts.PA; }
+    else { var W = img.W, H = img.H, sz = Math.min(W, H); pts = { PS: { x: W * 0.62, y: H * 0.2 }, PI: { x: W * 0.62, y: H * 0.2 + 0.12 * sz }, TT: { x: W * 0.6, y: H * 0.2 + 0.32 * sz } }; }
+    return { version: VERSION, method: 'template', status: 'suggest', level: 'low', reason: reason, pts: pts, conf: { score: 0.1 }, notes: ['template'], ms: Date.now() - (t0 || Date.now()) };
+  }
+
+  // ================= CT axial detection =================
+  function otsu(g, lo) { var h = new Float64Array(256), n = 0, i; for (i = 0; i < g.length; i += 2) { if (g[i] < lo) continue; h[g[i]]++; n++; } if (!n) return 128;
+    var sum = 0; for (i = 0; i < 256; i++) sum += i * h[i]; var sB = 0, wB = 0, best = 0, th = 128; for (i = 0; i < 256; i++) { wB += h[i]; if (!wB) continue; var wF = n - wB; if (!wF) break; sB += i * h[i]; var mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; th = i; } } return th; }
+  /** Bone components of an axial slice (downscaled to ≤ 360 px): [{n, cx, cy, x0, x1, y0, y1, pix:[...]}] sorted by size. */
+  function components(img) {
+    var W = img.W, H = img.H, f = Math.min(1, 360 / Math.max(W, H)), w = Math.max(1, Math.round(W * f)), h = Math.max(1, Math.round(H * f)), g = new Uint8ClampedArray(w * h), x, y;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) { var X0 = Math.floor(x / f), Y0 = Math.floor(y / f), X1 = Math.min(W, Math.floor((x + 1) / f)), Y1 = Math.min(H, Math.floor((y + 1) / f)), s = 0, c = 0; for (var yy = Y0; yy < Math.max(Y0 + 1, Y1); yy++) for (var xx = X0; xx < Math.max(X0 + 1, X1); xx++) { s += img.data[yy * W + xx]; c++; } g[y * w + x] = s / c; }
+    // air / soft tissue / bone: the first Otsu split is soft tissue | bone unless most of the frame is above it (then it was air | body)
+    var t1 = otsu(g, 0), above = 0, x2; for (x2 = 0; x2 < g.length; x2++) if (g[x2] > t1) above++; var th = above / g.length > 0.45 ? otsu(g, t1 + 1) : t1;
+    // bone mask + hole filling (cancellous bone inside a closed cortical rim counts as bone whatever its grey level)
+    var bm = new Uint8Array(w * h), outside = new Uint8Array(w * h), st = [], i0; for (i0 = 0; i0 < w * h; i0++) bm[i0] = g[i0] > th ? 1 : 0;
+    for (x = 0; x < w; x++) { st.push(x, (h - 1) * w + x); } for (y = 0; y < h; y++) { st.push(y * w, y * w + w - 1); }
+    while (st.length) { var q0 = st.pop(); if (outside[q0] || bm[q0]) continue; outside[q0] = 1; var qx = q0 % w; if (qx > 0) st.push(q0 - 1); if (qx < w - 1) st.push(q0 + 1); if (q0 >= w) st.push(q0 - w); if (q0 < w * (h - 1)) st.push(q0 + w); }
+    var filled = new Uint8Array(w * h); for (i0 = 0; i0 < w * h; i0++) filled[i0] = outside[i0] ? 0 : 1;
+    var lab = new Int32Array(w * h), comps = [];
+    for (var i = 0; i < w * h; i++) { if (lab[i] || !filled[i]) continue; var c2 = { n: 0, sx: 0, sy: 0, x0: w, x1: 0, y0: h, y1: 0, pix: [] }, id = comps.length + 1; lab[i] = id; st.push(i);
+      while (st.length) { var j = st.pop(), jx = j % w, jy = (j - jx) / w; c2.n++; c2.sx += jx; c2.sy += jy; c2.pix.push(j); if (jx < c2.x0) c2.x0 = jx; if (jx > c2.x1) c2.x1 = jx; if (jy < c2.y0) c2.y0 = jy; if (jy > c2.y1) c2.y1 = jy;
+        var nb = [j - 1, j + 1, j - w, j + w]; for (var q = 0; q < 4; q++) { var k = nb[q]; if (k < 0 || k >= w * h || lab[k]) continue; if ((q === 0 && jx === 0) || (q === 1 && jx === w - 1)) continue; if (filled[k]) { lab[k] = id; st.push(k); } } }
+      c2.cx = c2.sx / c2.n; c2.cy = c2.sy / c2.n; comps.push(c2); }
+    comps.sort(function (a, b) { return b.n - a.n; });
+    return { comps: comps, f: f, w: w, h: h, th: th, g: g, lab: lab };
+  }
+  function pickKnee(C, side) { // both knees on the slice → the requested side (radiological convention: patient's right on the image left)
+    var cs = C.comps.filter(function (c) { return c.n >= 0.35 * (C.comps[0] ? C.comps[0].n : 1) && c.n > 60; });
+    if (cs.length >= 2 && Math.abs(cs[0].cx - cs[1].cx) > 0.25 * C.w) { var two = cs.slice(0, 2).sort(function (a, b) { return a.cx - b.cx; }); return { c: side === 'L' ? two[1] : two[0], both: true }; }
+    return { c: C.comps[0] || null, both: false };
+  }
+  /** Extreme point of a pixel set along d, averaged over the points within tol of the extreme (removes the pixel-grid bias of flat tops). */
+  function farAvg(S, d, tol) { var mx = -Infinity; S.forEach(function (p) { var v = dot(p, d); if (v > mx) mx = v; }); var sx = 0, sy = 0, n = 0; S.forEach(function (p) { if (dot(p, d) >= mx - tol) { sx += p.x; sy += p.y; n++; } }); return { x: sx / n, y: sy / n }; }
+  /** Axial slice detection. kind 'A' (trochlea: C1 medial / C2 lateral posterior condyles, TG, SM, SL) or 'B' (tuberosity: TU).
+   *  o: { side 'R'|'L', ref {C1, C2} (slice-A line in the same pixel frame, for B) } → low-confidence suggestion (always checked). */
+  function detectCT(img, o) {
+    o = o || {}; img = toGray(img); var t0 = Date.now(), C = components(img), k = pickKnee(C, o.side), c = k.c, f = C.f;
+    var tmpl = function (reason) { var W = img.W, H = img.H, s = Math.min(W, H), lx = o.side === 'L' ? 1 : -1, cx = W / 2, cy = H / 2, p = {};
+      if (o.kind === 'B') p.TU = { x: cx + lx * 0.04 * s, y: cy - 0.2 * s }; else { p.C1 = { x: cx - lx * 0.16 * s, y: cy + 0.14 * s }; p.C2 = { x: cx + lx * 0.16 * s, y: cy + 0.14 * s }; p.TG = { x: cx, y: cy - 0.12 * s }; p.SM = { x: cx - lx * 0.12 * s, y: cy - 0.16 * s }; p.SL = { x: cx + lx * 0.13 * s, y: cy - 0.17 * s }; }
+      return { version: VERSION, method: 'template', status: 'suggest', level: 'low', reason: reason, pts: p, conf: { score: 0.1 }, notes: ['template'], ms: Date.now() - t0 }; };
+    if (!c || c.n < 80) return tmpl('noBone');
+    var P = c.pix.map(function (j) { var x = j % C.w; return { x: (x + 0.5) / f, y: ((j - x) / C.w + 0.5) / f }; });
+    var lx = o.side === 'L' ? 1 : -1; // image direction of "lateral"
+    if (o.kind === 'B') {
+      var ref = o.ref && okP(o.ref.C1) && okP(o.ref.C2) ? unit(sub(o.ref.C2, o.ref.C1)) : { x: lx, y: 0 }, ant = perp(ref); if (ant.y > 0) ant = mul(ant, -1); // anterior = image top
+      return { version: VERSION, method: 'ct-classic', status: 'suggest', level: 'low', pts: { TU: farAvg(P, ant, 0.75 / f) }, conf: { score: 0.3 }, notes: k.both ? ['bothKnees'] : [], ms: Date.now() - t0 };
+    }
+    // posterior condylar bitangent: iterate the tangent points of the medial and lateral halves
+    var cx = (c.cx + 0.5) / f, L = P.filter(function (p) { return (p.x - cx) * lx > 0; }), M = P.filter(function (p) { return (p.x - cx) * lx < 0; });
+    if (L.length < 20 || M.length < 20) return tmpl('noCondyles');
+    var post = { x: 0, y: 1 }, far = function (S, d) { return farAvg(S, d, 0.75 / f); };
+    var c1 = far(M, post), c2 = far(L, post);
+    for (var it = 0; it < 6; it++) { var u = unit(sub(c2, c1)), nn = perp(u); if (nn.y < 0) nn = mul(nn, -1); c1 = far(M, nn); c2 = far(L, nn); }
+    var uu = unit(sub(c2, c1)), an = perp(uu); if (an.y > 0) an = mul(an, -1);
+    // anterior outline in the condylar frame: for bins along uu, the most anterior bone point
+    var bins = {}, bw = Math.max(1, 1.2 / f); P.forEach(function (p) { var b = Math.round(dot(p, uu) / bw), v = dot(p, an); if (!bins[b] || v > bins[b].v) bins[b] = { v: v, p: p }; });
+    var keys = Object.keys(bins).map(Number).sort(function (a, b) { return a - b; }), b0 = keys[0], b1 = keys[keys.length - 1], sp = b1 - b0;
+    var inner = keys.filter(function (b) { return b > b0 + 0.18 * sp && b < b1 - 0.18 * sp; });
+    var fac = function (S, bc0) { var mx = -Infinity; S.forEach(function (b) { if (bins[b].v > mx) mx = bins[b].v; }); var m = null; S.forEach(function (b) { if (bins[b].v >= mx - 0.6 / f && (!m || Math.abs(b - bc0) < Math.abs(m.b - bc0))) m = { v: bins[b].v, b: b }; }); return m; }; // facet top (flat top → the end nearest the groove)
+    var bc = Math.round(dot({ x: cx, y: (c.cy + 0.5) / f }, uu) / bw), fM = fac(inner.filter(function (b) { return b < bc; }), bc), fL = fac(inner.filter(function (b) { return b >= bc; }), bc);
+    if (!fM || !fL) return tmpl('noTrochlea');
+    var g = null; inner.forEach(function (b) { if (b <= fM.b || b >= fL.b) return; if (!g || bins[b].v < g.v) g = { v: bins[b].v, b: b }; });
+    if (!g) return tmpl('noGroove');
+    var depth = Math.min(fM.v, fL.v) - g.v; // px
+    var pts = { C1: c1, C2: c2, TG: bins[g.b].p, SM: bins[fM.b].p, SL: bins[fL.b].p };
+    return { version: VERSION, method: 'ct-classic', status: 'suggest', level: 'low', pts: pts, conf: { score: 0.3, depthPx: Math.round(depth * 10) / 10 }, notes: (k.both ? ['bothKnees'] : []).concat(depth < 2 / f ? ['shallowGroove'] : []), ms: Date.now() - t0 };
+  }
+
+  // ================= synthetic DEMO films =================
+  /** Lateral knee with a parametric patella (o.pat: { xc, yc, a, b, phi }, mm in the 📐 PTS synthetic frame: x anterior, y distal). */
+  function synthLat(o) {
+    o = Object.assign({ theta: 9, seed: 13, condOff: 2, rot: 0, tubH: 6, tubY: 26, tubS: 8, pat: { xc: 37, yc: -38, a: 22, b: 9, phi: 8 } }, o || {});
+    var q = o.pat, Lx = -Math.sin(q.phi * D2R), Ly = Math.cos(q.phi * D2R), Nx = Ly, Ny = -Lx;
+    var loc = function (x, y) { var X = x - q.xc, Y = y - q.yc; return { p: X * Lx + Y * Ly, q: X * Nx + Y * Ny }; }, back = function (p, qq) { return { x: q.xc + p * Lx + qq * Nx, y: q.yc + p * Ly + qq * Ny }; };
+    var inside = function (x, y) { var l = loc(x, y), e = (l.p / q.a) * (l.p / q.a) + (l.q / q.b) * (l.q / q.b); if (e > 1) return 0; if (l.p > 0.5 * q.a && l.q < -0.25 * q.b) return 0; if (l.p < -0.9 * q.a && l.q < -0.25 * q.b) return 0; return e > 0.8 ? 165 : 140; };
+    var truth = function (T) { var ty = o.tubY - 0.6 * o.tubS;
+      return { PS: back(-0.9 * q.a, -Math.sqrt(0.19) * q.b), PI: back(0.5 * q.a, -Math.sqrt(0.75) * q.b), PU: back(-q.a, 0), PL: back(q.a, 0), TT: { x: T.xa(ty), y: ty } }; };
+    var P = Object.assign({}, o, { lateral: false, pat: { inside: inside, truth: truth } }), s = root.OrthoPTS.synth(P);
+    var tr = {}; ['PS', 'PI', 'PU', 'PL', 'TT'].forEach(function (k) { tr[k] = s.truth[k]; }); tr.TA = s.truth.PA; // anterior rim of the (medial) tibial plateau
+    var opt = JSON.parse(JSON.stringify(Object.assign({}, o)));
+    return { W: s.W, H: s.H, data: s.data, truth: tr, tibia: s.truth, mmPerPx: s.mmPerPx, opt: opt };
+  }
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  /** CT axial slices (co-registered, same FOV): kind 'A' (trochlear groove level) or 'B' (tibial tuberosity level) or 'AB' (composite).
+   *  o: { side, ttTg (mm, lateral +), rot (° posterior condylar line), ppm, size, depth (groove mm), seed } */
+  function synthCT(kind, o) {
+    o = Object.assign({ side: 'R', ttTg: 17, rot: 4, ppm: 2.2, size: 200, depth: 6, seed: 5, noise: 5, lateralFacet: 3 }, o || {});
+    var Wd = Math.round(o.size * o.ppm), H = Wd, out = new Uint8ClampedArray(Wd * H), rnd = rng(o.seed + (kind === 'B' ? 7 : 0)), lx = o.side === 'L' ? 1 : -1;
+    var cr = Math.cos(o.rot * D2R), sr = Math.sin(o.rot * D2R), cx = Wd / 2, cy = H / 2 + 8 * o.ppm;
+    // local mm frame: X lateral (+), Y posterior (+); image = rotate(rot) ∘ mirror(lx)
+    var toImg = function (X, Y) { var x = lx * X, y = Y, xr = x * cr - y * sr, yr = x * sr + y * cr; return { x: cx + xr * o.ppm, y: cy + yr * o.ppm }; };
+    var toLoc = function (px, py) { var xr = (px - cx) / o.ppm, yr = (py - cy) / o.ppm, x = xr * cr + yr * sr, y = -xr * sr + yr * cr; return { X: lx * x, Y: y }; };
+    var xg = 2, ant = function (X) { var base = -26 - (X > xg ? o.lateralFacet * Math.min(1, (X - xg) / 14) : 0), gw = 17, dd = Math.max(0, 1 - Math.abs(X - xg) / gw); return base + o.depth * dd; };
+    var femur = function (X, Y) {
+      var inBody = (X / 38) * (X / 38) + ((Y + 2) / 27) * ((Y + 2) / 27) <= 1 && Y >= ant(X);
+      var cM = Math.hypot(X + 21, Y - 12) <= 19, cL = Math.hypot(X - 21, Y - 12) <= 19, notch = Math.hypot(X, Y - 26) <= 10;
+      return (inBody || cM || cL) && !notch;
+    };
+    var xt = xg + o.ttTg, tibia = function (X, Y) { var body = (X / 36) * (X / 36) + ((Y - 4) / 24) * ((Y - 4) / 24) <= 1, tub = Math.hypot(X - xt, Y + 20) <= 8; return body || tub; };
+    var fib = function (X, Y) { return Math.hypot(X - 29, Y - 24) <= 7; }, patella = function (X, Y) { return ((X - xg - 3) / 20) * ((X - xg - 3) / 20) + ((Y + 40) / 7) * ((Y + 40) / 7) <= 1; };
+    for (var py = 0; py < H; py++) for (var px = 0; px < Wd; px++) {
+      var L = toLoc(px, py), X = L.X, Y = L.Y, v = 8;
+      if ((X / 62) * (X / 62) + ((Y + 2) / 56) * ((Y + 2) / 56) <= 1) v = 70; // soft tissue
+      var bA = kind !== 'B' && (femur(X, Y) || patella(X, Y)), bB = kind !== 'A' && (tibia(X, Y) || fib(X, Y));
+      if (bA || bB) { var edge = false; [[1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]].forEach(function (d) { var X2 = X + d[0], Y2 = Y + d[1]; var b2 = (kind !== 'B' && (femur(X2, Y2) || patella(X2, Y2))) || (kind !== 'A' && (tibia(X2, Y2) || fib(X2, Y2))); if (!b2) edge = true; }); v = edge ? 235 : (kind === 'AB' && bA && bB ? 215 : 175); }
+      v += (rnd() + rnd() + rnd() - 1.5) * o.noise * 1.4; out[py * Wd + px] = v < 0 ? 0 : v > 255 ? 255 : v;
+    }
+    // ground truth: posterior condylar bitangent (both circles r 19 at Y 12 → tangent points at Y 31), groove, facets, tuberosity
+    var Ya = function (X) { var e = 1 - (X / 38) * (X / 38); return e <= 0 ? 99 : Math.max(ant(X), -2 - 27 * Math.sqrt(e)); }, ext = function (x0, x1, mn) { var bx = x0, bv = Ya(x0); for (var X = x0; X <= x1; X += 0.05) { var v = Ya(X); if (mn ? v < bv : v > bv) { bv = v; bx = X; } } return bx; };
+    var xM = ext(-30, xg, true), xL = ext(xg, 30, true), xG = ext(xM, xL, false); // facet tops (most anterior) and the deepest groove point between them
+    var T = { C1: toImg(-21, 31), C2: toImg(21, 31), TG: toImg(xG, Ya(xG)), SM: toImg(xM, Ya(xM)), SL: toImg(xL, Ya(xL)), TU: toImg(xt, -28) };
+    var sm = sulcusAngle(T.SM, T.TG, T.SL);
+    return { W: Wd, H: H, data: out, truth: T, mmPerPx: 1 / o.ppm, ttTg: o.ttTg, sulcus: sm, opt: o, kind: kind };
+  }
+
+
+  // ================= shared entry (main thread fallback + detector worker) =================
+  var MAXDIM = { lat: 1400, ct: 1000 };
+  /** G = grey image already downscaled by gf (G.W ≈ W0·gf); o: { kind 'lat'|'A'|'B'|'AB', side, mmPerPx (image px), ref {C1,C2} (image px) } → result with ptsImg in image px. */
+  function detectImg(G, gf, o) {
+    o = o || {}; gf = gf || 1; var sc = function (p) { return okP(p) ? { x: p.x * gf, y: p.y * gf } : null; }, r;
+    var oo = { kind: o.kind, side: o.side, mmPerPx: o.mmPerPx ? o.mmPerPx / gf : null, ref: o.ref ? { C1: sc(o.ref.C1), C2: sc(o.ref.C2) } : null };
+    if (o.kind === 'lat') r = detectLat(G, oo);
+    else if (o.kind === 'AB') { // one composite image: groove + condyles as slice A; the tuberosity is only a template guess (low confidence)
+      r = detectCT(G, Object.assign({}, oo, { kind: 'A' })); var p = r.pts;
+      if (okP(p.C1) && okP(p.C2) && okP(p.TG)) { var u = unit(sub(p.C2, p.C1)), w = dist(p.C1, p.C2); p.TU = add(p.TG, add(mul(u, 0.21 * w), mul(perp(u).y < 0 ? perp(u) : mul(perp(u), -1), 0.05 * w))); }
+      r.composite = true; r.notes = (r.notes || []).concat(['tuTemplate']);
+    } else r = detectCT(G, Object.assign({}, oo, { kind: o.kind === 'B' ? 'B' : 'A' }));
+    var out = {}; Object.keys(r.pts || {}).forEach(function (k) { var q = r.pts[k]; if (okP(q)) out[k] = { x: q.x / gf, y: q.y / gf }; });
+    r.ptsImg = out; r.level = r.level || 'low'; if (o.kind !== 'lat') r.level = 'low'; return r;
+  }
+
+  root.OrthoPatella = { VERSION: VERSION, NORMS: NORMS, TTTG_CUT: TTTG_CUT, LAT_REQ: LAT_REQ, LAT_OPT: LAT_OPT, CTA_REQ: CTA_REQ, CTB_REQ: CTB_REQ, SULC: SULC, DEJOUR_SIGNS: DEJOUR_SIGNS,
+    status: status, ttBand: ttBand, calibration: calibration, measureLat: measureLat, measureCT: measureCT, sulcusAngle: sulcusAngle, dejour: dejour,
+    detectLat: detectLat, detectCT: detectCT, detectImg: detectImg, MAXDIM: MAXDIM, synthLat: synthLat, synthCT: synthCT, _u: { components: components, otsu: otsu } };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-xray-patella-ui">
+// ===== OrthoThessaly · 🦵 Αστάθεια επιγονατίδας (patellar instability) sub-tab (X-rays section) =====
+// Three independent sections, each with its own image(s): (1) ψηλή επιγονατίδα – τροποποιημένος δείκτης Insall–Salvati on a lateral knee
+// film (+ optional classic Insall–Salvati / Caton–Deschamps); (2) απόσταση TT–TG on CT axial slices (slice A trochlear groove + slice B
+// tibial tuberosity, co-registered, or one composite image; DICOM pixel spacing or a marker); (3) δυσπλασία τροχιλίας κατά Dejour from the
+// lateral-film signs + optional axial pattern and sulcus angle. Upload / paste / drop per section (the X-ray tab's decodeFile: EXIF,
+// downscale, DICOM), worker detection with pre-placed DRAGGABLE points + confidence, «✔ Επιβεβαίωση σημείων» (anonymous training for real
+// films), saved as its own X-ray study (kind 'patella' → xray_studies.extra), list / reopen / timeline / dashboard, A4 sheet. Doctor-only.
+(function () {
+  'use strict';
+  var O = window.OrthoPatella, X = window.OrthoXray; if (!O || !X) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var num = function (v, d, L) { if (v == null || !isFinite(v)) return '–'; var s = (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); if (s === '-0.0' || s === '-0' || s === '-0.00') s = s.slice(1); return (L || lang()) === 'el' ? s.replace('.', ',') : s; };
+  var f1 = function (v) { return num(v, 1); }, f2 = function (v) { return num(v, 2); };
+  var today = function () { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+  var VK = { lat: ['PS', 'PI', 'TT', 'PU', 'PL', 'TA', 'CAL1', 'CAL2'], ctA: ['C1', 'C2', 'TG', 'TU', 'SM', 'SL', 'CAL1', 'CAL2'], ctB: ['TU', 'B1', 'B2', 'CAL1', 'CAL2'] };
+  var COL = { PS: '#22d3ee', PI: '#22d3ee', TT: '#facc15', PU: '#c084fc', PL: '#c084fc', TA: '#fb923c', C1: '#38bdf8', C2: '#38bdf8', TG: '#4ade80', TU: '#fb7185', SM: '#fde047', SL: '#fde047', B1: '#38bdf8', B2: '#38bdf8', CAL1: '#94a3b8', CAL2: '#94a3b8' };
+  var S = {
+    el: { title: 'Αστάθεια επιγονατίδας', sub: 'Ψηλή επιγονατίδα (patella alta) · απόσταση TT–TG από αξονική τομογραφία · δυσπλασία τροχιλίας κατά Dejour. Κάθε ενότητα χρησιμοποιείται και μόνη της.',
+      sec_lat: '1 · Ψηλή επιγονατίδα', sec_ct: '2 · TT–TG (αξονική)', sec_dej: '3 · Dejour',
+      latT: 'Ψηλή επιγονατίδα (patella alta) – πλάγια ακτινογραφία γόνατος', latSub: 'Τροποποιημένος δείκτης Insall–Salvati: απόσταση από το κάτω άκρο της αρθρικής επιφάνειας της επιγονατίδας ως το κνημιαίο κύρτωμα ÷ μήκος της αρθρικής επιφάνειας. Ιδανικά πλάγια λήψη σε ≈30° κάμψη.',
+      ctT: 'Απόσταση TT–TG – αξονική τομογραφία', ctSub: 'Τομή A στην τροχιλία (το βαθύτερο σημείο της αύλακας, κεντρική τροχιλία) και τομή B στο κνημιαίο κύρτωμα, από την ίδια σειρά. Απόσταση των δύο καθέτων στην οπίσθια κονδυλική γραμμή.',
+      dejT: 'Δυσπλασία τροχιλίας κατά Dejour', dejSub: 'Σημεία στην πλάγια ακτινογραφία (αληθής πλάγια) και προαιρετικά η αξονική εικόνα (CT/MRI) με τη γωνία της τροχιλιακής αύλακας.',
+      upload: 'Ανεβάστε Ακτινογραφία', uploadCt: 'Ανεβάστε τομή', demo: '🧪 DEMO (συνθετική)', demoAlta: '🧪 DEMO ψηλή επιγονατίδα', demoCt: '🧪 DEMO τομές A + B',
+      fileLat: 'Πλάγια ακτινογραφία γόνατος · PNG, JPEG ή DICOM', fileCt: 'Αξονική τομή · PNG, JPEG ή DICOM (DICOM: pixel spacing για ακριβή mm)',
+      noFilmLat: 'Δεν έχει ανοιχτεί πλάγια ακτινογραφία', noFilmCt: 'Δεν έχει ανοιχτεί η τομή {s}', noFilmDej: 'Για τη γωνία της αύλακας ανοίξτε την αξονική τομή A (στην τροχιλία).',
+      stepsLat: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε πλάγια ακτινογραφία γόνατος (PNG, JPEG ή DICOM) ή επικολλήστε (Ctrl+V).', 'Τα σημεία προτείνονται αυτόματα – ελέγξτε τα, διορθώστε και επιβεβαιώστε.'],
+      stepsCt: ['Ανοίξτε την τομή A: το επίπεδο της τροχιλίας με το βαθύτερο σημείο της αύλακας.', 'Ανοίξτε την τομή B: το επίπεδο του κνημιαίου κυρτώματος (κατάφυση επιγονατιδικού τένοντα), από την ίδια σειρά.', 'Ελέγξτε τα σημεία και τη βαθμονόμηση (DICOM ή κλίμακα της οθόνης), μετά επιβεβαιώστε.'],
+      noPt: 'Χωρίς επιλεγμένο ασθενή η μέτρηση δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.',
+      mode2: 'Δύο τομές (A + B)', mode1: 'Μία σύνθετη εικόνα', sliceA: 'Τομή A · τροχιλία', sliceB: 'Τομή B · κύρτωμα',
+      lvl: 'Βεβαιότητα', lv_high: 'υψηλή', lv_medium: 'μέτρια', lv_low: 'χαμηλή', detecting: '🤖 Ανίχνευση σημείων…', cancel: '✕ Ακύρωση',
+      sugMed: '🤖 Προτεινόμενα σημεία – ελέγξτε τα και σύρετε όσα δεν είναι στη σωστή θέση, μετά επιβεβαιώστε.',
+      sugLow: '🤖 Προτεινόμενα σημεία με χαμηλή βεβαιότητα – ελέγξτε προσεκτικά και σύρετε κάθε σημείο στη σωστή θέση, μετά επιβεβαιώστε.',
+      sugCt: '🤖 Προτεινόμενα σημεία με χαμηλή βεβαιότητα – στις αξονικές τομές η αυτόματη πρόταση είναι μόνο αφετηρία. Τοποθετήστε κάθε σημείο στη σωστή θέση (σύρετε ή πατήστε), μετά επιβεβαιώστε.',
+      allSet: '✅ Όλα τα απαραίτητα σημεία τοποθετήθηκαν.', guideT: 'Τοποθέτηση με το χέρι – βήματα',
+      guideLat: ['Μεγεθύνετε στην επιγονατίδα. Η αρθρική επιφάνεια είναι το οπίσθιο περίγραμμα της επιγονατίδας προς την τροχιλία.', 'Πατήστε στο άνω άκρο και μετά στο κάτω άκρο της αρθρικής επιφάνειας (όχι στους πόλους της επιγονατίδας).', 'Πατήστε στο κνημιαίο κύρτωμα: το πρόσθιο-άνω σημείο του, όπου καταφύεται ο επιγονατιδικός τένοντας.', 'Προαιρετικά: άνω και κάτω πόλος (κλασικός Insall–Salvati) και πρόσθια-άνω γωνία του κνημιαίου plateau (Caton–Deschamps).', 'Ελέγξτε τις τιμές και πατήστε «✔ Επιβεβαίωση σημείων».'],
+      guideCt: ['Τομή A: πατήστε στο πιο οπίσθιο σημείο του έσω και μετά του έξω μηριαίου κονδύλου (οπίσθια κονδυλική γραμμή).', 'Τομή A: πατήστε στο βαθύτερο σημείο της τροχιλιακής αύλακας.', 'Τομή B: πατήστε στο πιο πρόσθιο σημείο του κνημιαίου κυρτώματος (κατάφυση του επιγονατιδικού τένοντα).', 'Βαθμονόμηση: με DICOM γίνεται αυτόματα· σε φωτογραφία οθόνης τοποθετήστε τα δύο άκρα της κλίμακας της οθόνης και γράψτε το μήκος της.', 'Ελέγξτε την τιμή και πατήστε «✔ Επιβεβαίωση σημείων».'],
+      n_PS: 'Άνω άκρο αρθρικής επιφάνειας επιγονατίδας', n_PI: 'Κάτω άκρο αρθρικής επιφάνειας επιγονατίδας', n_TT: 'Κνημιαίο κύρτωμα (πρόσθιο-άνω σημείο)', n_PU: 'Άνω πόλος επιγονατίδας', n_PL: 'Κάτω πόλος επιγονατίδας', n_TA: 'Πρόσθια-άνω γωνία κνημιαίου plateau',
+      n_C1: 'Οπίσθιο σημείο έσω μηριαίου κονδύλου', n_C2: 'Οπίσθιο σημείο έξω μηριαίου κονδύλου', n_TG: 'Βαθύτερο σημείο τροχιλιακής αύλακας (TG)', n_TU: 'Κνημιαίο κύρτωμα – κατάφυση επιγονατιδικού τένοντα (TT)', n_SM: 'Κορυφή έσω πλευράς τροχιλίας', n_SL: 'Κορυφή έξω πλευράς τροχιλίας',
+      n_B1: 'Γραμμή αναφοράς στην τομή B – έσω', n_B2: 'Γραμμή αναφοράς στην τομή B – έξω', n_CAL1: 'Βαθμονόμηση – άκρο 1', n_CAL2: 'Βαθμονόμηση – άκρο 2',
+      s_PS: 'Αρθρ. άνω', s_PI: 'Αρθρ. κάτω', s_TT: 'Κύρτωμα', s_PU: 'Άνω πόλος', s_PL: 'Κάτω πόλος', s_TA: 'Plateau', s_C1: 'Έσω κόνδυλος', s_C2: 'Έξω κόνδυλος', s_TG: 'TG', s_TU: 'TT', s_SM: 'Έσω πλευρά', s_SL: 'Έξω πλευρά', s_B1: 'Αναφ. έσω', s_B2: 'Αναφ. έξω', s_CAL1: 'Βαθμ. 1', s_CAL2: 'Βαθμ. 2',
+      p_PS: 'Πατήστε στο άνω άκρο της αρθρικής επιφάνειας της επιγονατίδας.', p_PI: 'Πατήστε στο κάτω άκρο της αρθρικής επιφάνειας της επιγονατίδας.', p_TT: 'Πατήστε στο κνημιαίο κύρτωμα (πρόσθιο-άνω σημείο, κατάφυση του επιγονατιδικού τένοντα).',
+      p_PU: 'Πατήστε στον άνω πόλο της επιγονατίδας.', p_PL: 'Πατήστε στον κάτω πόλο της επιγονατίδας (έκφυση του επιγονατιδικού τένοντα).', p_TA: 'Πατήστε στην πρόσθια-άνω γωνία του κνημιαίου plateau.',
+      p_C1: 'Πατήστε στο πιο οπίσθιο σημείο του έσω μηριαίου κονδύλου.', p_C2: 'Πατήστε στο πιο οπίσθιο σημείο του έξω μηριαίου κονδύλου.', p_TG: 'Πατήστε στο βαθύτερο σημείο της τροχιλιακής αύλακας.', p_TU: 'Πατήστε στο πιο πρόσθιο σημείο του κνημιαίου κυρτώματος (κατάφυση του επιγονατιδικού τένοντα).',
+      p_SM: 'Πατήστε στην κορυφή της έσω πλευράς της τροχιλίας.', p_SL: 'Πατήστε στην κορυφή της έξω πλευράς της τροχιλίας.', p_B1: 'Πατήστε στο έσω άκρο της γραμμής αναφοράς στην τομή B.', p_B2: 'Πατήστε στο έξω άκρο της γραμμής αναφοράς στην τομή B.',
+      p_CAL1: 'Πατήστε στο ένα άκρο της κλίμακας (ή του δείκτη γνωστού μήκους).', p_CAL2: 'Πατήστε στο άλλο άκρο της κλίμακας.',
+      optT: 'Προαιρετικά σημεία:', lmHelp: 'Πατήστε στην εικόνα για να τοποθετήσετε το σημείο · σύρετε ένα σημείο για διόρθωση · δύο δάχτυλα (ή ροδέλα) για μεγέθυνση και μετακίνηση.',
+      zin: 'Μεγέθυνση', zout: 'Σμίκρυνση', zfit: 'Ολόκληρη η εικόνα', redo: '🤖 Αυτόματη ανίχνευση ξανά', del: '🗑 Αφαίρεση', clear: '↺ Καθαρισμός σημείων', swap: '⇄ Εναλλαγή έσω / έξω',
+      side: 'Πλευρά', R: 'Δεξιά', L: 'Αριστερά', date: 'Ημ/νία εξέτασης', phase: 'Φάση', pre: 'Προεγχειρητικά', post: 'Μετεγχειρητικά',
+      value: 'Τιμή', normal: 'Φυσιολογικές τιμές', cuts: 'Όρια', st_in: '✓ εντός', st_low: '↓ κάτω', st_high: '↑ πάνω', b_lt15: '< 15 mm', b_15to20: '15–20 mm', b_ge20: '≥ 20 mm',
+      misi: 'Τροποποιημένος δείκτης Insall–Salvati', isi: 'Δείκτης Insall–Salvati (κλασικός)', cdi: 'Δείκτης Caton–Deschamps', art: 'Μήκος αρθρικής επιφάνειας', dist: 'Κάτω άκρο αρθρικής επιφάνειας → κύρτωμα', extraT: 'Συμπληρωματικοί δείκτες (προαιρετικά σημεία)',
+      tttg: 'Απόσταση TT–TG', sulc: 'Γωνία τροχιλιακής αύλακας', needLat: 'Τοποθετήστε τα σημεία για να υπολογιστεί ο δείκτης.', needCt: 'Τοποθετήστε τα σημεία και στις δύο τομές για να υπολογιστεί η απόσταση TT–TG.', needSulc: 'Τοποθετήστε τις δύο κορυφές των πλευρών και το βαθύτερο σημείο της αύλακας.',
+      dejour: 'Δυσπλασία τροχιλίας κατά Dejour', type: 'Τύπος', derived: 'από τα σημεία', override: 'Τύπος (επιλογή ιατρού)', ovAuto: 'Αυτόματα (από τα σημεία)', ovNone: 'Χωρίς δυσπλασία',
+      sigT: 'Σημεία στην πλάγια ακτινογραφία', crossing: 'Σημείο διασταύρωσης (crossing sign)', spur: 'Υπερτροχιλιακή απόφυση (spur)', dc: 'Σημείο διπλού περιγράμματος (double contour)', yes: 'Ναι', no: 'Όχι',
+      axT: 'Αξονική εικόνα (CT / MRI) – προαιρετικά', axPat: 'Μορφή τροχιλίας στην αξονική', axNone: '–',
+      ax_A: 'A – ρηχή τροχιλία', ax_B: 'B – επίπεδη ή κυρτή τροχιλία', ax_C: 'C – ασύμμετρες πλευρές (κυρτή έξω, υποπλαστική έσω)', ax_D: 'D – ασύμμετρες πλευρές με κάθετη σύνδεση («cliff»)',
+      dj_A: 'Τύπος A', dj_B: 'Τύπος B', dj_C: 'Τύπος C', dj_D: 'Τύπος D', dj_none: 'Χωρίς σημεία δυσπλασίας', dj_null: '–',
+      dd_A: 'σημείο διασταύρωσης', dd_B: 'σημείο διασταύρωσης + απόφυση', dd_C: 'σημείο διασταύρωσης + διπλό περίγραμμα', dd_D: 'σημείο διασταύρωσης + απόφυση + διπλό περίγραμμα',
+      q_noCrossing: 'Απόφυση ή διπλό περίγραμμα χωρίς σημείο διασταύρωσης: ελέγξτε τα σημεία ή επιλέξτε τύπο.', q_axDiff: 'Η μορφή στην αξονική διαφέρει από τον τύπο της πλάγιας.', q_override: 'Ο τύπος ορίστηκε από τον ιατρό.',
+      qT: 'Έλεγχοι ποιότητας', cal: 'Κλίμακα', c_dicom: 'DICOM pixel spacing', c_marker: 'βαθμονόμηση', c_demo: 'DEMO – συνθετική κλίμακα', c_none: 'χωρίς βαθμονόμηση', calMm: 'Μήκος κλίμακας (mm)', calNeed: 'Βαθμονόμηση απαιτείται: τοποθετήστε τα δύο άκρα της κλίμακας της οθόνης (ή αντικειμένου γνωστού μήκους) και γράψτε το μήκος σε mm.', calSet: '📏 Βαθμονόμηση',
+      ref_coreg: 'Κοινή οπίσθια κονδυλική γραμμή (τομές από την ίδια σειρά)', ref_own: 'Γραμμή αναφοράς και στην τομή B', ref_composite: 'Σύνθετη εικόνα', refT: 'Αναφορά',
+      q_misiOdd: 'Τιμή εκτός αναμενόμενου εύρους: ελέγξτε τα σημεία.', q_artOdd: 'Ασυνήθιστο μήκος αρθρικής επιφάνειας: ελέγξτε τα δύο άκρα της.', q_ttAbove: 'Το κύρτωμα είναι πάνω από το κάτω άκρο της αρθρικής επιφάνειας: ελέγξτε τα σημεία.', q_ratioNoCal: 'Ο δείκτης είναι λόγος αποστάσεων: δεν χρειάζεται βαθμονόμηση.', q_isiOdd: 'Κλασικός Insall–Salvati εκτός αναμενόμενου εύρους: ελέγξτε τους πόλους.',
+      q_needCal: 'Χωρίς βαθμονόμηση δεν υπολογίζονται mm: DICOM ή βαθμονόμηση με την κλίμακα της οθόνης.', q_scaleFromA: 'Η κλίμακα της τομής B πάρθηκε από την τομή A.', q_scaleDiff: 'Οι δύο τομές έχουν διαφορετική κλίμακα: ελέγξτε ότι είναι από την ίδια σειρά.', q_dimsDiff: 'Οι δύο εικόνες έχουν διαφορετικό μέγεθος: αν δεν είναι από την ίδια σειρά/οθόνη, τοποθετήστε και τη γραμμή αναφοράς στην τομή B ή χρησιμοποιήστε σύνθετη εικόνα.',
+      q_ttImplausible: 'Τιμή εκτός αναμενόμενου εύρους: ελέγξτε τα σημεία.', q_ttMedial: 'Αρνητική τιμή: το κύρτωμα είναι έσω από την αύλακα (ή αντιστράφηκαν έσω / έξω).', q_condTilt: 'Η οπίσθια κονδυλική γραμμή έχει μεγάλη κλίση: ελέγξτε τα σημεία των κονδύλων.',
+      confirm: '✔ Επιβεβαίωση σημείων', conf: 'Σημεία επιβεβαιωμένα από ιατρό', notConf: 'Τα σημεία δεν έχουν επιβεβαιωθεί – ελέγξτε και επιβεβαιώστε πριν την αποθήκευση.',
+      sumT: 'Σύνοψη', save: '💾 Αποθήκευση μέτρησης', print: '🖨 Φύλλο A4', saved: 'Η μέτρηση αστάθειας επιγονατίδας αποθηκεύτηκε', needLogin: 'Συνδεθείτε ως ιατρός για αποθήκευση.', needPt: 'Επιλέξτε ασθενή για αποθήκευση – χωρίς ασθενή η μέτρηση δεν αποθηκεύεται.', needConf: 'Επιβεβαιώστε πρώτα τα σημεία (✔) σε: ', needMeas: 'Δεν υπάρχει ακόμη μέτρηση.',
+      listT: 'Αποθηκευμένες μετρήσεις αστάθειας επιγονατίδας', open: 'Άνοιγμα', none: 'Καμία αποθηκευμένη μέτρηση για αυτόν τον ασθενή.', editing: 'Επεξεργασία αποθηκευμένης μέτρησης', newM: '＋ Νέα μέτρηση',
+      sheet: 'Φύλλο μέτρησης – αστάθεια επιγονατίδας', patient: 'Ασθενής', filmD: 'Εξέταση', measD: 'Ημ/νία μέτρησης', by: 'Ιατρός', close: '✕ Κλείσιμο', doPrint: '🖨 Εκτύπωση', sign: 'Υπογραφή',
+      unconf: 'ΣΗΜΕΙΑ ΜΗ ΕΠΙΒΕΒΑΙΩΜΕΝΑ', synth: 'DEMO συνθετικές εικόνες – όχι ασθενής', disc: 'Βοήθημα μέτρησης μόνο· επιβεβαιώστε στο PACS.',
+      imgFail: 'Η εικόνα δεν μπορεί να ανοίξει: ', loadFail: 'Η αποθηκευμένη εικόνα δεν βρέθηκε σε αυτή τη συσκευή – εμφανίζεται η μικρογραφία.', dash: 'Αστάθεια επιγονατίδας', notMeasured: 'δεν μετρήθηκε' },
+    en: { title: 'Patellar instability', sub: 'Patella alta · TT–TG distance on CT · trochlear dysplasia (Dejour). Each section can be used on its own.',
+      sec_lat: '1 · Patella alta', sec_ct: '2 · TT–TG (CT)', sec_dej: '3 · Dejour',
+      latT: 'Patella alta – lateral knee radiograph', latSub: 'Modified Insall–Salvati index: distance from the inferior end of the patellar articular surface to the tibial tuberosity ÷ articular-surface length. Ideally a lateral view at ≈30° flexion.',
+      ctT: 'TT–TG distance – CT', ctSub: 'Slice A at the trochlea (deepest point of the groove, proximal trochlea) and slice B at the tibial tuberosity, from the same series. Distance between the two perpendiculars to the posterior condylar line.',
+      dejT: 'Trochlear dysplasia (Dejour)', dejSub: 'Signs on the lateral radiograph (true lateral) and optionally the axial image (CT/MRI) with the sulcus angle.',
+      upload: 'Upload X-ray', uploadCt: 'Upload slice', demo: '🧪 DEMO (synthetic)', demoAlta: '🧪 DEMO patella alta', demoCt: '🧪 DEMO slices A + B',
+      fileLat: 'Lateral knee X-ray · PNG, JPEG or DICOM', fileCt: 'CT axial slice · PNG, JPEG or DICOM (DICOM: pixel spacing for exact mm)',
+      noFilmLat: 'No lateral X-ray open yet', noFilmCt: 'Slice {s} not open yet', noFilmDej: 'For the sulcus angle open CT slice A (at the trochlea).',
+      stepsLat: ['Select the patient (above, “Patient”).', 'Upload a lateral knee X-ray (PNG, JPEG or DICOM) or paste it (Ctrl+V).', 'Points are proposed automatically – check, correct and confirm them.'],
+      stepsCt: ['Open slice A: the trochlear level with the deepest point of the groove.', 'Open slice B: the tibial tuberosity level (patellar tendon insertion), same series.', 'Check the points and the scale (DICOM or the on-screen ruler), then confirm.'],
+      noPt: 'Without a selected patient the measurement is not saved; select a patient to keep it.',
+      mode2: 'Two slices (A + B)', mode1: 'One composite image', sliceA: 'Slice A · trochlea', sliceB: 'Slice B · tuberosity',
+      lvl: 'Confidence', lv_high: 'high', lv_medium: 'medium', lv_low: 'low', detecting: '🤖 Detecting points…', cancel: '✕ Cancel',
+      sugMed: '🤖 Suggested points – check them, drag any that are off, then confirm.', sugLow: '🤖 Low-confidence suggested points – check carefully and drag each point into place, then confirm.',
+      sugCt: '🤖 Low-confidence suggested points – on CT slices the automatic proposal is only a starting point. Put each point in place (drag or tap), then confirm.',
+      allSet: '✅ All required points placed.', guideT: 'Manual placement – steps',
+      guideLat: ['Zoom onto the patella. The articular surface is the posterior outline of the patella facing the trochlea.', 'Tap the superior and then the inferior end of the articular surface (not the patellar poles).', 'Tap the tibial tuberosity: its anterior-superior point, where the patellar tendon inserts.', 'Optional: superior and inferior pole (classic Insall–Salvati) and the anterior-superior corner of the tibial plateau (Caton–Deschamps).', 'Check the values and press “✔ Confirm points”.'],
+      guideCt: ['Slice A: tap the most posterior point of the medial and then the lateral femoral condyle (posterior condylar line).', 'Slice A: tap the deepest point of the trochlear groove.', 'Slice B: tap the most anterior point of the tibial tuberosity (patellar tendon insertion).', 'Scale: automatic with DICOM; on a photo of a monitor place both ends of the on-screen ruler and type its length.', 'Check the value and press “✔ Confirm points”.'],
+      n_PS: 'Superior end of the patellar articular surface', n_PI: 'Inferior end of the patellar articular surface', n_TT: 'Tibial tuberosity (anterior-superior point)', n_PU: 'Superior patellar pole', n_PL: 'Inferior patellar pole', n_TA: 'Anterior-superior corner of the tibial plateau',
+      n_C1: 'Posterior point of the medial femoral condyle', n_C2: 'Posterior point of the lateral femoral condyle', n_TG: 'Deepest point of the trochlear groove (TG)', n_TU: 'Tibial tuberosity – patellar tendon insertion (TT)', n_SM: 'Top of the medial trochlear facet', n_SL: 'Top of the lateral trochlear facet',
+      n_B1: 'Reference line on slice B – medial', n_B2: 'Reference line on slice B – lateral', n_CAL1: 'Scale – end 1', n_CAL2: 'Scale – end 2',
+      s_PS: 'Art. sup.', s_PI: 'Art. inf.', s_TT: 'Tuberosity', s_PU: 'Sup. pole', s_PL: 'Inf. pole', s_TA: 'Plateau', s_C1: 'Med. condyle', s_C2: 'Lat. condyle', s_TG: 'TG', s_TU: 'TT', s_SM: 'Med. facet', s_SL: 'Lat. facet', s_B1: 'Ref. med.', s_B2: 'Ref. lat.', s_CAL1: 'Cal 1', s_CAL2: 'Cal 2',
+      p_PS: 'Tap the superior end of the patellar articular surface.', p_PI: 'Tap the inferior end of the patellar articular surface.', p_TT: 'Tap the tibial tuberosity (anterior-superior point, patellar tendon insertion).',
+      p_PU: 'Tap the superior pole of the patella.', p_PL: 'Tap the inferior pole of the patella (patellar tendon origin).', p_TA: 'Tap the anterior-superior corner of the tibial plateau.',
+      p_C1: 'Tap the most posterior point of the medial femoral condyle.', p_C2: 'Tap the most posterior point of the lateral femoral condyle.', p_TG: 'Tap the deepest point of the trochlear groove.', p_TU: 'Tap the most anterior point of the tibial tuberosity (patellar tendon insertion).',
+      p_SM: 'Tap the top of the medial trochlear facet.', p_SL: 'Tap the top of the lateral trochlear facet.', p_B1: 'Tap the medial end of the reference line on slice B.', p_B2: 'Tap the lateral end of the reference line on slice B.',
+      p_CAL1: 'Tap one end of the ruler (or an object of known length).', p_CAL2: 'Tap the other end of the ruler.',
+      optT: 'Optional points:', lmHelp: 'Tap the image to place the point · drag a point to correct it · two fingers (or the wheel) to zoom and pan.',
+      zin: 'Zoom in', zout: 'Zoom out', zfit: 'Whole image', redo: '🤖 Run automatic detection again', del: '🗑 Remove', clear: '↺ Clear points', swap: '⇄ Swap medial / lateral',
+      side: 'Side', R: 'Right', L: 'Left', date: 'Study date', phase: 'Phase', pre: 'Pre-op', post: 'Post-op',
+      value: 'Value', normal: 'Normal range', cuts: 'Cut-offs', st_in: '✓ within', st_low: '↓ below', st_high: '↑ above', b_lt15: '< 15 mm', b_15to20: '15–20 mm', b_ge20: '≥ 20 mm',
+      misi: 'Modified Insall–Salvati index', isi: 'Insall–Salvati index (classic)', cdi: 'Caton–Deschamps index', art: 'Articular-surface length', dist: 'Inferior articular end → tuberosity', extraT: 'Additional indices (optional points)',
+      tttg: 'TT–TG distance', sulc: 'Sulcus angle', needLat: 'Place the points to compute the index.', needCt: 'Place the points on both slices to compute the TT–TG distance.', needSulc: 'Place both facet tops and the deepest point of the groove.',
+      dejour: 'Trochlear dysplasia (Dejour)', type: 'Type', derived: 'from the signs', override: 'Type (doctor’s choice)', ovAuto: 'Automatic (from the signs)', ovNone: 'No dysplasia',
+      sigT: 'Signs on the lateral radiograph', crossing: 'Crossing sign', spur: 'Supratrochlear spur', dc: 'Double contour sign', yes: 'Yes', no: 'No',
+      axT: 'Axial image (CT / MRI) – optional', axPat: 'Trochlear shape on the axial image', axNone: '–',
+      ax_A: 'A – shallow trochlea', ax_B: 'B – flat or convex trochlea', ax_C: 'C – asymmetric facets (convex lateral, hypoplastic medial)', ax_D: 'D – asymmetric facets with a vertical link (“cliff”)',
+      dj_A: 'Type A', dj_B: 'Type B', dj_C: 'Type C', dj_D: 'Type D', dj_none: 'No dysplasia signs', dj_null: '–',
+      dd_A: 'crossing sign', dd_B: 'crossing sign + spur', dd_C: 'crossing sign + double contour', dd_D: 'crossing sign + spur + double contour',
+      q_noCrossing: 'Spur or double contour without a crossing sign: check the signs or choose the type.', q_axDiff: 'The axial shape differs from the lateral-film type.', q_override: 'Type set by the doctor.',
+      qT: 'Quality checks', cal: 'Scale', c_dicom: 'DICOM pixel spacing', c_marker: 'calibration', c_demo: 'DEMO – synthetic scale', c_none: 'not calibrated', calMm: 'Ruler length (mm)', calNeed: 'Calibration needed: place both ends of the on-screen ruler (or an object of known length) and type its length in mm.', calSet: '📏 Calibrate',
+      ref_coreg: 'Common posterior condylar line (slices from the same series)', ref_own: 'Reference line on slice B too', ref_composite: 'Composite image', refT: 'Reference',
+      q_misiOdd: 'Value outside the expected range: check the points.', q_artOdd: 'Unusual articular-surface length: check both of its ends.', q_ttAbove: 'The tuberosity lies above the inferior articular end: check the points.', q_ratioNoCal: 'The index is a ratio of distances: no calibration needed.', q_isiOdd: 'Classic Insall–Salvati outside the expected range: check the poles.',
+      q_needCal: 'Not calibrated, so no mm: use DICOM or calibrate with the on-screen ruler.', q_scaleFromA: 'Slice B uses the scale of slice A.', q_scaleDiff: 'The two slices have different scales: check that they come from the same series.', q_dimsDiff: 'The two images differ in size: if they are not from the same series/screen, place the reference line on slice B too or use a composite image.',
+      q_ttImplausible: 'Value outside the expected range: check the points.', q_ttMedial: 'Negative value: the tuberosity is medial to the groove (or medial / lateral are swapped).', q_condTilt: 'The posterior condylar line is steeply tilted: check the condyle points.',
+      confirm: '✔ Confirm points', conf: 'Points confirmed by a doctor', notConf: 'Points not confirmed – check and confirm before saving.',
+      sumT: 'Summary', save: '💾 Save measurement', print: '🖨 A4 sheet', saved: 'Patellar instability measurement saved', needLogin: 'Sign in as a doctor to save.', needPt: 'Select a patient to save – without a patient the measurement is not saved.', needConf: 'Confirm the points first (✔) in: ', needMeas: 'Nothing measured yet.',
+      listT: 'Saved patellar instability measurements', open: 'Open', none: 'No saved measurement for this patient.', editing: 'Editing a saved measurement', newM: '＋ New measurement',
+      sheet: 'Measurement sheet – patellar instability', patient: 'Patient', filmD: 'Study', measD: 'Measured on', by: 'Doctor', close: '✕ Close', doPrint: '🖨 Print', sign: 'Signature',
+      unconf: 'POINTS NOT CONFIRMED', synth: 'DEMO synthetic images – not a patient', disc: 'Measurement aid only; confirm in PACS.',
+      imgFail: 'The image cannot be opened: ', loadFail: 'The saved image is not on this device – showing the thumbnail.', dash: 'Patellar instability', notMeasured: 'not measured' }
+  };
+  var t = function (k) { var v = S[lang()][k]; return v != null ? v : k; };
+  var XR = function () { return window.__xray; }, API = function () { return window.__orthoProms; };
+  var pid = function () { var s = XR() && XR().state; return (s && s.pid) || ''; };
+  function V0() { return { img: null, W: 0, H: 0, name: '', dicom: null, blob: null, filmId: null, demo: null, note: '', det: null, running: false, runTok: null, pts: {}, org: {}, lv: null, sel: null, pick: null, calMm: 50, msg: '' }; }
+  var ui = { sec: 'lat', v: { lat: V0(), ctA: V0(), ctB: V0() }, composite: false, slice: 'A', conf: { lat: null, ct: null, sulc: null },
+    dej: { crossing: null, spur: null, dc: null, axial: '', override: '' }, side: 'R', date: today(), phase: 'pre', msg: '', recId: null, pid: '', pending: false, last: null };
+
+  // ---------- which view / which points ----------
+  function vk() { return ui.sec === 'lat' ? 'lat' : ui.sec === 'ct' ? (ui.composite || ui.slice === 'A' ? 'ctA' : 'ctB') : 'ctA'; }
+  function reqOf(k) { if (k === 'lat') return O.LAT_REQ; if (k === 'ctB') return O.CTB_REQ; if (ui.sec === 'dej') return ['SM', 'TG', 'SL']; return ui.composite ? O.CTA_REQ.concat(['TU']) : O.CTA_REQ; }
+  function optOf(k) { if (k === 'lat') return ['PU', 'PL', 'TA', 'CAL1', 'CAL2']; if (k === 'ctB') return ['B1', 'B2', 'CAL1', 'CAL2']; if (ui.sec === 'dej') return []; return ['SM', 'SL', 'CAL1', 'CAL2']; }
+  function keysOf(k) { return reqOf(k).concat(optOf(k)); }
+  function calOf(k) { var v = ui.v[k]; return O.calibration({ spacing: v.dicom && v.dicom.spacing ? v.dicom.spacing : null, cal1: v.pts.CAL1, cal2: v.pts.CAL2, calMm: v.calMm, demoMmPerPx: v.demo ? v.demo.mmPerPx : null }); }
+  function dejOf() {
+    var d = O.dejour(ui.dej), ov = ui.dej.override || '', type = ov ? (ov === 'none' ? 'none' : ov) : d.type, q = [];
+    if (d.code === 'noCrossing' && !ov) q.push({ code: 'noCrossing', lv: 'w' });
+    if (ov) q.push({ code: 'override', lv: 'i' });
+    if (ui.dej.axial && type && type !== 'none' && ui.dej.axial !== type) q.push({ code: 'axDiff', lv: 'i' });
+    return { derived: d, type: type || null, override: ov || null, axial: ui.dej.axial || null, signs: { crossing: ui.dej.crossing, spur: ui.dej.spur, dc: ui.dej.dc }, quality: q };
+  }
+  function compute() {
+    var L = ui.v.lat, A = ui.v.ctA, B = ui.v.ctB, cL = calOf('lat'), cA = calOf('ctA'), cB = calOf('ctB');
+    var lat = L.img ? O.measureLat(L.pts, { mmPerPx: cL.mmPerPx, calSource: cL.source }) : null;
+    var ct = A.img ? O.measureCT(A.pts, B.pts, { mmA: cA.mmPerPx, mmB: B.img ? cB.mmPerPx : null, composite: ui.composite, dimsA: { W: A.W, H: A.H }, dimsB: B.img ? { W: B.W, H: B.H } : null }) : null;
+    if (ct) { ct.calA = cA.source; ct.calB = ui.composite ? cA.source : B.img ? cB.source : null; }
+    var sa = A.img ? O.sulcusAngle(A.pts.SM, A.pts.TG, A.pts.SL) : null;
+    ui.last = { lat: lat, ct: ct, sulc: sa == null ? null : { deg: sa, status: O.status('sulcus', sa) }, dej: dejOf() }; return ui.last;
+  }
+  function missing(k) { var v = ui.v[k]; return reqOf(k).filter(function (K) { return !v.pts[K]; }); }
+  function nextPt(k) { var v = ui.v[k]; if (v.pick && !v.pts[v.pick] && keysOf(k).indexOf(v.pick) >= 0) return v.pick; return missing(k)[0] || null; }
+  function secOk(m, s) { return s === 'lat' ? !!(m.lat && m.lat.ok) : s === 'ct' ? !!(m.ct && m.ct.ok) : !!m.sulc; }
+  function confKey() { return ui.sec === 'lat' ? 'lat' : ui.sec === 'ct' ? 'ct' : 'sulc'; }
+  function headline(p, L) {
+    L = L || lang(); var el = L === 'el', n = function (v, d) { return num(v, d, L); }, s = [];
+    if (!p) return '';
+    if (p.lat && p.lat.misi != null) s.push((el ? 'Τροπ. Insall–Salvati ' : 'Modified Insall–Salvati ') + n(p.lat.misi, 2));
+    if (p.ct && p.ct.ttTg != null) s.push('TT–TG ' + n(p.ct.ttTg, 1) + ' mm');
+    if (p.dej && p.dej.type) s.push('Dejour ' + (p.dej.type === 'none' ? (el ? 'χωρίς δυσπλασία' : 'no dysplasia') : p.dej.type));
+    var sd = p.sulcus && typeof p.sulcus === 'object' ? p.sulcus.deg : p.sulcus; if (sd != null) s.push((el ? 'Γωνία αύλακας ' : 'Sulcus ') + n(sd, 0) + '°');
+    return s.join(' · ');
+  }
+
+  // ---------- image + detection ----------
+  function fid() { return 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function setImage(k, c, name, dicom, blob, note, demo) {
+    var v = ui.v[k] = V0(); v.img = c; v.W = c.width; v.H = c.height; v.name = name || ''; v.dicom = dicom || null; v.blob = blob || null; v.demo = demo || null; v.note = note || ''; v.filmId = fid();
+    if (k === 'lat') ui.conf.lat = null; else { ui.conf.ct = null; if (k === 'ctA') ui.conf.sulc = null; }
+    ui.msg = ''; if (pid() !== ui.pid) { ui.pid = pid(); ui.recId = null; }
+    runDetect(k);
+  }
+  function grayOf(c, maxDim) {
+    var f = Math.min(1, maxDim / Math.max(c.width, c.height)), w = Math.max(1, Math.round(c.width * f)), h = Math.max(1, Math.round(c.height * f)), k = document.createElement('canvas'); k.width = w; k.height = h;
+    var x = k.getContext('2d', { willReadFrequently: true }); x.drawImage(c, 0, 0, w, h); var d = x.getImageData(0, 0, w, h).data, g = new Uint8ClampedArray(w * h);
+    for (var i = 0; i < w * h; i++) g[i] = Math.round(0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2]);
+    return { W: w, H: h, data: g, f: w / c.width };
+  }
+  function detectOn(c, o) { var G = grayOf(c, o.kind === 'lat' ? O.MAXDIM.lat : O.MAXDIM.ct); return O.detectImg({ W: G.W, H: G.H, data: G.data }, G.f, o); }
+  function kindOf(k) { return k === 'lat' ? 'lat' : k === 'ctB' ? 'B' : ui.composite ? 'AB' : 'A'; }
+  function runDetect(k) {
+    var v = ui.v[k]; if (!v.img) return; v.running = true; v.det = null; renderNow(); var img = v.img, tok = v.runTok = {}, t0 = performance.now();
+    var cal = calOf(k), mm = cal.source === 'dicom' || cal.source === 'demo' ? cal.mmPerPx : null, A = ui.v.ctA.pts;
+    var o = { kind: kindOf(k), side: ui.side, mmPerPx: mm, ref: k === 'ctB' && A.C1 && A.C2 ? { C1: A.C1, C2: A.C2 } : null };
+    var done = function (r) {
+      if (v.img !== img || v.runTok !== tok) return; v.running = false; v.runTok = null; r.ms = r.ms || Math.round(performance.now() - t0); v.det = r;
+      var ks = VK[k]; Object.keys(r.ptsImg || {}).forEach(function (K) { if (ks.indexOf(K) >= 0 && !/^CAL/.test(K) && v.org[K] !== 'manual') { v.pts[K] = r.ptsImg[K]; v.org[K] = 'auto'; } }); // hand-placed points are kept
+      v.lv = null; renderNow();
+    };
+    var x = XR(), job = x && x.patDetect ? x.patDetect(img, o) : null;
+    var local = function () { var r; try { r = detectOn(img, o); } catch (e) { r = { status: 'failed', reason: 'error', level: 'low', ptsImg: {} }; } done(r); };
+    if (job) { job.then(done, function () { setTimeout(local, 0); }); return; }
+    setTimeout(local, 30);
+  }
+  function cancelDetect() { var v = ui.v[vk()]; if (!v.running) return; v.running = false; v.runTok = null; v.det = { status: 'cancelled', level: 'low', ptsImg: {} }; renderNow(); }
+  function loadFile(file, k) {
+    var x = XR(); if (!file || !x || !x.decodeFile) return; k = k || vk();
+    x.decodeFile(file, function (c, name, dicom, blob, note) { setImage(k, c, name, dicom, blob, note, null); }, function (m) { ui.v[k].msg = m; ui.msg = m; renderNow(); });
+  }
+  function grayCanvas(s) { var c = document.createElement('canvas'); c.width = s.W; c.height = s.H; var x = c.getContext('2d'), id = x.createImageData(s.W, s.H);
+    for (var i = 0; i < s.W * s.H; i++) { var g = s.data[i]; id.data[4 * i] = id.data[4 * i + 1] = id.data[4 * i + 2] = g; id.data[4 * i + 3] = 255; } x.putImageData(id, 0, 0); return c; }
+  var DEMO_LAT = { seed: 13 }, DEMO_ALTA = { seed: 17, pat: { xc: 40, yc: -58, a: 21, b: 9, phi: 10 } }, DEMO_CT = { side: 'R', ttTg: 18, rot: 4, seed: 5 };
+  function loadDemoLat(alta) { var o = JSON.parse(JSON.stringify(alta ? DEMO_ALTA : DEMO_LAT)), s = O.synthLat(o); ui.sec = 'lat'; setImage('lat', grayCanvas(s), alta ? 'DEMO-PATELLA-ALTA' : 'DEMO-PATELLA', null, null, '', { mmPerPx: s.mmPerPx, kind: 'lat', opt: o }); }
+  function loadDemoCt(composite) {
+    var o = JSON.parse(JSON.stringify(DEMO_CT)); o.side = ui.side; ui.composite = !!composite; if (ui.sec === 'lat') ui.sec = 'ct';
+    if (composite) { var s0 = O.synthCT('AB', o); ui.v.ctB = V0(); setImage('ctA', grayCanvas(s0), 'DEMO-CT-AB', null, null, '', { mmPerPx: s0.mmPerPx, kind: 'AB', opt: o }); return; }
+    var a = O.synthCT('A', o), b = O.synthCT('B', o); ui.slice = 'A';
+    setImage('ctB', grayCanvas(b), 'DEMO-CT-B', null, null, '', { mmPerPx: b.mmPerPx, kind: 'B', opt: o });
+    setImage('ctA', grayCanvas(a), 'DEMO-CT-A', null, null, '', { mmPerPx: a.mmPerPx, kind: 'A', opt: o });
+    // slice B uses slice A's condylar line → re-run once A's points are in
+    var tries = 0, wait = function () { if (ui.v.ctA.running && tries++ < 200) { setTimeout(wait, 50); return; } if (ui.v.ctB.img && !Object.keys(ui.v.ctB.org).some(function (K) { return ui.v.ctB.org[K] === 'manual'; })) runDetect('ctB'); }; setTimeout(wait, 50);
+  }
+
+  // ---------- render ----------
+  function render() { if (ui.pending) return; ui.pending = true; requestAnimationFrame(function () { ui.pending = false; renderNow(); }); }
+  var lvB = function (lv) { return lv ? ' <span class="ptslvl ptslvl-' + esc(lv) + '" id="patLevel" data-level="' + esc(lv) + '">' + esc(t('lvl')) + ': ' + esc(t('lv_' + lv)) + '</span>' : ''; };
+  var guideHtml = function (k, open) { var g = t(k === 'lat' ? 'guideLat' : 'guideCt'); return '<details class="ptsman" id="patGuide"' + (open ? ' open' : '') + '><summary>' + esc(t('guideT')) + '</summary><ol class="ptsguide">' + g.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol></details>'; };
+  function stHtml(k) {
+    var v = ui.v[k];
+    if (v.running) return '<div class="xdetrow" id="patStatus" role="status" aria-live="polite"><span class="xspin dark" aria-hidden="true"></span><span>' + esc(t('detecting')) + '</span><button type="button" class="small" id="patCancel">' + esc(t('cancel')) + '</button></div>';
+    var d = v.det, req = reqOf(k), miss = missing(k), ck = k === 'lat' ? 'lat' : ui.sec === 'dej' ? 'sulc' : 'ct', untouched = d && !ui.conf[ck] && req.every(function (K) { return v.org[K] === 'auto'; });
+    if (d && d.status === 'suggest' && untouched) { var lv = d.level || 'low', msg = k === 'lat' ? (lv === 'medium' ? 'sugMed' : 'sugLow') : 'sugCt';
+      return '<div class="xhwarn" id="patStatus" role="status" data-level="' + esc(lv) + '" data-method="' + esc(d.method || '') + '" data-reason="' + esc(d.reason || '') + '"><p>' + esc(t(msg)) + lvB(lv) + '</p>' + guideHtml(k, lv === 'low' && k === 'lat') + '</div>'; }
+    if (!miss.length) return '<p class="xhok small" id="patStatus" role="status">' + esc(t('allSet')) + '</p>';
+    return '<div id="patStatus">' + guideHtml(k, true) + '</div>';
+  }
+  function chip(k, K, nx) { return '<button class="small xhchip' + (K === nx ? ' armed' : '') + '" data-patpick="' + K + '"><i style="background:' + COL[K] + '"></i>' + esc(t('n_' + K)) + '</button>'; }
+  function editorHtml(k) {
+    var v = ui.v[k], nx = nextPt(k), mi = reqOf(k).filter(function (K) { return !v.pts[K]; }), oi = optOf(k).filter(function (K) { return !v.pts[K]; });
+    var chips = (mi.length ? '<div class="row xhchips" id="patChips">' + mi.map(function (K) { return chip(k, K, nx); }).join('') + '</div>' : '') +
+      (oi.length ? '<details class="ptsopt" id="patOpt"' + (optOf(k).indexOf(v.pick) >= 0 ? ' open' : '') + '><summary class="small">' + esc(t('optT')) + ' ' + oi.length + '</summary><div class="row xhchips">' + oi.map(function (K) { return chip(k, K, nx); }).join('') + '</div></details>' : '');
+    var tools = '<div class="row xhzoom"><button id="patZin" class="small" aria-label="' + esc(t('zin')) + '">＋</button><button id="patZout" class="small" aria-label="' + esc(t('zout')) + '">－</button><button id="patZfit" class="small" aria-label="' + esc(t('zfit')) + '">⤢</button>' +
+      '<button id="patRedo" class="small"' + (v.running ? ' disabled' : '') + '>' + esc(t('redo')) + '</button>' + (v.sel && v.pts[v.sel] ? '<button id="patDel" class="small">' + esc(t('del')) + ' · ' + esc(t('s_' + v.sel)) + '</button>' : '') + (k === 'ctA' && ui.sec === 'ct' ? '<button id="patSwap" class="small">' + esc(t('swap')) + '</button>' : '') + '<button id="patClear" class="small">' + esc(t('clear')) + '</button></div>';
+    return '<div class="card xhedit" id="patEditor" data-view="' + k + '">' + (ui.recId ? '<p class="small muted">✏️ ' + esc(t('editing')) + '</p>' : '') + stHtml(k) + (nx ? '<p class="xhprompt" id="patPrompt" data-k="' + nx + '">👉 ' + esc(t('p_' + nx)) + '</p>' : '') + chips + tools +
+      '<div class="xhlmwrap"><canvas id="patCv" aria-label="' + esc(t('title')) + '"></canvas></div><p class="muted small">' + esc(t('lmHelp')) + '</p>' + (v.note ? '<p class="small">' + esc(v.note) + '</p>' : '') + '</div>';
+  }
+  function fileRow(k) {
+    var v = ui.v[k], lat = k === 'lat';
+    return '<div class="row xhfilm"><input type="file" id="patFile" data-view="' + k + '" accept="image/*,.dcm,application/dicom" hidden><label for="patFile" class="btn ' + (v.img ? 'small' : 'primary xhup') + '" id="patUpload" role="button" tabindex="0">' + esc(t(lat ? 'upload' : 'uploadCt')) + (lat ? '' : ' · ' + esc(k === 'ctB' ? 'B' : ui.composite ? 'A + B' : 'A')) + '</label>' +
+      (lat ? '<button id="patDemo" class="small">' + esc(t('demo')) + '</button><button id="patDemoAlta" class="small">' + esc(t('demoAlta')) + '</button>' : '<button id="patDemoCt" class="small">' + esc(ui.composite ? t('demo') : t('demoCt')) + '</button>') +
+      (v.img ? ' <span class="muted small" id="patName">' + esc(v.name) + '</span>' : '') + '</div><p class="muted small">' + esc(t(lat ? 'fileLat' : 'fileCt')) + '</p>' + (v.msg && !v.img ? '<p class="xhwarn" id="patMsg0">' + esc(v.msg) + '</p>' : '');
+  }
+  function emptyHtml(k) {
+    var P = pid(), st = t(k === 'lat' ? 'stepsLat' : 'stepsCt'), ttl = k === 'lat' ? t('noFilmLat') : t('noFilmCt').replace('{s}', k === 'ctB' ? 'B' : 'A');
+    return '<div class="card xhempty" id="patEmpty" data-view="' + k + '"><h3>' + esc(ttl) + '</h3><ol class="xhsteps">' + st.map(function (x, i) { return '<li>' + esc(x) + (i === 0 && P && k === 'lat' ? ' <b>✓ ' + esc(P) + '</b>' : '') + '</li>'; }).join('') + '</ol></div>';
+  }
+  function formHtml() {
+    return '<div class="row ptsform"><div class="seg" id="patSideSeg" role="group" aria-label="' + esc(t('side')) + '">' + ['R', 'L'].map(function (k) { return '<button data-patside="' + k + '" class="' + (k === ui.side ? 'active' : '') + '">' + esc(t(k)) + '</button>'; }).join('') + '</div>' +
+      '<label class="fld inl">' + esc(t('date')) + ' <input type="date" id="patDate" value="' + esc(ui.date) + '"></label><label class="fld inl">' + esc(t('phase')) + ' <select id="patPhase"><option value="pre"' + (ui.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (ui.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label></div>';
+  }
+  function renderNow() {
+    var el = $('xPatPane'); if (!el) return; var A = API();
+    if (!A || (A.store && A.store.portal)) { el.innerHTML = ''; return; } // doctor-only
+    if (ui.pid !== pid()) { if (ui.recId) reset(); ui.pid = pid(); ui.msg = ''; }
+    var P = pid(), m = compute(), k = vk(), v = ui.v[k];
+    var secs = '<div class="seg patsecs" id="patSecs" role="tablist">' + ['lat', 'ct', 'dej'].map(function (s) { var done = secOk(m, s) || (s === 'dej' && m.dej.type); return '<button role="tab" data-patsec="' + s + '" aria-selected="' + (ui.sec === s) + '" class="' + (ui.sec === s ? 'active' : '') + '">' + esc(t('sec_' + s)) + (done ? ' ✓' : '') + '</button>'; }).join('') + '</div>';
+    var head = '<div class="card xhhead"><h2>🦵 ' + esc(t('title')) + '</h2><p class="muted small">' + esc(t('sub')) + '</p>' + (P ? '' : '<p class="xhwarn small" id="patNoPt">' + esc(t('noPt')) + '</p>') + (window.OrthoXrayTrain ? window.OrthoXrayTrain.html('patTrain') : '') + secs + '</div>';
+    var body = '';
+    if (ui.sec === 'lat') {
+      body = '<div class="card patsec" id="patSecLat"><h3>' + esc(t('latT')) + '</h3><p class="muted small">' + esc(t('latSub')) + '</p>' + fileRow('lat') + '</div>' +
+        (v.img ? '<div class="xptsgrid"><div>' + editorHtml('lat') + '</div><div class="card xhpanel" id="patPanel">' + formHtml() + '<div id="patRes">' + latHtml(m.lat) + '</div>' + calHtml('lat') + '</div></div>' : emptyHtml('lat'));
+    } else if (ui.sec === 'ct') {
+      var mode = '<div class="row"><div class="seg" id="patModeSeg">' + [['two', 'mode2'], ['one', 'mode1']].map(function (q) { var on = (q[0] === 'one') === ui.composite; return '<button data-patmode="' + q[0] + '" class="' + (on ? 'active' : '') + '">' + esc(t(q[1])) + '</button>'; }).join('') + '</div>' +
+        (ui.composite ? '' : '<div class="seg" id="patSliceSeg">' + ['A', 'B'].map(function (s) { var vv = ui.v['ct' + s]; return '<button data-patslice="' + s + '" class="' + (ui.slice === s ? 'active' : '') + '">' + esc(t('slice' + s)) + (vv.img ? ' ✓' : '') + '</button>'; }).join('') + '</div>') + '</div>';
+      body = '<div class="card patsec" id="patSecCt"><h3>' + esc(t('ctT')) + '</h3><p class="muted small">' + esc(t('ctSub')) + '</p>' + mode + fileRow(k) + '</div>' +
+        (v.img ? '<div class="xptsgrid"><div>' + editorHtml(k) + '</div><div class="card xhpanel" id="patPanel">' + formHtml() + '<div id="patRes">' + ctHtml(m.ct) + '</div>' + calHtml(k) + '</div></div>' : emptyHtml(k));
+    } else {
+      var A0 = ui.v.ctA;
+      body = '<div class="card patsec" id="patSecDej"><h3>' + esc(t('dejT')) + '</h3><p class="muted small">' + esc(t('dejSub')) + '</p>' + signsHtml() + '<div id="patDejRes">' + dejHtml(m.dej) + '</div></div>' +
+        '<div class="card patsec" id="patSecAx"><h3>' + esc(t('axT')) + '</h3>' + axHtml() + (A0.img ? '' : '<p class="muted small" id="patNoAx">' + esc(t('noFilmDej')) + '</p>' + fileRow('ctA')) + '</div>' +
+        (A0.img ? '<div class="xptsgrid"><div>' + editorHtml('ctA') + '</div><div class="card xhpanel" id="patPanel">' + formHtml() + '<div id="patRes">' + sulcHtml(m.sulc) + '</div></div></div>' : '');
+    }
+    var ck = confKey(), ok = secOk(m, ui.sec), any = secOk(m, 'lat') || secOk(m, 'ct') || secOk(m, 'sulc') || !!m.dej.type;
+    var act = '<div class="card" id="patActs"><div class="row xhact">' + (ok ? (ui.conf[ck] ? '<span class="xhok small" id="patConfd">✔ ' + esc(t('conf')) + '</span>' : '<button id="patConfirm" class="primary">' + esc(t('confirm')) + '</button>') : '') +
+      '<button id="patSave"' + (P ? '' : ' disabled') + '>' + esc(t('save')) + '</button><button id="patPrint"' + (any ? '' : ' disabled') + '>' + esc(t('print')) + '</button></div>' +
+      (ok && !ui.conf[ck] ? '<p class="small xhwarn">' + esc(t('notConf')) + '</p>' : '') + (P ? '' : '<p class="small muted">' + esc(t('noPt')) + '</p>') + '<p class="small" id="patMsg" role="status">' + esc(ui.msg) + '</p></div>';
+    el.innerHTML = head + body + summaryHtml(m) + act + listHtml();
+    bindHead(); bindPane(); bindList(); bindEditor(); drawCv();
+  }
+  function stChip(st) { return st ? ' <span class="ptsst ptsst-' + st + '">' + esc(t('st_' + st)) + '</span>' : ''; }
+  function rng(k, d, u) { var r = O.NORMS[k]; return esc(num(r.lo, d) + '–' + num(r.hi, d) + (u || '')); }
+  function qList(Q, id) { var q = (Q || []).map(function (x) { var lv = x.lv === 'x' ? 'x' : x.lv === 'w' ? 'w' : 'i'; return '<li class="lv-' + lv + '" data-code="' + esc(x.code) + '">' + (lv === 'x' ? '⛔ ' : lv === 'w' ? '⚠️ ' : 'ℹ️ ') + esc(t('q_' + x.code)) + '</li>'; }).join(''); return q ? '<ul class="xhflags" id="' + id + '">' + q + '</ul>' : ''; }
+  function calRow(src, mm) { return '<tr><td>' + esc(t('cal')) + '</td><td>' + esc(t('c_' + (src || 'none'))) + (mm ? ' <span class="muted">(' + num(mm, 3) + ' mm/px)</span>' : '') + '</td></tr>'; }
+  function latHtml(m) {
+    var h = '<h3>' + esc(t('misi')) + ' · ' + esc(t(ui.side)) + '</h3>';
+    if (!m || !m.ok) return h + '<p class="muted" id="patNeedLat">' + esc(t('needLat')) + '</p>';
+    var mm = function (v) { return v == null ? '–' : f1(v) + ' mm'; }, N = m.norms || {};
+    h += '<div class="tblwrap"><table class="tbl xhtbl ptstbl" id="patLatTable"><tr><th></th><th>' + esc(t('value')) + '</th><th>' + esc(t('normal')) + '</th></tr>' +
+      '<tr data-m="misi" class="ptsdef"><td>' + esc(t('misi')) + '</td><td class="ptsval"><b>' + esc(f2(m.misi)) + '</b></td><td class="ptsnorm">' + rng('misi', 1) + stChip(N.misi && N.misi.status) + '</td></tr>' +
+      '<tr><td class="muted">' + esc(t('dist')) + '</td><td>' + esc(mm(m.distMm)) + '</td><td></td></tr><tr><td class="muted">' + esc(t('art')) + '</td><td>' + esc(mm(m.artMm)) + '</td><td></td></tr>';
+    if (m.isi != null || m.cdi != null) h += '<tr><th colspan="3" class="small">' + esc(t('extraT')) + '</th></tr>' +
+      (m.isi != null ? '<tr data-m="isi"><td>' + esc(t('isi')) + '</td><td class="ptsval"><b>' + esc(f2(m.isi)) + '</b></td><td class="ptsnorm">' + rng('isi', 1) + stChip(N.isi && N.isi.status) + '</td></tr>' : '') +
+      (m.cdi != null ? '<tr data-m="cdi"><td>' + esc(t('cdi')) + '</td><td class="ptsval"><b>' + esc(f2(m.cdi)) + '</b></td><td class="ptsnorm">' + rng('cdi', 1) + stChip(N.cdi && N.cdi.status) + '</td></tr>' : '');
+    h += '</table></div><h3>' + esc(t('qT')) + '</h3><div class="tblwrap"><table class="tbl xhtbl">' + calRow(m.cal.source, m.cal.mmPerPx) + '</table></div>' + qList(m.quality, 'patLatQ');
+    return h;
+  }
+  function bandChips(b) { return '<span class="patbands">' + ['lt15', '15to20', 'ge20'].map(function (k) { return '<span class="patband patband-' + k + (k === b ? ' on' : '') + '" data-band="' + k + '">' + esc(t('b_' + k)) + '</span>'; }).join('') + '</span>'; }
+  function ctHtml(m) {
+    var h = '<h3>' + esc(t('tttg')) + ' · ' + esc(t(ui.side)) + '</h3>';
+    if (!m) return h + '<p class="muted" id="patNeedCt">' + esc(t('needCt')) + '</p>';
+    if (!m.ok && m.reason !== 'noCal') return h + '<p class="muted" id="patNeedCt">' + esc(t('needCt')) + '</p>' + qList(m.quality, 'patCtQ');
+    if (!m.ok) h += '<p class="xhwarn" id="patNeedCal">' + esc(t('calNeed')) + '</p>';
+    else h += '<div class="tblwrap"><table class="tbl xhtbl ptstbl" id="patCtTable"><tr><th></th><th>' + esc(t('value')) + '</th><th>' + esc(t('cuts')) + '</th></tr><tr data-m="tttg" class="ptsdef"><td>' + esc(t('tttg')) + '</td><td class="ptsval"><b>' + esc(f1(m.ttTg)) + ' mm</b></td><td class="ptsnorm">' + bandChips(m.band) + '</td></tr></table></div>';
+    h += '<h3>' + esc(t('qT')) + '</h3><div class="tblwrap"><table class="tbl xhtbl"><tr><td>' + esc(t('refT')) + '</td><td>' + esc(t('ref_' + (m.ref || 'coreg'))) + '</td></tr>' + calRow(m.calA, m.mmA) + (!m.composite && m.calB && m.calB !== 'none' ? '<tr><td>' + esc(t('cal')) + ' B</td><td>' + esc(t('c_' + m.calB)) + (m.mmB ? ' <span class="muted">(' + num(m.mmB, 3) + ' mm/px)</span>' : '') + '</td></tr>' : '') + '</table></div>' + qList(m.quality, 'patCtQ');
+    return h;
+  }
+  function sulcHtml(s) {
+    var h = '<h3>' + esc(t('sulc')) + '</h3>';
+    if (!s) return h + '<p class="muted" id="patNeedSulc">' + esc(t('needSulc')) + '</p>';
+    return h + '<div class="tblwrap"><table class="tbl xhtbl ptstbl" id="patSulcTable"><tr><th></th><th>' + esc(t('value')) + '</th><th>' + esc(t('normal')) + '</th></tr><tr data-m="sulcus" class="ptsdef"><td>' + esc(t('sulc')) + '</td><td class="ptsval"><b>' + esc(num(s.deg, 0)) + '°</b></td><td class="ptsnorm">' + esc(num(O.NORMS.sulcus.mean, 0) + ' ± ' + num(O.NORMS.sulcus.sd, 0) + '°') + stChip(s.status) + '</td></tr></table></div>';
+  }
+  function triBtn(key) { var v = ui.dej[key]; return '<div class="seg patsign" data-sign="' + key + '">' + [['1', 'yes', true], ['0', 'no', false]].map(function (q) { return '<button data-patsign="' + key + '" data-val="' + q[0] + '" class="' + (v === q[2] ? 'active' : '') + '" aria-pressed="' + (v === q[2]) + '">' + esc(t(q[1])) + '</button>'; }).join('') + '</div>'; }
+  function signsHtml() {
+    return '<h4>' + esc(t('sigT')) + '</h4><div class="tblwrap"><table class="tbl xhtbl" id="patSigns">' + ['crossing', 'spur', 'dc'].map(function (k) { return '<tr><td>' + esc(t(k)) + '</td><td>' + triBtn(k) + '</td></tr>'; }).join('') + '</table></div>' +
+      '<label class="fld inl">' + esc(t('override')) + ' <select id="patDejOv"><option value="">' + esc(t('ovAuto')) + '</option>' + ['A', 'B', 'C', 'D'].map(function (k) { return '<option value="' + k + '"' + (ui.dej.override === k ? ' selected' : '') + '>' + esc(t('dj_' + k)) + '</option>'; }).join('') + '<option value="none"' + (ui.dej.override === 'none' ? ' selected' : '') + '>' + esc(t('ovNone')) + '</option></select></label>';
+  }
+  function axHtml() { return '<label class="fld inl">' + esc(t('axPat')) + ' <select id="patAx"><option value="">' + esc(t('axNone')) + '</option>' + ['A', 'B', 'C', 'D'].map(function (k) { return '<option value="' + k + '"' + (ui.dej.axial === k ? ' selected' : '') + '>' + esc(t('ax_' + k)) + '</option>'; }).join('') + '</select></label>'; }
+  function dejLabel(d) { return d && d.type ? t('dj_' + d.type) : t('dj_null'); }
+  function dejHtml(d) {
+    var desc = d.type && d.type !== 'none' && !d.override ? ' <span class="muted small">(' + esc(t('dd_' + d.type)) + ')</span>' : '';
+    return '<div class="tblwrap"><table class="tbl xhtbl ptstbl" id="patDejTable"><tr data-m="dejour" class="ptsdef"><td>' + esc(t('dejour')) + '</td><td class="ptsval" id="patDejType" data-type="' + esc(d.type || '') + '"><b>' + esc(dejLabel(d)) + '</b>' + desc + '</td></tr>' +
+      (d.axial ? '<tr><td>' + esc(t('axPat')) + '</td><td>' + esc(t('ax_' + d.axial)) + '</td></tr>' : '') + '</table></div>' + qList(d.quality, 'patDejQ');
+  }
+  function calHtml(k) {
+    var c = calOf(k); if (c.source === 'dicom' || c.source === 'demo') return '';
+    return '<div class="patcal"><label class="fld inl small">' + esc(t('calMm')) + ' <input type="number" id="patCalMm" min="1" max="500" step="0.5" value="' + ui.v[k].calMm + '"></label>' + (k !== 'lat' && !(ui.v[k].pts.CAL1 && ui.v[k].pts.CAL2) ? ' <button id="patCalGo" class="small">' + esc(t('calSet')) + '</button>' : '') + '</div>';
+  }
+  function summaryHtml(m, print) {
+    var L = m.lat, C = m.ct, sc = function (s) { return ui.conf[s] ? ' <span class="xhok small">✔</span>' : ''; };
+    var row = function (id, label, val, norm, extra) { return '<tr data-s="' + id + '"><td>' + esc(label) + '</td><td class="ptsval"><b>' + val + '</b></td><td class="ptsnorm">' + (norm || '') + '</td><td>' + (extra || '') + '</td></tr>'; };
+    var nm = '<span class="muted">' + esc(t('notMeasured')) + '</span>';
+    return '<div class="card patsum" id="patSummary"><h3>' + esc(t('sumT')) + ' · ' + esc(t(ui.side)) + '</h3><div class="tblwrap"><table class="tbl xhtbl ptstbl"><tr><th></th><th>' + esc(t('value')) + '</th><th>' + esc(t('normal')) + ' / ' + esc(t('cuts')) + '</th><th></th></tr>' +
+      row('misi', t('misi'), L && L.ok ? esc(f2(L.misi)) : nm, rng('misi', 1) + (L && L.ok ? stChip(L.norms.misi.status) : ''), print ? '' : sc('lat')) +
+      (L && L.isi != null ? row('isi', t('isi'), esc(f2(L.isi)), rng('isi', 1) + stChip(L.norms.isi.status)) : '') + (L && L.cdi != null ? row('cdi', t('cdi'), esc(f2(L.cdi)), rng('cdi', 1) + stChip(L.norms.cdi.status)) : '') +
+      row('tttg', t('tttg'), C && C.ok ? esc(f1(C.ttTg)) + ' mm' : nm, bandChips(C && C.ok ? C.band : null), print ? '' : sc('ct')) +
+      row('dejour', t('dejour'), m.dej.type ? esc(dejLabel(m.dej)) : nm, '', m.dej.axial ? '<span class="small muted">' + esc(t('axPat')) + ': ' + esc(m.dej.axial) + '</span>' : '') +
+      row('sulcus', t('sulc'), m.sulc ? esc(num(m.sulc.deg, 0)) + '°' : nm, esc(num(O.NORMS.sulcus.mean, 0) + ' ± ' + num(O.NORMS.sulcus.sd, 0) + '°') + (m.sulc ? stChip(m.sulc.status) : ''), print ? '' : sc('sulc')) +
+      '</table></div></div>';
+  }
+  function reset() { ui.v = { lat: V0(), ctA: V0(), ctB: V0() }; ui.recId = null; ui.conf = { lat: null, ct: null, sulc: null }; ui.dej = { crossing: null, spur: null, dc: null, axial: '', override: '' }; ui.composite = false; ui.slice = 'A'; ui.msg = ''; ui.last = null; }
+  function changed(k, K) {
+    if (k === 'lat') ui.conf.lat = null; else if (k === 'ctB') ui.conf.ct = null;
+    else { if (!K || ['SM', 'SL', 'TG'].indexOf(K) >= 0) ui.conf.sulc = null; if (!K || ['SM', 'SL'].indexOf(K) < 0) ui.conf.ct = null; }
+    ui.msg = '';
+  }
+  function bindHead() {
+    document.querySelectorAll('[data-patsec]').forEach(function (b) { b.onclick = function () { setSec(b.dataset.patsec); }; });
+    var f = $('patFile'); if (f) f.onchange = function (e) { loadFile(e.target.files[0], this.dataset.view); this.value = ''; };
+    var u = $('patUpload'); if (u) u.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('patFile').click(); } };
+    if ($('patDemo')) $('patDemo').onclick = function () { loadDemoLat(false); }; if ($('patDemoAlta')) $('patDemoAlta').onclick = function () { loadDemoLat(true); };
+    if ($('patDemoCt')) $('patDemoCt').onclick = function () { loadDemoCt(ui.composite); };
+  }
+  function bindPane() {
+    var cz = $('patCancel'); if (cz) cz.onclick = cancelDetect;
+    document.querySelectorAll('[data-patside]').forEach(function (b) { b.onclick = function () { ui.side = b.dataset.patside; renderNow(); }; });
+    if ($('patDate')) $('patDate').onchange = function () { ui.date = this.value || today(); }; if ($('patPhase')) $('patPhase').onchange = function () { ui.phase = this.value; };
+    if ($('patCalMm')) $('patCalMm').onchange = function () { var x = +this.value; if (x > 0) { var k = vk(); ui.v[k].calMm = x; changed(k, 'CAL1'); renderNow(); } };
+    if ($('patCalGo')) $('patCalGo').onclick = function () { var v = ui.v[vk()]; v.pick = 'CAL1'; v.sel = null; renderNow(); };
+    if ($('patConfirm')) $('patConfirm').onclick = function () { confirmPts(); };
+    if ($('patSave')) $('patSave').onclick = function () { save(); }; if ($('patPrint')) $('patPrint').onclick = function () { openSheet(); };
+    document.querySelectorAll('[data-patpick]').forEach(function (b) { b.onclick = function () { var v = ui.v[vk()]; v.pick = b.dataset.patpick; v.sel = null; renderNow(); }; });
+    document.querySelectorAll('[data-patmode]').forEach(function (b) { b.onclick = function () { setComposite(b.dataset.patmode === 'one'); }; });
+    document.querySelectorAll('[data-patslice]').forEach(function (b) { b.onclick = function () { setSlice(b.dataset.patslice); }; });
+    document.querySelectorAll('[data-patsign]').forEach(function (b) { b.onclick = function () { var k = b.dataset.patsign, val = b.dataset.val === '1'; setSign(k, ui.dej[k] === val ? null : val); }; });
+    if ($('patDejOv')) $('patDejOv').onchange = function () { ui.dej.override = this.value; ui.msg = ''; renderNow(); };
+    if ($('patAx')) $('patAx').onchange = function () { ui.dej.axial = this.value; ui.msg = ''; renderNow(); };
+  }
+  function setSec(s) { ui.sec = s === 'ct' || s === 'dej' ? s : 'lat'; ui.msg = ''; renderNow(); }
+  function setSlice(s) { ui.slice = s === 'B' ? 'B' : 'A'; renderNow(); }
+  function setComposite(on) { on = !!on; if (on === ui.composite) return; ui.composite = on; ui.conf.ct = null; ui.slice = 'A'; renderNow(); }
+  function setSign(k, val) { if (['crossing', 'spur', 'dc'].indexOf(k) < 0) return; ui.dej[k] = val == null ? null : !!val; ui.msg = ''; renderNow(); }
+  function swapMedLat() { var p = ui.v.ctA.pts, o = ui.v.ctA.org; [['C1', 'C2'], ['SM', 'SL']].forEach(function (pr) { var a = p[pr[0]], b = p[pr[1]]; if (b) p[pr[0]] = b; else delete p[pr[0]]; if (a) p[pr[1]] = a; else delete p[pr[1]]; var oa = o[pr[0]], ob = o[pr[1]]; if (ob) o[pr[0]] = 'manual'; else delete o[pr[0]]; if (oa) o[pr[1]] = 'manual'; else delete o[pr[1]]; void oa; }); changed('ctA'); renderNow(); }
+  var TRAIN_KIND = { lat: 'patella-lat', ctA: 'patella-ct-a', ctB: 'patella-ct-b' };
+  function contribute(k) {
+    try { var T = window.OrthoXrayTrain, v = ui.v[k]; if (!T || !T.contributeKind || !v.img || v.demo) return; var P = {}; VK[k].forEach(function (K) { if (v.pts[K] && !/^CAL/.test(K)) P[K] = v.pts[K]; });
+      if (Object.keys(P).length >= 2) T.contributeKind(TRAIN_KIND[k], { img: v.img, W: v.W, H: v.H, pts: P, org: v.org, det: v.det, side: ui.side }, ui.side, ui.phase); } catch (e) { if (window.console) console.warn('patella training', e); }
+  }
+  function confirmPts() {
+    var A = API(), u = A && A.currentUser(); if (!u) { ui.msg = t('needLogin'); renderNow(); return false; }
+    var m = compute(), ck = confKey(); if (!secOk(m, ui.sec)) { ui.msg = t('needMeas'); renderNow(); return false; }
+    ui.conf[ck] = { by: u.email, name: u.name, at: new Date().toISOString() }; ui.msg = '';
+    if (ck === 'lat') contribute('lat'); else if (ck === 'ct') { contribute('ctA'); if (!ui.composite) contribute('ctB'); } else contribute('ctA');
+    renderNow(); return true;
+  }
+
+  // ---------- canvas editor (one canvas, the active view) ----------
+  function cvSize(cv) { var w = Math.max(160, cv.parentNode.getBoundingClientRect().width), h = Math.round(Math.min(window.innerHeight * 0.72, Math.max(340, w * 1.05), 760)), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; } return { w: w, h: h }; }
+  function fitView(v, z) { var k = Math.min(z.w / v.W, z.h / v.H) * 0.97; return { s: k, tx: (z.w - v.W * k) / 2, ty: (z.h - v.H * k) / 2 }; }
+  function roiView(v, z, keys) { var ks = keys.filter(function (K) { return v.pts[K] && !/^CAL/.test(K); }); if (ks.length < 2) return fitView(v, z); var xs = ks.map(function (K) { return v.pts[K].x; }), ys = ks.map(function (K) { return v.pts[K].y; });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), pad = Math.max(x1 - x0, y1 - y0) * 0.35 + 30; x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
+    x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(v.W, x1); y1 = Math.min(v.H, y1); var k = Math.min(z.w / (x1 - x0), z.h / (y1 - y0)); return { s: k, tx: z.w / 2 - (x0 + x1) / 2 * k, ty: z.h / 2 - (y0 + y1) / 2 * k }; }
+  function drawCv() {
+    var cv = $('patCv'); if (!cv) return; var k = cv.closest('[data-view]') ? cv.closest('[data-view]').dataset.view : vk(), v = ui.v[k]; if (!v.img) return; var z = cvSize(cv), dpr = window.devicePixelRatio || 1;
+    if (!v.lv || v.lv.img !== v.img) { v.lv = k === 'lat' ? roiView(v, z, ['PS', 'PI', 'TT', 'PU', 'PL']) : fitView(v, z); v.lv.img = v.img; }
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); drawScene(g, z.w, z.h, k, v.lv, false);
+  }
+  function drawScene(g, w, h, k, vw, print) {
+    var v = ui.v[k], p = v.pts, m = ui.last || compute(), P = function (q) { return { x: q.x * vw.s + vw.tx, y: q.y * vw.s + vw.ty }; };
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.save(); g.translate(vw.tx, vw.ty); g.scale(vw.s, vw.s); g.drawImage(v.img, 0, 0); g.restore();
+    var L = function (a, b, col, lw, dash) { var A = P(a), B = P(b); g.save(); g.strokeStyle = col; g.lineWidth = lw || 2; g.setLineDash(dash || []); g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke(); g.restore(); };
+    var lab = function (q, s, col, dx, dy) { var A = P(q); g.save(); g.font = '700 13px system-ui,sans-serif'; g.lineWidth = 3.5; g.strokeStyle = 'rgba(0,0,0,.9)'; g.fillStyle = col || '#fff'; g.strokeText(s, A.x + (dx || 0), A.y + (dy || 0)); g.fillText(s, A.x + (dx || 0), A.y + (dy || 0)); g.restore(); };
+    var shownK = print ? VK[k] : keysOf(k), sh = function (K) { return shownK.indexOf(K) >= 0 && p[K]; };
+    if (k === 'lat') {
+      if (sh('PS') && sh('PI')) L(p.PS, p.PI, '#22d3ee', 3);
+      if (sh('PI') && sh('TT')) L(p.PI, p.TT, '#facc15', 2.4, [7, 5]);
+      if (sh('PL') && sh('TT')) L(p.PL, p.TT, 'rgba(192,132,252,.85)', 1.6, [3, 4]); if (sh('PU') && sh('PL')) L(p.PU, p.PL, 'rgba(192,132,252,.85)', 1.6);
+      if (sh('TA') && sh('PI')) L(p.PI, p.TA, 'rgba(251,146,60,.85)', 1.6, [3, 4]);
+      if (m.lat && m.lat.ok) lab({ x: (p.PI.x + p.TT.x) / 2, y: (p.PI.y + p.TT.y) / 2 }, (lang() === 'el' ? 'Τροπ. IS ' : 'mod. IS ') + f2(m.lat.misi), '#fde047', 12, 4);
+    } else {
+      var A = ui.v.ctA.pts, C1 = k === 'ctA' ? p.C1 : null, C2 = k === 'ctA' ? p.C2 : null;
+      if (k === 'ctB' && !ui.composite) { if (p.B1 && p.B2) { C1 = p.B1; C2 = p.B2; } else if (A.C1 && A.C2 && ui.v.ctA.W === v.W && ui.v.ctA.H === v.H) { C1 = A.C1; C2 = A.C2; } }
+      var showCt = ui.sec !== 'dej' || print;
+      if (C1 && C2 && showCt) {
+        var d = { x: C2.x - C1.x, y: C2.y - C1.y }, l = Math.hypot(d.x, d.y) || 1, u = { x: d.x / l, y: d.y / l }, n = { x: -u.y, y: u.x }; if (n.y > 0) n = { x: -n.x, y: -n.y };
+        L({ x: C1.x - u.x * l * 0.3, y: C1.y - u.y * l * 0.3 }, { x: C2.x + u.x * l * 0.3, y: C2.y + u.y * l * 0.3 }, k === 'ctB' && !(p.B1 && p.B2) ? 'rgba(56,189,248,.6)' : '#38bdf8', 2, k === 'ctB' && !(p.B1 && p.B2) ? [6, 5] : []);
+        var perpAt = function (q, col) { var s = (q.x - C1.x) * u.x + (q.y - C1.y) * u.y, f = { x: C1.x + u.x * s, y: C1.y + u.y * s }, top = { x: f.x + n.x * l * 0.9, y: f.y + n.y * l * 0.9 }; L(f, top, col, 2, [7, 5]); return f; };
+        var TG = k === 'ctA' ? p.TG : (A.TG && ui.v.ctA.W === v.W && ui.v.ctA.H === v.H ? A.TG : null), TU = k === 'ctA' ? (ui.composite ? p.TU : null) : p.TU;
+        var fG = TG ? perpAt(TG, '#4ade80') : null, fU = TU ? perpAt(TU, '#fb7185') : null;
+        if (fG && fU && m.ct && m.ct.ok) { L(fG, fU, '#fde047', 3); lab({ x: (fG.x + fU.x) / 2, y: (fG.y + fU.y) / 2 }, 'TT–TG ' + f1(m.ct.ttTg) + ' mm', '#fde047', -40, -10); }
+      }
+      if (k === 'ctA' && p.SM && p.TG && p.SL && (ui.sec === 'dej' || print)) { L(p.TG, p.SM, '#fde047', 2); L(p.TG, p.SL, '#fde047', 2); if (m.sulc) lab(p.TG, num(m.sulc.deg, 0) + '°', '#fde047', 10, 22); }
+    }
+    if (p.CAL1 && p.CAL2 && sh('CAL1')) L(p.CAL1, p.CAL2, '#94a3b8', 2);
+    VK[k].forEach(function (K) { var q = p[K]; if (!q || !sh(K)) return; var Q = P(q), sel = v.sel === K; g.save(); g.beginPath(); g.arc(Q.x, Q.y, sel ? 9 : 6.5, 0, 7); g.fillStyle = COL[K]; g.fill(); g.lineWidth = 2; g.strokeStyle = v.org[K] === 'auto' ? '#f97316' : '#000'; g.stroke();
+      if (!print) { g.font = '600 11px system-ui,sans-serif'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.fillStyle = '#fff'; var s = t('s_' + K) + (v.org[K] === 'auto' ? ' 🤖' : ''); g.strokeText(s, Q.x + 10, Q.y - 8); g.fillText(s, Q.x + 10, Q.y - 8); } g.restore(); });
+    if (v.demo) { g.save(); g.font = '600 11px system-ui,sans-serif'; g.fillStyle = '#fbbf24'; g.fillText('DEMO', 6, 14); g.restore(); }
+  }
+  function zoom(f, c) { var v = ui.v[vk()], w = v.lv; if (!w) return; var ns = Math.max(0.02, Math.min(40, w.s * f)), q = ns / w.s; w.tx = c.x - (c.x - w.tx) * q; w.ty = c.y - (c.y - w.ty) * q; w.s = ns; drawCv(); }
+  function live() { var m = compute(), r = $('patRes'), k = vk(); if (r) r.innerHTML = ui.sec === 'lat' ? latHtml(m.lat) : ui.sec === 'ct' ? ctHtml(m.ct) : sulcHtml(m.sulc); drawCv(); }
+  var NEXT = { CAL1: 'CAL2', C1: 'C2', B1: 'B2', PU: 'PL', SM: 'SL' };
+  function bindEditor() {
+    var cv = $('patCv'); if (!cv) return; var k = vk(), v = ui.v[k];
+    var center = function () { return { x: cv.width / (window.devicePixelRatio || 1) / 2, y: cv.height / (window.devicePixelRatio || 1) / 2 }; };
+    $('patZin').onclick = function () { zoom(1.5, center()); }; $('patZout').onclick = function () { zoom(1 / 1.5, center()); }; $('patZfit').onclick = function () { var z = cvSize(cv); v.lv = fitView(v, z); v.lv.img = v.img; drawCv(); };
+    $('patRedo').onclick = function () { keysOf(k).forEach(function (K) { if (!/^CAL/.test(K)) { delete v.pts[K]; delete v.org[K]; } }); changed(k); v.pick = null; v.sel = null; runDetect(k); };
+    $('patClear').onclick = function () { keysOf(k).forEach(function (K) { delete v.pts[K]; delete v.org[K]; }); changed(k); v.pick = null; v.sel = null; renderNow(); };
+    if ($('patDel')) $('patDel').onclick = function () { var K = v.sel; delete v.pts[K]; delete v.org[K]; v.pick = K; v.sel = null; changed(k, K); renderNow(); };
+    if ($('patSwap')) $('patSwap').onclick = swapMedLat;
+    var ptr = {}, gest = null, rel = function (e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    var toImg = function (q) { var w = v.lv; return { x: (q.x - w.tx) / w.s, y: (q.y - w.ty) / w.s }; };
+    var hit = function (q) { var best = null, bd = 22; keysOf(k).forEach(function (K) { var p = v.pts[K]; if (!p) return; var w = v.lv, d = Math.hypot(p.x * w.s + w.tx - q.x, p.y * w.s + w.ty - q.y); if (d < bd) { bd = d; best = K; } }); return best; };
+    cv.onpointerdown = function (e) {
+      if (!v.lv) return; try { cv.setPointerCapture(e.pointerId); } catch (_) {} var q = rel(e); ptr[e.pointerId] = q; e.preventDefault();
+      var ids = Object.keys(ptr); if (ids.length === 2) { var a = ptr[ids[0]], b = ptr[ids[1]]; gest = { type: 'pinch', d: Math.hypot(a.x - b.x, a.y - b.y), c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }; return; }
+      var h = hit(q); gest = h ? { type: 'maybe', k: h, start: q } : { type: 'tap', start: q, last: q };
+    };
+    cv.onpointermove = function (e) {
+      if (!gest) return; var q = rel(e); if (ptr[e.pointerId]) ptr[e.pointerId] = q;
+      if (gest.type === 'pinch') { var ids = Object.keys(ptr); if (ids.length < 2) return; var a = ptr[ids[0]], b = ptr[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; v.lv.tx += c.x - gest.c.x; v.lv.ty += c.y - gest.c.y; zoom(d / (gest.d || d), c); gest.d = d; gest.c = c; return; }
+      if (gest.type === 'maybe' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 5) gest = { type: 'drag', k: gest.k };
+      if (gest.type === 'drag') { v.pts[gest.k] = toImg(q); v.org[gest.k] = 'manual'; changed(k, gest.k); live(); return; }
+      if (gest.type === 'tap' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 9) gest.type = 'pan';
+      if (gest.type === 'pan') { v.lv.tx += q.x - gest.last.x; v.lv.ty += q.y - gest.last.y; drawCv(); }
+      if (gest.last) gest.last = q;
+    };
+    cv.onpointerup = function (e) {
+      var q = rel(e); delete ptr[e.pointerId]; var gs = gest; gest = null; if (!gs || gs.type === 'pinch') { if (Object.keys(ptr).length) gest = { type: 'pan', last: ptr[Object.keys(ptr)[0]] }; return; }
+      if (gs.type === 'maybe') { if (!nextPt(k)) { v.sel = gs.k; renderNow(); return; } gs = { type: 'tap' }; }
+      if (gs.type === 'drag') { v.sel = gs.k; renderNow(); return; }
+      if (gs.type === 'tap') { var K = nextPt(k); if (!K) { v.sel = null; renderNow(); return; } var p = toImg(q); if (p.x < 0 || p.y < 0 || p.x > v.W || p.y > v.H) return; v.pts[K] = p; v.org[K] = 'manual'; v.pick = NEXT[K] && !v.pts[NEXT[K]] ? NEXT[K] : null; v.sel = null; changed(k, K); renderNow(); }
+    };
+    cv.onpointercancel = function (e) { delete ptr[e.pointerId]; gest = null; };
+    cv.onwheel = function (e) { e.preventDefault(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, rel(e)); };
+  }
+
+  // ---------- save / list / reopen ----------
+  var r2 = function (v) { return v == null || !isFinite(v) ? null : Math.round(v * 100) / 100; };
+  var cp = function (o) { return JSON.parse(JSON.stringify(o || {})); };
+  function thumbOf(k, max) {
+    var v = ui.v[k]; if (!v.img) return null;
+    try { var ks = VK[k].filter(function (K) { return v.pts[K]; }), xs = ks.map(function (K) { return v.pts[K].x; }), ys = ks.map(function (K) { return v.pts[K].y; }), x0 = 0, y0 = 0, x1 = v.W, y1 = v.H;
+      if (ks.length >= 2 && k === 'lat') { var pad = 0.35 * Math.max(Math.max.apply(null, ys) - Math.min.apply(null, ys), Math.max.apply(null, xs) - Math.min.apply(null, xs)) + 20; x0 = Math.max(0, Math.min.apply(null, xs) - pad); x1 = Math.min(v.W, Math.max.apply(null, xs) + pad); y0 = Math.max(0, Math.min.apply(null, ys) - pad); y1 = Math.min(v.H, Math.max.apply(null, ys) + pad); }
+      var s = Math.min(1, (max || 320) / Math.max(x1 - x0, y1 - y0)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round((x1 - x0) * s)); c.height = Math.max(1, Math.round((y1 - y0) * s)); c.getContext('2d').drawImage(v.img, x0, y0, x1 - x0, y1 - y0, 0, 0, c.width, c.height);
+      return { url: c.toDataURL('image/jpeg', 0.7), x0: Math.round(x0 * 10) / 10, y0: Math.round(y0 * 10) / 10, s: s, w: c.width, h: c.height }; } catch (e) { return null; }
+  }
+  function filmMeta(k) { var v = ui.v[k]; if (!v.img) return null; return { filmId: v.filmId, name: v.name, W: v.W, H: v.H, dicom: v.dicom && v.dicom.spacing ? { spacing: v.dicom.spacing } : null, demo: v.demo ? { kind: v.demo.kind, opt: v.demo.opt } : null, calMm: v.calMm,
+    pts: cp(v.pts), org: cp(v.org), det: v.det ? { version: v.det.version || O.VERSION, method: v.det.method || null, level: v.det.level || null, reason: v.det.reason || null, conf: v.det.conf && v.det.conf.score != null ? v.det.conf.score : null } : null }; }
+  function lacking(m) { var n = []; if (secOk(m, 'lat') && !ui.conf.lat) n.push(t('sec_lat')); if (secOk(m, 'ct') && !ui.conf.ct) n.push(t('sec_ct')); if (secOk(m, 'sulc') && !ui.conf.sulc) n.push(t('sulc')); return n; }
+  function save() {
+    var A = API(), u = A && A.currentUser(), say = function (s) { ui.msg = s; var e = $('patMsg'); if (e) e.textContent = s; return null; };
+    if (!u) return say(t('needLogin')); var P = pid(); if (!P) return say(t('needPt')); var m = compute();
+    if (!(secOk(m, 'lat') || secOk(m, 'ct') || secOk(m, 'sulc') || m.dej.type)) return say(t('needMeas'));
+    var nc = lacking(m); if (nc.length) return say(t('needConf') + nc.join(', '));
+    var store = A.store; store.xrays = store.xrays || []; var old = ui.recId ? store.xrays.filter(function (x) { return x.id === ui.recId; })[0] : null;
+    var prim = ui.v.lat.img ? 'lat' : ui.v.ctA.img ? 'ctA' : ui.v.ctB.img ? 'ctB' : null, pv = prim ? ui.v[prim] : null, demo = ['lat', 'ctA', 'ctB'].some(function (k) { return ui.v[k].demo; });
+    var L = m.lat, C = m.ct;
+    var lat = L && L.ok ? { misi: r2(L.misi), isi: r2(L.isi), cdi: r2(L.cdi), artMm: r2(L.artMm), distMm: r2(L.distMm), norms: Object.keys(L.norms).reduce(function (o, k) { o[k] = { lo: L.norms[k].range.lo, hi: L.norms[k].range.hi, status: L.norms[k].status }; return o; }, {}), cal: L.cal.source, quality: L.quality.map(function (q) { return q.code; }) } : null;
+    var ct = C && C.ok ? { ttTg: r2(C.ttTg), band: C.band, cut: O.TTTG_CUT.slice(), ref: C.ref, composite: !!C.composite, calA: C.calA, calB: C.calB, mmA: C.mmA, mmB: C.mmB, quality: C.quality.map(function (q) { return q.code; }) } : null;
+    var sul = m.sulc ? { deg: r2(m.sulc.deg), status: m.sulc.status, lo: O.NORMS.sulcus.lo, hi: O.NORMS.sulcus.hi } : null;
+    var dj = m.dej.type || m.dej.signs.crossing != null || m.dej.signs.spur != null || m.dej.signs.dc != null || m.dej.axial ? { type: m.dej.type, derived: m.dej.derived.type, override: m.dej.override, signs: cp(m.dej.signs), axial: m.dej.axial } : null;
+    var films = {}; ['lat', 'ctA', 'ctB'].forEach(function (k) { var f = filmMeta(k); if (f) { if (k !== prim) f.thumb = thumbOf(k, 220); films[k] = f; } });
+    var rec = { id: old ? old.id : 'x' + Math.random().toString(36).slice(2, 10), patientId: P, date: ui.date, phase: ui.phase, side: ui.side, kind: 'patella', view: prim === 'lat' ? 'lateral' : prim ? 'ct-axial' : 'none', landmarks: {}, results: {},
+      image: (pv ? pv.name : '') + (demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician', confirmed: ui.conf.lat || ui.conf.ct || ui.conf.sulc || null, synth: demo ? 'patella' : null,
+      thumb: prim ? thumbOf(prim, 320) : null, filmId: pv ? pv.filmId : null, imgStored: !!(pv && !pv.demo),
+      patella: { v: 1, version: O.VERSION, date: today(), by: { email: u.email, name: u.name }, lat: lat, ct: ct, sulcus: sul, dej: dj, composite: !!ui.composite, primary: prim, films: films, conf: cp(ui.conf) } };
+    if (old && old.filmPath && old.filmId === rec.filmId) rec.filmPath = old.filmPath;
+    store.xrays = store.xrays.filter(function (x) { return x.id !== rec.id; }); store.xrays.push(rec); ui.recId = rec.id;
+    A.persist(); if (A.audit) A.audit('patella-save', P + ' ' + ui.side + ' ' + ui.date + ' ' + headline(rec.patella, 'en'));
+    ['lat', 'ctA', 'ctB'].forEach(function (k) { var v = ui.v[k]; if (v.img && !v.demo) storeFilm(P, k, k === prim && !(old && old.filmPath && old.filmId === v.filmId)); });
+    ui.msg = t('saved') + ': ' + P + ' · ' + t(ui.side) + (headline(rec.patella) ? ' · ' + headline(rec.patella) : ''); renderNow(); return rec;
+  }
+  function storeFilm(P, k, cloud) {
+    var v = ui.v[k], img = v.img, put = function (b) { if (!b) return; var x = XR(); if (x && x.putFilm) x.putFilm(v.filmId, { blob: b, w: img.width, h: img.height, name: v.name, pid: P, dicom: v.dicom, at: new Date().toISOString() }).catch(function () {}); if (cloud && window.__orthoFilms && window.__orthoFilms.put) window.__orthoFilms.put(P, v.filmId, b); };
+    if (v.blob) put(v.blob); else if (img.toBlob) img.toBlob(put, 'image/jpeg', 0.92);
+  }
+  function recs(P) { var A = API(); return ((A && A.store.xrays) || []).filter(function (x) { return x.patientId === P && x.kind === 'patella' && x.patella; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); }
+  function cells(q) { var L = q.lat || {}, C = q.ct || {}, D = q.dej || {}, S2 = q.sulcus || {};
+    return '<td><b>' + esc(f2(L.misi)) + '</b></td><td><b>' + esc(C.ttTg != null ? f1(C.ttTg) + ' mm' : '–') + '</b></td><td><b>' + esc(D.type ? (D.type === 'none' ? t('ovNone') : D.type) : '–') + '</b></td><td>' + esc(S2.deg != null ? num(S2.deg, 0) + '°' : '–') + '</td>'; }
+  function listHtml() {
+    var P = pid(); if (!P) return ''; var xs = recs(P);
+    var hd = '<tr><th>' + esc(t('date')) + '</th><th>' + esc(t('side')) + '</th><th>' + esc(lang() === 'el' ? 'Τροπ. IS' : 'Mod. IS') + '</th><th>TT–TG</th><th>Dejour</th><th>' + esc(t('sulc')) + '</th><th></th></tr>';
+    return '<div class="card" id="patList"><h3>🦵 ' + esc(t('listT')) + ' · ' + esc(P) + '</h3>' + (xs.length ? '<div class="tblwrap"><table class="tbl ptslist">' + hd + xs.map(function (x) {
+      return '<tr data-patrec="' + esc(x.id) + '"' + (x.id === ui.recId ? ' class="on"' : '') + '><td>' + esc(x.date) + ' <span class="muted small">' + esc(t(x.phase === 'post' ? 'post' : 'pre')) + '</span></td><td>' + esc(t(x.side)) + '</td>' + cells(x.patella) + '<td><button class="small" data-patopen="' + esc(x.id) + '">' + esc(t('open')) + '</button></td></tr>'; }).join('') + '</table></div>' : '<p class="muted small">' + esc(t('none')) + '</p>') +
+      (ui.recId ? '<button id="patNew" class="small">' + esc(t('newM')) + '</button>' : '') + '</div>';
+  }
+  function bindList() { document.querySelectorAll('[data-patopen]').forEach(function (b) { b.onclick = function () { open(b.dataset.patopen); }; }); if ($('patNew')) $('patNew').onclick = function () { reset(); renderNow(); }; }
+  function blobCanvas(blob) { return new Promise(function (res, rej) { var u = URL.createObjectURL(blob), im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u); res(c); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('image')); }; im.src = u; }); }
+  function thumbCanvas(th, W, H) { return new Promise(function (res, rej) { if (!th || !th.url) return rej(new Error('no thumb')); var im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = W || Math.ceil(th.x0 + th.w / th.s); c.height = H || Math.ceil(th.y0 + th.h / th.s); var x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, th.x0, th.y0, th.w / th.s, th.h / th.s); res(c); }; im.onerror = rej; im.src = th.url; }); }
+  function synthOf(d) { var s = d.kind === 'lat' ? O.synthLat(d.opt) : O.synthCT(d.kind, d.opt); return { c: grayCanvas(s), mm: s.mmPerPx }; }
+  /** Opens a saved study (list, patient timeline): switches patient + sub-tab, restores all three sections and their images (device → cloud for the primary film → thumbnail). */
+  function open(id) {
+    var A = API(), x = ((A && A.store.xrays) || []).filter(function (q) { return q.id === id && q.kind === 'patella'; })[0]; if (!x) return Promise.resolve(false);
+    var X2 = XR(); if (X2 && pid() !== x.patientId) X2.selectPatient(x.patientId);
+    var q = x.patella; reset(); ui.pid = x.patientId; ui.recId = x.id; ui.side = x.side; ui.date = x.date; ui.phase = x.phase; ui.composite = !!q.composite; ui.conf = cp(q.conf || {}); ['lat', 'ct', 'sulc'].forEach(function (k) { ui.conf[k] = ui.conf[k] || null; });
+    var dj = q.dej || {}; ui.dej = { crossing: dj.signs ? dj.signs.crossing : null, spur: dj.signs ? dj.signs.spur : null, dc: dj.signs ? dj.signs.dc : null, axial: dj.axial || '', override: dj.override || '' };
+    ui.sec = q.lat ? 'lat' : q.ct ? 'ct' : 'dej';
+    var jobs = Object.keys(q.films || {}).map(function (k) {
+      var f = q.films[k], v = ui.v[k] = V0(); v.filmId = f.filmId; v.name = f.name || ''; v.dicom = f.dicom || null; v.calMm = f.calMm || 50; v.pts = cp(f.pts); v.org = cp(f.org); v.det = f.det ? { status: 'suggest', level: f.det.level, method: f.det.method, reason: f.det.reason } : null;
+      var put = function (c, note) { if (ui.recId !== x.id) return; v.img = c; v.W = f.W || c.width; v.H = f.H || c.height; v.note = note || ''; v.lv = null; };
+      if (f.demo) { var s = synthOf(f.demo); v.demo = { kind: f.demo.kind, opt: f.demo.opt, mmPerPx: s.mm }; put(s.c); return Promise.resolve(); }
+      var th = k === q.primary ? x.thumb : f.thumb;
+      var cloud = function () { var h = window.__orthoFilms; if (k !== q.primary || !h || !h.get) return Promise.reject(new Error('no cloud')); return h.get(f.filmId).then(function (r) { return blobCanvas(r.blob); }); };
+      var dev = X2 && X2.getFilm ? X2.getFilm(f.filmId).then(function (r) { if (!r || !r.blob) throw new Error('none'); v.dicom = r.dicom || v.dicom; return blobCanvas(r.blob); }) : Promise.reject(new Error('none'));
+      return dev.catch(cloud).then(function (c) { put(c); }, function () { return thumbCanvas(th, f.W, f.H).then(function (c) { put(c, t('loadFail')); }, function () { put(Object.assign(document.createElement('canvas'), { width: f.W || 800, height: f.H || 800 }), t('loadFail')); }); });
+    });
+    return Promise.all(jobs).then(function () { if (ui.recId !== x.id) return false; if (X2) X2.setSub('patella'); else renderNow(); return true; });
+  }
+
+  // ---------- dashboard section ----------
+  function dashHtml(p) {
+    var xs = recs(p.id); if (!xs.length) return '';
+    var N = O.NORMS;
+    return '<h3 style="margin-top:12px">🦵 ' + esc(t('dash')) + '</h3><div class="tblwrap"><table class="tbl" id="patDash"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('side')) + '</th><th>' + esc(lang() === 'el' ? 'Τροπ. IS' : 'Mod. IS') + ' <span class="muted small">(' + esc(num(N.misi.lo, 1) + '–' + num(N.misi.hi, 1)) + ')</span></th><th>TT–TG <span class="muted small">(' + O.TTTG_CUT.join(' / ') + ' mm)</span></th><th>Dejour</th><th>' + esc(t('sulc')) + ' <span class="muted small">(' + esc(N.sulcus.mean + ' ± ' + N.sulcus.sd) + '°)</span></th></tr>' +
+      xs.map(function (x) { return '<tr><td>' + esc(x.date) + '</td><td>' + esc(t(x.side)) + '</td>' + cells(x.patella) + '</tr>'; }).join('') + '</table></div>';
+  }
+
+  // ---------- A4 print sheet ----------
+  function closeSheet() { document.body.classList.remove('pat-print'); var r = $('patReport'); if (r) r.remove(); }
+  function sheetImage(k) { var v = ui.v[k]; if (!v.img) return ''; var c = document.createElement('canvas'), w = k === 'lat' ? 420 : 300, h = k === 'lat' ? 460 : 300; c.width = w * 2; c.height = h * 2; var g = c.getContext('2d'); g.scale(2, 2);
+    var vw = k === 'lat' ? roiView(v, { w: w, h: h }, ['PS', 'PI', 'TT', 'PU', 'PL', 'TA']) : fitView(v, { w: w, h: h }); drawScene(g, w, h, k, vw, true); return c.toDataURL('image/jpeg', 0.88); }
+  function qBlock(title, rows, Q) { return '<div class="patq"><b>' + esc(title) + '</b>' + (rows.length ? ' · ' + rows.map(function (r) { return esc(r[0]) + ': ' + esc(r[1]); }).join(' · ') : '') + qList(Q, 'patPrQ') + '</div>'; }
+  function openSheet() {
+    var m = compute(); if (!(secOk(m, 'lat') || secOk(m, 'ct') || secOk(m, 'sulc') || m.dej.type)) { ui.msg = t('needMeas'); renderNow(); return; }
+    closeSheet(); var A = API(), u = A && A.currentUser(), P = pid(), pt = A && P ? (A.store.patients || []).filter(function (x) { return x.id === P; })[0] : null, name = pt ? [pt.lastName, pt.firstName].filter(Boolean).join(' ') : '';
+    var demo = ['lat', 'ctA', 'ctB'].some(function (k) { return ui.v[k].img && ui.v[k].demo; }), unc = lacking(m).length > 0;
+    var figs = []; if (ui.v.lat.img && m.lat && m.lat.ok) figs.push(['lat', t('sec_lat')]); if (ui.v.ctA.img && ((m.ct && m.ct.ok) || m.sulc)) figs.push(['ctA', ui.composite ? t('mode1') : t('sliceA')]); if (!ui.composite && ui.v.ctB.img && m.ct && m.ct.ok) figs.push(['ctB', t('sliceB')]);
+    var d = document.createElement('div'); d.id = 'patReport'; d.className = 'htoreport patreport'; d.setAttribute('lang', lang());
+    d.innerHTML = '<div class="xcr-bar noprint"><button id="patPrClose">' + esc(t('close')) + '</button><button id="patPrDo" class="primary">' + esc(t('doPrint')) + '</button></div><div class="htor-page">' +
+      '<div class="htor-head"><div><h1>🦵 ' + esc(t('sheet')) + '</h1><div class="small">OrthoThessaly</div></div><div class="htor-meta">' + esc(t('patient')) + ': <b>' + esc(P || '—') + '</b>' + (name ? ' · ' + esc(name) : '') + '<br>' + esc(t('filmD')) + ': ' + esc(ui.date) + ' · ' + esc(t(ui.phase)) + ' · ' + esc(t(ui.side)) + '<br>' + esc(t('measD')) + ': ' + esc(today()) + (u ? '<br>' + esc(t('by')) + ': ' + esc(u.name || u.email) : '') + '</div></div>' +
+      (demo ? '<p class="htor-demo">' + esc(t('synth')) + '</p>' : '') + (unc ? '<p class="htor-demo">' + esc(t('unconf')) + '</p>' : '') +
+      '<div class="patr-main">' + summaryHtml(m, true) + '</div><div class="patr-figs">' + figs.map(function (f) { return '<figure><img src="' + sheetImage(f[0]) + '" alt="' + esc(f[1]) + '"><figcaption class="small muted">' + esc(f[1]) + '</figcaption></figure>'; }).join('') + '</div>' +
+      '<div class="patr-det"><h3>' + esc(t('qT')) + '</h3>' + (m.lat && m.lat.ok ? qBlock(t('sec_lat'), [[t('art'), m.lat.artMm != null ? f1(m.lat.artMm) + ' mm' : '–'], [t('cal'), t('c_' + (m.lat.cal.source || 'none'))]], m.lat.quality) : '') +
+        (m.ct && m.ct.ok ? qBlock(t('sec_ct'), [[t('refT'), t('ref_' + (m.ct.ref || 'coreg'))], [t('cal'), t('c_' + (m.ct.calA || 'none'))]], m.ct.quality) : '') + (m.dej.quality.length ? qBlock(t('sec_dej'), [], m.dej.quality) : '') + '</div>' +
+      '<div class="htor-foot"><p>' + esc(t('sign')) + ': ______________________ </p><p>' + esc(t('disc')) + '</p></div></div>';
+    document.body.appendChild(d); document.body.classList.add('pat-print');
+    $('patPrClose').onclick = closeSheet; $('patPrDo').onclick = function () { window.print(); };
+  }
+  window.addEventListener('resize', function () { if ($('patCv')) drawCv(); });
+  window.__xpat = { cancel: cancelDetect, render: render, renderNow: renderNow, open: open, save: save, confirm: confirmPts, openSheet: openSheet, closeSheet: closeSheet, headline: headline, dashHtml: dashHtml,
+    loadDemoLat: loadDemoLat, loadDemoCt: loadDemoCt, loadFile: function (f) { loadFile(f, vk()); }, runDetect: function (k) { runDetect(k || vk()); }, setSec: setSec, setSlice: setSlice, setComposite: setComposite, setSign: setSign,
+    setOverride: function (v) { ui.dej.override = v || ''; renderNow(); }, setAxial: function (v) { ui.dej.axial = v || ''; renderNow(); }, swap: swapMedLat, reset: function () { reset(); renderNow(); },
+    setPoint: function (K, p, k) { k = k || vk(); var v = ui.v[k]; v.pts[K] = p; v.org[K] = 'manual'; changed(k, K); renderNow(); }, compute: compute, view: vk,
+    get last() { return ui.last; }, get state() { return ui; },
+    toScreen: function (p) { var cv = $('patCv'), v = ui.v[vk()]; if (!cv || !v.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * v.lv.s + v.lv.tx, y: r.top + p.y * v.lv.s + v.lv.ty }; } };
+})();
+</script>
 <!-- ===== TKA pre-op vs post-op comparison + print report ===== -->
 <script id="ortho-xray-compare">
 (function () {
@@ -14659,7 +15613,7 @@ window.OrthoQRGen = qrcode; })();
     return h;
   }
   function rerender(p) {
-    var el = $('xcmp'); if (!el) return; var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts'; });
+    var el = $('xcmp'); if (!el) return; var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'patella'; });
     var d = document.createElement('div'); d.innerHTML = html(p, xs); var nw = d.firstChild; if (nw) { var inf = el.querySelector('#xcInfo'); if (inf && inf.open) nw.querySelector('#xcInfo').open = true; el.parentNode.replaceChild(nw, el); } bind(p);
   }
   function bind(p) {
@@ -14676,7 +15630,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- print report ----------
   function reportHtml(p) {
-    var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts'; }), v = view(p, xs); if (!v) return '';
+    var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'patella'; }), v = view(p, xs); if (!v) return '';
     [v.pre, v.post].forEach(function (x) { if (x && !thumbOf(x) && x.synth && SY) try { synthThumb(x); } catch (e) { /* none */ } });
     var u = api().currentUser && api().currentUser(), proc = PR && PR.PROCEDURES[p.procedure] ? tx(PR.PROCEDURES[p.procedure].name) : p.procedure, now = new Date().toISOString().slice(0, 16).replace('T', ' ');
     var fig = function (x, w) { var f = figHtml(x, w, p); return f.replace('id="xcFig' + w + '"', 'id="xcrFig' + w + '"'); };
