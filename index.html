@@ -13501,7 +13501,7 @@ window.OrthoQRGen = qrcode; })();
   }
   function detect1(img, o) {
     var t0 = Date.now(), c = detectClassic(img, o);
-    if (c.status === 'ok' && !(c.checks || []).length) { c.method = 'classic'; c.level = (c.facingConf || 0) >= 0.3 ? 'high' : 'medium'; c.conf.score = c.level === 'high' ? 0.9 : 0.6; if (c.level !== 'high') c.status = 'suggest'; return c; }
+    if (c.status === 'ok' && !(c.checks || []).length) { c.method = 'classic'; c.level = 'medium'; c.conf.score = (c.facingConf || 0) >= 0.3 ? 0.75 : 0.6; if ((c.facingConf || 0) < 0.3) c.status = 'suggest'; return c; /* level never 'high': not validated against expert annotations; status ok = internal checks passed, the doctor still confirms */ }
     var A = root.OrthoPTSAuto, a = null;
     try { a = A ? A.detect(img, { mmPerPx: o.mmPerPx }) : null; } catch (e) { a = null; }
     if (a && a.status !== 'failed' && a.pts && a.pts.PA) {
@@ -15053,10 +15053,13 @@ window.OrthoQRGen = qrcode; })();
       var pts0 = mapPts(best.d.raw.pts, best.back);
       var pts = {}; Object.keys(pts0).forEach(function (k) { pts[k] = scaleBack(pts0[k]); });
       var view = best.d.view;
-      var level = best.sc >= 0.75 ? 'high' : best.sc >= 0.45 ? 'medium' : 'low';
-      var status = level === 'high' ? 'ok' : 'suggest';
+      // never 'high': the wrist detector is not validated against expert landmarks – points are always suggestions (προς έλεγχο)
+      var level = best.sc >= 0.45 ? 'medium' : 'low', status = 'suggest';
       var meas = view === 'pa' ? measurePA(pts, { mmPerPx: o.mmPerPx }) : measureLat(pts, { mmPerPx: o.mmPerPx });
-      if (!meas.ok) { status = 'suggest'; if (level === 'high') level = 'medium'; }
+      if (!meas.ok) level = 'low';
+      else { var mv = meas.values || {}; // anatomically implausible read-outs → the points are probably off
+        if ((mv.radialInclination != null && (mv.radialInclination < 0 || mv.radialInclination > 45)) || (mv.radialHeight != null && (mv.radialHeight < -5 || mv.radialHeight > 30)) ||
+            (mv.ulnarVariance != null && Math.abs(mv.ulnarVariance) > 10) || (mv.volarTilt != null && Math.abs(mv.volarTilt) > 45)) { level = 'low'; flags.notes = (flags.notes || []).concat(['implausible']); } }
       var notes = (best.d.raw.short ? ['short'] : []).concat(flags.notes || []);
       return {
         version: VERSION, method: best.tag, view: view, viewScore: Math.round(best.sc * 1000) / 1000,
@@ -15566,7 +15569,7 @@ window.OrthoQRGen = qrcode; })();
 // the posterior condyles + groove + anterior-most tuberosity. Points are ALWAYS returned with a confidence level (never 'high').
 (function (root) {
   'use strict';
-  var VERSION = 'patella-classic-1', R2D = 180 / Math.PI, D2R = Math.PI / 180;
+  var VERSION = 'patella-classic-2+comp-1', R2D = 180 / Math.PI, D2R = Math.PI / 180;
   var sub = function (a, b) { return { x: a.x - b.x, y: a.y - b.y }; }, add = function (a, b) { return { x: a.x + b.x, y: a.y + b.y }; };
   var mul = function (a, k) { return { x: a.x * k, y: a.y * k }; }, dot = function (a, b) { return a.x * b.x + a.y * b.y; };
   var len = function (a) { return Math.hypot(a.x, a.y); }, unit = function (a) { var l = len(a) || 1; return { x: a.x / l, y: a.y / l }; };
@@ -15655,6 +15658,79 @@ window.OrthoQRGen = qrcode; })();
   function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
   function toGray(img) { if (img.data.length === img.W * img.H) return img; var g = new Uint8ClampedArray(img.W * img.H); for (var i = 0; i < g.length; i++) g[i] = Math.round(0.299 * img.data[4 * i] + 0.587 * img.data[4 * i + 1] + 0.114 * img.data[4 * i + 2]); return { W: img.W, H: img.H, data: g }; }
 
+  // ================= lateral film: patella as a separate bone component (any flexion, either facing) =================
+  /** Samples the knee in the tibial frame (s across, d along the tibial axis, mm; 0.5-mm grid) and looks for the patella as a closed,
+   *  separate bone component: high-pass (minus a 5 / 10 mm Gaussian) AND above a grey percentile, opening, hole filling, opening;
+   *  every component is scored on size / elongation / solidity and – decisively – on its contrast against a 2-mm ring around it
+   *  (the patella is separated from the femur and the soft tissue). Independent of the sign of the frame normal, so it also tells
+   *  which side is anterior. Tuned on 34 FracAtlas lateral knees (development set), checked on a separate held-out set.
+   *  Returns { c, PU, PL, PS, PI, side (+1 = on the +n side), score, con, lenMm, widMm, piJump } in image px, or null. */
+  function patellaComp(at, F, mm, dbg) {
+    var st = 0.5, S0 = -110, S1 = 110, D0 = -150, D1 = 20, nw = Math.round((S1 - S0) / st) + 1, nh = Math.round((D1 - D0) / st) + 1, N = nw * nh, G = new Float32Array(N), i, j, k;
+    var vals = [];
+    for (j = 0; j < nh; j++) for (i = 0; i < nw; i++) { var v = at(F(S0 + i * st, D0 + j * st)); G[j * nw + i] = v < 0 ? 0 : v; if (v > 0 && ((i + j) & 3) === 0) vals.push(v); }
+    if (vals.length < 2000) return null; vals.sort(function (a, b) { return a - b; });
+    var pc = function (q) { return vals[Math.min(vals.length - 1, Math.floor(q * vals.length))]; }, range = Math.max(10, pc(0.98) - pc(0.05));
+    var boxH = function (src, r) { var o = new Float32Array(N); for (var y = 0; y < nh; y++) { var s = 0, b0 = y * nw; for (var x = -r; x <= r; x++) s += src[b0 + Math.min(nw - 1, Math.max(0, x))]; for (x = 0; x < nw; x++) { o[b0 + x] = s / (2 * r + 1); s += src[b0 + Math.min(nw - 1, x + r + 1)] - src[b0 + Math.max(0, x - r)]; } } return o; };
+    var boxV = function (src, r) { var o = new Float32Array(N); for (var x = 0; x < nw; x++) { var s = 0; for (var y = -r; y <= r; y++) s += src[Math.min(nh - 1, Math.max(0, y)) * nw + x]; for (y = 0; y < nh; y++) { o[y * nw + x] = s / (2 * r + 1); s += src[Math.min(nh - 1, y + r + 1) * nw + x] - src[Math.max(0, y - r) * nw + x]; } } return o; };
+    var gauss = function (sig) { var r = Math.max(1, Math.round(sig * Math.sqrt(12 / 3 + 1) / 2)), o = G; for (var t = 0; t < 3; t++) o = boxV(boxH(o, r), r); return o; }; // 3 box passes ≈ Gaussian
+    var morph = function (m, r, ero) { // separable square min/max filter on a 0/1 mask
+      var t = new Uint8Array(N), o = new Uint8Array(N), x, y, z, ok;
+      for (y = 0; y < nh; y++) for (x = 0; x < nw; x++) { ok = ero ? 1 : 0; for (z = -r; z <= r; z++) { var xx = x + z; var v = xx < 0 || xx >= nw ? (ero ? 0 : 0) : m[y * nw + xx]; if (ero ? !v : v) { ok = ero ? 0 : 1; break; } } t[y * nw + x] = ok; }
+      for (x = 0; x < nw; x++) for (y = 0; y < nh; y++) { ok = ero ? 1 : 0; for (z = -r; z <= r; z++) { var yy = y + z; var v2 = yy < 0 || yy >= nh ? 0 : t[yy * nw + x]; if (ero ? !v2 : v2) { ok = ero ? 0 : 1; break; } } o[y * nw + x] = ok; }
+      return o; };
+    var open = function (m, r) { return morph(morph(m, r, true), r, false); };
+    var stack = [], fill = function (m) { var out = new Uint8Array(N); stack.length = 0; for (i = 0; i < nw; i++) stack.push(i, (nh - 1) * nw + i); for (j = 0; j < nh; j++) stack.push(j * nw, j * nw + nw - 1);
+      while (stack.length) { var q0 = stack.pop(); if (out[q0] || m[q0]) continue; out[q0] = 1; var qx = q0 % nw; if (qx > 0) stack.push(q0 - 1); if (qx < nw - 1) stack.push(q0 + 1); if (q0 >= nw) stack.push(q0 - nw); if (q0 < N - nw) stack.push(q0 + nw); }
+      for (var z = 0; z < N; z++) out[z] = out[z] ? 0 : 1; return out; };
+    var best = null, lab = new Int32Array(N);
+    [10, 20].forEach(function (sig) {
+      var bl = gauss(sig), hp = new Float32Array(N); for (k = 0; k < N; k++) hp[k] = G[k] - bl[k];
+      [0, 3, 6, 10].forEach(function (thr) { [0.4, 0.55, 0.7].forEach(function (gq) {
+        var gl = pc(gq), m = new Uint8Array(N); for (k = 0; k < N; k++) m[k] = G[k] > 0 && hp[k] > thr && G[k] > gl ? 1 : 0;
+        m = open(fill(open(m, 2)), 4);
+        lab.fill(0); var nid = 0;
+        for (k = 0; k < N; k++) { if (!m[k] || lab[k]) continue; var id = ++nid, c = { n: 0, sx: 0, sy: 0, sxx: 0, syy: 0, sxy: 0, border: false, pix: [] }; lab[k] = id; stack.length = 0; stack.push(k);
+          while (stack.length) { var p = stack.pop(), px = p % nw, py = (p - px) / nw; c.n++; c.sx += px; c.sy += py; c.sxx += px * px; c.syy += py * py; c.sxy += px * py; c.pix.push(p); if (px <= 1 || py <= 1 || px >= nw - 2 || py >= nh - 2) c.border = true;
+            if (px > 0 && m[p - 1] && !lab[p - 1]) { lab[p - 1] = id; stack.push(p - 1); } if (px < nw - 1 && m[p + 1] && !lab[p + 1]) { lab[p + 1] = id; stack.push(p + 1); }
+            if (py > 0 && m[p - nw] && !lab[p - nw]) { lab[p - nw] = id; stack.push(p - nw); } if (py < nh - 1 && m[p + nw] && !lab[p + nw]) { lab[p + nw] = id; stack.push(p + nw); } }
+          var A = c.n * st * st; if (A < 200 || A > 1700 || c.border) continue;
+          var mx = c.sx / c.n, my = c.sy / c.n, cxx = c.sxx / c.n - mx * mx, cyy = c.syy / c.n - my * my, cxy = c.sxy / c.n - mx * my;
+          var ang = 0.5 * Math.atan2(2 * cxy, cxx - cyy), e1 = { x: Math.cos(ang), y: Math.sin(ang) }, e2 = { x: -e1.y, y: e1.x };
+          var t1 = 1e9, t2 = -1e9, w1 = 1e9, w2 = -1e9; c.pix.forEach(function (q) { var qx = q % nw - mx, qy = (q - q % nw) / nw - my, a = qx * e1.x + qy * e1.y, b = qx * e2.x + qy * e2.y; if (a < t1) t1 = a; if (a > t2) t2 = a; if (b < w1) w1 = b; if (b > w2) w2 = b; });
+          var L = (t2 - t1 + 1) * st, W = (w2 - w1 + 1) * st, sol = A / (Math.PI / 4 * L * W);
+          if (L < 24 || L > 68 || W < 10 || W > 34 || L / W < 1.15 || L / W > 3.8 || sol < 0.62) continue;
+          var sC = S0 + mx * st, dC = D0 + my * st; if (dC > 12 || Math.abs(sC) < 3) continue; // deep flexion: the patella lies almost over the tibial axis
+          // contrast against a ring 0.5–2 mm outside (square dilation of the component)
+          var inS = 0, ringS = 0, nR = 0; c.pix.forEach(function (q) { inS += G[q]; });
+          var ringSet = {}; c.pix.forEach(function (q) { var qx = q % nw, qy = (q - qx) / nw; for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) { var xx = qx + dx, yy = qy + dy; if (xx < 0 || yy < 0 || xx >= nw || yy >= nh) continue; var r2 = yy * nw + xx; if (lab[r2] === id || ringSet[r2] || G[r2] <= 0) continue; ringSet[r2] = 1; ringS += G[r2]; nR++; } });
+          var con = nR ? (inS / c.n - ringS / nR) / range : 0;
+          if (dbg) dbg.push({ sig: sig, thr: thr, gq: gq, A: Math.round(A), L: Math.round(L), W: Math.round(W), sol: +sol.toFixed(2), s: Math.round(sC), d: Math.round(dC), con: +con.toFixed(2) });
+          if (con < 0.22) continue;
+          var sc = Math.exp(-Math.pow((L - 44) / 12, 2)) * Math.exp(-Math.pow((W - 20) / 8, 2)) * Math.min(1, sol / 0.8) * Math.max(0, Math.min(1, (con - 0.1) / 0.25));
+          // preference tiers: proximal to the plateau (d < −8 mm) first, then clearly off the tibial axis (|s| ≥ 12 mm); near-axis / distal ones (deep flexion, patella baja) only when there is no other
+          var far = Math.abs(sC) >= 12, tier = (dC < -8 ? 2 : 0) + (far ? 1 : 0);
+          if (!best || tier > best.tier || (tier === best.tier && sc > best.sc)) best = { tier: tier, far: far, sc: sc, con: con, pix: c.pix.slice(), mx: mx, my: my, e1: e1, e2: e2, t1: t1, t2: t2, L: L, W: W, sC: sC, dC: dC };
+        }
+      }); });
+    });
+    if (!best || best.sc < 0.05) return null;
+    var B = best, toImg = function (gx, gy) { return F(S0 + gx * st, D0 + gy * st); };
+    var e1 = B.e1, e2 = B.e2; if (e1.y < 0) { e1 = { x: -e1.x, y: -e1.y }; var t0 = B.t1; B.t1 = -B.t2; B.t2 = -t0; } // e1 points distally (grid y = d): PU proximal, PL distal pole
+    // articular side: the femur lies behind the patella – the side of the patella facing the (larger) bright mass next to it
+    var side = function (sg) { var s2 = 0, c2 = 0; for (var t = -0.3; t <= 0.3; t += 0.1) for (var e = 3; e <= 12; e += 1) { var gx = B.mx + e1.x * t * (B.t2 - B.t1) + sg * e2.x * (B.W / 2 / st + e / st), gy = B.my + e1.y * t * (B.t2 - B.t1) + sg * e2.y * (B.W / 2 / st + e / st), ix = Math.round(gx), iy = Math.round(gy); if (ix >= 0 && iy >= 0 && ix < nw && iy < nh) { s2 += G[iy * nw + ix]; c2++; } } return c2 ? s2 / c2 : 0; };
+    if (side(-1) > side(1)) e2 = { x: -e2.x, y: -e2.y };
+    var nT = Math.round(B.t2 - B.t1) + 1, h = new Float32Array(nT).fill(-1e9);
+    B.pix.forEach(function (p) { var px = p % nw - B.mx, py = (p - p % nw) / nw - B.my, a = Math.round(px * e1.x + py * e1.y - B.t1), b = px * e2.x + py * e2.y; if (a >= 0 && a < nT && b > h[a]) h[a] = b; });
+    var P = function (t) { var tt = Math.max(0, Math.min(nT - 1, Math.round(t))), hb = h[tt] > -1e8 ? h[tt] : 0; return toImg(B.mx + e1.x * (tt + B.t1) + e2.x * hb, B.my + e1.y * (tt + B.t1) + e2.y * hb); };
+    var hm = function (t) { var s2 = 0, c2 = 0; for (var z = t - 2; z <= t + 2; z++) if (z >= 0 && z < nT && h[z] > -1e8) { s2 += h[z]; c2++; } return c2 ? s2 / c2 : 0; };
+    // inferior articular end: the articular outline steps away from the femur going distally (non-articular apex), within 55–85 % of the length
+    var jI = null; for (var tI = Math.round(0.55 * nT); tI <= Math.round(0.85 * nT); tI++) { var dj = hm(tI - 3) - hm(tI + 3); if (!jI || dj > jI.v) jI = { v: dj, t: tI }; }
+    var piJump = !!(jI && jI.v * st >= 1.2), tPI = piJump ? jI.t : Math.round(0.78 * nT), tPS = Math.round(0.07 * nT);
+    return { c: toImg(B.mx, B.my), PU: toImg(B.mx + e1.x * B.t1, B.my + e1.y * B.t1), PL: toImg(B.mx + e1.x * B.t2, B.my + e1.y * B.t2), PS: P(tPS), PI: P(tPI), side: B.sC >= 0 ? 1 : -1,
+      score: Math.round(B.sc * 100) / 100, con: Math.round(B.con * 100) / 100, lenMm: Math.round(B.L * 10) / 10, widMm: Math.round(B.W * 10) / 10, piJump: piJump, far: B.far, tier: B.tier, sMm: B.sC, dMm: B.dC };
+  }
+
   // ================= lateral-film detection =================
   /** img {W,H,data gray}, o {mmPerPx} → { status, level, method, pts {PS,PI,TT,PU,PL,TA}, conf, notes, frame } (image px). */
   function detectLat(img, o) {
@@ -15665,12 +15741,15 @@ window.OrthoQRGen = qrcode; })();
     var n = perp(u); if (dot(sub(tp.PA, tp.PP), n) < 0) n = mul(n, -1);
     var mm = o.mmPerPx || 47 / Math.max(5, dist(tp.PA, tp.PP)), at = sampler(img);
     var F = function (s, d) { return { x: pm.x + n.x * s / mm + u.x * d / mm, y: pm.y + n.y * s / mm + u.y * d / mm }; };
+    // the patella as a separate bone component (both sides searched): also tells which side is anterior (PA/PP of the tibial detector may be swapped)
+    var pc = o.comp === false ? null : patellaComp(at, F, mm), apFlip = false;
+    if (pc && pc.side < 0 && pc.score >= 0.25 && pc.con >= 0.28 && pc.tier === 3) { n = mul(n, -1); apFlip = true; notes.push('apFlip'); var tq = tp.PA; tp = Object.assign({}, tp, { PA: tp.PP, PP: tq }); }
     var sOf = function (p) { return dot(sub(p, pm), n) * mm; }, dOf = function (p) { return dot(sub(p, pm), u) * mm; };
     var sA1 = sOf(tp.A1), sP1 = sOf(tp.P1), dA1 = dOf(tp.A1);
     // bone / soft-tissue threshold from the tibial shaft and the soft tissue in front of it
     var bs = [], ss = [], i, d, s; for (i = 0; i <= 20; i++) { var q = mid(tp.A1, tp.P1), w = sub(tp.A1, tp.P1); bs.push(at(add(q, mul(w, (i / 20 - 0.5) * 0.9)))); }
     for (d = dA1 - 5; d <= dA1 + 25; d += 2) for (s = sA1 + 5; s <= sA1 + 12; s += 1) { var v0 = at(F(s, d)); if (v0 >= 0) ss.push(v0); }
-    var boneV = median(bs.filter(function (v) { return v >= 0; })), softV = median(ss); if (boneV == null || softV == null || boneV - softV < 8) return templateLat(img, 'lowContrast', t0, F, sA1);
+    var boneV = median(bs.filter(function (v) { return v >= 0; })), softV = median(ss); if (boneV == null || softV == null || boneV - softV < 8) { if (!pc) return templateLat(img, 'lowContrast', t0, F, sA1); var tl = templateLat(img, 'lowContrast', t0, F, sA1, r); tl.method = 'component'; tl.pts.PS = pc.PS; tl.pts.PI = pc.PI; tl.pts.PU = pc.PU; tl.pts.PL = pc.PL; tl.notes = ['patComp', 'lowContrast']; tl.patella = { lenMm: pc.lenMm, thMm: pc.widMm, jumps: pc.piJump ? 2 : 1, comp: true, score: pc.score }; tl.conf = { score: 0.2 }; return tl; }
     var T = softV + 0.45 * (boneV - softV), bone = function (s2, d2) { return at(F(s2, d2)) > T; }, step = Math.max(0.25, mm * 0.9);
     var run = function (s2, d2, dir, lim) { var k = 0; for (var e = 0; e < lim; e += step) { if (!bone(s2 + dir * e, d2)) break; k = e; } return k; };
     // ---- tibial anterior contour + tuberosity ----
@@ -15712,15 +15791,18 @@ window.OrthoQRGen = qrcode; })();
       if (jS && jS.v >= 1.5) { var ks = sharp(jS.k, false); PS = F(R[ks].p, R[ks].d); jumps++; } else { for (k2 = 0; k2 < Lr - 1 && R[k2].th < 0.6 * thMax; k2++); PS = F(R[k2].p, R[k2].d); notes.push('psByThickness'); }
       pat = { PS: PS, PI: PI, PU: PU, PL: PL, lenMm: span, thMm: thMax, jumps: jumps };
     } else notes.push('noPatella');
+    var oldOk = pat && pc && dist(mid(pat.PU, pat.PL), pc.c) < 0.35 * pc.lenMm / mm && pat.jumps >= 1 && dist(pat.PS, pat.PI) * mm >= 0.45 * pc.lenMm; // articular length must be plausible // the row search found the same bone → keep its finer outline ends
+    if (pc && !oldOk && ((pc.tier === 3 && pc.score >= 0.1) || !pat)) { pat = { PS: pc.PS, PI: pc.PI, PU: pc.PU, PL: pc.PL, lenMm: pc.lenMm, thMm: pc.widMm, jumps: pc.piJump ? 2 : 1, comp: true }; notes.push('patComp'); }
     if (!pat && !tt) return templateLat(img, 'noPatella', t0, F, sA1, r);
+    if (pat && pat.comp && notes.indexOf('noPatella') >= 0) notes.splice(notes.indexOf('noPatella'), 1);
     var sAnt = sA1 + 4, pts = {
       PS: pat ? pat.PS : F(sAnt + 6, -62), PI: pat ? pat.PI : F(sAnt + 6, -32), TT: tt || F(sAnt + 3, 20), TA: tp.PA };
     if (pat) { pts.PU = pat.PU; pts.PL = pat.PL; }
     var fr = r.level === 'high' ? 1 : r.level === 'medium' ? 0.75 : 0.4;
     var score = fr * ((pat ? 0.35 + 0.1 * pat.jumps : 0) + (tt ? 0.25 + Math.min(0.15, tubH / 30) : 0));
-    var level = score >= 0.6 && pat && tt ? 'medium' : 'low';
+    var level = score >= 0.6 && pat && tt && (!pat.comp || (pc.tier === 3 && pc.score >= 0.3 && pc.con >= 0.28)) ? 'medium' : 'low'; // never 'high': not validated against expert annotations
     return { version: VERSION, method: 'classic', status: 'suggest', level: level, pts: pts, conf: { score: Math.round(score * 100) / 100, frame: r.level, tibia: r.method || null }, notes: notes.concat(r.notes || []).slice(0, 12),
-      frame: { pm: pm, u: u, n: n, mmPerPx: mm }, patella: pat ? { lenMm: Math.round(pat.lenMm * 10) / 10, thMm: Math.round(pat.thMm * 10) / 10, jumps: pat.jumps } : null, tubMm: Math.round(tubH * 10) / 10, ms: Date.now() - t0 };
+      frame: { pm: pm, u: u, n: n, mmPerPx: mm, apFlip: apFlip }, patella: pat ? { lenMm: Math.round(pat.lenMm * 10) / 10, thMm: Math.round(pat.thMm * 10) / 10, jumps: pat.jumps, comp: !!pat.comp, score: pc ? pc.score : null } : null, tubMm: Math.round(tubH * 10) / 10, ms: Date.now() - t0 };
   }
   function templateLat(img, reason, t0, F, sA1, r) {
     var pts;
@@ -15859,7 +15941,7 @@ window.OrthoQRGen = qrcode; })();
 
   root.OrthoPatella = { VERSION: VERSION, NORMS: NORMS, TTTG_CUT: TTTG_CUT, LAT_REQ: LAT_REQ, LAT_OPT: LAT_OPT, CTA_REQ: CTA_REQ, CTB_REQ: CTB_REQ, SULC: SULC, DEJOUR_SIGNS: DEJOUR_SIGNS,
     status: status, ttBand: ttBand, calibration: calibration, measureLat: measureLat, measureCT: measureCT, sulcusAngle: sulcusAngle, dejour: dejour,
-    detectLat: detectLat, detectCT: detectCT, detectImg: detectImg, MAXDIM: MAXDIM, synthLat: synthLat, synthCT: synthCT, _u: { components: components, otsu: otsu } };
+    detectLat: detectLat, patellaComp: patellaComp, detectCT: detectCT, detectImg: detectImg, MAXDIM: MAXDIM, synthLat: synthLat, synthCT: synthCT, _u: { components: components, otsu: otsu } };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== DICOM series (CT) for TT–TG: many files / .zip / folder, read in the browser only, lazy slice decode, no patient identifiers (pure; tested in Node) ===== -->
