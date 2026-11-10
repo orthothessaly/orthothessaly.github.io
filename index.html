@@ -908,6 +908,14 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   .patreport .patr-det{font-size:.75em}
 }
 @media (max-width:560px){.patsecs button{font-size:.85em;padding:6px 6px}.patsum td:last-child{white-space:normal}}
+/* TT–TG: whole DICOM series viewer */
+.patser{outline:none}.patser:focus-visible{box-shadow:0 0 0 3px #38bdf8}
+.patser .patserhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.patser .patserhead #patSerClose{margin-left:auto}
+.patserwrap{margin:6px 0;background:#000;border-radius:8px;overflow:hidden}.patserwrap canvas{display:block;width:100%;cursor:ns-resize;touch-action:pan-y}
+.patsernav{display:flex;gap:8px;align-items:center}.patsernav input[type=range]{flex:1 1 auto;min-width:0}
+.patserwin,.patserab{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0}.patserwin input[type=number]{width:84px}
+.patserab button.on{outline:3px solid #fde047;outline-offset:1px}
+.patsererr:empty{display:none}
 /* ===== 🧠 Quiz (doctors only) – mobile-first ===== */
 #tab-quiz h2{margin:0;font-size:1.25rem;color:var(--brand)}
 .qzbar,.qzrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.qzsp{flex:1}
@@ -2487,8 +2495,12 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   // ---------- minimal DICOM reader (uncompressed little-endian, monochrome or RGB 8-bit) ----------
   var TS_IMPLICIT = '1.2.840.10008.1.2', TS_EXPLICIT = '1.2.840.10008.1.2.1', TS_DEFLATE = '1.2.840.10008.1.2.1.99', TS_BIG = '1.2.840.10008.1.2.2';
   var LONGVR = { OB: 1, OD: 1, OF: 1, OL: 1, OW: 1, SQ: 1, UC: 1, UR: 1, UT: 1, UN: 1, OV: 1, SV: 1, UV: 1 };
-  function parseDicom(buf) {
+  /** opt.headerOnly: geometry/window tags only, no pixel copy (a series loader reads just the first bytes of each file); throws
+   *  'truncated' when the pixel element was not reached. Never reads patient/study identifiers (names, IDs, dates, UIDs). */
+  function parseDicom(buf, opt) {
+    var headerOnly = !!(opt && opt.headerOnly);
     var dv = new DataView(buf), n = buf.byteLength, off = 0, el = {};
+    var fail = function (code) { var e = new Error(code); e.ts = ts; return e; }, tsChecked = false;
     var str = function (o, l) { var s = ''; for (var i = 0; i < l; i++) s += String.fromCharCode(dv.getUint8(o + i)); return s.replace(/[\0 ]+$/, ''); };
     if (n > 132 && str(128, 4) === 'DICM') off = 132; else if (n < 8) throw new Error('not-dicom');
     var ts = TS_EXPLICIT, explicitVR = true;
@@ -2508,27 +2520,38 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
         if (x.len === 0xFFFFFFFF) depth++; else off += x.len;
       }
     }
-    while (off < n - 8) {
-      var start = off, peekG = dv.getUint16(off, true);
-      var x = readEl(peekG === 0x0002 ? true : explicitVR);
-      if (x.tag === 0x00020010) { ts = str(x.pos, x.len); explicitVR = ts !== TS_IMPLICIT; }
-      if (peekG !== 0x0002 && start === 132 && !el.ts) {} // no-op
-      if (x.tag === 0x7FE00010) {
-        if (x.len === 0xFFFFFFFF) throw new Error('compressed');
-        el.pixelPos = x.pos; el.pixelLen = x.len; break;
+    try {
+      while (off < n - 8) {
+        var start = off, peekG = dv.getUint16(off, true);
+        // big-endian / deflated datasets cannot be walked as little-endian: stop at the end of the file meta group
+        if (peekG !== 0x0002 && !tsChecked) { tsChecked = true; if (ts === TS_BIG || ts === TS_DEFLATE) throw fail('unsupported-ts'); }
+        var x = readEl(peekG === 0x0002 ? true : explicitVR);
+        if (x.tag === 0x00020010) { ts = str(x.pos, x.len); explicitVR = ts !== TS_IMPLICIT; }
+        if (peekG !== 0x0002 && start === 132 && !el.ts) {} // no-op
+        if (x.tag === 0x7FE00010) {
+          if (x.len === 0xFFFFFFFF) throw fail('compressed');
+          el.pixelPos = x.pos; el.pixelLen = x.len; break;
+        }
+        if (x.len === 0xFFFFFFFF) { skipUndefined(peekG === 0x0002 ? true : explicitVR); continue; }
+        if (x.pos + x.len > n) break;
+        var key = x.tag;
+        if (key === 0x00280010 || key === 0x00280011 || key === 0x00280100 || key === 0x00280101 || key === 0x00280103 || key === 0x00280002) el[key] = dv.getUint16(x.pos, true);
+        else if (key === 0x00280004 || key === 0x00281050 || key === 0x00281051 || key === 0x00281052 || key === 0x00281053 || key === 0x00280030 || key === 0x00181164 || key === 0x00080060 || key === 0x00200020 || key === 0x00185101 ||
+          key === 0x00200032 || key === 0x00200037 || key === 0x00200013 || key === 0x00180050 || key === 0x00180088 || key === 0x00201041 || key === 0x00280008) el[key] = str(x.pos, x.len); // + geometry for series (position, orientation, instance no., thickness, frames)
+        off = x.pos + x.len;
       }
-      if (x.len === 0xFFFFFFFF) { skipUndefined(peekG === 0x0002 ? true : explicitVR); continue; }
-      if (x.pos + x.len > n) break;
-      var key = x.tag;
-      if (key === 0x00280010 || key === 0x00280011 || key === 0x00280100 || key === 0x00280101 || key === 0x00280103 || key === 0x00280002) el[key] = dv.getUint16(x.pos, true);
-      else if (key === 0x00280004 || key === 0x00281050 || key === 0x00281051 || key === 0x00281052 || key === 0x00281053 || key === 0x00280030 || key === 0x00181164 || key === 0x00080060 || key === 0x00200020 || key === 0x00185101) el[key] = str(x.pos, x.len);
-      off = x.pos + x.len;
-    }
-    if (ts !== TS_IMPLICIT && ts !== TS_EXPLICIT) throw new Error(ts === TS_BIG || ts === TS_DEFLATE ? 'unsupported-ts' : 'compressed');
-    if (el.pixelPos == null) throw new Error('no-pixels');
+    } catch (e) { if (headerOnly && e instanceof RangeError) throw fail('truncated'); throw e; }
+    if (ts !== TS_IMPLICIT && ts !== TS_EXPLICIT) throw fail(ts === TS_BIG || ts === TS_DEFLATE ? 'unsupported-ts' : 'compressed');
+    if (el.pixelPos == null) throw fail(headerOnly ? 'truncated' : 'no-pixels');
     var rows = el[0x00280010], cols = el[0x00280011], bits = el[0x00280100] || 16, spp = el[0x00280002] || 1, signed = el[0x00280103] === 1;
     if (!rows || !cols) throw new Error('no-size');
     var num = function (s) { if (s == null) return null; var v = parseFloat(String(s).split('\\')[0]); return isFinite(v) ? v : null; };
+    var vec = function (s, k) { if (s == null) return null; var a = String(s).split('\\').map(parseFloat); return a.length === k && a.every(isFinite) ? a : null; };
+    var geo = { ipp: vec(el[0x00200032], 3), iop: vec(el[0x00200037], 6), inst: num(el[0x00200013]), thick: num(el[0x00180050]), between: num(el[0x00180088]), sliceLoc: num(el[0x00201041]), frames: num(el[0x00280008]) || 1 };
+    if (headerOnly) { var ps0 = el[0x00280030] || el[0x00181164];
+      return { rows: rows, cols: cols, bits: bits, spp: spp, signed: signed, photometric: el[0x00280004] || 'MONOCHROME2', wc: num(el[0x00281050]), ww: num(el[0x00281051]), intercept: num(el[0x00281052]) || 0, slope: num(el[0x00281053]) || 1,
+        pixelSpacing: ps0 ? ps0.split('\\').map(parseFloat) : null, modality: el[0x00080060] || '', transferSyntax: ts, pixelPos: el.pixelPos, pixelLen: el.pixelLen,
+        ipp: geo.ipp, iop: geo.iop, inst: geo.inst, thick: geo.thick, between: geo.between, sliceLoc: geo.sliceLoc, frames: geo.frames }; }
     var px, count = rows * cols * spp;
     if (bits === 8) px = new Uint8Array(buf, el.pixelPos, count);
     else if (bits === 16) { px = signed ? new Int16Array(count) : new Uint16Array(count); for (var i = 0; i < count; i++) px[i] = signed ? dv.getInt16(el.pixelPos + 2 * i, true) : dv.getUint16(el.pixelPos + 2 * i, true); }
@@ -2536,7 +2559,8 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     var ps = el[0x00280030] || el[0x00181164];
     return { rows: rows, cols: cols, bits: bits, spp: spp, photometric: el[0x00280004] || 'MONOCHROME2', pixels: px,
       wc: num(el[0x00281050]), ww: num(el[0x00281051]), intercept: num(el[0x00281052]) || 0, slope: num(el[0x00281053]) || 1,
-      pixelSpacing: ps ? ps.split('\\').map(parseFloat) : null, modality: el[0x00080060] || '', view: el[0x00185101] || '', transferSyntax: ts };
+      pixelSpacing: ps ? ps.split('\\').map(parseFloat) : null, modality: el[0x00080060] || '', view: el[0x00185101] || '', transferSyntax: ts,
+      ipp: geo.ipp, iop: geo.iop, inst: geo.inst, thick: geo.thick, between: geo.between, sliceLoc: geo.sliceLoc, frames: geo.frames };
   }
   /** DICOM → RGBA Uint8ClampedArray with VOI window (DICOM window centre/width, else min–max) and MONOCHROME1 inversion. */
   function dicomToRGBA(d) {
@@ -11568,6 +11592,7 @@ window.OrthoQRGen = qrcode; })();
   document.addEventListener('dragleave', function (e) { if (!hasFiles(e) || !inXray(e)) return; dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) dropOn(false); });
   document.addEventListener('drop', function (e) {
     if (!hasFiles(e) || !inXray(e)) return; e.preventDefault(); dragDepth = 0; dropOn(false);
+    if (st.sub === 'patella' && window.__xpat && window.__xpat.dropSeries && window.__xpat.dropSeries(e.dataTransfer)) { setPasteMsg(''); return; } // 🦵 TT–TG: several files / folder / .zip → DICOM series viewer
     var fs = e.dataTransfer.files, f = fs && [].filter.call(fs, isImgFile)[0];
     if (!f) { if (fs && fs.length) setPasteMsg(pt('notImg')); return; } feedFile(f, 'dropped');
   });
@@ -15295,6 +15320,162 @@ window.OrthoQRGen = qrcode; })();
     detectLat: detectLat, detectCT: detectCT, detectImg: detectImg, MAXDIM: MAXDIM, synthLat: synthLat, synthCT: synthCT, _u: { components: components, otsu: otsu } };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<!-- ===== DICOM series (CT) for TT–TG: many files / .zip / folder, read in the browser only, lazy slice decode, no patient identifiers (pure; tested in Node) ===== -->
+<script id="ortho-dicom-series">
+// ===== OrthoThessaly · DICOM series (CT) for the 🦵 TT–TG section: pure helpers (tested in Node) =====
+// Reads a whole axial series from many files, a .zip (stored / deflate, via the browser's DecompressionStream) or a folder, entirely in
+// the browser – nothing is uploaded. Only the first bytes of every file are read up front (geometry: size, pixel spacing, position,
+// orientation, instance number, thickness, window); a slice's pixels are decoded only when it is shown (lazy, small cache in the UI).
+// Patient identifiers are never read: X.parseDicom only looks at geometry / window tags, and file or folder names are never displayed.
+// Transfer syntaxes = those of the existing reader (Implicit / Explicit VR Little Endian, 8/16-bit); compressed ones are listed by name.
+(function (root) {
+  'use strict';
+  var X = function () { return root.OrthoXray; };
+  var TS = {
+    '1.2.840.10008.1.2': 'Implicit VR Little Endian', '1.2.840.10008.1.2.1': 'Explicit VR Little Endian', '1.2.840.10008.1.2.2': 'Explicit VR Big Endian', '1.2.840.10008.1.2.1.99': 'Deflated Explicit VR Little Endian',
+    '1.2.840.10008.1.2.4.50': 'JPEG Baseline', '1.2.840.10008.1.2.4.51': 'JPEG Extended', '1.2.840.10008.1.2.4.57': 'JPEG Lossless', '1.2.840.10008.1.2.4.70': 'JPEG Lossless SV1',
+    '1.2.840.10008.1.2.4.80': 'JPEG-LS Lossless', '1.2.840.10008.1.2.4.81': 'JPEG-LS', '1.2.840.10008.1.2.4.90': 'JPEG 2000 Lossless', '1.2.840.10008.1.2.4.91': 'JPEG 2000',
+    '1.2.840.10008.1.2.4.201': 'HTJ2K Lossless', '1.2.840.10008.1.2.4.202': 'HTJ2K Lossless RPCL', '1.2.840.10008.1.2.4.203': 'HTJ2K', '1.2.840.10008.1.2.5': 'RLE Lossless' };
+  var SUPPORTED = ['1.2.840.10008.1.2', '1.2.840.10008.1.2.1'];
+  function tsName(uid) { return TS[uid] || (uid ? 'UID ' + uid : '?'); }
+  var PRESETS = { bone: { wc: 500, ww: 2000 }, soft: { wc: 40, ww: 400 } };
+  var HEAD = 65536, MAXFILE = 128 * 1024 * 1024;
+  var SKIP_EXT = /\.(png|jpe?g|gif|bmp|tiff?|txt|xml|html?|pdf|json|csv|ini|exe|dll|js|css|inf|log|md|zip|db|plist)$/i, JUNK = /(^|\/)(__MACOSX\/|\.DS_Store$|Thumbs\.db$|desktop\.ini$)/i;
+
+  // ---------- sources: { name (never shown), size, head(n) → ArrayBuffer of the first n bytes, all() → whole file } ----------
+  function blobSource(b, name) { return { name: name != null ? name : (b.name || ''), size: b.size, head: function (n) { return b.slice(0, Math.min(n, b.size)).arrayBuffer(); }, all: function () { return b.arrayBuffer(); } }; }
+  function concat(chunks, total, limit) { var n = Math.min(total, limit == null ? total : limit), out = new Uint8Array(n), o = 0; for (var i = 0; i < chunks.length && o < n; i++) { var c = chunks[i], k = Math.min(c.length, n - o); out.set(k === c.length ? c : c.subarray(0, k), o); o += k; } return out.buffer; }
+  function inflate(blob, limit) {
+    if (typeof root.DecompressionStream !== 'function') return Promise.reject(new Error('nodeflate'));
+    var rd = blob.stream().pipeThrough(new root.DecompressionStream('deflate-raw')).getReader(), chunks = [], total = 0;
+    var step = function () { return rd.read().then(function (r) { if (r.done) return concat(chunks, total); chunks.push(r.value); total += r.value.length; if (limit != null && total >= limit) { rd.cancel().catch(function () {}); return concat(chunks, total, limit); } return step(); }); };
+    return step();
+  }
+  /** ZIP central directory → sources (stored / deflate). ZIP64 / encrypted archives are refused. */
+  function zipSources(blob) {
+    var size = blob.size, tailN = Math.min(size, 65557);
+    return blob.slice(size - tailN).arrayBuffer().then(function (tb) {
+      var dv = new DataView(tb), e = -1; for (var i = tb.byteLength - 22; i >= 0; i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+      if (e < 0) throw new Error('zip-bad');
+      var count = dv.getUint16(e + 10, true), cdSize = dv.getUint32(e + 12, true), cdOff = dv.getUint32(e + 16, true);
+      if (count === 0xFFFF || cdOff === 0xFFFFFFFF || cdSize === 0xFFFFFFFF) throw new Error('zip64');
+      return blob.slice(cdOff, cdOff + cdSize).arrayBuffer().then(function (cb) {
+        var d = new DataView(cb), o = 0, out = [], skipped = { enc: 0, method: 0 }, dec = new TextDecoder('utf-8');
+        for (var k = 0; k < count && o + 46 <= cb.byteLength; k++) {
+          if (d.getUint32(o, true) !== 0x02014b50) throw new Error('zip-bad');
+          var flags = d.getUint16(o + 8, true), method = d.getUint16(o + 10, true), csize = d.getUint32(o + 20, true), usize = d.getUint32(o + 24, true), nl = d.getUint16(o + 28, true), xl = d.getUint16(o + 30, true), cl = d.getUint16(o + 32, true), lo = d.getUint32(o + 42, true);
+          var name = dec.decode(new Uint8Array(cb, o + 46, nl)); o += 46 + nl + xl + cl;
+          if (/\/$/.test(name) || JUNK.test(name)) continue;
+          if (csize === 0xFFFFFFFF || usize === 0xFFFFFFFF || lo === 0xFFFFFFFF) throw new Error('zip64');
+          if (flags & 1) { skipped.enc++; continue; }
+          if (method !== 0 && method !== 8) { skipped.method++; continue; }
+          out.push(zipEntry(blob, name, method, lo, csize, usize));
+        }
+        return { sources: out, skipped: skipped };
+      });
+    });
+  }
+  function zipEntry(blob, name, method, lo, csize, usize) {
+    var dataP = null, data = function () { if (!dataP) dataP = blob.slice(lo, lo + 30).arrayBuffer().then(function (h) { var d = new DataView(h); if (d.getUint32(0, true) !== 0x04034b50) throw new Error('zip-bad'); var s = lo + 30 + d.getUint16(26, true) + d.getUint16(28, true); return blob.slice(s, s + csize); }); return dataP; };
+    return { name: name, size: usize, zip: true,
+      head: function (n) { return data().then(function (b) { return method === 0 ? b.slice(0, Math.min(n, b.size)).arrayBuffer() : inflate(b, n); }); },
+      all: function () { return data().then(function (b) { return method === 0 ? b.arrayBuffer() : inflate(b, null); }); } };
+  }
+  /** Files / zips (+ folder entries already flattened to files) → sources. */
+  function toSources(files) {
+    var list = [].slice.call(files || []), zips = list.filter(function (f) { return /\.zip$/i.test(f.name || '') || f.type === 'application/zip' || f.type === 'application/x-zip-compressed'; }), rest = list.filter(function (f) { return zips.indexOf(f) < 0; });
+    var out = rest.filter(function (f) { return !JUNK.test(f.webkitRelativePath || f.name || ''); }).map(function (f) { return blobSource(f, f.webkitRelativePath || f.name); }), sk = { enc: 0, method: 0 };
+    return zips.reduce(function (p, z) { return p.then(function () { return zipSources(z).then(function (r) { out = out.concat(r.sources); sk.enc += r.skipped.enc; sk.method += r.skipped.method; }); }); }, Promise.resolve()).then(function () { return { sources: out, zipSkipped: sk, zips: zips.length }; });
+  }
+  /** Drag & drop of folders: DataTransfer items → flat File list (recursive). Must be called synchronously inside the drop handler. */
+  function filesFromDataTransfer(dt) {
+    var items = dt && dt.items ? [].slice.call(dt.items) : [], entries = items.map(function (it) { return it.kind === 'file' && it.webkitGetAsEntry ? it.webkitGetAsEntry() : null; });
+    if (!entries.some(Boolean)) return Promise.resolve([].slice.call((dt && dt.files) || []));
+    var out = [];
+    var walk = function (en) {
+      if (!en) return Promise.resolve();
+      if (en.isFile) return new Promise(function (res) { en.file(function (f) { try { Object.defineProperty(f, 'webkitRelativePath', { value: en.fullPath.replace(/^\//, '') }); } catch (e) { /* read-only */ } out.push(f); res(); }, function () { res(); }); });
+      if (en.isDirectory) { var rd = en.createReader(), all = []; var more = function () { return new Promise(function (res) { rd.readEntries(function (es) { res(es); }, function () { res([]); }); }).then(function (es) { if (!es.length) return; all = all.concat(es); return more(); }); };
+        return more().then(function () { return all.reduce(function (p, c) { return p.then(function () { return walk(c); }); }, Promise.resolve()); }); }
+      return Promise.resolve();
+    };
+    return entries.reduce(function (p, en) { return p.then(function () { return walk(en); }); }, Promise.resolve()).then(function () { return out; });
+  }
+  function isMulti(dt) {
+    var items = dt && dt.items ? [].slice.call(dt.items) : [], fs = [].slice.call((dt && dt.files) || []);
+    if (items.some(function (it) { var en = it.kind === 'file' && it.webkitGetAsEntry && it.webkitGetAsEntry(); return en && en.isDirectory; })) return true;
+    return fs.length > 1 || fs.some(function (f) { return /\.zip$/i.test(f.name || '') || /zip/.test(f.type || ''); });
+  }
+
+  // ---------- header scan (lazy: first bytes only) ----------
+  function hasPreamble(buf) { if (buf.byteLength < 132) return false; var u = new Uint8Array(buf, 128, 4); return u[0] === 68 && u[1] === 73 && u[2] === 67 && u[3] === 77; }
+  /** One source → { slice } or { skip: code, ts }. Only geometry/window fields are kept (whitelist). */
+  function readHeader(src) {
+    if (SKIP_EXT.test(src.name || '')) return Promise.resolve({ skip: 'notDicom' });
+    var parse = function (buf, last) {
+      var pre = hasPreamble(buf);
+      try { var h = X().parseDicom(buf, { headerOnly: true }); }
+      catch (e) {
+        var m = e && e.message;
+        if (m === 'truncated' && !last && src.size > buf.byteLength) { if (!pre && !/\.dcm$|\.dicom$|^[^.]*$/i.test(String(src.name || '').split('/').pop())) return { skip: 'notDicom' }; if (src.size > MAXFILE) return { skip: 'notDicom' }; return null; }
+        if (m === 'compressed' || m === 'unsupported-ts') return { skip: 'compressed', ts: e.ts };
+        if (m === 'truncated' || m === 'no-pixels') return { skip: pre ? 'noPixels' : 'notDicom' };
+        return { skip: pre ? 'bad' : 'notDicom' };
+      }
+      if (h.frames > 1) return { skip: 'multiframe' };
+      if (h.bits !== 8 && h.bits !== 16) return { skip: 'bits' };
+      if (h.pixelLen && h.pixelLen < h.rows * h.cols * h.spp * h.bits / 8) return { skip: 'bad' };
+      return { slice: { src: src, rows: h.rows, cols: h.cols, bits: h.bits, spp: h.spp, photometric: h.photometric, spacing: h.pixelSpacing && h.pixelSpacing.every(function (v) { return v > 0; }) ? h.pixelSpacing.slice(0, 2) : null,
+        ipp: h.ipp, iop: h.iop, inst: h.inst, thick: h.thick, between: h.between, sliceLoc: h.sliceLoc, wc: h.wc, ww: h.ww, slope: h.slope, intercept: h.intercept, modality: h.modality, ts: h.transferSyntax } };
+    };
+    return src.head(HEAD).then(function (b) { var r = parse(b, b.byteLength >= src.size); return r || src.all().then(function (all) { return parse(all, true); }); }).catch(function (e) { return { skip: e && /zip|nodeflate/.test(e.message) ? e.message : 'bad' }; });
+  }
+  /** All sources → { slices, skipped: {code: n}, ts: {uid: n} } with limited parallelism and progress(done, total). */
+  function scan(sources, progress, par) {
+    var i = 0, done = 0, n = sources.length, slices = [], skipped = {}, tsMap = {};
+    return new Promise(function (resolve) {
+      if (!n) return resolve({ slices: slices, skipped: skipped, ts: tsMap });
+      var next = function () {
+        if (i >= n) return; var k = i++;
+        readHeader(sources[k]).then(function (r) {
+          if (r.slice) slices.push(Object.assign(r.slice, { order: k })); else { skipped[r.skip] = (skipped[r.skip] || 0) + 1; if (r.ts) tsMap[r.ts] = (tsMap[r.ts] || 0) + 1; }
+          done++; if (progress) progress(done, n); if (done === n) resolve({ slices: slices, skipped: skipped, ts: tsMap }); else next();
+        });
+      };
+      for (var p = 0; p < Math.min(par || 6, n); p++) next();
+    });
+  }
+
+  // ---------- grouping + sorting ----------
+  var r2 = function (v) { return Math.round(v * 100) / 100; };
+  function geoKey(s) { return s.rows + 'x' + s.cols + '|' + s.spp + '|' + (s.iop ? s.iop.map(function (v) { return r2(v) + 0; }).join(',') : '-'); }
+  function normalOf(iop) { if (!iop) return null; var a = iop.slice(0, 3), b = iop.slice(3, 6), n = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], l = Math.hypot(n[0], n[1], n[2]); return l > 1e-6 ? [n[0] / l, n[1] / l, n[2] / l] : null; }
+  /** Keep the largest group of same size/orientation (drops scouts / localisers), sort by position along the slice normal
+   *  (ImagePositionPatient; index 0 = most superior), else by InstanceNumber, else in reading order. */
+  function organize(slices) {
+    var groups = {}; slices.forEach(function (s) { var k = geoKey(s); (groups[k] = groups[k] || []).push(s); });
+    var best = Object.keys(groups).sort(function (a, b) { return groups[b].length - groups[a].length; })[0], list = best ? groups[best].slice() : [], other = slices.length - list.length;
+    var nrm = list.length && list.every(function (s) { return s.iop; }) ? normalOf(list[0].iop) : null, by;
+    if (list.length && list.every(function (s) { return s.ipp; })) { by = 'ipp'; list.forEach(function (s) { s.z = nrm ? s.ipp[0] * nrm[0] + s.ipp[1] * nrm[1] + s.ipp[2] * nrm[2] : s.ipp[2]; });
+      list.sort(function (a, b) { return b.z - a.z || (a.inst != null && b.inst != null ? a.inst - b.inst : a.order - b.order); }); }
+    else if (list.length && list.every(function (s) { return s.inst != null; })) { by = 'inst'; list.sort(function (a, b) { return a.inst - b.inst || a.order - b.order; }); list.forEach(function (s) { s.z = s.sliceLoc != null ? s.sliceLoc : null; }); }
+    else { by = 'order'; list.sort(function (a, b) { return a.order - b.order; }); list.forEach(function (s) { s.z = s.sliceLoc != null ? s.sliceLoc : null; }); }
+    var gaps = []; for (var i = 1; i < list.length; i++) if (list[i].z != null && list[i - 1].z != null) gaps.push(Math.abs(list[i].z - list[i - 1].z)); gaps.sort(function (a, b) { return a - b; });
+    var dz = gaps.length ? gaps[gaps.length >> 1] : null, dupes = gaps.filter(function (g) { return g < 1e-3; }).length;
+    var sp = list.length ? list[0].spacing : null, mixedSp = list.some(function (s) { return !s.spacing || !sp || Math.abs(s.spacing[0] - sp[0]) > 1e-4 || Math.abs(s.spacing[1] - sp[1]) > 1e-4; });
+    return { slices: list, n: list.length, other: other, sortBy: by, dz: dz, dupes: dupes, spacing: mixedSp ? null : sp, mixedSpacing: !!(sp && mixedSp), rows: list.length ? list[0].rows : 0, cols: list.length ? list[0].cols : 0, thick: list.length ? list[0].thick : null };
+  }
+  /** Full decode of one slice (pixels) – called lazily by the viewer. */
+  function decode(s) { return s.src.all().then(function (buf) { return X().parseDicom(buf); }); }
+  function defaultWindow(s) { if (s && s.wc != null && s.ww != null && s.ww > 1) return { wc: s.wc, ww: s.ww, from: 'dicom' }; if (s && /CT/i.test(s.modality || '')) return { wc: PRESETS.bone.wc, ww: PRESETS.bone.ww, from: 'bone' }; return { wc: null, ww: null, from: 'auto' }; }
+  /** Decoded slice → RGBA with a given window (centre/width in rescaled units, e.g. HU); min–max when no window. */
+  function windowRGBA(d, wc, ww) { return X().dicomToRGBA(Object.assign({}, d, { wc: wc, ww: ww })); }
+  /** Geometry-only description of a slice for storage / print (no identifiers, no names). */
+  function sliceMeta(ser, i) { var s = ser.slices[i]; return { i: i + 1, n: ser.n, z: s.z != null ? Math.round(s.z * 100) / 100 : null, thick: s.thick != null ? s.thick : null }; }
+  root.OrthoDicomSeries = { TS: TS, SUPPORTED: SUPPORTED, tsName: tsName, PRESETS: PRESETS, HEAD: HEAD, blobSource: blobSource, zipSources: zipSources, toSources: toSources, filesFromDataTransfer: filesFromDataTransfer, isMulti: isMulti,
+    readHeader: readHeader, scan: scan, organize: organize, normalOf: normalOf, decode: decode, defaultWindow: defaultWindow, windowRGBA: windowRGBA, sliceMeta: sliceMeta, inflate: inflate };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
 <script id="ortho-xray-patella-ui">
 // ===== OrthoThessaly · 🦵 Αστάθεια επιγονατίδας (patellar instability) sub-tab (X-rays section) =====
 // Three independent sections, each with its own image(s): (1) ψηλή επιγονατίδα – τροποποιημένος δείκτης Insall–Salvati on a lateral knee
@@ -15303,6 +15484,9 @@ window.OrthoQRGen = qrcode; })();
 // lateral-film signs + optional axial pattern and sulcus angle. Upload / paste / drop per section (the X-ray tab's decodeFile: EXIF,
 // downscale, DICOM), worker detection with pre-placed DRAGGABLE points + confidence, «✔ Επιβεβαίωση σημείων» (anonymous training for real
 // films), saved as its own X-ray study (kind 'patella' → xray_studies.extra), list / reopen / timeline / dashboard, A4 sheet. Doctor-only.
+// TT–TG: a whole CT series (many DICOM files, a .zip or a folder; also drag & drop) opens in a slice viewer (slider / wheel / arrow keys,
+// bone / soft-tissue / DICOM window + manual W/L) → «Ορισμός ως τομή A / B»; everything stays in the browser, pixels decoded lazily
+// (OrthoDicomSeries), patient identifiers never read, mm from the DICOM pixel spacing.
 (function () {
   'use strict';
   var O = window.OrthoPatella, X = window.OrthoXray; if (!O || !X) return;
@@ -15321,7 +15505,19 @@ window.OrthoQRGen = qrcode; })();
       ctT: 'Απόσταση TT–TG – αξονική τομογραφία', ctSub: 'Τομή A στην τροχιλία (το βαθύτερο σημείο της αύλακας, κεντρική τροχιλία) και τομή B στο κνημιαίο κύρτωμα, από την ίδια σειρά. Απόσταση των δύο καθέτων στην οπίσθια κονδυλική γραμμή.',
       dejT: 'Δυσπλασία τροχιλίας κατά Dejour', dejSub: 'Σημεία στην πλάγια ακτινογραφία (αληθής πλάγια) και προαιρετικά η αξονική εικόνα (CT/MRI) με τη γωνία της τροχιλιακής αύλακας.',
       upload: 'Ανεβάστε Ακτινογραφία', uploadCt: 'Ανεβάστε τομή', demo: '🧪 DEMO (συνθετική)', demoAlta: '🧪 DEMO ψηλή επιγονατίδα', demoCt: '🧪 DEMO τομές A + B',
-      fileLat: 'Πλάγια ακτινογραφία γόνατος · PNG, JPEG ή DICOM', fileCt: 'Αξονική τομή · PNG, JPEG ή DICOM (DICOM: pixel spacing για ακριβή mm)',
+      fileLat: 'Πλάγια ακτινογραφία γόνατος · PNG, JPEG ή DICOM', fileCt: 'Αξονική τομή · PNG, JPEG ή DICOM (DICOM: pixel spacing για ακριβή mm) · ή ολόκληρη σειρά DICOM (πολλά αρχεία, .zip ή φάκελος) για κύλιση των τομών',
+      ser_btn: '📚 Σειρά DICOM', ser_btnT: 'Ολόκληρη σειρά αξονικής: πολλά αρχεία DICOM ή ένα .zip', ser_dir: '📁 Φάκελος DICOM', serT: 'Σειρά DICOM', serLoading: 'Ανάγνωση σειράς… {d} / {n}', serN: '{n} τομές',
+      serSlice: 'Τομή {i} / {n}', serPos: 'θέση {z} mm', serThick: 'πάχος {t} mm', serDz: 'απόσταση τομών {d} mm', serPx: 'pixel {a} × {b} mm', serNoSp: 'χωρίς pixel spacing',
+      serSetA: 'Ορισμός ως τομή A', serSetB: 'Ορισμός ως τομή B', serSetAT: 'Τομή A · τροχιλία (βαθύτερο σημείο της αύλακας)', serSetBT: 'Τομή B · κνημιαίο κύρτωμα', serIsA: 'A: τομή {i}', serIsB: 'B: τομή {i}', serGoto: 'Μετάβαση', serAB: 'Απόσταση τομών A–B: {d} mm',
+      serWin: 'Παράθυρο', w_bone: 'Οστό', w_soft: 'Μαλακά μόρια', w_dicom: 'DICOM', w_auto: 'Αυτόματο', w_manual: 'Χειροκίνητο', winW: 'W', winL: 'L', winWT: 'Πλάτος παραθύρου (W)', winLT: 'Κέντρο παραθύρου (L)',
+      serHelp: 'Κύλιση τομών: ολισθητής, ροδέλα ποντικιού ή βέλη πληκτρολογίου. Η σειρά διαβάζεται μόνο σε αυτή τη συσκευή – δεν ανεβαίνει τίποτα· στοιχεία ασθενούς από το DICOM δεν διαβάζονται.',
+      serClose: '✕ Κλείσιμο σειράς', serPrev: 'Προηγούμενη τομή', serNext: 'Επόμενη τομή', serRange: 'Τομή της σειράς', serName: 'Σειρά CT · τομή {i}/{n}', serDecoding: 'Φόρτωση τομής…',
+      serNone: 'Δεν βρέθηκαν τομές DICOM που να διαβάζονται.', serSkComp: '{n} αρχεία με {ts} δεν υποστηρίζονται – εξαγάγετε από το PACS ως μη συμπιεσμένο DICOM (Explicit ή Implicit VR Little Endian).',
+      serSkNot: '{n} αρχεία δεν είναι εικόνες DICOM και παραλείφθηκαν.', serSkOther: '{n} εικόνες άλλου μεγέθους ή προσανατολισμού (π.χ. scout) παραλείφθηκαν.', serSkMf: '{n} πολυκαρέ αρχεία DICOM (multi-frame) δεν υποστηρίζονται – εξαγάγετε ως μεμονωμένες τομές.',
+      serSkBits: '{n} αρχεία με μη υποστηριζόμενο βάθος bit παραλείφθηκαν.', serSkBad: '{n} αρχεία δεν διαβάστηκαν.', serSkNoPx: '{n} αρχεία DICOM χωρίς εικόνα (π.χ. DICOMDIR) παραλείφθηκαν.',
+      serZip64: 'Το .zip δεν μπορεί να ανοίξει (ZIP64 ή κατεστραμμένο) – αποσυμπιέστε το και επιλέξτε τον φάκελο.', serZipEnc: '{n} κρυπτογραφημένα ή μη υποστηριζόμενα αρχεία μέσα στο .zip παραλείφθηκαν.', serNoDeflate: 'Αυτός ο browser δεν ανοίγει συμπιεσμένα .zip – αποσυμπιέστε το και επιλέξτε τον φάκελο.',
+      serDecErr: 'Η τομή δεν μπορεί να διαβαστεί: ', serSortInst: 'Ταξινόμηση κατά αριθμό εικόνας (χωρίς θέση τομής στο DICOM).', serSortOrd: 'Χωρίς θέση ή αριθμό εικόνας στο DICOM: σειρά ανάγνωσης των αρχείων.', serDupes: '{n} τομές με ίδια θέση.', serMixedSp: 'Οι τομές έχουν διαφορετικό pixel spacing: ελέγξτε τη σειρά.',
+      q_anisoPx: 'Μη τετράγωνα pixel στο DICOM: η απόσταση υπολογίζεται με τη μέση τιμή του pixel spacing.',
       noFilmLat: 'Δεν έχει ανοιχτεί πλάγια ακτινογραφία', noFilmCt: 'Δεν έχει ανοιχτεί η τομή {s}', noFilmDej: 'Για τη γωνία της αύλακας ανοίξτε την αξονική τομή A (στην τροχιλία).',
       stepsLat: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε πλάγια ακτινογραφία γόνατος (PNG, JPEG ή DICOM) ή επικολλήστε (Ctrl+V).', 'Τα σημεία προτείνονται αυτόματα – ελέγξτε τα, διορθώστε και επιβεβαιώστε.'],
       stepsCt: ['Ανοίξτε την τομή A: το επίπεδο της τροχιλίας με το βαθύτερο σημείο της αύλακας.', 'Ανοίξτε την τομή B: το επίπεδο του κνημιαίου κυρτώματος (κατάφυση επιγονατιδικού τένοντα), από την ίδια σειρά.', 'Ελέγξτε τα σημεία και τη βαθμονόμηση (DICOM ή κλίμακα της οθόνης), μετά επιβεβαιώστε.'],
@@ -15373,7 +15569,19 @@ window.OrthoQRGen = qrcode; })();
       ctT: 'TT–TG distance – CT', ctSub: 'Slice A at the trochlea (deepest point of the groove, proximal trochlea) and slice B at the tibial tuberosity, from the same series. Distance between the two perpendiculars to the posterior condylar line.',
       dejT: 'Trochlear dysplasia (Dejour)', dejSub: 'Signs on the lateral radiograph (true lateral) and optionally the axial image (CT/MRI) with the sulcus angle.',
       upload: 'Upload X-ray', uploadCt: 'Upload slice', demo: '🧪 DEMO (synthetic)', demoAlta: '🧪 DEMO patella alta', demoCt: '🧪 DEMO slices A + B',
-      fileLat: 'Lateral knee X-ray · PNG, JPEG or DICOM', fileCt: 'CT axial slice · PNG, JPEG or DICOM (DICOM: pixel spacing for exact mm)',
+      fileLat: 'Lateral knee X-ray · PNG, JPEG or DICOM', fileCt: 'CT axial slice · PNG, JPEG or DICOM (DICOM: pixel spacing for exact mm) · or a whole DICOM series (many files, a .zip or a folder) to scroll through the slices',
+      ser_btn: '📚 DICOM series', ser_btnT: 'Whole CT series: many DICOM files or one .zip', ser_dir: '📁 DICOM folder', serT: 'DICOM series', serLoading: 'Reading series… {d} / {n}', serN: '{n} slices',
+      serSlice: 'Slice {i} / {n}', serPos: 'position {z} mm', serThick: 'thickness {t} mm', serDz: 'slice spacing {d} mm', serPx: 'pixel {a} × {b} mm', serNoSp: 'no pixel spacing',
+      serSetA: 'Set as slice A', serSetB: 'Set as slice B', serSetAT: 'Slice A · trochlea (deepest point of the groove)', serSetBT: 'Slice B · tibial tuberosity', serIsA: 'A: slice {i}', serIsB: 'B: slice {i}', serGoto: 'Go to', serAB: 'Distance between slices A–B: {d} mm',
+      serWin: 'Window', w_bone: 'Bone', w_soft: 'Soft tissue', w_dicom: 'DICOM', w_auto: 'Automatic', w_manual: 'Manual', winW: 'W', winL: 'L', winWT: 'Window width (W)', winLT: 'Window level (L)',
+      serHelp: 'Scroll the slices: slider, mouse wheel or arrow keys. The series is read on this device only – nothing is uploaded; patient details in the DICOM are not read.',
+      serClose: '✕ Close series', serPrev: 'Previous slice', serNext: 'Next slice', serRange: 'Slice of the series', serName: 'CT series · slice {i}/{n}', serDecoding: 'Loading slice…',
+      serNone: 'No readable DICOM slices found.', serSkComp: '{n} files with {ts} are not supported – export from PACS as uncompressed DICOM (Explicit or Implicit VR Little Endian).',
+      serSkNot: '{n} files are not DICOM images and were skipped.', serSkOther: '{n} images of another size or orientation (e.g. scout) were skipped.', serSkMf: '{n} multi-frame DICOM files are not supported – export as single slices.',
+      serSkBits: '{n} files with an unsupported bit depth were skipped.', serSkBad: '{n} files could not be read.', serSkNoPx: '{n} DICOM files without an image (e.g. DICOMDIR) were skipped.',
+      serZip64: 'The .zip cannot be opened (ZIP64 or damaged) – unzip it and choose the folder.', serZipEnc: '{n} encrypted or unsupported files inside the .zip were skipped.', serNoDeflate: 'This browser cannot open compressed .zip files – unzip it and choose the folder.',
+      serDecErr: 'The slice cannot be read: ', serSortInst: 'Sorted by instance number (no slice position in the DICOM).', serSortOrd: 'No position or instance number in the DICOM: file reading order.', serDupes: '{n} slices share a position.', serMixedSp: 'The slices have different pixel spacing: check the series.',
+      q_anisoPx: 'Non-square pixels in the DICOM: the distance uses the mean pixel spacing.',
       noFilmLat: 'No lateral X-ray open yet', noFilmCt: 'Slice {s} not open yet', noFilmDej: 'For the sulcus angle open CT slice A (at the trochlea).',
       stepsLat: ['Select the patient (above, “Patient”).', 'Upload a lateral knee X-ray (PNG, JPEG or DICOM) or paste it (Ctrl+V).', 'Points are proposed automatically – check, correct and confirm them.'],
       stepsCt: ['Open slice A: the trochlear level with the deepest point of the groove.', 'Open slice B: the tibial tuberosity level (patellar tendon insertion), same series.', 'Check the points and the scale (DICOM or the on-screen ruler), then confirm.'],
@@ -15422,16 +15630,19 @@ window.OrthoQRGen = qrcode; })();
   var t = function (k) { var v = S[lang()][k]; return v != null ? v : k; };
   var XR = function () { return window.__xray; }, API = function () { return window.__orthoProms; };
   var pid = function () { var s = XR() && XR().state; return (s && s.pid) || ''; };
-  function V0() { return { img: null, W: 0, H: 0, name: '', dicom: null, blob: null, filmId: null, demo: null, note: '', det: null, running: false, runTok: null, pts: {}, org: {}, lv: null, sel: null, pick: null, calMm: 50, msg: '' }; }
+  function V0() { return { img: null, W: 0, H: 0, name: '', dicom: null, blob: null, filmId: null, demo: null, note: '', det: null, running: false, runTok: null, pts: {}, org: {}, lv: null, sel: null, pick: null, calMm: 50, msg: '', serId: null, serI: null }; }
   var ui = { sec: 'lat', v: { lat: V0(), ctA: V0(), ctB: V0() }, composite: false, slice: 'A', conf: { lat: null, ct: null, sulc: null },
-    dej: { crossing: null, spur: null, dc: null, axial: '', override: '' }, side: 'R', date: today(), phase: 'pre', msg: '', recId: null, pid: '', pending: false, last: null };
+    dej: { crossing: null, spur: null, dc: null, axial: '', override: '' }, side: 'R', date: today(), phase: 'pre', msg: '', recId: null, pid: '', pending: false, last: null, ser: null, serMsg: '' };
+  var DS = function () { return window.OrthoDicomSeries; }, serSeq = 0;
 
   // ---------- which view / which points ----------
   function vk() { return ui.sec === 'lat' ? 'lat' : ui.sec === 'ct' ? (ui.composite || ui.slice === 'A' ? 'ctA' : 'ctB') : 'ctA'; }
   function reqOf(k) { if (k === 'lat') return O.LAT_REQ; if (k === 'ctB') return O.CTB_REQ; if (ui.sec === 'dej') return ['SM', 'TG', 'SL']; return ui.composite ? O.CTA_REQ.concat(['TU']) : O.CTA_REQ; }
   function optOf(k) { if (k === 'lat') return ['PU', 'PL', 'TA', 'CAL1', 'CAL2']; if (k === 'ctB') return ['B1', 'B2', 'CAL1', 'CAL2']; if (ui.sec === 'dej') return []; return ['SM', 'SL', 'CAL1', 'CAL2']; }
   function keysOf(k) { return reqOf(k).concat(optOf(k)); }
-  function calOf(k) { var v = ui.v[k]; return O.calibration({ spacing: v.dicom && v.dicom.spacing ? v.dicom.spacing : null, cal1: v.pts.CAL1, cal2: v.pts.CAL2, calMm: v.calMm, demoMmPerPx: v.demo ? v.demo.mmPerPx : null }); }
+  function spOf(v) { var s = v.dicom && v.dicom.spacing; if (s == null) return null; if (typeof s === 'number') return s > 0 ? s : null; var a = +s[0], b = s[1] != null ? +s[1] : a; return a > 0 && b > 0 ? (a + b) / 2 : a > 0 ? a : null; } // DICOM PixelSpacing = [row, column] mm
+  function anisoOf(v) { var s = v.dicom && v.dicom.spacing; return !!(s && s.length > 1 && s[0] > 0 && s[1] > 0 && Math.abs(s[0] - s[1]) > 0.01 * Math.max(s[0], s[1])); }
+  function calOf(k) { var v = ui.v[k]; return O.calibration({ spacing: spOf(v), cal1: v.pts.CAL1, cal2: v.pts.CAL2, calMm: v.calMm, demoMmPerPx: v.demo ? v.demo.mmPerPx : null }); }
   function dejOf() {
     var d = O.dejour(ui.dej), ov = ui.dej.override || '', type = ov ? (ov === 'none' ? 'none' : ov) : d.type, q = [];
     if (d.code === 'noCrossing' && !ov) q.push({ code: 'noCrossing', lv: 'w' });
@@ -15443,7 +15654,7 @@ window.OrthoQRGen = qrcode; })();
     var L = ui.v.lat, A = ui.v.ctA, B = ui.v.ctB, cL = calOf('lat'), cA = calOf('ctA'), cB = calOf('ctB');
     var lat = L.img ? O.measureLat(L.pts, { mmPerPx: cL.mmPerPx, calSource: cL.source }) : null;
     var ct = A.img ? O.measureCT(A.pts, B.pts, { mmA: cA.mmPerPx, mmB: B.img ? cB.mmPerPx : null, composite: ui.composite, dimsA: { W: A.W, H: A.H }, dimsB: B.img ? { W: B.W, H: B.H } : null }) : null;
-    if (ct) { ct.calA = cA.source; ct.calB = ui.composite ? cA.source : B.img ? cB.source : null; }
+    if (ct) { ct.calA = cA.source; ct.calB = ui.composite ? cA.source : B.img ? cB.source : null; if (ct.quality && (anisoOf(A) || (!ui.composite && B.img && anisoOf(B)))) ct.quality.push({ code: 'anisoPx', lv: 'w' }); }
     var sa = A.img ? O.sulcusAngle(A.pts.SM, A.pts.TG, A.pts.SL) : null;
     ui.last = { lat: lat, ct: ct, sulc: sa == null ? null : { deg: sa, status: O.status('sulcus', sa) }, dej: dejOf() }; return ui.last;
   }
@@ -15496,6 +15707,133 @@ window.OrthoQRGen = qrcode; })();
     var x = XR(); if (!file || !x || !x.decodeFile) return; k = k || vk();
     x.decodeFile(file, function (c, name, dicom, blob, note) { setImage(k, c, name, dicom, blob, note, null); }, function (m) { ui.v[k].msg = m; ui.msg = m; renderNow(); });
   }
+  // ---------- whole DICOM series (TT–TG): lazy slice viewer ----------
+  var isZip = function (f) { return !!f && (/\.zip$/i.test(f.name || '') || /zip/.test(f.type || '')); };
+  var fmt = function (s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ''; }); };
+  var SER_CACHE = 8; // decoded slices kept in memory (a 512² 16-bit slice ≈ 0,5 MB)
+  var nt = function (v) { var x = num(v, 3); return /[.,]/.test(x) ? x.replace(/0+$/, '').replace(/[.,]$/, '') : x; }; // 2,500 → 2,5 · 0,625 stays
+  function serNotes(sc, og, zs) {
+    var N = [], sk = sc.skipped || {}, add = function (k, n, x) { if (n) N.push(fmt(t(k), Object.assign({ n: n }, x || {}))); };
+    if (sk.compressed) { var names = Object.keys(sc.ts || {}).map(function (u) { return DS().tsName(u); }); add('serSkComp', sk.compressed, { ts: names.join(', ') || 'compressed DICOM' }); }
+    add('serSkMf', sk.multiframe); add('serSkBits', sk.bits); add('serSkNot', sk.notDicom); add('serSkNoPx', sk.noPixels); add('serSkBad', (sk.bad || 0) + (sk['zip-bad'] || 0)); add('serSkOther', og && og.other);
+    if (zs) add('serZipEnc', (zs.enc || 0) + (zs.method || 0)); if (sk.nodeflate) N.push(t('serNoDeflate'));
+    if (og && og.n) { if (og.sortBy === 'inst') N.push(t('serSortInst')); else if (og.sortBy === 'order' && og.n > 1) N.push(t('serSortOrd')); add('serDupes', og.dupes); if (og.mixedSpacing) N.push(t('serMixedSp')); }
+    return N;
+  }
+  /** Files (several DICOM files, .zip archives and/or a folder's files) → slice viewer. Nothing leaves the browser. */
+  function loadSeries(files) {
+    var D = DS(); files = [].slice.call(files || []); if (!D || !files.length) return Promise.resolve(false);
+    var S2 = ui.ser = { id: ++serSeq, loading: { d: 0, n: files.length }, notes: [], slices: [], n: 0, i: 0, cache: [], pend: {}, A: null, B: null, wc: null, ww: null, win: 'auto', dicomWin: null, cv: null, cvI: -1, cvKey: '', wheel: 0, err: '' };
+    ui.sec = 'ct'; ui.composite = false; ui.msg = ''; ui.serMsg = ''; renderNow();
+    var tick = 0, prog = function (d, n) { S2.loading = { d: d, n: n }; var now = Date.now(); if (now - tick < 120 && d < n) return; tick = now; var e = $('patSerProg'); if (e) e.textContent = fmt(t('serLoading'), { d: d, n: n }); };
+    return D.toSources(files).then(function (r) { S2.zs = r.zipSkipped; prog(0, r.sources.length); return D.scan(r.sources, prog); }).then(function (sc) {
+      if (ui.ser !== S2) return false; var og = D.organize(sc.slices); S2.loading = null; S2.notes = serNotes(sc, og, S2.zs);
+      if (!og.n) { ui.ser = null; ui.serMsg = [t('serNone')].concat(S2.notes).join(' '); renderNow(); return false; }
+      ['slices', 'n', 'other', 'sortBy', 'dz', 'dupes', 'spacing', 'mixedSpacing', 'rows', 'cols', 'thick'].forEach(function (k) { S2[k] = og[k]; });
+      var w = D.defaultWindow(og.slices[0]); S2.wc = w.wc; S2.ww = w.ww; S2.win = w.from; S2.dicomWin = w.from === 'dicom' ? { wc: w.wc, ww: w.ww } : null; S2.i = Math.floor((og.n - 1) / 2);
+      renderNow(); return true;
+    }).catch(function (e) { if (ui.ser !== S2) return false; ui.ser = null; var m = e && e.message; ui.serMsg = m === 'zip64' || m === 'zip-bad' ? t('serZip64') : m === 'nodeflate' ? t('serNoDeflate') : t('serNone'); renderNow(); return false; });
+  }
+  /** Drop of several files / a folder / a .zip on the CT section → series (single files keep the normal path). Synchronous check. */
+  function dropSeries(dt) { var D = DS(); if (!D || ui.sec !== 'ct' || !dt || !D.isMulti(dt)) return false; D.filesFromDataTransfer(dt).then(loadSeries); return true; }
+  function serGet(i) {
+    var S2 = ui.ser; if (!S2 || !S2.slices[i]) return Promise.reject(new Error('no-slice'));
+    for (var j = 0; j < S2.cache.length; j++) if (S2.cache[j].i === i) { var hit = S2.cache.splice(j, 1)[0]; S2.cache.push(hit); return Promise.resolve(hit.d); }
+    if (S2.pend[i]) return S2.pend[i];
+    return (S2.pend[i] = DS().decode(S2.slices[i]).then(function (d) { delete S2.pend[i]; S2.cache.push({ i: i, d: d }); while (S2.cache.length > SER_CACHE) S2.cache.shift(); return d; }, function (e) { delete S2.pend[i]; throw e; }));
+  }
+  function winData(d, S2) { return S2.win === 'auto' ? DS().windowRGBA(d, null, null) : DS().windowRGBA(d, S2.wc, S2.ww); }
+  function sliceCanvas(d, S2, into) { var c = into || document.createElement('canvas'); if (c.width !== d.cols || c.height !== d.rows) { c.width = d.cols; c.height = d.rows; } var x = c.getContext('2d'), id = x.createImageData(d.cols, d.rows); id.data.set(winData(d, S2)); x.putImageData(id, 0, 0); return c; }
+  function serGo(i) { var S2 = ui.ser; if (!S2 || !S2.n) return; i = Math.max(0, Math.min(S2.n - 1, Math.round(i))); S2.i = i; S2.err = ''; serUpdate(); serPaint(); }
+  function serPaint() {
+    var S2 = ui.ser; if (!S2 || !S2.n) return; var i = S2.i, key = i + '|' + S2.win + '|' + S2.wc + '|' + S2.ww; if (S2.cv && S2.cvKey === key) { serDraw(); return; }
+    S2.want = key; serGet(i).then(function (d) { if (ui.ser !== S2 || S2.want !== key) return; S2.cv = sliceCanvas(d, S2, S2.cv); S2.cvI = i; S2.cvKey = key; serDraw();
+      [i + 1, i - 1].forEach(function (j) { if (j >= 0 && j < S2.n && !S2.pend[j] && !S2.cache.some(function (c) { return c.i === j; })) serGet(j).catch(function () {}); }); // prefetch the neighbours
+    }, function (e) { if (ui.ser !== S2 || S2.want !== key) return; S2.err = t('serDecErr') + (e && (e.message === 'compressed' || e.message === 'unsupported-ts') ? DS().tsName(e.ts) : (e && e.message) || ''); serUpdate(); });
+  }
+  function serDraw() {
+    var cv = $('patSerCv'), S2 = ui.ser; if (!cv || !S2) return; var w = Math.max(160, cv.parentNode.getBoundingClientRect().width), h = Math.round(Math.min(w, Math.max(240, window.innerHeight * 0.55), 560)), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; }
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+    if (S2.cv) { var k = Math.min(w / S2.cv.width, h / S2.cv.height), dw = S2.cv.width * k, dh = S2.cv.height * k; g.imageSmoothingEnabled = true; g.drawImage(S2.cv, (w - dw) / 2, (h - dh) / 2, dw, dh); }
+    var tag = S2.cvI === S2.A && S2.cvI === S2.B ? 'A · B' : S2.cvI === S2.A ? 'A' : S2.cvI === S2.B ? 'B' : '';
+    g.font = '700 13px system-ui,sans-serif'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.9)'; g.fillStyle = '#fde047';
+    var s1 = fmt(t('serSlice'), { i: S2.cvI + 1, n: S2.n }) + (tag ? '  ·  ' + tag : ''); if (S2.cv) { g.strokeText(s1, 8, 18); g.fillText(s1, 8, 18); }
+    if (S2.cvI !== S2.i || !S2.cv) { g.fillStyle = '#fff'; g.strokeText(t('serDecoding'), 8, h - 10); g.fillText(t('serDecoding'), 8, h - 10); }
+  }
+  function serPosText(S2, i) { var s = S2.slices[i]; if (!s) return ''; return [fmt(t('serSlice'), { i: i + 1, n: S2.n }), s.z != null ? fmt(t('serPos'), { z: num(s.z, 1) }) : '', s.thick != null ? fmt(t('serThick'), { t: nt(s.thick) }) : ''].filter(Boolean).join(' · '); }
+  function serAbText(S2) {
+    var a = S2.A, b = S2.B, parts = [];
+    if (a != null) parts.push(fmt(t('serIsA'), { i: a + 1 })); if (b != null) parts.push(fmt(t('serIsB'), { i: b + 1 }));
+    if (a != null && b != null && S2.slices[a].z != null && S2.slices[b].z != null) parts.push(fmt(t('serAB'), { d: num(Math.abs(S2.slices[a].z - S2.slices[b].z), 1) }));
+    return parts.join(' · ');
+  }
+  function serUpdate() {
+    var S2 = ui.ser; if (!S2 || !S2.n) return; var r = $('patSerRange'), p = $('patSerPos'), e = $('patSerErr');
+    if (r && +r.value !== S2.i) r.value = S2.i; if (p) p.textContent = serPosText(S2, S2.i); if (e) e.textContent = S2.err || '';
+    var pa = $('patSetA'), pb = $('patSetB'); if (pa) pa.classList.toggle('on', S2.A === S2.i); if (pb) pb.classList.toggle('on', S2.B === S2.i);
+    serDraw();
+  }
+  function serHtml() {
+    var S2 = ui.ser; if (!S2) return '';
+    var head = '<div class="row patserhead"><b>📚 ' + esc(t('serT')) + '</b>';
+    if (S2.loading) return '<div class="card patser" id="patSeries" data-loading="1">' + head + '</div><p class="small" id="patSerProg" role="status" aria-live="polite">' + esc(fmt(t('serLoading'), S2.loading)) + '</p></div>';
+    var info = [fmt(t('serN'), { n: S2.n }), S2.thick != null ? fmt(t('serThick'), { t: nt(S2.thick) }) : '', S2.dz != null ? fmt(t('serDz'), { d: nt(S2.dz) }) : '', S2.spacing ? fmt(t('serPx'), { a: num(S2.spacing[0], 3), b: num(S2.spacing[1], 3) }) : t('serNoSp')].filter(Boolean).join(' · ');
+    var wins = ['bone', 'soft'].concat(S2.dicomWin ? ['dicom'] : []).concat(S2.win === 'auto' ? ['auto'] : []);
+    return '<div class="card patser" id="patSeries" tabindex="0" aria-label="' + esc(t('serT')) + '" data-n="' + S2.n + '">' + head + ' <span class="muted small" id="patSerInfo">' + esc(info) + '</span><button id="patSerClose" class="small">' + esc(t('serClose')) + '</button></div>' +
+      '<div class="patserwrap"><canvas id="patSerCv" aria-label="' + esc(t('serT')) + '"></canvas></div>' +
+      '<div class="row patsernav"><button id="patSerPrev" class="small" aria-label="' + esc(t('serPrev')) + '">◀</button><input type="range" id="patSerRange" min="0" max="' + (S2.n - 1) + '" step="1" value="' + S2.i + '" aria-label="' + esc(t('serRange')) + '"><button id="patSerNext" class="small" aria-label="' + esc(t('serNext')) + '">▶</button></div>' +
+      '<p class="small" id="patSerPos" role="status">' + esc(serPosText(S2, S2.i)) + '</p><p class="small xhwarn patsererr" id="patSerErr" role="alert">' + esc(S2.err || '') + '</p>' +
+      '<div class="row patserwin"><span class="small">' + esc(t('serWin')) + '</span><div class="seg" id="patWinSeg">' + wins.map(function (w) { return '<button data-patwin="' + w + '" class="' + (S2.win === w ? 'active' : '') + '">' + esc(t('w_' + w)) + '</button>'; }).join('') + (S2.win === 'manual' ? '<button class="active" disabled>' + esc(t('w_manual')) + '</button>' : '') + '</div>' +
+      '<label class="fld inl small" title="' + esc(t('winWT')) + '">' + esc(t('winW')) + ' <input type="number" id="patWinW" step="10" min="1" value="' + (S2.ww != null ? Math.round(S2.ww) : '') + '"></label><label class="fld inl small" title="' + esc(t('winLT')) + '">' + esc(t('winL')) + ' <input type="number" id="patWinL" step="10" value="' + (S2.wc != null ? Math.round(S2.wc) : '') + '"></label></div>' +
+      '<div class="row patserab"><button id="patSetA" class="primary' + (S2.A === S2.i ? ' on' : '') + '" title="' + esc(t('serSetAT')) + '">' + esc(t('serSetA')) + '</button><button id="patSetB" class="primary' + (S2.B === S2.i ? ' on' : '') + '" title="' + esc(t('serSetBT')) + '">' + esc(t('serSetB')) + '</button>' +
+      (S2.A != null ? '<button class="small" data-patsergo="A">' + esc(t('serGoto')) + ' A</button>' : '') + (S2.B != null ? '<button class="small" data-patsergo="B">' + esc(t('serGoto')) + ' B</button>' : '') + '</div>' +
+      '<p class="small" id="patSerAB">' + esc(serAbText(S2)) + '</p>' + (S2.notes.length ? '<ul class="xhflags" id="patSerNotes">' + S2.notes.map(function (x) { return '<li class="lv-i">ℹ️ ' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+      '<p class="muted small">' + esc(t('serHelp')) + '</p></div>';
+  }
+  function serSetWin(w, wc, ww) {
+    var S2 = ui.ser; if (!S2) return;
+    if (w === 'bone' || w === 'soft') { S2.wc = DS().PRESETS[w].wc; S2.ww = DS().PRESETS[w].ww; }
+    else if (w === 'dicom' && S2.dicomWin) { S2.wc = S2.dicomWin.wc; S2.ww = S2.dicomWin.ww; }
+    else if (w === 'manual') { if (wc != null && isFinite(wc)) S2.wc = +wc; if (ww != null && isFinite(ww) && ww >= 1) S2.ww = +ww; if (S2.wc == null || S2.ww == null) return; }
+    else if (w !== 'auto') return;
+    S2.win = w; renderNow(); serRewindow();
+  }
+  /** Window change → the slices already set as A / B are re-drawn in place (same canvas, points kept). */
+  function serRewindow() { var S2 = ui.ser; if (!S2) return; ['ctA', 'ctB'].forEach(function (k) { var v = ui.v[k]; if (!v.img || v.serId !== S2.id || v.serI == null) return; var img = v.img; serGet(v.serI).then(function (d) { if (v.img !== img || img.width !== d.cols || img.height !== d.rows) return; sliceCanvas(d, S2, img); if (vk() === k) drawCv(); }).catch(function () {}); }); }
+  function serSet(which) {
+    var S2 = ui.ser; which = which === 'B' ? 'B' : 'A'; if (!S2 || !S2.n) return Promise.resolve(false); var i = S2.i, k = 'ct' + which;
+    return serGet(i).then(function (d) {
+      if (ui.ser !== S2) return false; var sl = S2.slices[i], c = sliceCanvas(d, S2, null);
+      var meta = { spacing: sl.spacing, modality: sl.modality, ts: sl.ts, bits: sl.bits, photometric: sl.photometric, series: DS().sliceMeta(S2, i) }; // geometry only
+      S2[which] = i; ui.composite = false; ui.slice = which; ui.sec = 'ct';
+      setImage(k, c, fmt(t('serName'), { i: i + 1, n: S2.n }), meta, null, '', null); ui.v[k].serId = S2.id; ui.v[k].serI = i;
+      if (which === 'A') { var tries = 0, wait = function () { if (ui.v.ctA.running && tries++ < 200) { setTimeout(wait, 50); return; } var B = ui.v.ctB; if (B.img && B.serId === S2.id && !B.running && !Object.keys(B.org).some(function (K) { return B.org[K] === 'manual'; })) runDetect('ctB'); }; setTimeout(wait, 50); } // slice B uses A's condylar line
+      renderNow(); return true;
+    }, function (e) { S2.err = t('serDecErr') + ((e && e.message) || ''); serUpdate(); return false; });
+  }
+  function bindSeries() {
+    var S2 = ui.ser, box = $('patSeries'); if (!S2 || !box || S2.loading) return;
+    var r = $('patSerRange'); if (r) r.oninput = function () { serGo(+this.value); };
+    if ($('patSerPrev')) $('patSerPrev').onclick = function () { serGo(S2.i - 1); }; if ($('patSerNext')) $('patSerNext').onclick = function () { serGo(S2.i + 1); };
+    if ($('patSerClose')) $('patSerClose').onclick = function () { ui.ser = null; renderNow(); };
+    if ($('patSetA')) $('patSetA').onclick = function () { serSet('A'); }; if ($('patSetB')) $('patSetB').onclick = function () { serSet('B'); };
+    document.querySelectorAll('[data-patsergo]').forEach(function (b) { b.onclick = function () { var j = S2[b.dataset.patsergo]; if (j != null) serGo(j); }; });
+    document.querySelectorAll('[data-patwin]').forEach(function (b) { b.onclick = function () { serSetWin(b.dataset.patwin); }; });
+    var wi = function () { serSetWin('manual', parseFloat($('patWinL').value), parseFloat($('patWinW').value)); }; if ($('patWinW')) $('patWinW').onchange = wi; if ($('patWinL')) $('patWinL').onchange = wi;
+    var cv = $('patSerCv');
+    if (cv) { // wheel = one slice per notch (trackpads accumulate)
+      cv.onwheel = function (e) { e.preventDefault(); var d = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY, st = 0; S2.wheel += d; while (Math.abs(S2.wheel) >= 50) { st += S2.wheel > 0 ? 1 : -1; S2.wheel -= S2.wheel > 0 ? 50 : -50; } if (st) serGo(S2.i + st); };
+      cv.onclick = function () { try { box.focus({ preventScroll: true }); } catch (e) { box.focus(); } };
+    }
+    box.onkeydown = function (e) {
+      var tg = e.target; if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'SELECT')) return; // the slider handles its own keys; W/L fields are typed into
+      if (e.key === 'Home') { e.preventDefault(); serGo(0); return; } if (e.key === 'End') { e.preventDefault(); serGo(S2.n - 1); return; }
+      var st = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1, PageUp: -10, PageDown: 10 }[e.key];
+      if (st) { e.preventDefault(); serGo(S2.i + st); }
+    };
+    serUpdate(); serPaint();
+  }
   function grayCanvas(s) { var c = document.createElement('canvas'); c.width = s.W; c.height = s.H; var x = c.getContext('2d'), id = x.createImageData(s.W, s.H);
     for (var i = 0; i < s.W * s.H; i++) { var g = s.data[i]; id.data[4 * i] = id.data[4 * i + 1] = id.data[4 * i + 2] = g; id.data[4 * i + 3] = 255; } x.putImageData(id, 0, 0); return c; }
   var DEMO_LAT = { seed: 13 }, DEMO_ALTA = { seed: 17, pat: { xc: 40, yc: -58, a: 21, b: 9, phi: 10 } }, DEMO_CT = { side: 'R', ttTg: 18, rot: 4, seed: 5 };
@@ -15535,9 +15873,11 @@ window.OrthoQRGen = qrcode; })();
   }
   function fileRow(k) {
     var v = ui.v[k], lat = k === 'lat';
-    return '<div class="row xhfilm"><input type="file" id="patFile" data-view="' + k + '" accept="image/*,.dcm,application/dicom" hidden><label for="patFile" class="btn ' + (v.img ? 'small' : 'primary xhup') + '" id="patUpload" role="button" tabindex="0">' + esc(t(lat ? 'upload' : 'uploadCt')) + (lat ? '' : ' · ' + esc(k === 'ctB' ? 'B' : ui.composite ? 'A + B' : 'A')) + '</label>' +
+    var ser = !lat && ui.sec === 'ct' && DS();
+    return '<div class="row xhfilm"><input type="file" id="patFile" data-view="' + k + '" accept="image/*,.dcm,application/dicom' + (ser ? ',.zip,application/zip' : '') + '"' + (ser ? ' multiple' : '') + ' hidden><label for="patFile" class="btn ' + (v.img || ui.ser ? 'small' : 'primary xhup') + '" id="patUpload" role="button" tabindex="0">' + esc(t(lat ? 'upload' : 'uploadCt')) + (lat ? '' : ' · ' + esc(k === 'ctB' ? 'B' : ui.composite ? 'A + B' : 'A')) + '</label>' +
+      (ser ? '<input type="file" id="patSerFile" multiple hidden><label for="patSerFile" class="btn small" id="patSerUp" role="button" tabindex="0" title="' + esc(t('ser_btnT')) + '">' + esc(t('ser_btn')) + '</label><input type="file" id="patSerDir" webkitdirectory directory multiple hidden><label for="patSerDir" class="btn small" id="patSerDirUp" role="button" tabindex="0">' + esc(t('ser_dir')) + '</label>' : '') +
       (lat ? '<button id="patDemo" class="small">' + esc(t('demo')) + '</button><button id="patDemoAlta" class="small">' + esc(t('demoAlta')) + '</button>' : '<button id="patDemoCt" class="small">' + esc(ui.composite ? t('demo') : t('demoCt')) + '</button>') +
-      (v.img ? ' <span class="muted small" id="patName">' + esc(v.name) + '</span>' : '') + '</div><p class="muted small">' + esc(t(lat ? 'fileLat' : 'fileCt')) + '</p>' + (v.msg && !v.img ? '<p class="xhwarn" id="patMsg0">' + esc(v.msg) + '</p>' : '');
+      (v.img ? ' <span class="muted small" id="patName">' + esc(v.name) + '</span>' : '') + '</div><p class="muted small">' + esc(t(lat ? 'fileLat' : 'fileCt')) + '</p>' + (v.msg && !v.img ? '<p class="xhwarn" id="patMsg0">' + esc(v.msg) + '</p>' : '') + (ser && ui.serMsg ? '<p class="xhwarn" id="patSerMsg">' + esc(ui.serMsg) + '</p>' : '');
   }
   function emptyHtml(k) {
     var P = pid(), st = t(k === 'lat' ? 'stepsLat' : 'stepsCt'), ttl = k === 'lat' ? t('noFilmLat') : t('noFilmCt').replace('{s}', k === 'ctB' ? 'B' : 'A');
@@ -15561,7 +15901,7 @@ window.OrthoQRGen = qrcode; })();
     } else if (ui.sec === 'ct') {
       var mode = '<div class="row"><div class="seg" id="patModeSeg">' + [['two', 'mode2'], ['one', 'mode1']].map(function (q) { var on = (q[0] === 'one') === ui.composite; return '<button data-patmode="' + q[0] + '" class="' + (on ? 'active' : '') + '">' + esc(t(q[1])) + '</button>'; }).join('') + '</div>' +
         (ui.composite ? '' : '<div class="seg" id="patSliceSeg">' + ['A', 'B'].map(function (s) { var vv = ui.v['ct' + s]; return '<button data-patslice="' + s + '" class="' + (ui.slice === s ? 'active' : '') + '">' + esc(t('slice' + s)) + (vv.img ? ' ✓' : '') + '</button>'; }).join('') + '</div>') + '</div>';
-      body = '<div class="card patsec" id="patSecCt"><h3>' + esc(t('ctT')) + '</h3><p class="muted small">' + esc(t('ctSub')) + '</p>' + mode + fileRow(k) + '</div>' +
+      body = '<div class="card patsec" id="patSecCt"><h3>' + esc(t('ctT')) + '</h3><p class="muted small">' + esc(t('ctSub')) + '</p>' + mode + fileRow(k) + '</div>' + (ui.composite ? '' : serHtml()) +
         (v.img ? '<div class="xptsgrid"><div>' + editorHtml(k) + '</div><div class="card xhpanel" id="patPanel">' + formHtml() + '<div id="patRes">' + ctHtml(m.ct) + '</div>' + calHtml(k) + '</div></div>' : emptyHtml(k));
     } else {
       var A0 = ui.v.ctA;
@@ -15574,7 +15914,7 @@ window.OrthoQRGen = qrcode; })();
       '<button id="patSave"' + (P ? '' : ' disabled') + '>' + esc(t('save')) + '</button><button id="patPrint"' + (any ? '' : ' disabled') + '>' + esc(t('print')) + '</button></div>' +
       (ok && !ui.conf[ck] ? '<p class="small xhwarn">' + esc(t('notConf')) + '</p>' : '') + (P ? '' : '<p class="small muted">' + esc(t('noPt')) + '</p>') + '<p class="small" id="patMsg" role="status">' + esc(ui.msg) + '</p></div>';
     el.innerHTML = head + body + summaryHtml(m) + act + listHtml();
-    bindHead(); bindPane(); bindList(); bindEditor(); drawCv();
+    bindHead(); bindPane(); bindList(); bindEditor(); drawCv(); bindSeries();
   }
   function stChip(st) { return st ? ' <span class="ptsst ptsst-' + st + '">' + esc(t('st_' + st)) + '</span>' : ''; }
   function rng(k, d, u) { var r = O.NORMS[k]; return esc(num(r.lo, d) + '–' + num(r.hi, d) + (u || '')); }
@@ -15636,7 +15976,7 @@ window.OrthoQRGen = qrcode; })();
       row('sulcus', t('sulc'), m.sulc ? esc(num(m.sulc.deg, 0)) + '°' : nm, esc(num(O.NORMS.sulcus.mean, 0) + ' ± ' + num(O.NORMS.sulcus.sd, 0) + '°') + (m.sulc ? stChip(m.sulc.status) : ''), print ? '' : sc('sulc')) +
       '</table></div></div>';
   }
-  function reset() { ui.v = { lat: V0(), ctA: V0(), ctB: V0() }; ui.recId = null; ui.conf = { lat: null, ct: null, sulc: null }; ui.dej = { crossing: null, spur: null, dc: null, axial: '', override: '' }; ui.composite = false; ui.slice = 'A'; ui.msg = ''; ui.last = null; }
+  function reset() { ui.v = { lat: V0(), ctA: V0(), ctB: V0() }; ui.recId = null; ui.conf = { lat: null, ct: null, sulc: null }; ui.dej = { crossing: null, spur: null, dc: null, axial: '', override: '' }; ui.composite = false; ui.slice = 'A'; ui.msg = ''; ui.last = null; ui.ser = null; ui.serMsg = ''; }
   function changed(k, K) {
     if (k === 'lat') ui.conf.lat = null; else if (k === 'ctB') ui.conf.ct = null;
     else { if (!K || ['SM', 'SL', 'TG'].indexOf(K) >= 0) ui.conf.sulc = null; if (!K || ['SM', 'SL'].indexOf(K) < 0) ui.conf.ct = null; }
@@ -15644,7 +15984,9 @@ window.OrthoQRGen = qrcode; })();
   }
   function bindHead() {
     document.querySelectorAll('[data-patsec]').forEach(function (b) { b.onclick = function () { setSec(b.dataset.patsec); }; });
-    var f = $('patFile'); if (f) f.onchange = function (e) { loadFile(e.target.files[0], this.dataset.view); this.value = ''; };
+    var f = $('patFile'); if (f) f.onchange = function (e) { var fs = [].slice.call(e.target.files || []), k = this.dataset.view; this.value = ''; if (!fs.length) return; if (k !== 'lat' && DS() && (fs.length > 1 || fs.some(isZip))) loadSeries(fs); else loadFile(fs[0], k); };
+    ['patSerFile', 'patSerDir'].forEach(function (id) { var i = $(id); if (i) i.onchange = function (e) { var fs = [].slice.call(e.target.files || []); this.value = ''; if (!fs.length) return; if (fs.length === 1 && !isZip(fs[0]) && id === 'patSerFile') loadFile(fs[0], vk()); else loadSeries(fs); }; });
+    ['patSerUp', 'patSerDirUp'].forEach(function (id) { var l = $(id); if (l) l.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(l.htmlFor).click(); } }; });
     var u = $('patUpload'); if (u) u.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('patFile').click(); } };
     if ($('patDemo')) $('patDemo').onclick = function () { loadDemoLat(false); }; if ($('patDemoAlta')) $('patDemoAlta').onclick = function () { loadDemoLat(true); };
     if ($('patDemoCt')) $('patDemoCt').onclick = function () { loadDemoCt(ui.composite); };
@@ -15773,7 +16115,7 @@ window.OrthoQRGen = qrcode; })();
       var s = Math.min(1, (max || 320) / Math.max(x1 - x0, y1 - y0)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round((x1 - x0) * s)); c.height = Math.max(1, Math.round((y1 - y0) * s)); c.getContext('2d').drawImage(v.img, x0, y0, x1 - x0, y1 - y0, 0, 0, c.width, c.height);
       return { url: c.toDataURL('image/jpeg', 0.7), x0: Math.round(x0 * 10) / 10, y0: Math.round(y0 * 10) / 10, s: s, w: c.width, h: c.height }; } catch (e) { return null; }
   }
-  function filmMeta(k) { var v = ui.v[k]; if (!v.img) return null; return { filmId: v.filmId, name: v.name, W: v.W, H: v.H, dicom: v.dicom && v.dicom.spacing ? { spacing: v.dicom.spacing } : null, demo: v.demo ? { kind: v.demo.kind, opt: v.demo.opt } : null, calMm: v.calMm,
+  function filmMeta(k) { var v = ui.v[k]; if (!v.img) return null; return { filmId: v.filmId, name: v.name, W: v.W, H: v.H, dicom: v.dicom && v.dicom.spacing ? (v.dicom.series ? { spacing: v.dicom.spacing, series: cp(v.dicom.series) } : { spacing: v.dicom.spacing }) : null, demo: v.demo ? { kind: v.demo.kind, opt: v.demo.opt } : null, calMm: v.calMm,
     pts: cp(v.pts), org: cp(v.org), det: v.det ? { version: v.det.version || O.VERSION, method: v.det.method || null, level: v.det.level || null, reason: v.det.reason || null, conf: v.det.conf && v.det.conf.score != null ? v.det.conf.score : null } : null }; }
   function lacking(m) { var n = []; if (secOk(m, 'lat') && !ui.conf.lat) n.push(t('sec_lat')); if (secOk(m, 'ct') && !ui.conf.ct) n.push(t('sec_ct')); if (secOk(m, 'sulc') && !ui.conf.sulc) n.push(t('sulc')); return n; }
   function save() {
@@ -15858,18 +16200,21 @@ window.OrthoQRGen = qrcode; })();
     d.innerHTML = '<div class="xcr-bar noprint"><button id="patPrClose">' + esc(t('close')) + '</button><button id="patPrDo" class="primary">' + esc(t('doPrint')) + '</button></div><div class="htor-page">' +
       '<div class="htor-head"><div><h1>🦵 ' + esc(t('sheet')) + '</h1><div class="small">OrthoThessaly</div></div><div class="htor-meta">' + esc(t('patient')) + ': <b>' + esc(P || '—') + '</b>' + (name ? ' · ' + esc(name) : '') + '<br>' + esc(t('filmD')) + ': ' + esc(ui.date) + ' · ' + esc(t(ui.phase)) + ' · ' + esc(t(ui.side)) + '<br>' + esc(t('measD')) + ': ' + esc(today()) + (u ? '<br>' + esc(t('by')) + ': ' + esc(u.name || u.email) : '') + '</div></div>' +
       (demo ? '<p class="htor-demo">' + esc(t('synth')) + '</p>' : '') + (unc ? '<p class="htor-demo">' + esc(t('unconf')) + '</p>' : '') +
-      '<div class="patr-main">' + summaryHtml(m, true) + '</div><div class="patr-figs">' + figs.map(function (f) { return '<figure><img src="' + sheetImage(f[0]) + '" alt="' + esc(f[1]) + '"><figcaption class="small muted">' + esc(f[1]) + '</figcaption></figure>'; }).join('') + '</div>' +
+      '<div class="patr-main">' + summaryHtml(m, true) + '</div><div class="patr-figs">' + figs.map(function (f) { var sr = ui.v[f[0]].dicom && ui.v[f[0]].dicom.series, cap = f[1] + (sr ? ' · ' + fmt(t('serSlice'), { i: sr.i, n: sr.n }) + (sr.z != null ? ' · ' + fmt(t('serPos'), { z: num(sr.z, 1) }) : '') : ''); return '<figure><img src="' + sheetImage(f[0]) + '" alt="' + esc(f[1]) + '"><figcaption class="small muted">' + esc(cap) + '</figcaption></figure>'; }).join('') + '</div>' +
       '<div class="patr-det"><h3>' + esc(t('qT')) + '</h3>' + (m.lat && m.lat.ok ? qBlock(t('sec_lat'), [[t('art'), m.lat.artMm != null ? f1(m.lat.artMm) + ' mm' : '–'], [t('cal'), t('c_' + (m.lat.cal.source || 'none'))]], m.lat.quality) : '') +
         (m.ct && m.ct.ok ? qBlock(t('sec_ct'), [[t('refT'), t('ref_' + (m.ct.ref || 'coreg'))], [t('cal'), t('c_' + (m.ct.calA || 'none'))]], m.ct.quality) : '') + (m.dej.quality.length ? qBlock(t('sec_dej'), [], m.dej.quality) : '') + '</div>' +
       '<div class="htor-foot"><p>' + esc(t('sign')) + ': ______________________ </p><p>' + esc(t('disc')) + '</p></div></div>';
     document.body.appendChild(d); document.body.classList.add('pat-print');
     $('patPrClose').onclick = closeSheet; $('patPrDo').onclick = function () { window.print(); };
   }
-  window.addEventListener('resize', function () { if ($('patCv')) drawCv(); });
+  window.addEventListener('resize', function () { if ($('patCv')) drawCv(); if ($('patSerCv')) serDraw(); });
   window.__xpat = { cancel: cancelDetect, render: render, renderNow: renderNow, open: open, save: save, confirm: confirmPts, openSheet: openSheet, closeSheet: closeSheet, headline: headline, dashHtml: dashHtml,
     loadDemoLat: loadDemoLat, loadDemoCt: loadDemoCt, loadFile: function (f) { loadFile(f, vk()); }, runDetect: function (k) { runDetect(k || vk()); }, setSec: setSec, setSlice: setSlice, setComposite: setComposite, setSign: setSign,
     setOverride: function (v) { ui.dej.override = v || ''; renderNow(); }, setAxial: function (v) { ui.dej.axial = v || ''; renderNow(); }, swap: swapMedLat, reset: function () { reset(); renderNow(); },
     setPoint: function (K, p, k) { k = k || vk(); var v = ui.v[k]; v.pts[K] = p; v.org[K] = 'manual'; changed(k, K); renderNow(); }, compute: compute, view: vk,
+    loadSeries: loadSeries, dropSeries: dropSeries, serGo: serGo, serSet: serSet, serWin: serSetWin,
+    serInfo: function () { var S2 = ui.ser; if (!S2) return null; return { loading: !!S2.loading, n: S2.n, i: S2.i, A: S2.A, B: S2.B, win: S2.win, wc: S2.wc, ww: S2.ww, sortBy: S2.sortBy, dz: S2.dz, thick: S2.thick, spacing: S2.spacing, other: S2.other, notes: S2.notes.slice(), cached: S2.cache.map(function (c) { return c.i; }), shown: S2.cvI,
+      slice: S2.slices[S2.i] ? { z: S2.slices[S2.i].z, inst: S2.slices[S2.i].inst, thick: S2.slices[S2.i].thick, spacing: S2.slices[S2.i].spacing } : null }; },
     get last() { return ui.last; }, get state() { return ui; },
     toScreen: function (p) { var cv = $('patCv'), v = ui.v[vk()]; if (!cv || !v.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * v.lv.s + v.lv.tx, y: r.top + p.y * v.lv.s + v.lv.ty }; } };
 })();
