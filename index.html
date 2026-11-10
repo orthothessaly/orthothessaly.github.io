@@ -636,6 +636,40 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
 .tl-today .tldot{border-color:#c0392b;background:#fde2e2}.tl-today b{color:#9b1c1c}.tl-today:after{content:'';position:absolute;left:44px;right:0;top:50%;border-top:2px dashed #e7b1ab;z-index:0}
 .tl-today .tlbody{background:#fbfdfe;z-index:1;flex:0 0 auto;padding-right:8px}
 @media print{.ptl,.fucard{display:none}}
+/* ===== 📤 PROMs export (Excel / PDF) – doctor dashboard card + A4 print view ===== */
+.pexp h2 .pexpsub{font-size:.85rem;font-weight:400}
+.pexpwarn{background:#fff6e0;border:1px solid #f0d58a;border-radius:8px;padding:7px 10px;color:#5a4300;font-size:.88rem;margin:6px 0 10px}
+.pexprow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:6px 0}.pexprow>.fld{margin:0}
+.pexplab{font-weight:700;min-width:7.5em}.pexpchk{display:inline-flex;gap:5px;align-items:center;font-size:.9rem}.pexpchk[hidden]{display:none}
+.pexpflt{border:0;padding:0;margin:0;min-width:0}.pexpflt[disabled]{opacity:.5}
+.pexppid{max-width:100%;min-width:14em}.pexpanon{background:#eef7f0;border-radius:8px;padding:4px 8px}
+.pexpgo{justify-content:space-between;border-top:1px solid #e3eaee;padding-top:8px;margin-top:10px}.pexpbtns{display:flex;gap:8px;flex-wrap:wrap}
+.pexpptb{margin:6px 0}
+@media (max-width:640px){.pexplab{min-width:0;width:100%}.pexpbtns{width:100%}.pexpbtns button{flex:1}}
+.pereport{display:none}
+body.pe-print .pereport{display:block;position:fixed;inset:0;z-index:100000;overflow:auto;background:#fff;color:#0b1f26;padding:14px}
+.per-bar{max-width:190mm;margin:0 auto 8px;display:flex;gap:8px;justify-content:flex-end}
+.per-page{max-width:190mm;margin:0 auto;font-size:9pt}
+.per-head{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid #0b3d4a;padding-bottom:4px;margin-bottom:4px}.per-head h1{font-size:14pt;margin:0 0 2px}
+.per-meta{text-align:right;font-size:8pt;color:#41545c}.per-filt{font-size:8pt;color:#41545c;margin:2px 0 6px}.per-id{font-size:9.5pt}
+.per-page h3{font-size:10.5pt;margin:8px 0 3px;color:#0b3d4a}.per-page h4{font-size:9.5pt;margin:6px 0 2px}.per-page h2{font-size:12pt;margin:0 0 2px}
+.per-tbl{width:100%;border-collapse:collapse;font-size:8pt}.per-tbl th,.per-tbl td{padding:2px 4px;border-bottom:1px solid #e1e8eb;text-align:left;vertical-align:top;white-space:normal}
+.per-tbl th{background:#eef4f6;position:static}.per-tbl thead{display:table-header-group}.per-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}.per-tbl tr.per-first td{border-top:1px solid #b7c4ca}.per-tbl tr.per-ov td{background:#f6fafb}
+.per-tbl .badge{font-size:7.5pt;padding:1px 5px;cursor:default}
+.per-charts{grid-template-columns:repeat(3,minmax(0,1fr));gap:3mm}.per-charts .chart{padding:3px;break-inside:avoid}.per-charts .chart h4{font-size:8.5pt}.per-charts .legend{font-size:7pt}
+.per-pthead{border-bottom:2px solid #0b3d4a;margin-bottom:4px;padding-bottom:3px}
+.per-foot{border-top:1px solid #b7c4ca;margin-top:8px;padding-top:3px;font-size:7.5pt;color:#41545c}
+.per-break{border-top:2px dashed #b7c4ca;margin-top:12px;padding-top:8px}
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  body.pe-print>*:not(#peReport){display:none!important}
+  body.pe-print .pereport{position:static;padding:0;overflow:visible}
+  body.pe-print .noprint{display:none!important}
+  .per-page{max-width:none}
+  .per-break{break-before:page;page-break-before:always;border-top:0;margin-top:0;padding-top:0}
+  .per-tbl tr{break-inside:avoid}
+  .pereport *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 /* ===== Patient QR card + clinic QR poster ===== */
 .qrbtnrow{margin:8px 0 2px}.qrbtn{background:#fff;border:2px solid #0b5f73;color:#0b4a5a;font-weight:700}
 body.qr-open{overflow:hidden}
@@ -5864,6 +5898,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     }).join('') + '</table></div>' + (dq && !pts.length ? '<p class="muted" id="npNoMatch">' + esc(t('npNoMatch')) + '</p>' : '') + '</div>';
     h += cohortHtml(u);
     var sp = patientById(dsel.pid);
+    if (window.__pexp) h += window.__pexp.dashHtml(u, sp && pts.indexOf(sp) >= 0 ? sp : null);
     if (sp && pts.indexOf(sp) >= 0) h += patientView(sp, td); else h += '<div class="card muted">' + esc(t('selectPt')) + '</div>';
     h += '<details class="card" id="dashProto"' + (dashProtoOpen ? ' open' : '') + '><summary><b>📋 ' + esc(t('protoOpen')) + '</b></summary><p class="muted">' + esc(t('protoWhy')) + '</p>' + protocolHtml(protoSel || dsel.proc || (sp ? sp.procedure : 'TKA'), 'dproto') + '</details>';
     var fs = subs.filter(function (s) { return (!dsel.proc || s.procedure === dsel.proc) && (!dsel.inst || s.instrument === dsel.inst) && (!dsel.pid || s.patientId === dsel.pid); }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
@@ -5883,6 +5918,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     if (window.__qlib) window.__qlib.bindDash(sp);
     if (window.__qr) window.__qr.bind(sp && pts.indexOf(sp) >= 0 ? sp : null);
     if (window.__fu) { window.__fu.bindDash(); if (sp && pts.indexOf(sp) >= 0) window.__fu.bindTimeline(sp); }
+    if (window.__pexp) { window.__pexp.bind(); window.__pexp.bindPt(); }
     document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { r.onclick = function () { dsel.pid = dsel.pid === r.dataset.pid ? '' : r.dataset.pid; dsel.tp = ''; if (dsel.pid) audit('view-patient', dsel.pid); renderDash(); }; });
     if (sp && pts.indexOf(sp) >= 0) { bindCamera(sp); bindAssign(sp); }
     if (sp && pts.indexOf(sp) >= 0 && window.__xcmp) window.__xcmp.bind(sp);
@@ -5910,6 +5946,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
     h += mcidHtml(p);
     var used = {}; store.submissions.forEach(function (s) { if (s.patientId === p.id) used[s.instrument] = 1; });
     var list = rec.concat(PROC[p.procedure].other).filter(function (i, k, a) { return a.indexOf(i) === k && used[i] && (!dsel.inst || dsel.inst === i); });
+    if (window.__pexp) h += window.__pexp.ptBtn(p);
     h += '<h3 style="margin-top:12px">' + esc(t('charts')) + '</h3><div class="charts">' + list.map(function (i) { return chartSvg(p, i); }).join('') + '</div></div>';
     return h;
   }
@@ -6226,7 +6263,7 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   window.__orthoProms = { goDash: function () { if (!isDoc()) docGate = true; showTab('dash'); renderDash(); }, openPatient: function (pid, anchor) { dsel.pid = pid; showTab('dash'); renderDash(); if (anchor) setTimeout(function () { var e = document.getElementById(anchor); if (e) e.scrollIntoView({ block: 'start' }); }, 30); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
     lib: { I: I, P: P, PR: PR, PROC: PROC, ROLE: ROLE, TPS: TPS, TP_ORDER: TP_ORDER, tx: tx, jt: jt, setJoint: function (j) { JOVR = j || ''; }, variant: variant, srcNote: srcNote, thrText: thrText, tpName: tpName,
       fmtScore: fmtScore, subsHtml: subsHtml, bandHtml: bandHtml, actLabel: actLabel, ptTitle: ptTitle, ptInstr: function (id) { return PT_INSTR[id] || I[id].instructions; }, abbr: PT_ABBR, noSec: PT_NOSEC, srcLab: srcLab, esc: esc, lang: lang,
-      get curTab() { return curTab; }, patientById: function (id) { return patientById(id); } }, refreshUser: function () { chatSync(); if (curTab === 'dash') renderDash(); },
+      get curTab() { return curTab; }, patientById: function (id) { return patientById(id); }, chartSvg: chartSvg, subName: subName }, refreshUser: function () { chatSync(); if (curTab === 'dash') renderDash(); },
     patient: { get ctx() { return ctx; }, get run() { return prun; }, get drafts() { return drafts; }, title: ptTitle, items: function (id) { return ptItems(id, prun && prun.inst === id ? prun.ans : {}); }, open: ptOpen, currentTp: currentTp,
       preview: function (id, itemId) { var its = I[id].items.filter(function (it) { return !it.clinician; }), k = its.map(function (x) { return x.id; }).indexOf(itemId); var ans = {}; its.forEach(function (x) { if (x.showIf && x.id === itemId) { I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[y.options.length - 1].v; }); } }); var vis = ptItems(id, ans), vi = vis.map(function (x) { return x.id; }).indexOf(itemId); if (vi < 0) { ans = {}; I[id].items.forEach(function (y) { if (y.options && !y.clinician) ans[y.id] = y.options[0].v; }); vis = ptItems(id, ans); vi = vis.map(function (x) { return x.id; }).indexOf(itemId); } if (vi < 0) return false; prun = { inst: id, screen: 'q', idx: vi, ans: ans, preview: true }; renderProms(); return k >= 0; } } };
 })();
@@ -6737,6 +6774,422 @@ body.pat-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ov
   window.__fu = { dashHtml: dashHtml, bindDash: bindDash, timelineHtml: timelineHtml, bindTimeline: bindTimeline, csv: csv, syncBadge: syncBadge, get ui() { return ui; } };
   new MutationObserver(function () { setTimeout(syncBadge, 0); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   syncBadge();
+  if (X.curTab === 'dash' && A.refreshUser) A.refreshUser();
+})();
+</script>
+<!-- ===== 📤 PROMs export (doctor-only): Excel .xlsx built in the browser (no library, no network) + A4 print report; core pure, tested in Node ===== -->
+<script id="ortho-export">
+(function (root) {
+  'use strict';
+  // ===== PROMs export core (pure; unit-tested in Node): filtered rows for «Εξαγωγή» + a dependency-free .xlsx writer =====
+  // Never exports names or ΑΜΚΑ: patients appear by internal code, or by sequential codes P001… when anonymised.
+  var P = root.OrthoPROMs;
+  var VERSION = 'pexp-1.0';
+  var TP_IDS = ['pre', '6w', '3m', '6m', '1y', '2y'], FOLLOW = ['3m', '6m', '1y', '2y'];
+  var LBL = {
+    el: { total: 'Σύνολο', overall: 'Συνολικά (κύρια υποκλίμακα)', overallAll: 'Συνολικά (όλες οι υποκλίμακες)', R: 'Δεξιά', L: 'Αριστερά', B: 'Αμφοτερόπλευρα', yes: 'Ναι', no: 'Όχι' },
+    en: { total: 'Total', overall: 'Overall (key subscale)', overallAll: 'Overall (all subscales)', R: 'Right', L: 'Left', B: 'Bilateral', yes: 'Yes', no: 'No' }
+  };
+  var SUBX = { raw: { el: 'Ακατέργαστο άθροισμα', en: 'Raw sum' }, lss: { el: 'Άθροισμα επιπέδων (LSS 5–25)', en: 'Level sum score (5–25)' }, index: { el: 'Δείκτης', en: 'Index' }, stiffness: { el: 'Δυσκαμψία', en: 'Stiffness' }, 'function': { el: 'Λειτουργικότητα', en: 'Function' }, social: { el: 'Κοινωνική-ψυχολογική', en: 'Social-psychological' }, walking: { el: 'Βάδιση & όρθια στάση', en: 'Walking & standing' }, standard: { el: 'Συνήθεις δραστηριότητες', en: 'Standard activities' }, advanced: { el: 'Προχωρημένες δραστηριότητες', en: 'Advanced activities' }, discretionary: { el: 'Δραστηριότητες επιλογής', en: 'Discretionary activities' }, preInjury: { el: 'Πριν από τον τραυματισμό', en: 'Before injury' } };
+  function tr(o, lg) { return o == null ? '' : typeof o === 'string' ? o : (o[lg] || o.el || o.en || ''); }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function r3(v) { return Math.round(v * 1000) / 1000; }
+  function lgOf(o) { return o && o.lang === 'en' ? 'en' : 'el'; }
+  function I() { return P.INSTRUMENTS; }
+  function instShort(id) { return I()[id] ? I()[id].short : id; }
+  function subName(id, k, lg) { if (k === 'total') return id === 'EQ5D5L' ? 'EQ VAS' : LBL[lg].total; var sn = (I()[id] && I()[id].subNames) || {}; return tr(sn[k] || SUBX[k] || P.SUBNAMES[k], lg) || k; }
+  function tpName(id, lg) { var t = P.TIMEPOINTS.filter(function (x) { return x.id === id; })[0]; return t ? tr(t.name, lg) : id; }
+  function procName(id, lg) { return P.PROCEDURES[id] ? tr(P.PROCEDURES[id].name, lg) : (id || ''); }
+  function sideName(s, lg) { s = String(s || '').charAt(0).toUpperCase(); return LBL[lg][s] || ''; }
+  function yn(v, lg) { return v === true ? LBL[lg].yes : v === false ? LBL[lg].no : ''; }
+  /** Numeric score keys of a submission in export order: total first, then numeric subscales (hidden helpers and EQ VAS duplicate removed). */
+  function scoreKeys(s) {
+    var out = [], sub = s.subscales || {};
+    if (isNum(s.total)) out.push('total');
+    Object.keys(sub).forEach(function (k) { if (!isNum(sub[k]) || k === 'maxPossible' || (s.instrument === 'EQ5D5L' && k === 'vas' && isNum(s.total))) return; out.push(k); });
+    return out;
+  }
+  function isPrimary(id, k) { var pk = I()[id] ? I()[id].primary : 'total'; return k === pk || (id === 'EQ5D5L' && k === 'total' && pk === 'vas'); }
+  function val(s, k) { return k === 'total' ? s.total : (s.subscales || {})[k]; }
+  /** Patients in scope. opt: {pid, procs:[...], side, from, to (surgery date ISO), mine (email), excludeDemo} */
+  function filterPatients(store, opt) {
+    opt = opt || {};
+    return (store.patients || []).filter(function (p) {
+      if (opt.pid) return p.id === opt.pid;
+      if (opt.excludeDemo && p.demo) return false;
+      if (opt.procs && opt.procs.length && opt.procs.indexOf(p.procedure) < 0) return false;
+      if (opt.side && String(p.side || '').charAt(0).toUpperCase() !== opt.side) return false;
+      if ((opt.from || opt.to) && !p.surgeryDate) return false;
+      if (opt.from && p.surgeryDate < opt.from) return false;
+      if (opt.to && p.surgeryDate > opt.to) return false;
+      if (opt.mine && !(p.enteredBy && p.enteredBy.email === opt.mine)) return false;
+      return true;
+    }).sort(function (a, b) { var x = (a.surgeryDate || '9999') + '|' + a.id, y = (b.surgeryDate || '9999') + '|' + b.id; return x < y ? -1 : x > y ? 1 : 0; });
+  }
+  /** id → exported code. anon: P001… in surgery-date order; otherwise the internal patient code (never ΑΜΚΑ / name). */
+  function codeMap(pts, anon) {
+    var m = {}, w = String(pts.length).length < 3 ? 3 : String(pts.length).length;
+    pts.forEach(function (p, i) { m[p.id] = anon ? 'P' + String(i + 1).padStart(w, '0') : String(p.id); });
+    return m;
+  }
+  function latestAt(subs, pid, inst, tp) { return subs.filter(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; })[0] || null; }
+  /** All export tables for the filtered set. opt also: tps (timepoint ids kept), anon (default true), daysOnly, lang, today. */
+  function build(store, opt) {
+    opt = opt || {}; var lg = lgOf(opt), subsAll = store.submissions || [];
+    var tps = opt.tps && opt.tps.length ? TP_IDS.filter(function (t) { return opt.tps.indexOf(t) >= 0; }) : TP_IDS.slice();
+    var pts = filterPatients(store, opt), code = codeMap(pts, opt.anon !== false), byId = {};
+    pts.forEach(function (p) { byId[p.id] = p; });
+    var subs = subsAll.filter(function (s) { return byId[s.patientId] && tps.indexOf(s.timepoint) >= 0; }).sort(function (a, b) {
+      var pa = code[a.patientId], pb = code[b.patientId]; if (pa !== pb) return pa < pb ? -1 : 1;
+      var d = TP_IDS.indexOf(a.timepoint) - TP_IDS.indexOf(b.timepoint); if (d) return d;
+      if (a.instrument !== b.instrument) return a.instrument < b.instrument ? -1 : 1; return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+    });
+    var scores = [], unscored = 0;
+    subs.forEach(function (s) {
+      var p = byId[s.patientId], ks = scoreKeys(s); if (!ks.length) { unscored++; return; }
+      var days = p.surgeryDate && s.date ? P.daysBetween(p.surgeryDate, s.date) : null;
+      ks.forEach(function (k) {
+        scores.push({ code: code[p.id], procedure: p.procedure, procName: procName(p.procedure, lg), side: sideName(p.side, lg), tp: s.timepoint, tpName: tpName(s.timepoint, lg), date: opt.daysOnly ? null : (s.date || null), days: days,
+          inst: s.instrument, instShort: instShort(s.instrument), subKey: k, subName: subName(s.instrument, k, lg), score: r3(val(s, k)), primary: isPrimary(s.instrument, k), valid: s.valid !== false });
+      });
+    });
+    // ---- MCID / PASS: one row per patient × instrument × follow-up timepoint (3 mo – 2 yr; baseline = valid pre-op value, used even if «pre» is not exported) ----
+    var mcid = [], noBase = 0;
+    pts.forEach(function (p) {
+      var pr = P.PROTOCOLS[p.procedure]; if (!pr) return;
+      pr.core.concat(pr.optional).filter(function (i, k, a) { return a.indexOf(i) === k && P.thresholdFor(i, p.procedure, p.ulType); }).forEach(function (inst) {
+        var base = P.baselineSub(subsAll, p, inst), e = P.thresholdFor(inst, p.procedure, p.ulType);
+        FOLLOW.forEach(function (tp) {
+          if (tps.indexOf(tp) < 0) return;
+          var fol = latestAt(subsAll, p.id, inst, tp); if (!fol) return;
+          var m = P.meaningful(inst, base, fol, tp, p.procedure, { ulType: p.ulType }); if (!m) return;
+          var row0 = { code: code[p.id], procedure: p.procedure, procName: procName(p.procedure, lg), side: sideName(p.side, lg), ulType: p.procedure === 'UL' ? tr(P.UL_TYPES[p.ulType], lg) : '', inst: inst, instShort: instShort(inst), tp: tp, tpName: tpName(tp, lg), date: opt.daysOnly ? null : (fol.date || null), days: p.surgeryDate && fol.date ? P.daysBetween(p.surgeryDate, fol.date) : null, noBase: !!m.noBase, thr: P.thresholdText(inst, p.procedure, p.ulType, lg) };
+          if (m.noBase) noBase++;
+          if (e.subs) {
+            Object.keys(m.subs).forEach(function (k) { var x = m.subs[k], b = base && base.subscales ? base.subscales[k] : null; mcid.push(Object.assign({}, row0, { subKey: k, subName: subName(inst, k, lg), baseline: isNum(b) ? b : null, follow: x.follow, delta: x.delta != null ? x.delta : null, mcidThr: x.thr, mcid: x.mcid, passThr: e.subs[k].pass != null ? e.subs[k].pass : (e.passAll && e.passAll[k] != null ? e.passAll[k] : null), passOp: '>=', pass: x.pass != null ? x.pass : (m.passSubs && k in m.passSubs ? m.passSubs[k] : null) })); });
+            mcid.push(Object.assign({}, row0, { subKey: '*', subName: e.key ? LBL[lg].overall + ': ' + subName(inst, e.key, lg) : LBL[lg].overallAll, baseline: null, follow: null, delta: m.delta != null ? m.delta : null, mcidThr: null, mcid: m.mcid, passThr: null, passOp: '', pass: m.pass, overall: true }));
+          } else {
+            mcid.push(Object.assign({}, row0, { subKey: I()[inst].primary, subName: subName(inst, I()[inst].primary, lg), baseline: m.baseline, follow: m.follow, delta: m.delta != null ? m.delta : null, mcidThr: m.thr != null ? m.thr : null, mcid: m.mcid, passThr: e.pass ? e.pass.v : null, passOp: e.pass ? e.pass.op : '', pass: m.pass, low: I()[inst].better === 'low' }));
+          }
+        });
+      });
+    });
+    // ---- Summary: per procedure × instrument × follow-up timepoint (same counting as the dashboard «MCID / PASS ανά επέμβαση») ----
+    var summary = [], inSet = function (p) { return !!byId[p.id]; };
+    Object.keys(P.PROCEDURES).forEach(function (proc) {
+      if (!pts.some(function (p) { return p.procedure === proc; })) return;
+      FOLLOW.forEach(function (tp) {
+        if (tps.indexOf(tp) < 0) return;
+        P.cohortStats(store, proc, tp, { patient: inSet }).forEach(function (r) {
+          if (!r.follow) return;
+          summary.push({ procedure: proc, procName: procName(proc, lg), inst: r.inst, instShort: instShort(r.inst), ul: r.ul ? r.ul.map(function (u) { return tr(P.UL_TYPES[u], lg); }).join(', ') : '', tp: tp, tpName: tpName(tp, lg), follow: r.follow, noBase: r.noBase,
+            mcidN: r.mcidApplies ? r.mcidN : null, mcidD: r.mcidApplies ? r.mcidD : null, mcidPct: r.mcidApplies && r.mcidD >= 5 ? r.mcidN / r.mcidD : null,
+            passN: r.passApplies ? r.passN : null, passD: r.passApplies ? r.passD : null, passPct: r.passApplies && r.passD >= 5 ? r.passN / r.passD : null, thr: P.thresholdText(r.inst, proc, r.ul ? r.ul[0] : null, lg) });
+        });
+      });
+    });
+    var ord = function (r) { var pr = P.PROTOCOLS[r.procedure], l = pr.core.concat(pr.optional); return l.indexOf(r.inst); };
+    summary.sort(function (a, b) { var pa = Object.keys(P.PROCEDURES).indexOf(a.procedure), pb = Object.keys(P.PROCEDURES).indexOf(b.procedure); return pa - pb || ord(a) - ord(b) || FOLLOW.indexOf(a.tp) - FOLLOW.indexOf(b.tp); });
+    // ---- Completeness (missing data): per procedure × timepoint × instrument: expected (window opened) vs completed ----
+    var today = opt.today || new Date().toISOString().slice(0, 10), comp = {};
+    pts.forEach(function (p) {
+      if (!P.PROTOCOLS[p.procedure]) return; var st = P.protocolStatus(p, subsAll, today);
+      Object.keys(st).forEach(function (inst) { tps.forEach(function (tp) {
+        var v = st[inst][tp]; if (v !== 'done' && v !== 'due' && v !== 'overdue') return;
+        var k = p.procedure + '|' + tp + '|' + inst, c = comp[k] || (comp[k] = { procedure: p.procedure, procName: procName(p.procedure, lg), tp: tp, tpName: tpName(tp, lg), inst: inst, instShort: instShort(inst), expected: 0, done: 0, open: 0, overdue: 0 });
+        c.expected++; if (v === 'done') c.done++; else if (v === 'due') c.open++; else c.overdue++;
+      }); });
+    });
+    var completeness = Object.keys(comp).map(function (k) { return comp[k]; }).sort(function (a, b) { return a.procedure < b.procedure ? -1 : a.procedure > b.procedure ? 1 : TP_IDS.indexOf(a.tp) - TP_IDS.indexOf(b.tp) || (a.inst < b.inst ? -1 : a.inst > b.inst ? 1 : 0); });
+    return { lang: lg, patients: pts, code: code, tps: tps, scores: scores, mcid: mcid, summary: summary, completeness: completeness, nSubs: subs.length, unscored: unscored, noBase: noBase, today: today };
+  }
+
+  // ===== Sheets (column definitions; headers localised) =====
+  var H = {
+    el: { sheets: ['Βαθμολογίες', 'MCID–PASS', 'Σύνοψη', 'Πληροφορίες'], code: 'Κωδικός ασθενή', proc: 'Επέμβαση', procId: 'Κωδ. επέμβασης', side: 'Πλευρά', tp: 'Χρονικό σημείο', tpId: 'Κωδ. χρονικού σημείου', date: 'Ημερομηνία', days: 'Ημέρες από χειρουργείο', inst: 'Ερωτηματολόγιο', sub: 'Υποκλίμακα', subKey: 'Κωδ. υποκλίμακας', score: 'Βαθμολογία', primary: 'Κύρια τιμή', ulType: 'Τύπος (άνω άκρο)', base: 'Προεγχειρητική τιμή', fol: 'Τιμή παρακολούθησης', delta: 'Μεταβολή', mcidThr: 'Όριο MCID', mcid: 'MCID', passThr: 'Όριο PASS', pass: 'PASS', noBase: 'Χωρίς προεγχειρητική', nFol: 'Ασθενείς με απάντηση', mcidN: 'MCID n', mcidD: 'MCID N', mcidPct: 'MCID %', passN: 'PASS n', passD: 'PASS N', passPct: 'PASS %', thr: 'Όρια', key: 'Πεδίο', value: 'Τιμή', expected: 'Αναμενόμενα', done: 'Συμπληρωμένα', open: 'Σε εξέλιξη (παράθυρο ανοιχτό)', overdue: 'Λείπουν (εκπρόθεσμα)', donePct: 'Πληρότητα %' },
+    en: { sheets: ['Scores', 'MCID–PASS', 'Summary', 'Info'], code: 'Patient code', proc: 'Procedure', procId: 'Procedure code', side: 'Side', tp: 'Timepoint', tpId: 'Timepoint code', date: 'Date', days: 'Days from surgery', inst: 'Questionnaire', sub: 'Subscale', subKey: 'Subscale code', score: 'Score', primary: 'Primary value', ulType: 'Type (upper limb)', base: 'Pre-op value', fol: 'Follow-up value', delta: 'Change', mcidThr: 'MCID threshold', mcid: 'MCID', passThr: 'PASS threshold', pass: 'PASS', noBase: 'No pre-op value', nFol: 'Patients with a response', mcidN: 'MCID n', mcidD: 'MCID N', mcidPct: 'MCID %', passN: 'PASS n', passD: 'PASS N', passPct: 'PASS %', thr: 'Thresholds', key: 'Field', value: 'Value', expected: 'Expected', done: 'Completed', open: 'In progress (window open)', overdue: 'Missing (overdue)', donePct: 'Completeness %' }
+  };
+  var INFO = {
+    el: { title: 'OrthoThessaly – Εξαγωγή PROMs', expDate: 'Ημερομηνία εξαγωγής', app: 'Εφαρμογή / έκδοση', mode: 'Δεδομένα', demo: 'DEMO – συνθετικά δεδομένα', db: 'Βάση δεδομένων (μητρώο ιατρών)', scope: 'Εύρος', scopeAll: 'Μητρώο (όλοι οι ασθενείς του φίλτρου)', scopePt: 'Ένας ασθενής', filters: 'Φίλτρα', anon: 'Ανωνυμοποίηση', anonOn: 'Ναι – κωδικοί P001… (σειρά ημερομηνίας χειρουργείου)', anonOff: 'Όχι – εσωτερικός κωδικός ασθενή (χωρίς ονόματα / ΑΜΚΑ)', nPts: 'Ασθενείς', nSubs: 'Υποβολές ερωτηματολογίων', nRows: 'Γραμμές βαθμολογιών', notes: 'Σημειώσεις για ελλείποντα δεδομένα', gdpr: 'Το αρχείο περιέχει δεδομένα υγείας (ειδική κατηγορία, άρθρο 9 GDPR). Φυλάξτε το και διαβιβάστε το μόνο σύμφωνα με τον GDPR και τις διαδικασίες του νοσοκομείου.',
+      n1: 'Δεν περιλαμβάνονται ονόματα ούτε ΑΜΚΑ.', n2: 'Κενό κελί = δεν υπάρχει τιμή (δεν συμπληρώθηκε ή δεν βαθμολογείται). Υποβολές χωρίς υπολογίσιμη βαθμολογία: {0}.', n3: 'MCID: μεταβολή από την προεγχειρητική τιμή (έγκυρη προεγχειρητική υποβολή, η πιο πρόσφατη ως την ημερομηνία χειρουργείου). Οι 6 εβδομάδες δεν αξιολογούνται. Γραμμές χωρίς προεγχειρητική τιμή: {0}.', n4: 'Σύνοψη: ένας ασθενής μετρά μία φορά ανά ερωτηματολόγιο και χρονικό σημείο (η πιο πρόσφατη απάντηση). Ποσοστό μόνο όταν N ≥ 5.', n5: 'Το προφίλ υγείας του EQ-5D-5L (5 ψηφία) δεν εξάγεται ως αριθμός· εξάγεται το EQ VAS και το άθροισμα επιπέδων.', n6: 'Για το MCID χρησιμοποιείται η προεγχειρητική τιμή ακόμη κι όταν το «Προεγχειρητικά» δεν επιλέχθηκε στα χρονικά σημεία.', n7: 'Πληρότητα: αναμενόμενα = χρονικά σημεία του προγράμματος των οποίων το παράθυρο έχει ανοίξει.', n8: 'Χωρίς ημερομηνίες: εξάγονται μόνο οι ημέρες από το χειρουργείο.', compT: 'Πληρότητα ανά χρονικό σημείο', all: 'όλα' },
+    en: { title: 'OrthoThessaly – PROMs export', expDate: 'Export date', app: 'Application / version', mode: 'Data', demo: 'DEMO – synthetic data', db: 'Database (doctors\u2019 registry)', scope: 'Scope', scopeAll: 'Registry (all patients matching the filters)', scopePt: 'Single patient', filters: 'Filters', anon: 'Anonymisation', anonOn: 'Yes – codes P001… (surgery-date order)', anonOff: 'No – internal patient code (no names / AMKA)', nPts: 'Patients', nSubs: 'Questionnaire submissions', nRows: 'Score rows', notes: 'Notes on missing data', gdpr: 'This file contains health data (special category, GDPR Art. 9). Store and share it only in line with the GDPR and hospital procedures.',
+      n1: 'No names or AMKA are included.', n2: 'Empty cell = no value (not answered or not scored). Submissions without a computable score: {0}.', n3: 'MCID: change from the pre-op value (valid pre-op submission, latest on or before the surgery date). 6 weeks is never evaluated. Rows without a pre-op value: {0}.', n4: 'Summary: one patient counts once per questionnaire and timepoint (latest response). Percentage only when N ≥ 5.', n5: 'The EQ-5D-5L health profile (5 digits) is not exported as a number; EQ VAS and the level sum score are.', n6: 'MCID uses the pre-op value even when “Pre-op” is not among the selected timepoints.', n7: 'Completeness: expected = protocol timepoints whose window has opened.', n8: 'Without dates: only days from surgery are exported.', compT: 'Completeness by timepoint', all: 'all' }
+  };
+  function fmtS(s, a) { return String(s).replace('{0}', a); }
+  /** Workbook definition for writeXlsx(). meta: {appVersion, demo, scopePt, filters (text), exportedAt (ISO datetime)} */
+  function sheets(d, opt, meta) {
+    opt = opt || {}; meta = meta || {}; var lg = d.lang, h = H[lg], T = INFO[lg], yes = function (v) { return yn(v, lg); };
+    var opSym = function (o) { return o === '<=' ? '≤' : o ? '≥' : ''; };
+    var s1 = { name: h.sheets[0], cols: [[h.code, 14], [h.proc, 26], [h.side, 12], [h.tp, 15], [h.date, 12, 'date'], [h.days, 11, 'num'], [h.inst, 15], [h.sub, 26], [h.score, 11, 'num'], [h.primary, 10], [h.procId, 9], [h.tpId, 9], [h.subKey, 14]],
+      rows: d.scores.map(function (r) { return [r.code, r.procName, r.side, r.tpName, r.date, r.days, r.instShort, r.subName, r.score, yes(r.primary), r.procedure, r.tp, r.subKey]; }) };
+    var s2 = { name: h.sheets[1], cols: [[h.code, 14], [h.proc, 26], [h.side, 12], [h.ulType, 14], [h.inst, 15], [h.sub, 30], [h.tp, 15], [h.date, 12, 'date'], [h.days, 11, 'num'], [h.base, 13, 'num'], [h.fol, 13, 'num'], [h.delta, 11, 'num'], [h.mcidThr, 11, 'num'], [h.mcid, 9], [h.passThr, 11, 'num'], [h.pass, 9], [h.noBase, 12], [h.thr, 44]],
+      rows: d.mcid.map(function (r) { return [r.code, r.procName, r.side, r.ulType, r.instShort, r.subName, r.tpName, r.date, r.days, r.baseline, r.follow, r.delta, r.mcidThr, yes(r.mcid), r.passThr, yes(r.pass), r.noBase ? LBL[lg].yes : '', r.thr]; }) };
+    var s3 = { name: h.sheets[2], cols: [[h.proc, 26], [h.inst, 15], [h.ulType, 14], [h.tp, 15], [h.nFol, 12, 'num'], [h.mcidN, 9, 'num'], [h.mcidD, 9, 'num'], [h.mcidPct, 9, 'pct'], [h.passN, 9, 'num'], [h.passD, 9, 'num'], [h.passPct, 9, 'pct'], [h.noBase, 12, 'num'], [h.thr, 44]],
+      rows: d.summary.map(function (r) { return [r.procName, r.instShort, r.ul, r.tpName, r.follow, r.mcidN, r.mcidD, r.mcidPct, r.passN, r.passD, r.passPct, r.noBase, r.thr]; }) };
+    var info = [[T.title, ''], [T.expDate, (meta.exportedAt || new Date().toISOString()).slice(0, 16).replace('T', ' ') + ' UTC'], [T.app, meta.appVersion || ('OrthoThessaly · ' + VERSION)], [T.mode, meta.demo ? T.demo : T.db], [T.scope, meta.scopePt ? T.scopePt : T.scopeAll], [T.filters, meta.filters || T.all],
+      [T.anon, opt.anon !== false ? T.anonOn : T.anonOff], [T.nPts, d.patients.length], [T.nSubs, d.nSubs], [T.nRows, d.scores.length], ['', ''], ['⚠ GDPR', T.gdpr], ['', ''], [T.notes, ''], ['•', T.n1], ['•', fmtS(T.n2, d.unscored)], ['•', fmtS(T.n3, d.noBase)], ['•', T.n4], ['•', T.n5], ['•', T.n6], ['•', T.n7]];
+    if (opt.daysOnly) info.push(['•', T.n8]);
+    info.push(['', ''], [T.compT, '']);
+    var s4 = { name: h.sheets[3], cols: [[h.key, 30], [h.value, 70], ['', 12], ['', 12], ['', 12], ['', 12], ['', 14]], rows: info, noFreeze: true, bold: [0, 13, info.length - 1] };
+    s4.rows.push([h.proc, h.tp, h.inst, h.expected, h.done, h.overdue, h.donePct]); s4.bold.push(s4.rows.length - 1);
+    s4.types = { 3: 'num', 4: 'num', 5: 'num', 6: 'pct' }; s4.typedFrom = s4.rows.length;
+    d.completeness.forEach(function (c) { s4.rows.push([c.procName, c.tpName, c.instShort, c.expected, c.done, c.overdue, c.expected ? c.done / c.expected : null]); });
+    return [s1, s2, s3, s4];
+  }
+
+  // ===== Minimal OOXML (.xlsx) writer: shared strings, styles (bold header, date, %), frozen header, column widths, autofilter; ZIP (stored) + CRC-32 =====
+  var CRC = (function () { var t = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { var c = 0xFFFFFFFF; for (var i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  function zip(files, when) {
+    var d = when || new Date(), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(), tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    var parts = [], cen = [], off = 0;
+    var u16 = function (a, v) { a.push(v & 0xFF, (v >>> 8) & 0xFF); }, u32 = function (a, v) { a.push(v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF); };
+    files.forEach(function (f) {
+      var name = utf8(f.name), data = typeof f.data === 'string' ? utf8(f.data) : f.data, crc = crc32(data), h = [];
+      u32(h, 0x04034b50); u16(h, 20); u16(h, 0x0800); u16(h, 0); u16(h, tm); u16(h, dt); u32(h, crc); u32(h, data.length); u32(h, data.length); u16(h, name.length); u16(h, 0);
+      parts.push(new Uint8Array(h), name, data);
+      var c = []; u32(c, 0x02014b50); u16(c, 20); u16(c, 20); u16(c, 0x0800); u16(c, 0); u16(c, tm); u16(c, dt); u32(c, crc); u32(c, data.length); u32(c, data.length); u16(c, name.length); u16(c, 0); u16(c, 0); u16(c, 0); u16(c, 0); u32(c, 0); u32(c, off);
+      cen.push(new Uint8Array(c), name); off += h.length + name.length + data.length;
+    });
+    var csz = cen.reduce(function (s, x) { return s + x.length; }, 0), e = [];
+    u32(e, 0x06054b50); u16(e, 0); u16(e, 0); u16(e, files.length); u16(e, files.length); u32(e, csz); u32(e, off); u16(e, 0);
+    var all = parts.concat(cen, [new Uint8Array(e)]), n = all.reduce(function (s, x) { return s + x.length; }, 0), out = new Uint8Array(n), p = 0;
+    all.forEach(function (x) { out.set(x, p); p += x.length; });
+    return out;
+  }
+  function xe(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ''); }
+  function colName(i) { var s = ''; i++; while (i) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function serial(iso) { var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(iso || ''); if (!m) return null; return (Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.UTC(1899, 11, 30)) / 864e5; }
+  function safeSheet(n, used) { var s = String(n).replace(/[\\\/?*\[\]:]/g, ' ').slice(0, 31) || 'Sheet'; var b = s, k = 2; while (used[s]) s = b.slice(0, 28) + ' ' + k++; used[s] = 1; return s; }
+  /** sheets: [{name, cols:[[header, width, type?]], rows:[[...]], noFreeze, bold:[rowIdx], types:{col:type}, typedFrom}] → Uint8Array (.xlsx).
+   *  Cell types: number → numeric; 'date' column + ISO string → date serial; 'pct' → fraction with 0.0 % format; null/'' → empty cell (no element). */
+  function writeXlsx(defs, opt) {
+    opt = opt || {}; var sst = [], sidx = {}, used = {};
+    var si = function (s) { s = String(s); if (!(s in sidx)) { sidx[s] = sst.length; sst.push(s); } return sidx[s]; };
+    var names = defs.map(function (d) { return safeSheet(d.name, used); });
+    var sheetXml = defs.map(function (d, n) {
+      var ncol = d.cols.length, rows = [d.cols.map(function (c) { return c[0]; })].concat(d.rows), x = [];
+      rows.forEach(function (r, ri) {
+        var cells = [], hdr = ri === 0, bold = hdr || (d.bold && d.bold.indexOf(ri - 1) >= 0);
+        for (var ci = 0; ci < ncol; ci++) {
+          var v = r[ci], ref = colName(ci) + (ri + 1), ty = ri === 0 ? null : (d.typedFrom != null ? (ri - 1 >= d.typedFrom && d.types ? d.types[ci] : null) : d.cols[ci][2]);
+          if (v == null || v === '') continue;
+          if (!bold && ty === 'date' && typeof v === 'string' && serial(v) != null) { cells.push('<c r="' + ref + '" s="2"><v>' + serial(v) + '</v></c>'); continue; }
+          if (typeof v === 'number' && isFinite(v)) { cells.push('<c r="' + ref + '"' + (ty === 'pct' ? ' s="3"' : bold ? ' s="1"' : '') + '><v>' + (ty === 'pct' ? r3(v * 1000) / 1000 : v) + '</v></c>'); continue; }
+          if (typeof v === 'boolean') { cells.push('<c r="' + ref + '" t="b"' + (bold ? ' s="1"' : '') + '><v>' + (v ? 1 : 0) + '</v></c>'); continue; }
+          cells.push('<c r="' + ref + '" t="s"' + (bold ? ' s="1"' : (String(v).length > 60 ? ' s="4"' : '')) + '><v>' + si(v) + '</v></c>');
+        }
+        x.push('<row r="' + (ri + 1) + '">' + cells.join('') + '</row>');
+      });
+      var last = colName(ncol - 1) + rows.length;
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        '<dimension ref="A1:' + last + '"/><sheetViews><sheetView workbookViewId="0"' + (n === 0 ? ' tabSelected="1"' : '') + '>' + (d.noFreeze ? '' : '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>') + '</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>' +
+        '<cols>' + d.cols.map(function (c, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (c[1] || 12) + '" customWidth="1"/>'; }).join('') + '</cols>' +
+        '<sheetData>' + x.join('') + '</sheetData>' + (!d.noFreeze && rows.length > 1 ? '<autoFilter ref="A1:' + last + '"/>' : '') + '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape"/></worksheet>';
+    });
+    var files = [
+      { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' + defs.map(function (d, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>' },
+      { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>' },
+      { name: 'docProps/core.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>' + xe(opt.title || 'OrthoThessaly PROMs export') + '</dc:title><dc:creator>OrthoThessaly</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + (opt.created || new Date().toISOString()).slice(0, 19) + 'Z</dcterms:created></cp:coreProperties>' },
+      { name: 'docProps/app.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>OrthoThessaly</Application></Properties>' },
+      { name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>' + names.map(function (nm, i) { return '<sheet name="' + xe(nm) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets><definedNames>' + defs.map(function (d, i) { return !d.noFreeze && d.rows.length ? '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">\'' + xe(names[i].replace(/'/g, "''")) + '\'!$A$1:$' + colName(d.cols.length - 1) + '$' + (d.rows.length + 1) + '</definedName>' : ''; }).join('') + '</definedNames></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + defs.map(function (d, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (defs.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId' + (defs.length + 2) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="yyyy\\-mm\\-dd"/><numFmt numFmtId="165" formatCode="0.0%"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCECF1"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF7FA3AF"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>' },
+      { name: 'xl/sharedStrings.xml', data: null }
+    ];
+    defs.forEach(function (d, i) { files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: sheetXml[i] }); });
+    files[7].data = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' + sst.length + '" uniqueCount="' + sst.length + '">' + sst.map(function (s) { return '<si><t xml:space="preserve">' + xe(s) + '</t></si>'; }).join('') + '</sst>';
+    return zip(files, opt.when);
+  }
+  /** Convenience: filtered data → .xlsx bytes. */
+  function workbook(store, opt, meta) { var d = build(store, opt); return { data: d, bytes: writeXlsx(sheets(d, opt, meta), { title: INFO[d.lang].title, created: meta && meta.exportedAt }) }; }
+  root.OrthoExport = { VERSION: VERSION, TP_IDS: TP_IDS, FOLLOW: FOLLOW, filterPatients: filterPatients, codeMap: codeMap, build: build, sheets: sheets, writeXlsx: writeXlsx, workbook: workbook, crc32: crc32, zip: zip, serial: serial, scoreKeys: scoreKeys, subName: subName, tpName: tpName, procName: procName, sideName: sideName, INFO: INFO, H: H };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-export-ui">
+(function () {
+  'use strict';
+  // ===== Doctor-only «📤 Εξαγωγή» of PROMs follow-up: Excel (.xlsx, built in the browser) + print-ready A4 PDF report (window.print). =====
+  // Everything stays on this device: nothing is uploaded. Never exports names or ΑΜΚΑ; «Ανωνυμοποίηση» (default on) → P001…
+  var A = window.__orthoProms, E = window.OrthoExport; if (!A || !A.lib || !E) return;
+  var X = A.lib, I = X.I, P = X.P, esc = X.esc, tx = X.tx;
+  var $ = function (id) { return document.getElementById(id); };
+  var lg = function () { return X.lang() === 'en' ? 'en' : 'el'; };
+  var S = {
+    el: { T: 'Εξαγωγή δεδομένων PROMs', sub: 'Excel / PDF για δημοσίευση ή ανασκόπηση', lead: 'Δημιουργεί αρχείο Excel (.xlsx) ή αναφορά PDF για εκτύπωση. Το αρχείο φτιάχνεται σε αυτή τη συσκευή· τίποτα δεν ανεβαίνει.',
+      warn: 'Το αρχείο περιέχει δεδομένα υγείας. Φυλάξτε και διαβιβάστε το μόνο σύμφωνα με τον GDPR και τις διαδικασίες του νοσοκομείου.', scope: 'Εύρος', all: 'Όλο το μητρώο (με φίλτρα)', one: 'Ένας ασθενής', pick: '— επιλέξτε ασθενή —',
+      proc: 'Επέμβαση', side: 'Πλευρά', anySide: 'Όλες', R: 'Δεξιά', L: 'Αριστερά', B: 'Αμφοτερόπλευρα', from: 'Χειρουργείο από', to: 'έως', by: 'Καταχωρίστηκαν από', byAll: 'Όλοι οι ιατροί', byMe: 'Δικοί μου ασθενείς', tps: 'Χρονικά σημεία',
+      anon: 'Ανωνυμοποίηση', anonH: 'κωδικοί P001, P002… αντί για τον κωδικό ασθενή (ονόματα και ΑΜΚΑ δεν εξάγονται ποτέ)', noDates: 'Χωρίς ημερομηνίες', noDatesH: 'μόνο ημέρες από το χειρουργείο', perPt: 'PDF: και μία σελίδα ανά ασθενή', noneAll: 'καμία επιλογή = όλες',
+      count: '{0} ασθενείς · {1} υποβολές', xlsx: 'Excel (.xlsx)', pdf: 'PDF (εκτύπωση)', none: 'Κανένας ασθενής δεν ταιριάζει στα φίλτρα.', ptBtn: 'Εξαγωγή ασθενή (Excel / PDF)',
+      repPt: 'Αναφορά PROMs ασθενή', repReg: 'Σύνοψη μητρώου PROMs', code: 'Κωδικός', surg: 'Χειρουργείο', dayN: 'ημέρα {0}', gen: 'Δημιουργία', filters: 'Φίλτρα', scores: 'Βαθμολογίες ανά χρονικό σημείο', inst: 'Ερωτηματολόγιο', subsc: 'Υποκλίμακα',
+      mcidT: 'MCID / PASS (μεταβολή από την προεγχειρητική τιμή)', base: 'Προεγχ.', val: 'Τιμή', delta: 'Μεταβολή', thr: 'Όρια', charts: 'Γραφήματα εξέλιξης', noData: 'Δεν υπάρχουν απαντήσεις.', noMcid: 'Δεν υπάρχει αξιολογήσιμη παρακολούθηση (3 μήνες – 2 έτη).',
+      sumT: 'MCID / PASS ανά επέμβαση', nFol: 'N απαντ.', noBase: 'χωρίς προεγχ.', ptsT: 'Ασθενείς', nSubs: 'Υποβολές', latest: 'Τελευταία αξιολόγηση', pctNote: 'n/N ασθενών· ποσοστό μόνο όταν N ≥ 5. Ένας ασθενής μετρά μία φορά ανά ερωτηματολόγιο και χρονικό σημείο.',
+      print: 'Εκτύπωση / αποθήκευση PDF', close: 'Κλείσιμο', page: 'Σελίδα ασθενή', mcidOk: 'MCID ✓', passOk: 'PASS ✓', no: 'όχι', perProc: 'Ασθενείς ανά επέμβαση', anonOn: 'ανωνυμοποιημένο', yes: 'Ναι' },
+    en: { T: 'PROMs data export', sub: 'Excel / PDF for publication or review', lead: 'Creates an Excel file (.xlsx) or a print-ready PDF report. The file is generated on this device; nothing is uploaded.',
+      warn: 'The file contains health data. Store and share it only in line with the GDPR and hospital procedures.', scope: 'Scope', all: 'Whole registry (filtered)', one: 'One patient', pick: '— choose a patient —',
+      proc: 'Procedure', side: 'Side', anySide: 'All', R: 'Right', L: 'Left', B: 'Bilateral', from: 'Surgery from', to: 'to', by: 'Entered by', byAll: 'All doctors', byMe: 'My patients', tps: 'Timepoints',
+      anon: 'Anonymise', anonH: 'codes P001, P002… instead of the patient code (names and AMKA are never exported)', noDates: 'Without dates', noDatesH: 'days from surgery only', perPt: 'PDF: also one page per patient', noneAll: 'none ticked = all',
+      count: '{0} patients · {1} submissions', xlsx: 'Excel (.xlsx)', pdf: 'PDF (print)', none: 'No patient matches the filters.', ptBtn: 'Export patient (Excel / PDF)',
+      repPt: 'PROMs patient report', repReg: 'PROMs registry summary', code: 'Code', surg: 'Surgery', dayN: 'day {0}', gen: 'Generated', filters: 'Filters', scores: 'Scores by timepoint', inst: 'Questionnaire', subsc: 'Subscale',
+      mcidT: 'MCID / PASS (change from the pre-op value)', base: 'Pre-op', val: 'Value', delta: 'Change', thr: 'Thresholds', charts: 'Trend charts', noData: 'No responses.', noMcid: 'No evaluable follow-up (3 months – 2 years).',
+      sumT: 'MCID / PASS by procedure', nFol: 'N resp.', noBase: 'no pre-op', ptsT: 'Patients', nSubs: 'Submissions', latest: 'Latest evaluation', pctNote: 'n/N patients; percentage only when N ≥ 5. One patient counts once per questionnaire and timepoint.',
+      print: 'Print / save as PDF', close: 'Close', page: 'Patient page', mcidOk: 'MCID ✓', passOk: 'PASS ✓', no: 'no', perProc: 'Patients by procedure', anonOn: 'anonymised', yes: 'Yes' }
+  };
+  var t = function (k) { var v = S[lg()][k]; return v == null ? k : v; };
+  var f = function (k) { var a = [].slice.call(arguments, 1); return t(k).replace(/\{(\d)\}/g, function (_, i) { return a[+i]; }); };
+  var ui = { scope: 'all', pid: '', procs: {}, side: '', from: '', to: '', mine: false, tps: { pre: 1, '6w': 1, '3m': 1, '6m': 1, '1y': 1, '2y': 1 }, anon: true, daysOnly: false, perPt: false };
+  function today() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }
+  function cloud() { return A.cloud && A.cloud.mode === 'cloud'; }
+  function opts() {
+    var u = A.currentUser() || {}, o = { lang: lg(), anon: ui.anon, daysOnly: ui.daysOnly, today: today(), excludeDemo: cloud(), tps: E.TP_IDS.filter(function (k) { return ui.tps[k]; }) };
+    if (ui.scope === 'patient') { o.pid = ui.pid || '__none__'; return o; }
+    o.procs = Object.keys(ui.procs).filter(function (k) { return ui.procs[k]; }); o.side = ui.side; o.from = ui.from; o.to = ui.to; o.mine = ui.mine ? u.email : '';
+    return o;
+  }
+  function filterText() {
+    var o = opts(), L = lg(), bits = [];
+    if (o.pid) bits.push(t('one'));
+    else { if (o.procs.length) bits.push(t('proc') + ': ' + o.procs.map(function (k) { return E.procName(k, L); }).join(', ')); if (o.side) bits.push(t('side') + ': ' + t(o.side)); if (o.from || o.to) bits.push(t('from') + ' ' + (o.from || '…') + ' ' + t('to') + ' ' + (o.to || '…')); if (o.mine) bits.push(t('byMe')); }
+    if (o.tps.length < E.TP_IDS.length) bits.push(t('tps') + ': ' + o.tps.map(function (k) { return E.tpName(k, L); }).join(', '));
+    if (o.daysOnly) bits.push(t('noDates'));
+    return bits.join(' · ') || E.INFO[L].all;
+  }
+  function meta() { return { appVersion: 'OrthoThessaly v0.3 · ' + E.VERSION, demo: !cloud(), scopePt: ui.scope === 'patient', filters: filterText(), exportedAt: new Date().toISOString() }; }
+  function opt(v, l, s) { return '<option value="' + esc(v) + '"' + (s ? ' selected' : '') + '>' + esc(l) + '</option>'; }
+  function ptOptLabel(p) { var nm = ((p.lastName || '') + ' ' + (p.firstName || '')).trim(); return (nm ? nm + ' · ' : '') + p.id + ' · ' + (X.PROC[p.procedure] ? tx(X.PROC[p.procedure].name) : p.procedure); }
+  // ---------- dashboard card ----------
+  function dashHtml(u, sp) {
+    if (!u) return '';
+    if (sp && ui.autoPid !== sp.id) { ui.autoPid = sp.id; ui.pid = sp.id; }
+    var pts = A.store.patients.filter(function (p) { return !(cloud() && p.demo); });
+    var h = '<div class="card pexp" id="pexpCard"><h2>📤 ' + esc(t('T')) + ' <span class="muted pexpsub">' + esc(t('sub')) + '</span></h2><p class="muted small">' + esc(t('lead')) + '</p>';
+    h += '<p class="pexpwarn" id="pexpWarn" role="note">⚠️ ' + esc(t('warn')) + '</p>';
+    h += '<div class="pexprow"><span class="pexplab">' + esc(t('scope')) + '</span><label class="pexpchk"><input type="radio" name="pexpScope" value="all"' + (ui.scope === 'all' ? ' checked' : '') + '> ' + esc(t('all')) + '</label><label class="pexpchk"><input type="radio" name="pexpScope" value="patient"' + (ui.scope === 'patient' ? ' checked' : '') + '> ' + esc(t('one')) + '</label>' +
+      '<select id="pexpPid" class="pexppid"' + (ui.scope === 'patient' ? '' : ' disabled') + '>' + opt('', t('pick'), !ui.pid) + pts.map(function (p) { return opt(p.id, ptOptLabel(p), ui.pid === p.id); }).join('') + '</select></div>';
+    h += '<fieldset class="pexpflt" id="pexpFlt"' + (ui.scope === 'patient' ? ' disabled' : '') + '><div class="pexprow"><span class="pexplab">' + esc(t('proc')) + '</span>' + Object.keys(X.PROC).map(function (k) { return '<label class="pexpchk"><input type="checkbox" data-pexproc="' + k + '"' + (ui.procs[k] ? ' checked' : '') + '> ' + esc(tx(X.PROC[k].name)) + '</label>'; }).join('') + '<span class="muted small">(' + esc(t('noneAll')) + ')</span></div>' +
+      '<div class="pexprow"><label class="fld">' + esc(t('side')) + '<select id="pexpSide">' + opt('', t('anySide'), !ui.side) + ['R', 'L', 'B'].map(function (k) { return opt(k, t(k), ui.side === k); }).join('') + '</select></label>' +
+      '<label class="fld">' + esc(t('from')) + '<input type="date" id="pexpFrom" value="' + esc(ui.from) + '"></label><label class="fld">' + esc(t('to')) + '<input type="date" id="pexpTo" value="' + esc(ui.to) + '"></label>' +
+      '<label class="fld">' + esc(t('by')) + '<select id="pexpMine">' + opt('', t('byAll'), !ui.mine) + opt('1', t('byMe'), ui.mine) + '</select></label></div></fieldset>';
+    h += '<div class="pexprow"><span class="pexplab">' + esc(t('tps')) + '</span>' + E.TP_IDS.map(function (k) { return '<label class="pexpchk"><input type="checkbox" data-pextp="' + k + '"' + (ui.tps[k] ? ' checked' : '') + '> ' + esc(X.tpName(k)) + '</label>'; }).join('') + '</div>';
+    h += '<div class="pexprow"><label class="pexpchk pexpanon"><input type="checkbox" id="pexpAnon"' + (ui.anon ? ' checked' : '') + '> <b>' + esc(t('anon')) + '</b> <span class="muted small">(' + esc(t('anonH')) + ')</span></label></div>';
+    h += '<div class="pexprow"><label class="pexpchk"><input type="checkbox" id="pexpNoDates"' + (ui.daysOnly ? ' checked' : '') + '> ' + esc(t('noDates')) + ' <span class="muted small">(' + esc(t('noDatesH')) + ')</span></label><label class="pexpchk" id="pexpPerPtL"' + (ui.scope === 'patient' ? ' hidden' : '') + '><input type="checkbox" id="pexpPerPt"' + (ui.perPt ? ' checked' : '') + '> ' + esc(t('perPt')) + '</label></div>';
+    h += '<div class="pexprow pexpgo"><span class="muted" id="pexpCount"></span><span class="pexpbtns"><button class="primary" id="pexpXlsx">⬇ ' + esc(t('xlsx')) + '</button><button id="pexpPdf">🖨 ' + esc(t('pdf')) + '</button></span></div></div>';
+    return h;
+  }
+  function count() {
+    var o = opts(), pts = E.filterPatients(A.store, o), ids = {}; pts.forEach(function (p) { ids[p.id] = 1; });
+    var ns = A.store.submissions.filter(function (s) { return ids[s.patientId] && o.tps.indexOf(s.timepoint) >= 0; }).length, el = $('pexpCount');
+    if (el) el.textContent = pts.length ? f('count', pts.length, ns) : t('none');
+    ['pexpXlsx', 'pexpPdf'].forEach(function (id) { if ($(id)) $(id).disabled = !pts.length; });
+    return pts.length;
+  }
+  function bind() {
+    var c = $('pexpCard'); if (!c) return;
+    c.querySelectorAll('input[name=pexpScope]').forEach(function (r) { r.onchange = function () { ui.scope = r.value; $('pexpPid').disabled = ui.scope !== 'patient'; $('pexpFlt').disabled = ui.scope === 'patient'; $('pexpPerPtL').hidden = ui.scope === 'patient'; count(); }; });
+    $('pexpPid').onchange = function () { ui.pid = this.value; count(); };
+    c.querySelectorAll('[data-pexproc]').forEach(function (b) { b.onchange = function () { ui.procs[b.dataset.pexproc] = b.checked; count(); }; });
+    c.querySelectorAll('[data-pextp]').forEach(function (b) { b.onchange = function () { ui.tps[b.dataset.pextp] = b.checked ? 1 : 0; count(); }; });
+    $('pexpSide').onchange = function () { ui.side = this.value; count(); };
+    $('pexpFrom').onchange = function () { ui.from = this.value; count(); };
+    $('pexpTo').onchange = function () { ui.to = this.value; count(); };
+    $('pexpMine').onchange = function () { ui.mine = !!this.value; count(); };
+    $('pexpAnon').onchange = function () { ui.anon = this.checked; };
+    $('pexpNoDates').onchange = function () { ui.daysOnly = this.checked; };
+    $('pexpPerPt').onchange = function () { ui.perPt = this.checked; };
+    $('pexpXlsx').onclick = xlsx; $('pexpPdf').onclick = pdf;
+    count();
+  }
+  function ptBtn(p) { return '<p class="pexpptb"><button class="small" data-pexpt="' + esc(p.id) + '" id="pexpPtBtn">📤 ' + esc(t('ptBtn')) + '</button></p>'; }
+  function bindPt() { var b = $('pexpPtBtn'); if (!b) return; b.onclick = function () { ui.scope = 'patient'; ui.pid = b.dataset.pexpt; A.refreshUser(); setTimeout(function () { var c = $('pexpCard'); if (c) c.scrollIntoView({ block: 'start' }); }, 30); }; }
+  // ---------- Excel ----------
+  function fileStem() { var o = opts(), base = 'orthothessaly_proms_'; if (o.pid) { var c = E.codeMap([{ id: o.pid }], ui.anon)[o.pid]; return base + c.replace(/[^\w.-]/g, '') + '_' + today(); } return base + 'registry_' + today(); }
+  function xlsx() {
+    if (!count()) return;
+    var o = opts(), w = E.workbook(A.store, o, meta()), name = fileStem() + '.xlsx';
+    A.audit('export-xlsx', (o.pid ? 'patient ' + o.pid : 'registry') + ' · ' + w.data.patients.length + ' pts' + (ui.anon ? ' · anonymised' : ''));
+    window.__lastPexp = { name: name, bytes: w.bytes, data: w.data };
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([w.bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  // ---------- PDF (print view) ----------
+  function n1(v) { return v == null ? '–' : String(Math.round(v * 10) / 10); }
+  function sg(v) { return v == null ? '–' : (v > 0 ? '+' : '') + n1(v); }
+  function badge(v, lab) { return v === true ? '<span class="badge ok">' + esc(lab) + '</span>' : v === false ? '<span class="muted">' + esc(t('no')) + '</span>' : '<span class="muted">–</span>'; }
+  function head(title, d, extra) {
+    var u = A.currentUser() || {}, now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    return '<div class="per-head"><div><h1>' + esc(title) + '</h1>' + (extra || '') + '</div><div class="per-meta">' + (cloud() ? '' : '<span class="pill demo">DEMO</span><br>') + esc(t('gen')) + ' ' + esc(now) + ' UTC<br>' + esc(u.name || u.email || '') + (ui.anon ? '<br>' + esc(t('anonOn')) : '') + '</div></div>' +
+      '<p class="per-filt"><b>' + esc(t('filters')) + ':</b> ' + esc(filterText()) + '</p>';
+  }
+  function patientSection(p, d, standalone) {
+    var L = d.lang, code = d.code[p.id], rows = d.scores.filter(function (r) { return r.code === code; }), mc = d.mcid.filter(function (r) { return r.code === code; });
+    var info = '<div class="per-id"><b>' + esc(t('code')) + ' ' + esc(code) + '</b> · ' + esc(E.procName(p.procedure, L)) + (p.side ? ' · ' + esc(E.sideName(p.side, L)) : '') + (p.surgeryDate && !ui.daysOnly ? ' · ' + esc(t('surg')) + ' ' + esc(p.surgeryDate) : '') + (p.procedure === 'UL' && p.ulType && P.UL_TYPES[p.ulType] ? ' · ' + esc(tx(P.UL_TYPES[p.ulType])) : '') + '</div>';
+    var h = standalone ? head(t('repPt'), d, info) : '<div class="per-pthead"><h2>' + esc(t('page')) + '</h2>' + info + '</div>';
+    // score table: instrument × score key, columns = timepoints kept
+    var tps = d.tps, keys = [], seen = {};
+    var iord = [];
+    rows.forEach(function (r) { var k = r.inst + '|' + r.subKey; if (iord.indexOf(r.inst) < 0) iord.push(r.inst); if (!seen[k]) { seen[k] = { inst: r.inst, instShort: r.instShort, sub: r.subName, primary: r.primary, v: {}, o: keys.length }; keys.push(k); } seen[k].v[r.tp] = r; });
+    keys.sort(function (a, b) { return iord.indexOf(seen[a].inst) - iord.indexOf(seen[b].inst) || seen[a].o - seen[b].o; });
+    h += '<h3>' + esc(t('scores')) + '</h3>';
+    if (!keys.length) h += '<p class="muted">' + esc(t('noData')) + '</p>';
+    else h += '<table class="tbl per-tbl per-scores"><thead><tr><th>' + esc(t('inst')) + '</th><th>' + esc(t('subsc')) + '</th>' + tps.map(function (k) { return '<th>' + esc(E.tpName(k, L)) + '</th>'; }).join('') + '</tr></thead><tbody>' + keys.map(function (k, i) {
+      var x = seen[k], first = !i || seen[keys[i - 1]].inst !== x.inst;
+      return '<tr class="' + (first ? 'per-first' : '') + '"><td>' + (first ? '<b>' + esc(x.instShort) + '</b>' : '') + '</td><td>' + esc(x.sub) + '</td>' + tps.map(function (tp) { var r = x.v[tp]; return '<td class="num">' + (r ? (x.primary ? '<b>' + esc(n1(r.score)) + '</b>' : esc(n1(r.score))) + (ui.daysOnly && r.days != null ? '<br><span class="muted small">' + esc(f('dayN', r.days)) + '</span>' : '') : '') + '</td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody></table>';
+    h += '<h3>' + esc(t('mcidT')) + '</h3>';
+    if (!mc.length) h += '<p class="muted">' + esc(t('noMcid')) + '</p>';
+    else h += '<table class="tbl per-tbl per-mcid"><thead><tr><th>' + esc(t('inst')) + '</th><th>' + esc(t('subsc')) + '</th><th>' + esc(X.tpName('pre').slice(0, 0) || '') + esc(L === 'en' ? 'Timepoint' : 'Χρονικό σημείο') + '</th><th>' + esc(t('base')) + '</th><th>' + esc(t('val')) + '</th><th>' + esc(t('delta')) + '</th><th>MCID</th><th>PASS</th><th>' + esc(t('thr')) + '</th></tr></thead><tbody>' + mc.map(function (r, i) {
+      var first = !i || mc[i - 1].inst !== r.inst;
+      return '<tr class="' + (first ? 'per-first' : '') + (r.overall ? ' per-ov' : '') + '"><td>' + (first ? '<b>' + esc(r.instShort) + '</b>' : '') + '</td><td>' + esc(r.subName) + '</td><td>' + esc(r.tpName) + '</td><td class="num">' + esc(n1(r.baseline)) + '</td><td class="num">' + esc(n1(r.follow)) + '</td><td class="num">' + esc(sg(r.delta)) + '</td><td>' + (r.noBase && r.mcid == null ? '<span class="muted small">' + esc(t('noBase')) + '</span>' : badge(r.mcid, t('mcidOk'))) + '</td><td>' + badge(r.pass, t('passOk')) + '</td><td class="small muted">' + (first ? esc(r.thr || '') : '') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+    // existing SVG trend charts (same as the patient page)
+    var used = {}; A.store.submissions.forEach(function (s) { if (s.patientId === p.id && d.tps.indexOf(s.timepoint) >= 0) used[s.instrument] = 1; });
+    var list = Object.keys(used).filter(function (i) { return I[i] && I[i].chart; });
+    if (list.length && X.chartSvg) h += '<h3>' + esc(t('charts')) + '</h3><div class="charts per-charts">' + list.map(function (i) { return X.chartSvg(p, i); }).join('') + '</div>';
+    return h;
+  }
+  function registryHtml(d) {
+    var L = d.lang, h = head(t('repReg'), d, '<div class="per-id">' + esc(f('count', d.patients.length, d.nSubs)) + '</div>');
+    var byProc = {}; d.patients.forEach(function (p) { byProc[p.procedure] = (byProc[p.procedure] || 0) + 1; });
+    h += '<h3>' + esc(t('perProc')) + '</h3><table class="tbl per-tbl per-proc"><tr>' + Object.keys(byProc).map(function (k) { return '<th>' + esc(E.procName(k, L)) + '</th>'; }).join('') + '</tr><tr>' + Object.keys(byProc).map(function (k) { return '<td class="num"><b>' + byProc[k] + '</b></td>'; }).join('') + '</tr></table>';
+    var cell = function (nn, dd, pct) { return dd == null ? '–' : '<b>' + nn + '/' + dd + '</b>' + (pct != null ? ' <span class="muted">(' + Math.round(pct * 100) + '%)</span>' : ''); };
+    h += '<h3>' + esc(t('sumT')) + '</h3><p class="muted small">' + esc(t('pctNote')) + '</p>';
+    if (!d.summary.length) h += '<p class="muted">' + esc(t('noMcid')) + '</p>';
+    Object.keys(X.PROC).forEach(function (proc) {
+      var rs = d.summary.filter(function (r) { return r.procedure === proc; }); if (!rs.length) return;
+      h += '<h4>' + esc(E.procName(proc, L)) + '</h4><table class="tbl per-tbl per-sum" data-persum="' + proc + '"><thead><tr><th>' + esc(t('inst')) + '</th><th>' + esc(L === 'en' ? 'Timepoint' : 'Χρονικό σημείο') + '</th><th>' + esc(t('nFol')) + '</th><th>MCID</th><th>PASS</th><th>' + esc(t('noBase')) + '</th><th>' + esc(t('thr')) + '</th></tr></thead><tbody>' + rs.map(function (r, i) {
+        var first = !i || rs[i - 1].inst !== r.inst;
+        return '<tr class="' + (first ? 'per-first' : '') + '"><td>' + (first ? '<b>' + esc(r.instShort) + '</b>' + (r.ul ? ' <span class="muted small">(' + esc(r.ul) + ')</span>' : '') : '') + '</td><td>' + esc(r.tpName) + '</td><td class="num">' + r.follow + '</td><td>' + cell(r.mcidN, r.mcidD, r.mcidPct) + '</td><td>' + cell(r.passN, r.passD, r.passPct) + '</td><td class="num">' + r.noBase + '</td><td class="small muted">' + (first ? esc(r.thr) : '') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    });
+    // patient list: latest evaluable follow-up per instrument (key/overall rows), like the dashboard badges
+    h += '<h3>' + esc(t('ptsT')) + '</h3><table class="tbl per-tbl per-pts"><thead><tr><th>' + esc(t('code')) + '</th><th>' + esc(t('proc')) + '</th><th>' + esc(t('side')) + '</th><th>' + esc(ui.daysOnly ? '' : t('surg')) + '</th><th>' + esc(t('nSubs')) + '</th><th>' + esc(t('latest')) + '</th></tr></thead><tbody>' + d.patients.map(function (p) {
+      var c = d.code[p.id], last = {};
+      d.mcid.forEach(function (r) { if (r.code !== c) return; var e = P.thresholdFor(r.inst, p.procedure, p.ulType); if (e && e.subs && !r.overall) return; var o = last[r.inst]; if (!o || E.FOLLOW.indexOf(r.tp) > E.FOLLOW.indexOf(o.tp)) last[r.inst] = r; });
+      var L2 = Object.keys(last).map(function (k) { return last[k]; }), mT = L2.filter(function (r) { return r.mcid != null; }), pT = L2.filter(function (r) { return r.pass != null; });
+      var mOk = mT.filter(function (r) { return r.mcid; }).length, pOk = pT.filter(function (r) { return r.pass; }).length;
+      var ns = d.scores.filter(function (r) { return r.code === c; }).reduce(function (o, r) { o[r.inst + r.tp + (r.date || r.days)] = 1; return o; }, {});
+      return '<tr><td><b>' + esc(c) + '</b></td><td>' + esc(E.procName(p.procedure, L)) + '</td><td>' + esc(E.sideName(p.side, L)) + '</td><td>' + esc(ui.daysOnly ? '' : (p.surgeryDate || '—')) + '</td><td class="num">' + Object.keys(ns).length + '</td><td>' + (mT.length ? '<span class="badge ' + (mOk ? 'ok' : 'na') + '">MCID ' + mOk + '/' + mT.length + '</span> ' : '') + (pT.length ? '<span class="badge ' + (pOk ? 'ok' : 'na') + '">PASS ' + pOk + '/' + pT.length + '</span>' : '') + (!mT.length && !pT.length ? '–' : '') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+    if (ui.perPt) d.patients.forEach(function (p) { h += '</div><div class="per-page per-break">' + patientSection(p, d, false); });
+    return h;
+  }
+  function closeReport() { document.body.classList.remove('pe-print'); var r = $('peReport'); if (r) r.remove(); }
+  function pdf() {
+    if (!count()) return;
+    var o = opts(), d = E.build(A.store, o), html;
+    if (o.pid) { var p = X.patientById(o.pid); if (!p) return; html = patientSection(p, d, true); } else html = registryHtml(d);
+    html += '<p class="per-foot">⚠️ ' + esc(t('warn')) + '</p>';
+    closeReport(); var el = document.createElement('div'); el.id = 'peReport'; el.className = 'pereport'; el.setAttribute('lang', lg());
+    el.innerHTML = '<div class="per-bar noprint"><button class="primary" id="perPrint">🖨 ' + esc(t('print')) + '</button><button id="perClose">✕ ' + esc(t('close')) + '</button></div><div class="per-page">' + html + '</div>';
+    document.body.appendChild(el); document.body.classList.add('pe-print');
+    $('perClose').onclick = closeReport; $('perPrint').onclick = function () { window.print(); };
+    A.audit('export-pdf', (o.pid ? 'patient ' + o.pid : 'registry') + ' · ' + d.patients.length + ' pts' + (ui.anon ? ' · anonymised' : ''));
+    window.__lastPexpPdf = d;
+    if (!window.__peNoPrint) setTimeout(function () { window.print(); }, 80);
+  }
+  window.addEventListener('afterprint', function () { if (!window.__peNoPrint) closeReport(); });
+  window.__pexp = { dashHtml: dashHtml, bind: bind, ptBtn: ptBtn, bindPt: bindPt, xlsx: xlsx, pdf: pdf, closeReport: closeReport, opts: opts, get ui() { return ui; } };
   if (X.curTab === 'dash' && A.refreshUser) A.refreshUser();
 })();
 </script>
