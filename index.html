@@ -987,6 +987,31 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
   body.satt-print .htoreport{position:static;padding:0;overflow:visible}
   body.satt-print .noprint{display:none!important}
 }
+/* ===== 🦴 Shoulder instability sub-tab (reuses the 📐 PTS / 📏 SATT layout classes) ===== */
+.shsecs{margin:6px 0 2px;flex-wrap:wrap}
+.shtbl td:first-child{width:58%}
+.shtbl tr.shbig td{font-size:1.05rem}
+.shtbl tr.shbig b{font-size:1.15em;color:#0b3d4a}
+.shsrc{font-size:.72em;border-radius:999px;padding:1px 7px;margin-left:4px;white-space:nowrap;background:#e6f0f3;color:#2c4a54}
+.shsrc-typed{background:#fff1c2;color:#6b4e00}
+.shbands .shzone{background:#0b3d4a;color:#fff;border-radius:6px;padding:0 6px}
+.shfactor{gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0}
+.shfactor input{width:5.5em}
+.shtrack{display:flex;flex-wrap:wrap;gap:.6em;align-items:baseline;border-radius:10px;padding:8px 12px;margin:6px 0;font-size:1.05rem}
+.shtrack b{font-size:1.25em;letter-spacing:.02em}
+.shtrack-on{background:#e3f6ea;color:#14532d;border:1px solid #86d3a3}
+.shtrack-off{background:#fde8e8;color:#7f1d1d;border:1px solid #f1a3a3}
+.shman{margin:8px 0;border:1px dashed #b9c9cf;border-radius:8px;padding:6px 10px}
+.shman summary{cursor:pointer;font-weight:600}
+.shman input{width:6.5em}
+.shr-figs{display:flex;flex-direction:column;gap:6px}
+.shr-figs figure{margin:0}.shr-figs img{max-width:100%;display:block}
+body.sh-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;overflow:auto;background:#fff;color:#0b1f26;padding:14px}
+@media print{
+  body.sh-print>*:not(#shReport){display:none!important}
+  body.sh-print .htoreport{position:static;padding:0;overflow:visible}
+  body.sh-print .noprint{display:none!important}
+}
 /* ===== 🧠 Quiz (doctors only) – mobile-first ===== */
 #tab-quiz h2{margin:0;font-size:1.25rem;color:var(--brand)}
 .qzbar,.qzrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.qzsp{flex:1}
@@ -7153,7 +7178,7 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
     if (p.created) ev.push({ kind: 'reg', date: String(p.created).slice(0, 10), by: p.enteredBy || null });
     if (p.surgeryDate) ev.push({ kind: 'surgery', date: p.surgeryDate, procedure: p.procedure, side: p.side || '' });
     (d.opnotes || []).filter(function (n) { return n.patientId === p.id; }).forEach(function (n) { ev.push({ kind: 'opnote', date: (n.fields && n.fields.date) || String(n.createdAt || '').slice(0, 10) || p.surgeryDate || '', id: n.id, status: n.status, note: n }); });
-    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { if (x.kind === 'pts') { if (x.pts) ev.push({ kind: 'pts', date: x.pts.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', pts: x.pts }); return; } if (x.kind === 'wrist') { if (x.wrist) ev.push({ kind: 'wrist', date: x.wrist.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', wrist: x.wrist }); return; } if (x.kind === 'patella') { if (x.patella) ev.push({ kind: 'patella', date: x.patella.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', patella: x.patella }); return; } if (x.kind === 'satt') { if (x.satt) ev.push({ kind: 'satt', date: x.satt.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', satt: x.satt }); return; } ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} });
+    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { if (x.kind === 'pts') { if (x.pts) ev.push({ kind: 'pts', date: x.pts.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', pts: x.pts }); return; } if (x.kind === 'wrist') { if (x.wrist) ev.push({ kind: 'wrist', date: x.wrist.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', wrist: x.wrist }); return; } if (x.kind === 'patella') { if (x.patella) ev.push({ kind: 'patella', date: x.patella.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', patella: x.patella }); return; } if (x.kind === 'satt') { if (x.satt) ev.push({ kind: 'satt', date: x.satt.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', satt: x.satt }); return; } if (x.kind === 'shoulder') { if (x.shoulder) ev.push({ kind: 'shoulder', date: x.shoulder.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', shoulder: x.shoulder }); return; } ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} });
       if (x.hto && x.hto.result) ev.push({ kind: 'hto', date: x.hto.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', hto: x.hto }); });
     var groups = {};
     subs.forEach(function (s) { var k = s.timepoint + '|' + s.date; if (!groups[k]) { groups[k] = { kind: 'prom', date: s.date, tp: s.timepoint, subs: [] }; ev.push(groups[k]); } groups[k].subs.push(s); });
@@ -7282,7 +7307,7 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
   function side(s) { s = String(s || '').charAt(0).toUpperCase(); return s === 'R' ? t('sR') : s === 'L' ? t('sL') : s === 'B' ? t('sB') : ''; }
   function f1(v) { return typeof v === 'number' ? (Math.round(v * 10) / 10).toFixed(1) : v; }
   function evHtml(e, p, i) {
-    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', hto: '🦴', pts: '📐', wrist: '🖐', patella: '🦵', satt: '📏', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
+    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', hto: '🦴', pts: '📐', wrist: '🖐', patella: '🦵', satt: '📏', shoulder: '🦴', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
     var rel = p.surgeryDate && e.date && e.kind !== 'today' ? P.daysBetween(p.surgeryDate, e.date) : null;
     if (e.kind === 'today') return '<li class="tl-today" data-tlk="today"><span class="tldot">' + ic + '</span><div class="tlbody"><b>' + esc(t('today')) + '</b> <span class="muted">' + esc(dmy(e.date)) + '</span></div></li>';
     if (e.kind === 'reg') { title = t('reg'); body = e.by ? esc(t('by') + ' ' + (e.by.name || e.by.email || '')) : ''; }
@@ -7294,6 +7319,7 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
     if (e.kind === 'hto') { title = t('hto') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xhto ? '<b class="tlxr">' + esc(window.__xhto.headline(e.hto, en() ? 'en' : 'el')) + '</b>' + (e.filmDate && e.filmDate !== e.date ? ' <span class="muted small">(' + esc(t('xr') + ' ' + dmy(e.filmDate)) + ')</span>' : '') : ''; }
     if (e.kind === 'pts') { title = (en() ? 'Posterior tibial slope' : 'Οπίσθια κλίση κνήμης') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xpts ? '<b class="tlxr">' + esc(window.__xpts.headline(e.pts, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'patella') { title = (en() ? 'Patellar instability' : 'Αστάθεια επιγονατίδας') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xpat ? '<b class="tlxr">' + esc(window.__xpat.headline(e.patella, en() ? 'en' : 'el')) + '</b>' : ''; }
+    if (e.kind === 'shoulder') { title = (en() ? 'Shoulder · bone loss / track' : 'Ώμος · απώλεια οστού / track') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xsh ? '<b class="tlxr">' + esc(window.__xsh.headline(e.shoulder, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'satt') { title = 'SATT' + (e.side ? ' · ' + side(e.side) : ''); body = window.__xsatt ? '<b class="tlxr">' + esc(window.__xsatt.headline(e.satt, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'wrist') { title = (en() ? 'Wrist (distal radius)' : 'Πηχεοκαρπική') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xwrist ? '<b class="tlxr">' + esc(window.__xwrist.headline(e.wrist, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'prom') { title = t('prom') + ' · ' + X.tpName(e.tp);
@@ -7322,6 +7348,7 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
         if (e.kind === 'pts' && window.__xpts && A.showTab) { A.showTab('xray'); window.__xpts.open(e.id); return; }
         if (e.kind === 'patella' && window.__xpat && A.showTab) { A.showTab('xray'); window.__xpat.open(e.id); return; }
         if (e.kind === 'satt' && window.__xsatt && A.showTab) { A.showTab('xray'); window.__xsatt.open(e.id); return; }
+        if (e.kind === 'shoulder' && window.__xsh && A.showTab) { A.showTab('xray'); window.__xsh.open(e.id); return; }
         if (e.kind === 'wrist' && window.__xwrist && A.showTab) { A.showTab('xray'); window.__xwrist.open(e.id); return; }
         if (e.kind === 'hto' && window.__xray && window.__xray.openStudy && A.showTab) { A.showTab('xray'); window.__xray.openStudy(e.id, 'hto'); return; }
         if (e.kind === 'opnote' && window.__opnote && window.__opnote.open) { window.__opnote.open(e.id, 'view'); return A.openPatient(p.id, 'opn'); }
@@ -11417,7 +11444,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- view transform ----------
   function vsize() { var v = $('xView'); return { w: v.clientWidth, h: v.clientHeight }; }
-  function fit() { if (!st.img) return; if ((st.sub === 'hto' && window.__xhto) || (st.sub === 'pts' && window.__xpts) || (st.sub === 'wrist' && window.__xwrist) || (st.sub === 'patella' && window.__xpat) || (st.sub === 'satt' && window.__xsatt)) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
+  function fit() { if (!st.img) return; if ((st.sub === 'hto' && window.__xhto) || (st.sub === 'pts' && window.__xpts) || (st.sub === 'wrist' && window.__xwrist) || (st.sub === 'patella' && window.__xpat) || (st.sub === 'satt' && window.__xsatt) || (st.sub === 'shoulder' && window.__xsh)) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
   function toScr(p) { return { x: p.x * st.view.s + st.view.tx, y: p.y * st.view.s + st.view.ty }; }
   function toImg(p) { return { x: (p.x - st.view.tx) / st.view.s, y: (p.y - st.view.ty) / st.view.s }; }
   function zoomAt(k, c) { var a = toImg(c); st.view.s = Math.max(0.05, Math.min(12, st.view.s * k)); st.view.tx = c.x - a.x * st.view.s; st.view.ty = c.y - a.y * st.view.s; draw(); }
@@ -11969,8 +11996,8 @@ window.OrthoQRGen = qrcode; })();
     var root = $('tab-xray'); if (!root) return;
     var api = P(), pts = api ? api.store.patients : [];
     if (!st.date) st.date = today();
-    var hto = window.__xhto, ptsU = window.__xpts, wriU = window.__xwrist, patU = window.__xpat, satU = window.__xsatt, sub = hto && st.sub === 'hto' ? 'hto' : ptsU && st.sub === 'pts' ? 'pts' : wriU && st.sub === 'wrist' ? 'wrist' : patU && st.sub === 'patella' ? 'patella' : satU && st.sub === 'satt' ? 'satt' : 'align';
-    var h = hto ? '<div class="xsubbar" role="tablist" aria-label="' + esc(t('title')) + '"><button class="xsub' + (sub === 'align' ? ' on' : '') + '" id="xSubAlign" role="tab" aria-selected="' + (sub === 'align') + '" data-xsub="align">🩻 ' + esc(lang() === 'el' ? 'Ευθυγράμμιση' : 'Alignment') + '</button><button class="xsub' + (sub === 'hto' ? ' on' : '') + '" id="xSubHto" role="tab" aria-selected="' + (sub === 'hto') + '" data-xsub="hto">🦴 ' + esc(lang() === 'el' ? 'Σχεδιασμός HTO' : 'HTO planning') + '</button>' + (ptsU ? '<button class="xsub' + (sub === 'pts' ? ' on' : '') + '" id="xSubPts" role="tab" aria-selected="' + (sub === 'pts') + '" data-xsub="pts">📐 ' + esc(lang() === 'el' ? 'Οπίσθια κλίση (PTS)' : 'Posterior slope (PTS)') + '</button>' : '') + (wriU ? '<button class="xsub' + (sub === 'wrist' ? ' on' : '') + '" id="xSubWrist" role="tab" aria-selected="' + (sub === 'wrist') + '" data-xsub="wrist">🖐 ' + esc(lang() === 'el' ? 'Πηχεοκαρπική' : 'Wrist (distal radius)') + '</button>' : '') + (patU ? '<button class="xsub' + (sub === 'patella' ? ' on' : '') + '" id="xSubPatella" role="tab" aria-selected="' + (sub === 'patella') + '" data-xsub="patella">🦵 ' + esc(lang() === 'el' ? 'Αστάθεια επιγονατίδας' : 'Patellar instability') + '</button>' : '') + (satU ? '<button class="xsub' + (sub === 'satt' ? ' on' : '') + '" id="xSubSatt" role="tab" aria-selected="' + (sub === 'satt') + '" data-xsub="satt">📏 SATT</button>' : '') + '</div>' : '';
+    var hto = window.__xhto, ptsU = window.__xpts, wriU = window.__xwrist, patU = window.__xpat, satU = window.__xsatt, shU = window.__xsh, sub = hto && st.sub === 'hto' ? 'hto' : ptsU && st.sub === 'pts' ? 'pts' : wriU && st.sub === 'wrist' ? 'wrist' : patU && st.sub === 'patella' ? 'patella' : satU && st.sub === 'satt' ? 'satt' : shU && st.sub === 'shoulder' ? 'shoulder' : 'align';
+    var h = hto ? '<div class="xsubbar" role="tablist" aria-label="' + esc(t('title')) + '"><button class="xsub' + (sub === 'align' ? ' on' : '') + '" id="xSubAlign" role="tab" aria-selected="' + (sub === 'align') + '" data-xsub="align">🩻 ' + esc(lang() === 'el' ? 'Ευθυγράμμιση' : 'Alignment') + '</button><button class="xsub' + (sub === 'hto' ? ' on' : '') + '" id="xSubHto" role="tab" aria-selected="' + (sub === 'hto') + '" data-xsub="hto">🦴 ' + esc(lang() === 'el' ? 'Σχεδιασμός HTO' : 'HTO planning') + '</button>' + (ptsU ? '<button class="xsub' + (sub === 'pts' ? ' on' : '') + '" id="xSubPts" role="tab" aria-selected="' + (sub === 'pts') + '" data-xsub="pts">📐 ' + esc(lang() === 'el' ? 'Οπίσθια κλίση (PTS)' : 'Posterior slope (PTS)') + '</button>' : '') + (wriU ? '<button class="xsub' + (sub === 'wrist' ? ' on' : '') + '" id="xSubWrist" role="tab" aria-selected="' + (sub === 'wrist') + '" data-xsub="wrist">🖐 ' + esc(lang() === 'el' ? 'Πηχεοκαρπική' : 'Wrist (distal radius)') + '</button>' : '') + (patU ? '<button class="xsub' + (sub === 'patella' ? ' on' : '') + '" id="xSubPatella" role="tab" aria-selected="' + (sub === 'patella') + '" data-xsub="patella">🦵 ' + esc(lang() === 'el' ? 'Αστάθεια επιγονατίδας' : 'Patellar instability') + '</button>' : '') + (satU ? '<button class="xsub' + (sub === 'satt' ? ' on' : '') + '" id="xSubSatt" role="tab" aria-selected="' + (sub === 'satt') + '" data-xsub="satt">📏 SATT</button>' : '') + (shU ? '<button class="xsub' + (sub === 'shoulder' ? ' on' : '') + '" id="xSubShoulder" role="tab" aria-selected="' + (sub === 'shoulder') + '" data-xsub="shoulder">🦴 ' + esc(lang() === 'el' ? 'Ώμος · Απώλεια οστού / Track' : 'Shoulder · Bone loss / Track') + '</button>' : '') + '</div>' : '';
     h += '<div class="card xtopcard' + (sub !== 'align' ? ' xtop-hto' : '') + '"><h2>🩻 ' + esc(t('title')) + ' <span class="pill demo">DEMO</span></h2><div class="xptrow"><label class="fld inl">' + esc(t('patient')) + ' <select id="xPid"><option value="">—</option>' + pts.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === st.pid ? ' selected' : '') + '>' + esc(p.id) + '</option>'; }).join('') + '</select></label><div id="xTabs" class="xtabswrap"></div></div><p class="muted">' + esc(t('lead')) + '</p><div class="grid2 xform">' +
       '<label class="fld">' + esc(t('date')) + '<input type="date" id="xDate" value="' + esc(st.date) + '"></label>' +
       '<label class="fld">' + esc(t('phase')) + '<select id="xPhase"><option value="pre"' + (st.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (st.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label>' +
@@ -11982,7 +12009,7 @@ window.OrthoQRGen = qrcode; })();
       '<label class="rng">☀ ' + esc(t('bright')) + '<input type="range" id="xBr" min="40" max="220" value="' + st.bright + '"></label><label class="rng">◐ ' + esc(t('contrast')) + '<input type="range" id="xCo" min="40" max="300" value="' + st.contrast + '"></label>' +
       '<label class="chk"><input type="checkbox" id="xInv"' + (st.invert ? ' checked' : '') + '> ' + esc(t('invert')) + '</label><label class="chk"><input type="checkbox" id="xMirror"' + (st.mirror ? ' checked' : '') + '> ' + esc(t('mirror')) + '</label><label class="chk"><input type="checkbox" id="xSnap"' + (st.snap ? ' checked' : '') + '> ' + esc(t('snap')) + '</label><button id="xResetSide">↺ ' + esc(t('resetSide')) + '</button></div>' +
       '<div class="xviewpair"><div class="xview" id="xView" role="tabpanel"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><div id="xBanner" class="xbanner hidden" role="status" aria-live="polite"></div><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + emptyHtml() + '</div>' + (st.img && st.imgNote === 'imgThumb' ? '<div class="ximgnote" id="xImgNote">' + esc(t('imgThumb')) + '</div>' : '') + '</div><div class="xview xview2" id="xView2" aria-hidden="true"><canvas id="xImg2"></canvas><div class="xv2lab" id="xV2Lab"></div></div></div></div>' +
-      '<div class="card xpanel" id="xSide"></div></div>' + (hto ? '<div id="xHtoPane" class="xhto' + (sub === 'hto' ? '' : ' hidden') + '"></div>' : '') + (ptsU ? '<div id="xPtsPane" class="xpts' + (sub === 'pts' ? '' : ' hidden') + '"></div>' : '') + (wriU ? '<div id="xWristPane" class="xwri' + (sub === 'wrist' ? '' : ' hidden') + '"></div>' : '') + (patU ? '<div id="xPatPane" class="xpat xpts' + (sub === 'patella' ? '' : ' hidden') + '"></div>' : '') + (satU ? '<div id="xSattPane" class="xsatt xpts' + (sub === 'satt' ? '' : ' hidden') + '"></div>' : '');
+      '<div class="card xpanel" id="xSide"></div></div>' + (hto ? '<div id="xHtoPane" class="xhto' + (sub === 'hto' ? '' : ' hidden') + '"></div>' : '') + (ptsU ? '<div id="xPtsPane" class="xpts' + (sub === 'pts' ? '' : ' hidden') + '"></div>' : '') + (wriU ? '<div id="xWristPane" class="xwri' + (sub === 'wrist' ? '' : ' hidden') + '"></div>' : '') + (patU ? '<div id="xPatPane" class="xpat xpts' + (sub === 'patella' ? '' : ' hidden') + '"></div>' : '') + (satU ? '<div id="xSattPane" class="xsatt xpts' + (sub === 'satt' ? '' : ' hidden') + '"></div>' : '') + (shU ? '<div id="xShPane" class="xsh xpts' + (sub === 'shoulder' ? '' : ' hidden') + '"></div>' : '');
     root.innerHTML = h; renderTabs();
     root.querySelectorAll('[data-xsub]').forEach(function (b) { b.onclick = function () { setSub(b.dataset.xsub); }; });
     var syncTka = function () { var b = $('xTka'); if (b) b.checked = tkaOn(); };
@@ -12010,6 +12037,7 @@ window.OrthoQRGen = qrcode; })();
     if (sub === 'wrist') { wriU.render(); return; }
     if (sub === 'patella') { patU.render(); return; }
     if (sub === 'satt') { satU.render(); return; }
+    if (sub === 'shoulder') { shU.render(); return; }
     requestAnimationFrame(function () { if (st.img && !st.fitted) { fit(); st.fitted = true; } else draw(); });
   }
   window.addEventListener('resize', function () { if ($('xView') && !$('tab-xray').classList.contains('hidden')) draw(); });
@@ -12020,7 +12048,7 @@ window.OrthoQRGen = qrcode; })();
   /** Saves one side (as the 💾 button does) and returns the stored study, or null with the reason shown in the status line. */
   function saveSide(sd) { var keep = st.side; st.side = sd; lastSaved = null; saveStudy(); st.side = keep; return lastSaved; }
   /** Sub-tab switch: 🩻 Alignment ↔ 🦴 HTO planning (the film, patient and tabs are shared). */
-  function setSub(v) { st.sub = v === 'hto' ? 'hto' : v === 'pts' && window.__xpts ? 'pts' : v === 'wrist' && window.__xwrist ? 'wrist' : v === 'patella' && window.__xpat ? 'patella' : v === 'satt' && window.__xsatt ? 'satt' : 'align'; syncSub(); render(); }
+  function setSub(v) { st.sub = v === 'hto' ? 'hto' : v === 'pts' && window.__xpts ? 'pts' : v === 'wrist' && window.__xwrist ? 'wrist' : v === 'patella' && window.__xpat ? 'patella' : v === 'satt' && window.__xsatt ? 'satt' : v === 'shoulder' && window.__xsh ? 'shoulder' : 'align'; syncSub(); render(); }
   /** Opens a saved study (e.g. from the patient timeline) in its film tab, on its side, in the given sub-tab. */
   function openStudy(id, sub) {
     var api = P(), x = ((api && api.store.xrays) || []).filter(function (q) { return q.id === id; })[0]; if (!x) return false;
@@ -12044,7 +12072,7 @@ window.OrthoQRGen = qrcode; })();
     if (!st.filmId) st.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     var tkaF = st.phase === 'post' && isTkaSide(sd0), label = pt && pt.surgeryDate && window.__xcmp ? window.__xcmp.intervalLabel(pt.surgeryDate, st.date) : null;
     var prevHto = null; store.xrays.forEach(function (x) { if (x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.hto) prevHto = x.hto; });
-    store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt'); }); // 📐 PTS / 🖐 wrist / 🦵 patella / 📏 SATT records are separate studies
+    store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder'); }); // 📐 PTS / 🖐 wrist / 🦵 patella / 📏 SATT / 🦴 shoulder records are separate studies
     store.xrays.push({ id: 'x' + Math.random().toString(36).slice(2, 10), patientId: st.pid, date: st.date, phase: st.phase, side: st.side, landmarks: JSON.parse(JSON.stringify(st.lm[st.side])), results: res, image: st.name + (st.demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician',
       landmarkSource: landmarkSource(sd0), origins: JSON.parse(JSON.stringify(st.origin[sd0])), autoConfidence: conf, detector: det ? det.version : null, autoStatus: det ? det.status : null, confirmed: cfd, tka: tkaF, tkaDetected: !!(det && det.tka), label: label, synth: st.demo ? st.variant : null, thumb: makeThumb(sd0), filmId: st.filmId, imgStored: !st.demo && st.imgNote !== 'imgThumb' && !!st.img });
     if (prevHto) store.xrays[store.xrays.length - 1].hto = prevHto;
@@ -12089,9 +12117,9 @@ window.OrthoQRGen = qrcode; })();
   }
 
   // ---------- dashboard section ----------
-  function dashHtml(p) { return dashAlign(p) + (window.__xpts && window.__xpts.dashHtml ? window.__xpts.dashHtml(p) : '') + (window.__xwrist && window.__xwrist.dashHtml ? window.__xwrist.dashHtml(p) : '') + (window.__xpat && window.__xpat.dashHtml ? window.__xpat.dashHtml(p) : '') + (window.__xsatt && window.__xsatt.dashHtml ? window.__xsatt.dashHtml(p) : ''); }
+  function dashHtml(p) { return dashAlign(p) + (window.__xpts && window.__xpts.dashHtml ? window.__xpts.dashHtml(p) : '') + (window.__xwrist && window.__xwrist.dashHtml ? window.__xwrist.dashHtml(p) : '') + (window.__xpat && window.__xpat.dashHtml ? window.__xpat.dashHtml(p) : '') + (window.__xsatt && window.__xsatt.dashHtml ? window.__xsatt.dashHtml(p) : '') + (window.__xsh && window.__xsh.dashHtml ? window.__xsh.dashHtml(p) : ''); }
   function dashAlign(p) {
-    var api = P(), xs = ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt'; });
+    var api = P(), xs = ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder'; });
     if (!xs.length && p.procedure !== 'TKA') return '';
     var h = '<h3 style="margin-top:12px">🩻 ' + esc(t('dashT')) + '</h3>';
     if (!xs.length) return h + '<p class="muted">' + esc(t('dashNone')) + '</p>';
@@ -12112,7 +12140,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- paste (Ctrl/Cmd+V, 📋 button) and drag & drop: the image goes into the ACTIVE sub-tab through that sub-tab's own file input ----------
   // (same pipeline as «Ανεβάστε Ακτινογραφία»: EXIF / downscale, worker detection, independent per-sub-tab film, training opt-in)
-  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile', wrist: 'wristFile', patella: 'patFile', satt: 'sattFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
+  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile', wrist: 'wristFile', patella: 'patFile', satt: 'sattFile', shoulder: 'shFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
   var PT = {
     el: { btn: '📋 Επικόλληση', hint: 'Ctrl+V για επικόλληση από PACS', aria: 'Επικόλληση ακτινογραφίας από το πρόχειρο', no: 'Πατήστε Ctrl+V ή χρησιμοποιήστε το «Ανεβάστε Ακτινογραφία»', empty: 'Δεν βρέθηκε εικόνα στο πρόχειρο – αντιγράψτε πρώτα την ακτινογραφία (π.χ. από το PACS).', drop: 'Αφήστε την εικόνα εδώ', notImg: 'Το αρχείο δεν είναι εικόνα ακτινογραφίας (PNG, JPEG ή DICOM).' },
     en: { btn: '📋 Paste', hint: 'Ctrl+V to paste from PACS', aria: 'Paste X-ray from the clipboard', no: 'Press Ctrl+V or use «Upload X-ray»', empty: 'No image on the clipboard – copy the X-ray first (e.g. from PACS).', drop: 'Drop the image here', notImg: 'The file is not an X-ray image (PNG, JPEG or DICOM).' } };
@@ -12133,6 +12161,7 @@ window.OrthoQRGen = qrcode; })();
     if (st.sub === 'wrist' && window.__xwrist && window.__xwrist.loadFile) { window.__xwrist.loadFile(file); return true; }
     if (st.sub === 'patella' && window.__xpat && window.__xpat.loadFile) { window.__xpat.loadFile(file); return true; }
     if (st.sub === 'satt' && window.__xsatt && window.__xsatt.loadFile) { window.__xsatt.loadFile(file); return true; }
+    if (st.sub === 'shoulder' && window.__xsh && window.__xsh.loadFile) { window.__xsh.loadFile(file); return true; }
     return false;
   }
   function imageFromItems(items) { for (var i = 0; items && i < items.length; i++) { var it = items[i]; if (it.kind === 'file' && /^image\//.test(it.type)) { var f = it.getAsFile(); if (f) return f; } } return null; }
@@ -12163,13 +12192,14 @@ window.OrthoQRGen = qrcode; })();
   document.addEventListener('drop', function (e) {
     if (!hasFiles(e) || !inXray(e)) return; e.preventDefault(); dragDepth = 0; dropOn(false);
     if (st.sub === 'patella' && window.__xpat && window.__xpat.dropSeries && window.__xpat.dropSeries(e.dataTransfer)) { setPasteMsg(''); return; } // 🦵 TT–TG: several files / folder / .zip → DICOM series viewer
+    if (st.sub === 'shoulder' && window.__xsh && window.__xsh.dropSeries && window.__xsh.dropSeries(e.dataTransfer)) { setPasteMsg(''); return; } // 🦴 shoulder: same series viewer
     var fs = e.dataTransfer.files, f = fs && [].filter.call(fs, isImgFile)[0];
     if (!f) { if (fs && fs.length) setPasteMsg(pt('notImg')); return; } feedFile(f, 'dropped');
   });
   /** 📋 button + desktop hint next to every «Ανεβάστε Ακτινογραφία» of the active sub-tab (the sub-tab UIs re-render freely; this re-attaches). */
   function ensurePasteUi() {
     var r = $('tab-xray'); if (!r) return;
-    var ids = ['xFile', 'htoFile', 'ptsFile', 'wristFile', 'patFile', 'sattFile'];
+    var ids = ['xFile', 'htoFile', 'ptsFile', 'wristFile', 'patFile', 'sattFile', 'shFile'];
     [].forEach.call(r.querySelectorAll(ids.map(function (i) { return 'label[for="' + i + '"]'; }).join(',')), function (lab) {
       if (lab.nextElementSibling && lab.nextElementSibling.classList.contains('xpastewrap')) return;
       var w = document.createElement('span'); w.className = 'xpastewrap';
@@ -17482,6 +17512,710 @@ window.OrthoQRGen = qrcode; })();
     toScreen: function (p) { var cv = $('sattCv'); if (!cv || !ui.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * ui.lv.s + ui.lv.tx, y: r.top + p.y * ui.lv.s + ui.lv.ty }; } };
 })();
 </script>
+<!-- ===== 🦴 Shoulder instability: glenoid bone loss (best-fit circle, d/D, surface area) + glenoid track / Hill-Sachs interval, on-track / off-track (pure, tested in Node) + UI ===== -->
+<script id="ortho-xray-shoulder">
+// ===== OrthoThessaly · 🦴 Shoulder instability core: glenoid bone loss (best-fit circle) + glenoid track / Hill-Sachs interval (pure; unit-tested in Node) =====
+// Glenoid view (en-face 3D CT or a sagittal oblique CT / MRI slice of the glenoid). Points (image px, y down):
+//   C1..Cn  ≥ 3 points on the intact inferior (posterior–inferior) glenoid rim → least-squares best-fit circle, diameter D
+//   E1      anterior glenoid rim at the defect (where the measuring diameter meets the remaining glenoid)
+//   E2      optional second point on the straight anterior defect edge: with E1–E2 the measuring diameter is perpendicular to that edge
+//   P1..Pk  optional traced outline of the defect (surface-area method), from where the rim leaves the circle to where it rejoins it
+//   CAL1 / CAL2 optional marker of known length (screenshots without DICOM)
+// d = width of the anterior defect along the measuring diameter (circle rim → defect edge) = R − h, h = distance centre → defect edge.
+// Bone loss % = d / D × 100 · surface-area (PICO-type) % = missing circular segment beyond the defect edge / circle area × 100 (straight defect edge).
+// Hill-Sachs view (axial CT / MRI): H1 medial edge of the Hill-Sachs lesion, H2 lateral edge, F medial margin of the rotator-cuff footprint.
+// HSI = Hill-Sachs width (H1–H2) + bone bridge (H2–F). Glenoid track GT = k × D − d (k = 0.83 by default, editable).
+// HSI < GT → on-track, HSI ≥ GT → off-track · distance to dislocation DTD = GT − HSI · Hill-Sachs occupancy = HSI / GT × 100
+// (on-track: ≥ 75 % peripheral-track, < 75 % central-track) · near-track: on-track with DTD < 8 mm.
+// Anisotropic DICOM pixels are handled exactly: every point is converted to mm per axis before fitting / measuring.
+(function (root) {
+  'use strict';
+  var VERSION = 'shoulder-1.0';
+  var FACTOR = 0.83, LOSS = [13.5, 20, 25], DTD_T = [8, 10], OCC_T = 75; // numbers only on the page
+  var MIN_C = 3, MAX_C = 12;
+  var okP = function (p) { return !!p && isFinite(p.x) && isFinite(p.y); };
+  var sub = function (a, b) { return { x: a.x - b.x, y: a.y - b.y }; }, dot = function (a, b) { return a.x * b.x + a.y * b.y; };
+  var len = function (a) { return Math.hypot(a.x, a.y); };
+
+  /** DICOM PixelSpacing [row, column] → { sx (columns), sy (rows) } – the same fixed helper as the 📏 SATT / 📐 PTS sub-tabs. */
+  var spacingXY = (root.OrthoSATT && root.OrthoSATT.spacingXY) || function (s) {
+    if (s == null) return null; if (typeof s === 'number') return s > 0 ? { sx: s, sy: s } : null;
+    if (typeof s === 'string') s = s.split('\\').map(Number);
+    var r = +s[0], c = s[1] != null ? +s[1] : r; if (!(r > 0)) r = c; if (!(c > 0)) c = r; return r > 0 && c > 0 ? { sx: c, sy: r } : null;
+  };
+  /** o: { spacing (DICOM PixelSpacing), cal1, cal2, calMm, demoMmPerPx } → { sx, sy, mmPerPx, aniso, source: dicom | marker | demo | none, approx } */
+  function calibration(o) {
+    o = o || {}; var sp = spacingXY(o.spacing);
+    if (sp) return { sx: sp.sx, sy: sp.sy, mmPerPx: (sp.sx + sp.sy) / 2, aniso: Math.abs(sp.sx - sp.sy) > 0.01 * Math.max(sp.sx, sp.sy), source: 'dicom', approx: false };
+    if (okP(o.cal1) && okP(o.cal2) && o.calMm > 0 && len(sub(o.cal1, o.cal2)) > 3) { var k = o.calMm / len(sub(o.cal1, o.cal2)); return { sx: k, sy: k, mmPerPx: k, aniso: false, source: 'marker', approx: true }; }
+    if (o.demoMmPerPx > 0) return { sx: o.demoMmPerPx, sy: o.demoMmPerPx, mmPerPx: o.demoMmPerPx, aniso: false, source: 'demo', approx: false };
+    return { sx: null, sy: null, mmPerPx: null, aniso: false, source: 'none', approx: false };
+  }
+  /** Circle points C1..Cn of a point map, in order. */
+  function circlePts(pts) { var out = []; for (var i = 1; i <= MAX_C; i++) if (okP(pts && pts['C' + i])) out.push(pts['C' + i]); return out; }
+
+  /** Least-squares circle: algebraic (Kåsa) start, then Gauss–Newton on the geometric distances. → { cx, cy, r, rms, n, arcDeg } or null. */
+  function fitCircle(P) {
+    P = (P || []).filter(okP); var n = P.length; if (n < 3) return null;
+    var mx = 0, my = 0; P.forEach(function (p) { mx += p.x; my += p.y; }); mx /= n; my /= n;
+    var Suu = 0, Svv = 0, Suv = 0, Suuu = 0, Svvv = 0, Suvv = 0, Svuu = 0;
+    P.forEach(function (p) { var u = p.x - mx, v = p.y - my; Suu += u * u; Svv += v * v; Suv += u * v; Suuu += u * u * u; Svvv += v * v * v; Suvv += u * v * v; Svuu += v * u * u; });
+    var det = Suu * Svv - Suv * Suv, scale = Suu + Svv; if (!(scale > 0) || Math.abs(det) < 1e-12 * scale * scale) return null; // collinear
+    var b1 = 0.5 * (Suuu + Suvv), b2 = 0.5 * (Svvv + Svuu), uc = (b1 * Svv - b2 * Suv) / det, vc = (Suu * b2 - Suv * b1) / det;
+    var cx = uc + mx, cy = vc + my, r = Math.sqrt(uc * uc + vc * vc + (Suu + Svv) / n);
+    for (var it = 0; it < 50; it++) { // Gauss–Newton: residual ri = |p − c| − r
+      var JtJ = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], Jtr = [0, 0, 0], ok = true;
+      P.forEach(function (p) { var dx = p.x - cx, dy = p.y - cy, di = Math.hypot(dx, dy); if (di < 1e-12) { ok = false; return; } var J = [-dx / di, -dy / di, -1], ri = di - r;
+        for (var a = 0; a < 3; a++) { Jtr[a] += J[a] * ri; for (var b = 0; b < 3; b++) JtJ[a][b] += J[a] * J[b]; } });
+      if (!ok) break; var s = solve3(JtJ, Jtr); if (!s) break; cx -= s[0]; cy -= s[1]; r -= s[2];
+      if (Math.abs(s[0]) + Math.abs(s[1]) + Math.abs(s[2]) < 1e-10 * (1 + Math.abs(r))) break;
+    }
+    if (!(r > 0) || !isFinite(cx) || !isFinite(cy)) return null;
+    var ss = 0; P.forEach(function (p) { var e = Math.hypot(p.x - cx, p.y - cy) - r; ss += e * e; });
+    var ang = P.map(function (p) { return Math.atan2(p.y - cy, p.x - cx); }).sort(function (a, b) { return a - b; }), gap = 0;
+    for (var i = 0; i < ang.length; i++) { var g = (i + 1 < ang.length ? ang[i + 1] : ang[0] + 2 * Math.PI) - ang[i]; if (g > gap) gap = g; }
+    return { cx: cx, cy: cy, r: r, rms: Math.sqrt(ss / n), n: n, arcDeg: (2 * Math.PI - gap) * 180 / Math.PI };
+  }
+  function solve3(A, b) {
+    var M = A.map(function (row, i) { return row.concat([b[i]]); });
+    for (var c = 0; c < 3; c++) { var p = c; for (var r = c + 1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r; if (Math.abs(M[p][c]) < 1e-14) return null; var t = M[c]; M[c] = M[p]; M[p] = t;
+      for (var r2 = 0; r2 < 3; r2++) if (r2 !== c) { var f = M[r2][c] / M[c][c]; for (var k = c; k < 4; k++) M[r2][k] -= f * M[c][k]; } }
+    return [M[0][3] / M[0][0], M[1][3] / M[1][1], M[2][3] / M[2][2]];
+  }
+  /** Defect outline points P1..Pn of a point map, in order. */
+  function outlinePts(pts) { var out = []; for (var i = 1; i <= MAX_C; i++) if (okP(pts && pts['P' + i])) out.push(pts['P' + i]); return out; }
+  /** Area (mm²) between a traced outline (mm) and the circle arc that closes it on the side away from the intact rim points. */
+  function tracedArea(T, c, R, Cm) {
+    var a0 = Math.atan2(T[0].y - c.y, T[0].x - c.x), a1 = Math.atan2(T[T.length - 1].y - c.y, T[T.length - 1].x - c.x), mc = { x: 0, y: 0 };
+    Cm.forEach(function (p) { mc.x += p.x / Cm.length; mc.y += p.y / Cm.length; });
+    var sweep = function (dir) { var d = dir > 0 ? a0 - a1 : a1 - a0; while (d <= 0) d += 2 * Math.PI; while (d > 2 * Math.PI) d -= 2 * Math.PI; return d * dir; }; // from a1 back to a0
+    var best = null; [1, -1].forEach(function (dir) { var sw = sweep(dir), am = a1 + sw / 2, pm = { x: c.x + R * Math.cos(am), y: c.y + R * Math.sin(am) }, far = Math.hypot(pm.x - mc.x, pm.y - mc.y); if (!best || far > best.far) best = { sw: sw, far: far }; });
+    var poly = T.slice(), n = Math.max(8, Math.ceil(Math.abs(best.sw) / (0.25 * Math.PI / 180)));
+    for (var i = 0; i <= n; i++) { var t = a1 + best.sw * i / n; poly.push({ x: c.x + R * Math.cos(t), y: c.y + R * Math.sin(t) }); }
+    var A = 0; for (var j = 0; j < poly.length; j++) { var p = poly[j], q = poly[(j + 1) % poly.length]; A += p.x * q.y - q.x * p.y; }
+    var outside = T.some(function (p) { return Math.hypot(p.x - c.x, p.y - c.y) > R * 1.05; });
+    return { area: Math.abs(A) / 2, poly: poly, outside: outside };
+  }
+  /** Area of the circular segment beyond a chord at signed distance h from the centre (h ∈ [−R, R]; h < 0 → more than half). */
+  function segmentArea(R, h) { h = Math.max(-R, Math.min(R, h)); return R * R * Math.acos(h / R) - h * Math.sqrt(Math.max(0, R * R - h * h)); }
+
+  /** Glenoid: pts { C1..Cn, E1, E2? }, o { cal }. All lengths in mm when calibrated (else px, ok = false for mm values but % still valid). */
+  function glenoid(pts, o) {
+    pts = pts || {}; o = o || {}; var cal = o.cal || calibration({}), sx = cal.sx || 1, sy = cal.sy || 1, mmOk = !!cal.mmPerPx;
+    var M = function (p) { return { x: p.x * sx, y: p.y * sy }; }, Im = function (p) { return { x: p.x / sx, y: p.y / sy }; };
+    var C = circlePts(pts), out = { ok: false, pctOk: false, nC: C.length, cal: cal, quality: [], mode: okP(pts.E2) ? 'line' : 'point' };
+    if (C.length < MIN_C) { out.missing = 'circle'; return out; }
+    var f = fitCircle(C.map(M)); if (!f) { out.quality.push({ code: 'collinear', lv: 'x' }); return out; }
+    var R = f.r, c = { x: f.cx, y: f.cy }; out.R = R; out.D = 2 * R; out.c = Im(c); out.rIm = { x: R / sx, y: R / sy }; out.rms = f.rms; out.arcDeg = f.arcDeg;
+    out.circleArea = Math.PI * R * R;
+    var Q = out.quality;
+    if (cal.source === 'none') Q.push({ code: 'noScale', lv: 'w' }); else if (cal.approx) Q.push({ code: 'approx', lv: 'i' });
+    if (cal.aniso) Q.push({ code: 'aniso', lv: 'i' });
+    if (f.n === 3) Q.push({ code: 'three', lv: 'i' });
+    if (f.rms > 0.04 * R) Q.push({ code: 'fitRms', lv: 'w' });
+    if (f.arcDeg < 90) Q.push({ code: 'arcShort', lv: 'w' });
+    if (!okP(pts.E1)) { out.missing = 'defect'; return out; }
+    var e1 = M(pts.E1), u, h;
+    if (okP(pts.E2) && len(sub(M(pts.E2), e1)) > 1e-6) {
+      var e2 = M(pts.E2), t = sub(e2, e1), L = len(t), nrm = { x: -t.y / L, y: t.x / L }, mc = { x: 0, y: 0 };
+      C.map(M).forEach(function (p) { mc.x += p.x / C.length; mc.y += p.y / C.length; });
+      if (dot(sub(mc, e1), nrm) > 0) nrm = { x: -nrm.x, y: -nrm.y };   // nrm points from the intact rim towards the defect
+      h = -dot(sub(c, e1), nrm);                                       // signed: + = centre on the intact side of the defect edge
+      u = nrm; out.E0 = Im({ x: c.x + u.x * h, y: c.y + u.y * h });    // foot of the measuring diameter on the defect edge
+    } else {
+      var v = sub(e1, c), lv = len(v); if (lv < 1e-9) { Q.push({ code: 'e1Centre', lv: 'x' }); return out; }
+      u = { x: v.x / lv, y: v.y / lv }; h = lv; out.E0 = pts.E1;
+    }
+    out.u = u; out.h = h; out.d = R - h;
+    out.A0 = Im({ x: c.x + u.x * R, y: c.y + u.y * R }); out.P0 = Im({ x: c.x - u.x * R, y: c.y - u.y * R }); // measuring diameter ends (circle rim)
+    out.lossPct = out.d / out.D * 100;
+    out.defectArea = segmentArea(R, h); out.picoPct = out.defectArea / out.circleArea * 100;
+    if (out.d < 0) Q.push({ code: 'edgeOut', lv: 'w' });
+    if (out.lossPct > 50) Q.push({ code: 'lossHuge', lv: 'w' });
+    if (okP(pts.E2)) { var r1 = len(sub(M(pts.E1), c)) - R, r2 = len(sub(M(pts.E2), c)) - R; if (r1 > 0.25 * R || r2 > 0.25 * R) Q.push({ code: 'edgeFar', lv: 'w' }); }
+    out.d = Math.max(0, out.d); out.lossPct = Math.max(0, out.lossPct);
+    // surface-area method: traced defect outline P1..Pk (≥ 2) closed by the circle arc on the defect side; otherwise the straight-edge segment above
+    var T = outlinePts(pts); out.picoMode = 'chord';
+    if (T.length >= 2) { var a = tracedArea(T.map(M), c, R, C.map(M)); if (a != null) { out.picoMode = 'trace'; out.defectArea = a.area; out.picoPct = a.area / out.circleArea * 100; out.trace = a.poly.map(Im); if (a.outside) Q.push({ code: 'traceOut', lv: 'w' }); } }
+    out.pctOk = true; out.ok = mmOk; if (!mmOk) { out.Dpx = out.D; out.dpx = out.d; }
+    return out;
+  }
+  /** Hill-Sachs interval: pts { H1 (medial HS edge), H2 (lateral HS edge), F (medial cuff-footprint margin) }, o { cal }. */
+  function hsi(pts, o) {
+    pts = pts || {}; o = o || {}; var cal = o.cal || calibration({}), sx = cal.sx || 1, sy = cal.sy || 1, mmOk = !!cal.mmPerPx, M = function (p) { return { x: p.x * sx, y: p.y * sy }; };
+    var out = { ok: false, cal: cal, quality: [] }, Q = out.quality;
+    if (!okP(pts.H1) || !okP(pts.H2) || !okP(pts.F)) { out.missing = ['H1', 'H2', 'F'].filter(function (k) { return !okP(pts[k]); }); return out; }
+    var a = M(pts.H1), b = M(pts.H2), f = M(pts.F);
+    out.width = len(sub(b, a)); out.bridge = len(sub(f, b)); out.raw = out.width + out.bridge; out.direct = len(sub(f, a));
+    if (cal.source === 'none') Q.push({ code: 'noScale', lv: 'w' }); else if (cal.approx) Q.push({ code: 'approx', lv: 'i' });
+    if (cal.aniso) Q.push({ code: 'aniso', lv: 'i' });
+    if (dot(sub(b, a), sub(f, b)) < 0) Q.push({ code: 'hsOrder', lv: 'w' });       // the bridge doubles back over the lesion
+    if (out.width < 1e-6) Q.push({ code: 'hsZero', lv: 'w' });
+    if (mmOk) { out.hsi = out.raw; out.ok = true; if (out.hsi > 45) Q.push({ code: 'hsiOdd', lv: 'w' }); } else out.px = out.raw;
+    return out;
+  }
+  /** o: { D, d, hsi (mm), factor (default 0.83) } → glenoid track, classification, DTD, occupancy. */
+  function track(o) {
+    o = o || {}; var k = o.factor > 0 ? +o.factor : FACTOR, out = { factor: k, ok: false };
+    var nb = function (x) { return x != null && x !== '' && isFinite(+x) && +x >= 0; };
+    if (!(+o.D > 0) || o.D == null || !nb(o.d)) return out;
+    out.D = +o.D; out.d = +o.d; out.lossPct = out.d / out.D * 100; out.gt = k * out.D - out.d;
+    if (!nb(o.hsi)) { out.gtOnly = true; return out; }
+    out.hsi = +o.hsi; out.dtd = out.gt - out.hsi; out.track = out.hsi < out.gt ? 'on' : 'off'; out.ok = true;
+    out.occ = out.gt > 0 ? out.hsi / out.gt * 100 : null;
+    if (out.track === 'on') { out.sub = out.occ != null && out.occ >= OCC_T ? 'peripheral' : 'central'; out.near = out.dtd < DTD_T[0]; }
+    return out;
+  }
+  /** Literature bands of glenoid bone loss (numbers only): 0 = < 13.5 %, 1 = 13.5–< 20 %, 2 = 20–25 %, 3 = > 25 %. */
+  function lossZone(p) { if (p == null || !isFinite(p)) return null; return p < LOSS[0] ? 0 : p < LOSS[1] ? 1 : p <= LOSS[2] ? 2 : 3; }
+
+  // ---------- synthetic images (DEMO + tests): known geometry, gray Uint8 ----------
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  /** En-face glenoid: inferior circle (R mm) + narrower superior pole, anterior straight defect of width d (mm) at angle defAng (rad, image space; 0 = +x).
+   *  o: { R, d, mmPerPx, W, H, defAng, tilt (deg of the defect edge vs. the perpendicular), seed, noise } → { W, H, data, mmPerPx, truth } */
+  function synthGlenoid(o) {
+    o = Object.assign({ R: 13, d: 4, mmPerPx: 0.1, W: 420, H: 520, defAng: 0, seed: 7, noise: 6 }, o || {});
+    var W = o.W, H = o.H, k = 1 / o.mmPerPx, R = o.R * k, cx = W / 2, cy = H * 0.6, rnd = rng(o.seed), data = new Uint8ClampedArray(W * H);
+    var ux = Math.cos(o.defAng), uy = Math.sin(o.defAng), h = R - o.d * k;
+    var supC = { x: cx, y: cy - R * 1.05 }, sa = R * 0.72, sb = R * 1.0; // superior pole ellipse
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var dx = x - cx, dy = y - cy, inC = dx * dx + dy * dy <= R * R, ex = (x - supC.x) / sa, ey = (y - supC.y) / sb, inE = ex * ex + ey * ey <= 1 && y < cy;
+      var bone = (inC || inE) && (dx * ux + dy * uy) <= h; var v = bone ? 185 - 25 * Math.hypot(dx, dy) / R : 40 + 18 * (y / H);
+      data[y * W + x] = Math.max(0, Math.min(255, Math.round(v + (rnd() - 0.5) * 2 * o.noise)));
+    }
+    // truth: 5 points on the posterior–inferior arc (opposite the defect, 90°..270° away), defect edge ends inside the circle
+    var C = [], base = o.defAng + Math.PI; [-80, -40, 0, 40, 80].forEach(function (a) { var t = base + a * Math.PI / 180; C.push({ x: cx + R * Math.cos(t), y: cy + R * Math.sin(t) }); });
+    var half = Math.sqrt(Math.max(0, R * R - h * h)) * 0.6, px = -uy, py = ux;
+    var E1 = { x: cx + ux * h, y: cy + uy * h }, E2 = { x: E1.x + px * half, y: E1.y + py * half }, truth = { C: C, E1: E1, E2: E2, D: 2 * o.R, d: o.d, lossPct: o.d / (2 * o.R) * 100, c: { x: cx, y: cy }, rPx: R };
+    truth.picoPct = segmentArea(o.R, o.R - o.d) / (Math.PI * o.R * o.R) * 100;
+    return { W: W, H: H, data: data, mmPerPx: o.mmPerPx, truth: truth };
+  }
+  /** Axial humeral head with a posterolateral Hill-Sachs notch. o: { Rh (mm), hsW (mm), bb (mm), mmPerPx } → truth H1, H2, F (on the head outline), HSI. */
+  function synthHumerus(o) {
+    o = Object.assign({ Rh: 24, hsW: 14, bb: 9, mmPerPx: 0.15, W: 460, H: 460, seed: 11, noise: 6 }, o || {});
+    var W = o.W, H = o.H, k = 1 / o.mmPerPx, R = o.Rh * k, cx = W * 0.5, cy = H * 0.5, rnd = rng(o.seed), data = new Uint8ClampedArray(W * H);
+    // the posterior (top of the image) – lateral (right) quadrant: F (cuff footprint margin) at −30°, lesion from F + bb (lateral edge H2) to H2 + hsW (medial edge H1), chord lengths
+    var aF = -30 * Math.PI / 180, ang = function (chord) { return 2 * Math.asin(Math.min(1, chord / (2 * o.Rh))); };
+    var aH2 = aF - ang(o.bb), aH1 = aH2 - ang(o.hsW), on = function (a) { return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) }; };
+    var F = on(aF), H2 = on(aH2), H1 = on(aH1), mid = on((aH1 + aH2) / 2), depth = R * 0.12, nr = Math.hypot(H1.x - H2.x, H1.y - H2.y) / 2;
+    var nc = { x: mid.x + (mid.x - cx) / R * (nr * 0.9 - depth), y: mid.y + (mid.y - cy) / R * (nr * 0.9 - depth) };
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var dx = x - cx, dy = y - cy, rr = Math.hypot(dx, dy), bone = rr <= R && Math.hypot(x - nc.x, y - nc.y) > nr * 0.9;
+      var v = bone ? (rr > R - 2.2 * k ? 200 : 150) : 35 + 15 * (x / W);
+      data[y * W + x] = Math.max(0, Math.min(255, Math.round(v + (rnd() - 0.5) * 2 * o.noise)));
+    }
+    return { W: W, H: H, data: data, mmPerPx: o.mmPerPx, truth: { H1: H1, H2: H2, F: F, width: o.hsW, bridge: o.bb, hsi: o.hsW + o.bb } };
+  }
+  root.OrthoShoulder = { VERSION: VERSION, FACTOR: FACTOR, LOSS: LOSS, DTD_T: DTD_T, OCC_T: OCC_T, MIN_C: MIN_C, MAX_C: MAX_C, spacingXY: spacingXY, calibration: calibration, circlePts: circlePts, outlinePts: outlinePts,
+    fitCircle: fitCircle, segmentArea: segmentArea, glenoid: glenoid, hsi: hsi, track: track, lossZone: lossZone, synthGlenoid: synthGlenoid, synthHumerus: synthHumerus };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-xray-shoulder-ui">
+// ===== OrthoThessaly · 🦴 Shoulder instability sub-tab (X-rays section): glenoid bone loss + glenoid track / Hill-Sachs interval =====
+// Two images of the same shoulder: ① glenoid (en-face 3D CT or a sagittal oblique CT / MRI slice) and ② Hill-Sachs (axial CT / MRI).
+// Each: PNG / JPEG / DICOM (PixelSpacing [row, column] → exact mm per axis), paste (Ctrl+V / 📋), drag & drop, or a slice of a whole DICOM
+// series (many files, a .zip or a folder; read in the browser only). Without DICOM: 📏 calibration with an object of known length (mm marked ≈).
+// The doctor places every point (no automatic detection); points are draggable, values update live. Optional typed values (from PACS) for
+// D, d and HSI override the image values. Saved as its own X-ray study of the selected patient (kind 'shoulder' → xray_studies.extra);
+// the images stay on this device (IndexedDB only, never uploaded). A4 print sheet. Doctor-only (portal: nothing).
+(function () {
+  'use strict';
+  var S0 = window.OrthoShoulder, X = window.OrthoXray; if (!S0 || !X) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var num = function (v, d, L) { if (v == null || !isFinite(v)) return '–'; var s = (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); if (/^-0[.,]?0*$/.test(s)) s = s.slice(1); return (L || lang()) === 'el' ? s.replace('.', ',') : s; };
+  var f1 = function (v, L) { return num(v, 1, L); };
+  var today = function () { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+  var fmt = function (s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ''; }); };
+  var COL = { C: '#22d3ee', E1: '#f87171', E2: '#fb923c', P: '#e879f9', H1: '#f87171', H2: '#fbbf24', F: '#4ade80', CAL1: '#60a5fa', CAL2: '#60a5fa' };
+  var colOf = function (k) { return COL[k] || COL[k.charAt(0)] || '#fff'; };
+  var S = {
+    el: { title: 'Ώμος · Απώλεια οστού / Track', sub: 'Απώλεια οστού ωμογλήνης (μέθοδος best-fit circle) και glenoid track / Hill-Sachs interval (on-track / off-track).',
+      secG: '① Ωμογλήνη (D, d)', secH: '② Hill-Sachs (HSI)', secGT: 'En-face 3D CT ή οβελιαία λοξή τομή CT / MRI της ωμογλήνης', secHT: 'Αξονική τομή CT / MRI της κεφαλής του βραχιονίου',
+      upload: 'Ανεβάστε Ακτινογραφία', demo: '🧪 DEMO (συνθετικές)', fileTypes: 'PNG, JPEG ή DICOM (DICOM: pixel spacing για ακριβή mm) · ή ολόκληρη σειρά DICOM (πολλά αρχεία, .zip ή φάκελος)',
+      noPt: 'Χωρίς επιλεγμένο ασθενή η μέτρηση δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.',
+      noFilmG: 'Δεν έχει ανοιχτεί εικόνα ωμογλήνης', noFilmH: 'Δεν έχει ανοιχτεί αξονική τομή για το Hill-Sachs',
+      stepsG: ['Επιλέξτε ασθενή (πάνω, «Ασθενής»).', 'Ανεβάστε ή επικολλήστε en-face 3D CT ή οβελιαία λοξή τομή της ωμογλήνης (PNG, JPEG, DICOM ή σειρά DICOM).', 'Τοποθετήστε ≥ 3 σημεία στο άθικτο κάτω χείλος (κύκλος) και το πρόσθιο χείλος στη βλάβη· ελέγξτε και επιβεβαιώστε.'],
+      stepsH: ['Ανεβάστε αξονική τομή CT / MRI στο επίπεδο της βλάβης Hill-Sachs (ή διαλέξτε τομή από τη σειρά DICOM).', 'Σημειώστε το έσω και το έξω όριο της βλάβης και το έσω όριο της πρόσφυσης του στροφικού πετάλου.', 'Ή γράψτε το HSI από το PACS στις «Τιμές από PACS».'],
+      ser_btn: '📚 Σειρά DICOM', ser_btnT: 'Ολόκληρη σειρά: πολλά αρχεία DICOM ή ένα .zip', ser_dir: '📁 Φάκελος DICOM', serT: 'Σειρά DICOM', serLoading: 'Ανάγνωση σειράς… {d} / {n}', serN: '{n} τομές',
+      serSlice: 'Τομή {i} / {n}', serPos: 'θέση {z} mm', serPx: 'pixel {a} × {b} mm', serNoSp: 'χωρίς pixel spacing', serUseG: 'Χρήση για ωμογλήνη', serUseH: 'Χρήση για Hill-Sachs', serClose: '✕ Κλείσιμο σειράς',
+      serPrev: 'Προηγούμενη τομή', serNext: 'Επόμενη τομή', serRange: 'Τομή της σειράς', serName: 'Σειρά · τομή {i}/{n}', serDecoding: 'Φόρτωση τομής…', serNone: 'Δεν βρέθηκαν αναγνώσιμες τομές DICOM.', serWin: 'Παράθυρο', w_bone: 'Οστό', w_soft: 'Μαλακά μόρια', w_dicom: 'DICOM', w_auto: 'Αυτόματο',
+      serHelp: 'Κύλιση τομών: ρυθμιστικό, ροδέλα ή βελάκια. Η σειρά διαβάζεται μόνο σε αυτή τη συσκευή – τίποτα δεν ανεβαίνει· τα στοιχεία ασθενούς του DICOM δεν διαβάζονται.', serDecErr: 'Η τομή δεν μπορεί να διαβαστεί: ',
+      lmHelp: 'Πατήστε στην εικόνα για να τοποθετήσετε το σημείο · σύρετε ένα σημείο για διόρθωση (οι τιμές ενημερώνονται αμέσως) · δύο δάχτυλα (ή ροδέλα) για μεγέθυνση και μετακίνηση.',
+      n_C: 'Κύκλος – σημείο {i} στο άθικτο κάτω χείλος', n_E1: 'Πρόσθιο χείλος ωμογλήνης στη βλάβη', n_E2: 'Όριο βλάβης – 2ο σημείο (προαιρετικό)', n_P: 'Περίγραμμα βλάβης – σημείο {i}', n_H1: 'Έσω όριο βλάβης Hill-Sachs', n_H2: 'Έξω όριο βλάβης Hill-Sachs', n_F: 'Έσω όριο πρόσφυσης στροφικού πετάλου', n_CAL1: 'Βαθμονόμηση – άκρο 1', n_CAL2: 'Βαθμονόμηση – άκρο 2',
+      s_C: 'K{i}', s_E1: 'E1', s_E2: 'E2', s_P: 'Π{i}', s_H1: 'HS έσω', s_H2: 'HS έξω', s_F: 'Πέταλο', s_CAL1: 'Βαθμ. 1', s_CAL2: 'Βαθμ. 2',
+      p_C: 'Πατήστε στο άθικτο κάτω (οπίσθιο–κάτω) χείλος της ωμογλήνης – σημείο {i} του κύκλου (απλώστε τα σημεία σε όσο μεγαλύτερο τόξο γίνεται).', p_E1: 'Πατήστε στο πρόσθιο χείλος της ωμογλήνης εκεί που αρχίζει η βλάβη, πάνω στη διάμετρο του κύκλου.',
+      p_E2: 'Πατήστε ένα δεύτερο σημείο πάνω στο ευθύ όριο της βλάβης: η διάμετρος μέτρησης γίνεται κάθετη σε αυτό.', p_P: 'Περίγραμμα βλάβης: πατήστε το σημείο {i}, από εκεί που το χείλος φεύγει από τον κύκλο ως εκεί που ξαναμπαίνει.',
+      p_H1: 'Πατήστε στο έσω όριο της βλάβης Hill-Sachs.', p_H2: 'Πατήστε στο έξω όριο της βλάβης Hill-Sachs.', p_F: 'Πατήστε στο έσω όριο της πρόσφυσης του στροφικού πετάλου (footprint).',
+      p_CAL1: 'Πατήστε στο ένα άκρο αντικειμένου γνωστού μήκους (κλίμακα της οθόνης PACS).', p_CAL2: 'Πατήστε στο άλλο άκρο του.',
+      addC: '＋ Σημείο κύκλου', addE2: '＋ 2ο σημείο ορίου βλάβης', trace: '✏️ Περίγραμμα βλάβης (επιφάνεια)', traceEnd: '✔ Τέλος περιγράμματος', traceClr: 'Αφαίρεση περιγράμματος',
+      zin: 'Μεγέθυνση', zout: 'Σμίκρυνση', zfit: 'Ολόκληρη η εικόνα', zroi: '🔍 Περιοχή σημείων', del: '🗑 Αφαίρεση', clear: '↺ Καθαρισμός σημείων',
+      side: 'Πλευρά', R: 'Δεξιά', L: 'Αριστερά', date: 'Ημ/νία εικόνας', phase: 'Φάση', pre: 'Προεγχειρητικά', post: 'Μετεγχειρητικά',
+      m_ct3d: '3D CT (en face)', m_ctsag: 'CT οβελιαία λοξή', m_mrisag: 'MRI οβελιαία λοξή', m_ctax: 'CT αξονική', m_mriax: 'MRI αξονική', m_ct3dp: '3D CT (οπίσθια όψη)',
+      gT: 'Απώλεια οστού ωμογλήνης', D: 'Διάμετρος ωμογλήνης (D)', d: 'Απώλεια οστού (d)', lossP: 'Απώλεια οστού (d/D)', pico: 'Επιφάνεια ελλείμματος (PICO)', picoTrace: 'περίγραμμα', picoChord: 'ευθύ όριο βλάβης',
+      thrL: 'Όρια: ', gtT: 'Glenoid track', factor: 'Συντελεστής', gtF: 'GT = {k} × D − d', hsT: 'Hill-Sachs interval', hsW: 'Πλάτος βλάβης Hill-Sachs', hsB: 'Οστική γέφυρα', hsi: 'Hill-Sachs interval (HSI)',
+      trT: 'On-track / Off-track', on: 'ON-TRACK', off: 'OFF-TRACK', cmpOn: 'HSI {h} mm < GT {g} mm', cmpOff: 'HSI {h} mm ≥ GT {g} mm', dtd: 'Απόσταση από εξάρθρημα (DTD = GT − HSI)', occ: 'Hill-Sachs occupancy (HSI / GT)',
+      periph: 'peripheral-track (≥75%)', central: 'central-track (<75%)', nearT: 'near-track (DTD <8 mm)', thrT: 'Όρια: DTD 8 mm · 10 mm · occupancy 75%',
+      src_typed: 'από PACS', src_img: 'από εικόνα', needG: 'Τοποθετήστε τον κύκλο (≥ 3 σημεία) και το πρόσθιο χείλος στη βλάβη – ή γράψτε D και d από το PACS.', needH: 'Σημειώστε τα 3 σημεία στην αξονική – ή γράψτε το HSI από το PACS.',
+      needCalG: 'Χωρίς κλίμακα: D = {D} px, d = {d} px (το ποσοστό ισχύει) – βαθμονομήστε (📏) ή ανοίξτε DICOM για τιμές σε mm.', needCalH: 'Χωρίς κλίμακα: HSI = {p} px – βαθμονομήστε (📏) ή ανοίξτε DICOM για τιμή σε mm.',
+      man: '✍ Τιμές από PACS (προαιρετικά)', manHelp: 'Ό,τι γράψετε εδώ αντικαθιστά την τιμή της εικόνας· αφήστε κενό για να χρησιμοποιηθεί η μέτρηση στην εικόνα.', manD: 'D (mm)', mand: 'd (mm)', manH: 'HSI (mm)',
+      approx: '≈ = κλίμακα από βαθμονόμηση με αντικείμενο (όχι DICOM).',
+      qT: 'Έλεγχοι ποιότητας', cal: 'Κλίμακα', calMm: 'Μήκος αντικειμένου (mm)', calSet: '📏 Βαθμονόμηση', calClr: 'Αφαίρεση βαθμονόμησης', c_dicom: 'DICOM pixel spacing', c_marker: 'βαθμονόμηση με αντικείμενο', c_demo: 'DEMO – συνθετική κλίμακα', c_none: 'χωρίς κλίμακα', fitRmsL: 'Απόκλιση σημείων από τον κύκλο', arcL: 'Τόξο σημείων κύκλου',
+      q_noScale: 'Χωρίς κλίμακα: δεν υπάρχουν τιμές σε mm – βαθμονομήστε ή χρησιμοποιήστε DICOM.', q_approx: 'Κλίμακα από βαθμονόμηση: τα mm είναι κατά προσέγγιση (≈).', q_aniso: 'Μη τετράγωνα pixel στο DICOM: οι αποστάσεις υπολογίζονται χωριστά ανά άξονα.',
+      q_three: 'Μόνο 3 σημεία κύκλου: προσθέστε κι άλλα για πιο σταθερό κύκλο.', q_fitRms: 'Τα σημεία δεν ταιριάζουν καλά σε κύκλο: ελέγξτε ότι είναι όλα στο άθικτο κάτω χείλος.', q_arcShort: 'Τα σημεία του κύκλου καλύπτουν τόξο < 90°: απλώστε τα περισσότερο.',
+      q_collinear: 'Τα σημεία του κύκλου είναι σε ευθεία.', q_e1Centre: 'Το E1 συμπίπτει με το κέντρο του κύκλου.', q_edgeOut: 'Το όριο της βλάβης είναι έξω από τον κύκλο: d = 0.', q_lossHuge: 'Απώλεια > 50%: ελέγξτε τα σημεία.', q_edgeFar: 'Τα σημεία του ορίου βλάβης είναι μακριά από τον κύκλο: ελέγξτε τα.', q_traceOut: 'Σημεία του περιγράμματος είναι έξω από τον κύκλο.',
+      q_hsOrder: 'Το όριο του πετάλου είναι πάνω στη βλάβη: ελέγξτε τη σειρά των σημείων (έσω όριο → έξω όριο → πέταλο).', q_hsZero: 'Μηδενικό πλάτος βλάβης.', q_hsiOdd: 'HSI > 45 mm: ελέγξτε τα σημεία και την κλίμακα.', q_typed: 'Μία ή περισσότερες τιμές γράφτηκαν από το PACS.', q_factor: 'Συντελεστής ≠ 0,83.',
+      confirm: '✔ Επιβεβαίωση σημείων', conf: 'Σημεία / τιμές επιβεβαιωμένα από ιατρό', notConf: 'Τα σημεία δεν έχουν επιβεβαιωθεί – ελέγξτε και επιβεβαιώστε πριν την αποθήκευση.',
+      save: '💾 Αποθήκευση μέτρησης', print: '🖨 Φύλλο A4', saved: 'Η μέτρηση ώμου αποθηκεύτηκε', needLogin: 'Συνδεθείτε ως ιατρός για αποθήκευση.', needPt: 'Επιλέξτε ασθενή για αποθήκευση – χωρίς ασθενή η μέτρηση δεν αποθηκεύεται.', needConf: 'Επιβεβαιώστε πρώτα τα σημεία (✔).', needMeas: 'Δεν υπάρχουν ακόμη D και d σε mm (σημεία, κλίμακα ή τιμές από PACS).',
+      listT: 'Αποθηκευμένες μετρήσεις ώμου', open: 'Άνοιγμα', none: 'Καμία αποθηκευμένη μέτρηση ώμου για αυτόν τον ασθενή.', editing: 'Επεξεργασία αποθηκευμένης μέτρησης', newM: '＋ Νέα μέτρηση',
+      sheet: 'Φύλλο μέτρησης ώμου · απώλεια οστού ωμογλήνης / glenoid track', patient: 'Ασθενής', filmD: 'Εικόνες', measD: 'Ημ/νία μέτρησης', by: 'Ιατρός', close: '✕ Κλείσιμο', doPrint: '🖨 Εκτύπωση', sign: 'Υπογραφή',
+      unconf: 'ΣΗΜΕΙΑ ΜΗ ΕΠΙΒΕΒΑΙΩΜΕΝΑ', synth: 'DEMO συνθετικές εικόνες – όχι ασθενής', disc: 'Βοήθημα μέτρησης μόνο· επιβεβαιώστε στο PACS.', legendG: 'Κυανό: best-fit circle · Κίτρινο: διάμετρος μέτρησης (D) · Κόκκινο: απώλεια οστού (d) · Μωβ: έλλειμμα επιφάνειας', legendH: 'Κόκκινο: πλάτος βλάβης Hill-Sachs · Πράσινο: οστική γέφυρα ως το στροφικό πέταλο',
+      imgFail: 'Η εικόνα δεν μπορεί να ανοίξει: ', loadFail: 'Η αποθηκευμένη εικόνα δεν βρέθηκε σε αυτή τη συσκευή (οι εικόνες μένουν μόνο στη συσκευή όπου μετρήθηκαν) – εμφανίζονται μόνο τα σημεία.', local: 'Οι εικόνες μένουν μόνο σε αυτή τη συσκευή· αποθηκεύονται μόνο τα σημεία και οι τιμές.',
+      dash: 'Ώμος · απώλεια οστού / track', dLoss: 'Απώλεια', dTr: 'Track' },
+    en: { title: 'Shoulder · Bone loss / Track', sub: 'Glenoid bone loss (best-fit circle method) and glenoid track / Hill-Sachs interval (on-track / off-track).',
+      secG: '① Glenoid (D, d)', secH: '② Hill-Sachs (HSI)', secGT: 'En-face 3D CT or a sagittal oblique CT / MRI slice of the glenoid', secHT: 'Axial CT / MRI slice of the humeral head',
+      upload: 'Upload X-ray', demo: '🧪 DEMO (synthetic)', fileTypes: 'PNG, JPEG or DICOM (DICOM: pixel spacing for exact mm) · or a whole DICOM series (many files, a .zip or a folder)',
+      noPt: 'Without a selected patient the measurement is not saved; select a patient to keep it.',
+      noFilmG: 'No glenoid image open yet', noFilmH: 'No axial slice open yet for the Hill-Sachs lesion',
+      stepsG: ['Select the patient (above, “Patient”).', 'Upload or paste an en-face 3D CT or a sagittal oblique slice of the glenoid (PNG, JPEG, DICOM or a DICOM series).', 'Place ≥ 3 points on the intact inferior rim (circle) and the anterior rim at the defect; check and confirm.'],
+      stepsH: ['Upload an axial CT / MRI slice at the level of the Hill-Sachs lesion (or pick a slice from the DICOM series).', 'Mark the medial and lateral edges of the lesion and the medial margin of the rotator-cuff footprint.', 'Or type the HSI from PACS under “Values from PACS”.'],
+      ser_btn: '📚 DICOM series', ser_btnT: 'Whole series: many DICOM files or one .zip', ser_dir: '📁 DICOM folder', serT: 'DICOM series', serLoading: 'Reading series… {d} / {n}', serN: '{n} slices',
+      serSlice: 'Slice {i} / {n}', serPos: 'position {z} mm', serPx: 'pixel {a} × {b} mm', serNoSp: 'no pixel spacing', serUseG: 'Use for the glenoid', serUseH: 'Use for Hill-Sachs', serClose: '✕ Close series',
+      serPrev: 'Previous slice', serNext: 'Next slice', serRange: 'Slice of the series', serName: 'Series · slice {i}/{n}', serDecoding: 'Loading slice…', serNone: 'No readable DICOM slices found.', serWin: 'Window', w_bone: 'Bone', w_soft: 'Soft tissue', w_dicom: 'DICOM', w_auto: 'Auto',
+      serHelp: 'Scroll the slices: slider, mouse wheel or arrow keys. The series is read on this device only – nothing is uploaded; patient details in the DICOM are not read.', serDecErr: 'The slice cannot be read: ',
+      lmHelp: 'Tap the image to place the point · drag a point to correct it (values update at once) · two fingers (or the wheel) to zoom and pan.',
+      n_C: 'Circle – point {i} on the intact inferior rim', n_E1: 'Anterior glenoid rim at the defect', n_E2: 'Defect edge – 2nd point (optional)', n_P: 'Defect outline – point {i}', n_H1: 'Medial edge of the Hill-Sachs lesion', n_H2: 'Lateral edge of the Hill-Sachs lesion', n_F: 'Medial margin of the rotator-cuff footprint', n_CAL1: 'Calibration – end 1', n_CAL2: 'Calibration – end 2',
+      s_C: 'C{i}', s_E1: 'E1', s_E2: 'E2', s_P: 'P{i}', s_H1: 'HS med', s_H2: 'HS lat', s_F: 'Cuff', s_CAL1: 'Cal 1', s_CAL2: 'Cal 2',
+      p_C: 'Tap the intact inferior (posterior–inferior) glenoid rim – circle point {i} (spread the points over as long an arc as possible).', p_E1: 'Tap the anterior glenoid rim where the defect begins, on the circle diameter.',
+      p_E2: 'Tap a second point on the straight defect edge: the measuring diameter becomes perpendicular to it.', p_P: 'Defect outline: tap point {i}, from where the rim leaves the circle to where it rejoins it.',
+      p_H1: 'Tap the medial edge of the Hill-Sachs lesion.', p_H2: 'Tap the lateral edge of the Hill-Sachs lesion.', p_F: 'Tap the medial margin of the rotator-cuff footprint.',
+      p_CAL1: 'Tap one end of an object of known length (the PACS on-screen ruler).', p_CAL2: 'Tap its other end.',
+      addC: '＋ Circle point', addE2: '＋ 2nd defect-edge point', trace: '✏️ Defect outline (area)', traceEnd: '✔ Finish outline', traceClr: 'Remove outline',
+      zin: 'Zoom in', zout: 'Zoom out', zfit: 'Whole image', zroi: '🔍 Points region', del: '🗑 Remove', clear: '↺ Clear points',
+      side: 'Side', R: 'Right', L: 'Left', date: 'Image date', phase: 'Phase', pre: 'Pre-op', post: 'Post-op',
+      m_ct3d: '3D CT (en face)', m_ctsag: 'CT sagittal oblique', m_mrisag: 'MRI sagittal oblique', m_ctax: 'CT axial', m_mriax: 'MRI axial', m_ct3dp: '3D CT (posterior view)',
+      gT: 'Glenoid bone loss', D: 'Glenoid diameter (D)', d: 'Bone loss (d)', lossP: 'Bone loss (d/D)', pico: 'Surface-area deficit (PICO)', picoTrace: 'outline', picoChord: 'straight defect edge',
+      thrL: 'Thresholds: ', gtT: 'Glenoid track', factor: 'Factor', gtF: 'GT = {k} × D − d', hsT: 'Hill-Sachs interval', hsW: 'Hill-Sachs lesion width', hsB: 'Bone bridge', hsi: 'Hill-Sachs interval (HSI)',
+      trT: 'On-track / Off-track', on: 'ON-TRACK', off: 'OFF-TRACK', cmpOn: 'HSI {h} mm < GT {g} mm', cmpOff: 'HSI {h} mm ≥ GT {g} mm', dtd: 'Distance to dislocation (DTD = GT − HSI)', occ: 'Hill-Sachs occupancy (HSI / GT)',
+      periph: 'peripheral-track (≥75%)', central: 'central-track (<75%)', nearT: 'near-track (DTD <8 mm)', thrT: 'Thresholds: DTD 8 mm · 10 mm · occupancy 75%',
+      src_typed: 'from PACS', src_img: 'from image', needG: 'Place the circle (≥ 3 points) and the anterior rim at the defect – or type D and d from PACS.', needH: 'Mark the 3 points on the axial slice – or type the HSI from PACS.',
+      needCalG: 'No scale: D = {D} px, d = {d} px (the percentage is valid) – calibrate (📏) or open a DICOM for values in mm.', needCalH: 'No scale: HSI = {p} px – calibrate (📏) or open a DICOM for a value in mm.',
+      man: '✍ Values from PACS (optional)', manHelp: 'Anything typed here replaces the image value; leave empty to use the measurement on the image.', manD: 'D (mm)', mand: 'd (mm)', manH: 'HSI (mm)',
+      approx: '≈ = scale from an object calibration (not DICOM).',
+      qT: 'Quality checks', cal: 'Scale', calMm: 'Object length (mm)', calSet: '📏 Calibrate', calClr: 'Remove calibration', c_dicom: 'DICOM pixel spacing', c_marker: 'object calibration', c_demo: 'DEMO – synthetic scale', c_none: 'no scale', fitRmsL: 'Point deviation from the circle', arcL: 'Arc of the circle points',
+      q_noScale: 'No scale: no values in mm – calibrate or use DICOM.', q_approx: 'Scale from a calibration: mm are approximate (≈).', q_aniso: 'Non-square DICOM pixels: distances are computed per axis.',
+      q_three: 'Only 3 circle points: add more for a steadier circle.', q_fitRms: 'The points do not fit a circle well: check that they all lie on the intact inferior rim.', q_arcShort: 'The circle points cover an arc < 90°: spread them more.',
+      q_collinear: 'The circle points are collinear.', q_e1Centre: 'E1 coincides with the circle centre.', q_edgeOut: 'The defect edge lies outside the circle: d = 0.', q_lossHuge: 'Bone loss > 50%: check the points.', q_edgeFar: 'The defect-edge points are far from the circle: check them.', q_traceOut: 'Outline points lie outside the circle.',
+      q_hsOrder: 'The cuff point lies on the lesion: check the point order (medial edge → lateral edge → cuff).', q_hsZero: 'Zero lesion width.', q_hsiOdd: 'HSI > 45 mm: check the points and the scale.', q_typed: 'One or more values were typed from PACS.', q_factor: 'Factor ≠ 0.83.',
+      confirm: '✔ Confirm points', conf: 'Points / values confirmed by a doctor', notConf: 'Points not confirmed – check and confirm before saving.',
+      save: '💾 Save measurement', print: '🖨 A4 sheet', saved: 'Shoulder measurement saved', needLogin: 'Sign in as a doctor to save.', needPt: 'Select a patient to save – without a patient the measurement is not saved.', needConf: 'Confirm the points first (✔).', needMeas: 'No D and d in mm yet (points, scale or values from PACS).',
+      listT: 'Saved shoulder measurements', open: 'Open', none: 'No saved shoulder measurement for this patient.', editing: 'Editing a saved measurement', newM: '＋ New measurement',
+      sheet: 'Shoulder measurement sheet · glenoid bone loss / glenoid track', patient: 'Patient', filmD: 'Images', measD: 'Measured on', by: 'Doctor', close: '✕ Close', doPrint: '🖨 Print', sign: 'Signature',
+      unconf: 'POINTS NOT CONFIRMED', synth: 'DEMO synthetic images – not a patient', disc: 'Measurement aid only; confirm in PACS.', legendG: 'Cyan: best-fit circle · Yellow: measuring diameter (D) · Red: bone loss (d) · Purple: surface deficit', legendH: 'Red: Hill-Sachs lesion width · Green: bone bridge to the rotator cuff',
+      imgFail: 'The image cannot be opened: ', loadFail: 'The saved image is not on this device (images stay only on the device where they were measured) – showing the points only.', local: 'Images stay on this device only; only the points and values are saved.',
+      dash: 'Shoulder · bone loss / track', dLoss: 'Loss', dTr: 'Track' }
+  };
+  var t = function (k) { var v = S[lang()][k]; return v != null ? v : k; };
+  var XR = function () { return window.__xray; }, API = function () { return window.__orthoProms; }, DS = function () { return window.OrthoDicomSeries; };
+  var pid = function () { var s = XR() && XR().state; return (s && s.pid) || ''; };
+  var V0 = function () { return { img: null, W: 0, H: 0, name: '', dicom: null, blob: null, filmId: null, demo: null, note: '', pts: {}, org: {}, lv: null, calMm: 10, nC: 3, trace: false, sel: null, pick: null, roi: false }; };
+  var ui = { sec: 'g', v: { g: V0(), h: V0() }, factor: S0.FACTOR, man: { D: '', d: '', hsi: '' }, side: 'R', date: today(), phase: 'pre', modG: 'ct3d', modH: 'ctax', confirmed: null, msg: '', recId: null, pid: '', pending: false, last: null, ser: null, serMsg: '' };
+  var V = function () { return ui.v[ui.sec]; };
+
+  // ---------- point keys ----------
+  var kBase = function (k) { return /^C\d+$/.test(k) ? 'C' : /^P\d+$/.test(k) ? 'P' : k; }, kIdx = function (k) { var m = /^[CP](\d+)$/.exec(k); return m ? m[1] : ''; };
+  var nm = function (pre, k) { return fmt(t(pre + kBase(k)), { i: kIdx(k) }); };
+  function cKeys(v) { var n = Math.max(S0.MIN_C, v.nC), out = []; for (var i = 1; i <= n; i++) out.push('C' + i); return out; }
+  function pKeys(v) { var out = []; for (var i = 1; i <= S0.MAX_C; i++) if (v.pts['P' + i]) out.push('P' + i); return out; }
+  function reqOf(sec) { var v = ui.v[sec]; return sec === 'g' ? cKeys(v).concat(['E1']) : ['H1', 'H2', 'F']; }
+  function allOf(sec) { var v = ui.v[sec]; return sec === 'g' ? cKeys(v).concat(['E1', 'E2'], pKeys(v), ['CAL1', 'CAL2']) : ['H1', 'H2', 'F', 'CAL1', 'CAL2']; }
+  function missing(sec) { sec = sec || ui.sec; var v = ui.v[sec]; return reqOf(sec).filter(function (k) { return !v.pts[k]; }); }
+  function nextPt() { var v = V(); if (v.pick && !v.pts[v.pick]) return v.pick; return missing()[0] || null; }
+
+  // ---------- measurement ----------
+  function calOf(sec) { var v = ui.v[sec]; return S0.calibration({ spacing: v.dicom && v.dicom.spacing ? v.dicom.spacing : null, cal1: v.pts.CAL1, cal2: v.pts.CAL2, calMm: v.calMm, demoMmPerPx: v.demo ? v.demo.mmPerPx : null }); }
+  var typed = function (k) { var s = String(ui.man[k] == null ? '' : ui.man[k]).trim().replace(',', '.'); if (s === '') return null; var x = +s; return isFinite(x) && x >= 0 ? x : null; };
+  function compute() {
+    var g = S0.glenoid(ui.v.g.pts, { cal: calOf('g') }), h = S0.hsi(ui.v.h.pts, { cal: calOf('h') });
+    var tD = typed('D'), td = typed('d'), tH = typed('hsi'), useD = tD != null && tD > 0;
+    var D = useD ? tD : g.ok ? g.D : null, d = td != null ? td : g.ok ? g.d : null, H = tH != null ? tH : h.ok ? h.hsi : null;
+    var src = { D: useD ? 'typed' : g.ok ? 'img' : null, d: td != null ? 'typed' : g.ok ? 'img' : null, hsi: tH != null ? 'typed' : h.ok ? 'img' : null };
+    var tr = S0.track({ D: D, d: d, hsi: H, factor: ui.factor }), imgOnly = !useD && td == null;
+    var lossPct = imgOnly ? (g.pctOk ? g.lossPct : null) : D > 0 && d != null ? d / D * 100 : null;
+    var picoPct = imgOnly ? (g.pctOk ? g.picoPct : null) : D > 0 && d != null ? S0.segmentArea(D / 2, D / 2 - d) / (Math.PI * D * D / 4) * 100 : null;
+    var apD = src.D === 'img' && g.cal.approx, apd = src.d === 'img' && g.cal.approx, apH = src.hsi === 'img' && h.cal.approx;
+    ui.last = { g: g, h: h, src: src, tr: tr, D: D, d: d, hsi: H, lossPct: lossPct, picoPct: picoPct, picoMode: imgOnly ? g.picoMode : 'chord', apD: apD, apd: apd, apG: apD || apd, apH: apH, ok: tr.D > 0 && tr.d >= 0, factor: tr.factor };
+    return ui.last;
+  }
+  function trackTxt(r) { return r && r.track ? (r.track === 'on' ? 'on-track' : 'off-track') : ''; }
+  function headline(s, L) { L = L || lang(); if (!s || !s.result) return ''; var r = s.result, ap = function (b) { return b ? '≈' : ''; };
+    return [r.lossPct != null ? S[L].dLoss + ' ' + num(r.lossPct, 1, L) + '%' : '', r.gt != null ? 'GT ' + ap(r.apG) + num(r.gt, 1, L) + ' mm' : '', r.hsi != null ? 'HSI ' + ap(r.apH) + num(r.hsi, 1, L) + ' mm' : '', trackTxt(r)].filter(Boolean).join(' · '); }
+
+  // ---------- images ----------
+  function setImage(sec, c, name, dicom, blob, note, demo) {
+    var v = ui.v[sec]; v.img = c; v.W = c.width; v.H = c.height; v.name = name || ''; v.dicom = dicom || null; v.blob = blob || null; v.demo = demo || null; v.note = note || '';
+    v.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); v.pts = {}; v.org = {}; v.nC = 3; v.trace = false; v.lv = null; v.sel = null; v.pick = null; v.roi = false;
+    if (dicom && /^MR$/i.test(dicom.modality || '')) { if (sec === 'g') ui.modG = 'mrisag'; else ui.modH = 'mriax'; }
+    if (!ui.recId) ui.pid = pid(); ui.confirmed = null; ui.msg = ''; ui.sec = sec; renderNow();
+  }
+  function loadUpload(file, sec) { var x = XR(); sec = sec || ui.sec; if (!file || !x || !x.decodeFile) return; x.decodeFile(file, function (c, name, dicom, blob, note) { setImage(sec, c, name, dicom, blob, note, null); }, function (m) { ui.msg = t('imgFail') + m; renderNow(); }); }
+  function grayCanvas(s) { var c = document.createElement('canvas'); c.width = s.W; c.height = s.H; var x = c.getContext('2d'), id = x.createImageData(s.W, s.H); for (var i = 0; i < s.W * s.H; i++) { var q = s.data[i]; id.data[4 * i] = id.data[4 * i + 1] = id.data[4 * i + 2] = q; id.data[4 * i + 3] = 255; } x.putImageData(id, 0, 0); return c; }
+  var DEMO_G = { R: 13.5, d: 4.5, mmPerPx: 0.1, defAng: 0.15, seed: 7 }, DEMO_H = { Rh: 24, hsW: 9, bb: 4, mmPerPx: 0.15, seed: 11 };
+  function demoPts(s, keys) { var o = {}; keys.forEach(function (k) { o[k] = { x: Math.round(s[k].x * 10) / 10, y: Math.round(s[k].y * 10) / 10 }; }); return o; }
+  /** DEMO: two synthetic images with known geometry, example points already placed (to be checked, moved and confirmed like real ones). */
+  function loadDemo() {
+    resetAll(); var g = S0.synthGlenoid(DEMO_G), h = S0.synthHumerus(DEMO_H), tg = g.truth, P = {};
+    tg.C.forEach(function (q, i) { P['C' + (i + 1)] = q; }); P.E1 = tg.E1; P.E2 = tg.E2;
+    setImage('g', grayCanvas(g), 'DEMO-SHOULDER-glenoid', null, null, '', { mmPerPx: g.mmPerPx, opt: DEMO_G });
+    var vg = ui.v.g; vg.pts = demoPts(P, Object.keys(P)); vg.nC = tg.C.length; Object.keys(vg.pts).forEach(function (k) { vg.org[k] = 'manual'; }); vg.roi = true; vg.lv = null;
+    setImage('h', grayCanvas(h), 'DEMO-SHOULDER-axial', null, null, '', { mmPerPx: h.mmPerPx, opt: DEMO_H });
+    var vh = ui.v.h; vh.pts = demoPts(h.truth, ['H1', 'H2', 'F']); ['H1', 'H2', 'F'].forEach(function (k) { vh.org[k] = 'manual'; }); vh.roi = true; vh.lv = null;
+    ui.sec = 'g'; renderNow();
+  }
+
+  // ---------- whole DICOM series: lazy slice viewer (same reader as the 🦵 TT–TG sub-tab) ----------
+  var serSeq = 0, SER_CACHE = 8;
+  function loadSeries(files) {
+    var D = DS(); files = [].slice.call(files || []); if (!D || !files.length) return Promise.resolve(false);
+    var S2 = ui.ser = { id: ++serSeq, loading: { d: 0, n: files.length }, slices: [], n: 0, i: 0, cache: [], pend: {}, win: 'auto', wc: null, ww: null, dicomWin: null, cv: null, cvI: -1, cvKey: '', err: '' }; ui.serMsg = ''; renderNow();
+    var tick = 0, prog = function (d, n) { S2.loading = { d: d, n: n }; var now = Date.now(); if (now - tick < 120 && d < n) return; tick = now; var e = $('shSerProg'); if (e) e.textContent = fmt(t('serLoading'), { d: d, n: n }); };
+    return D.toSources(files).then(function (r) { prog(0, r.sources.length); return D.scan(r.sources, prog); }).then(function (sc) {
+      if (ui.ser !== S2) return false; var og = D.organize(sc.slices); S2.loading = null;
+      if (!og.n) { ui.ser = null; ui.serMsg = t('serNone'); renderNow(); return false; }
+      ['slices', 'n', 'spacing', 'thick', 'dz'].forEach(function (k) { S2[k] = og[k]; });
+      var w = D.defaultWindow(og.slices[0]); S2.wc = w.wc; S2.ww = w.ww; S2.win = w.from; S2.dicomWin = w.from === 'dicom' ? { wc: w.wc, ww: w.ww } : null; S2.i = Math.floor((og.n - 1) / 2);
+      renderNow(); return true;
+    }).catch(function () { if (ui.ser !== S2) return false; ui.ser = null; ui.serMsg = t('serNone'); renderNow(); return false; });
+  }
+  function dropSeries(dt) { var D = DS(); if (!D || !dt || !D.isMulti(dt)) return false; D.filesFromDataTransfer(dt).then(loadSeries); return true; }
+  function serGet(i) {
+    var S2 = ui.ser; if (!S2 || !S2.slices[i]) return Promise.reject(new Error('no-slice'));
+    for (var j = 0; j < S2.cache.length; j++) if (S2.cache[j].i === i) { var hit = S2.cache.splice(j, 1)[0]; S2.cache.push(hit); return Promise.resolve(hit.d); }
+    if (S2.pend[i]) return S2.pend[i];
+    return (S2.pend[i] = DS().decode(S2.slices[i]).then(function (d) { delete S2.pend[i]; S2.cache.push({ i: i, d: d }); while (S2.cache.length > SER_CACHE) S2.cache.shift(); return d; }, function (e) { delete S2.pend[i]; throw e; }));
+  }
+  function sliceCanvas(d, S2, into) { var c = into || document.createElement('canvas'); if (c.width !== d.cols || c.height !== d.rows) { c.width = d.cols; c.height = d.rows; } var x = c.getContext('2d'), id = x.createImageData(d.cols, d.rows); id.data.set(S2.win === 'auto' ? DS().windowRGBA(d, null, null) : DS().windowRGBA(d, S2.wc, S2.ww)); x.putImageData(id, 0, 0); return c; }
+  function serGo(i) { var S2 = ui.ser; if (!S2 || !S2.n) return; S2.i = Math.max(0, Math.min(S2.n - 1, Math.round(i))); S2.err = ''; serUpdate(); serPaint(); }
+  function serPaint() {
+    var S2 = ui.ser; if (!S2 || !S2.n) return; var i = S2.i, key = i + '|' + S2.win + '|' + S2.wc + '|' + S2.ww; if (S2.cv && S2.cvKey === key) { serDraw(); return; }
+    S2.want = key; serGet(i).then(function (d) { if (ui.ser !== S2 || S2.want !== key) return; S2.cv = sliceCanvas(d, S2, S2.cv); S2.cvI = i; S2.cvKey = key; serDraw(); },
+      function (e) { if (ui.ser !== S2 || S2.want !== key) return; S2.err = t('serDecErr') + ((e && e.message) || ''); serUpdate(); });
+  }
+  function serDraw() {
+    var cv = $('shSerCv'), S2 = ui.ser; if (!cv || !S2) return; var w = Math.max(160, cv.parentNode.getBoundingClientRect().width), h = Math.round(Math.min(w, Math.max(220, window.innerHeight * 0.45), 480)), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; }
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+    if (S2.cv) { var k = Math.min(w / S2.cv.width, h / S2.cv.height), dw = S2.cv.width * k, dh = S2.cv.height * k; g.drawImage(S2.cv, (w - dw) / 2, (h - dh) / 2, dw, dh); }
+    g.font = '700 13px system-ui,sans-serif'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.9)'; g.fillStyle = '#fde047'; var s1 = fmt(t('serSlice'), { i: S2.cvI + 1, n: S2.n }); if (S2.cv) { g.strokeText(s1, 8, 18); g.fillText(s1, 8, 18); }
+    if (S2.cvI !== S2.i || !S2.cv) { g.fillStyle = '#fff'; g.strokeText(t('serDecoding'), 8, h - 10); g.fillText(t('serDecoding'), 8, h - 10); }
+  }
+  function serPosText(S2, i) { var s = S2.slices[i]; if (!s) return ''; return [fmt(t('serSlice'), { i: i + 1, n: S2.n }), s.z != null ? fmt(t('serPos'), { z: num(s.z, 1) }) : ''].filter(Boolean).join(' · '); }
+  function serUpdate() { var S2 = ui.ser; if (!S2 || !S2.n) return; var r = $('shSerRange'), p = $('shSerPos'), e = $('shSerErr'); if (r && +r.value !== S2.i) r.value = S2.i; if (p) p.textContent = serPosText(S2, S2.i); if (e) e.textContent = S2.err || ''; serDraw(); }
+  function serHtml() {
+    var S2 = ui.ser; if (!S2) return ui.serMsg ? '<p class="xhwarn small" id="shSerMsg">' + esc(ui.serMsg) + '</p>' : '';
+    if (S2.loading) return '<div class="card patser" id="shSeries" data-loading="1"><b>📚 ' + esc(t('serT')) + '</b><p class="small" id="shSerProg" role="status" aria-live="polite">' + esc(fmt(t('serLoading'), S2.loading)) + '</p></div>';
+    var info = [fmt(t('serN'), { n: S2.n }), S2.spacing ? fmt(t('serPx'), { a: num(S2.spacing[0], 3), b: num(S2.spacing[1], 3) }) : t('serNoSp')].join(' · ');
+    var wins = ['bone', 'soft'].concat(S2.dicomWin ? ['dicom'] : []).concat(S2.win === 'auto' ? ['auto'] : []);
+    return '<div class="card patser" id="shSeries" tabindex="0" data-n="' + S2.n + '"><div class="row patserhead"><b>📚 ' + esc(t('serT')) + '</b> <span class="muted small" id="shSerInfo">' + esc(info) + '</span><button id="shSerClose" class="small">' + esc(t('serClose')) + '</button></div>' +
+      '<div class="patserwrap"><canvas id="shSerCv" aria-label="' + esc(t('serT')) + '"></canvas></div>' +
+      '<div class="row patsernav"><button id="shSerPrev" class="small" aria-label="' + esc(t('serPrev')) + '">◀</button><input type="range" id="shSerRange" min="0" max="' + (S2.n - 1) + '" step="1" value="' + S2.i + '" aria-label="' + esc(t('serRange')) + '"><button id="shSerNext" class="small" aria-label="' + esc(t('serNext')) + '">▶</button></div>' +
+      '<p class="small" id="shSerPos" role="status">' + esc(serPosText(S2, S2.i)) + '</p><p class="small xhwarn patsererr" id="shSerErr" role="alert">' + esc(S2.err || '') + '</p>' +
+      '<div class="row patserwin"><span class="small">' + esc(t('serWin')) + '</span><div class="seg" id="shWinSeg">' + wins.map(function (w) { return '<button data-shwin="' + w + '" class="' + (S2.win === w ? 'active' : '') + '">' + esc(t('w_' + w)) + '</button>'; }).join('') + '</div></div>' +
+      '<div class="row patserab"><button id="shUseG" class="primary">' + esc(t('serUseG')) + '</button><button id="shUseH" class="primary">' + esc(t('serUseH')) + '</button></div><p class="muted small">' + esc(t('serHelp')) + '</p></div>';
+  }
+  function serSetWin(w) { var S2 = ui.ser; if (!S2) return; if (w === 'bone' || w === 'soft') { S2.wc = DS().PRESETS[w].wc; S2.ww = DS().PRESETS[w].ww; } else if (w === 'dicom' && S2.dicomWin) { S2.wc = S2.dicomWin.wc; S2.ww = S2.dicomWin.ww; } else if (w !== 'auto') return; S2.win = w; renderNow(); }
+  function serUse(sec) {
+    var S2 = ui.ser; if (!S2 || !S2.n) return Promise.resolve(false); var i = S2.i;
+    return serGet(i).then(function (d) { if (ui.ser !== S2) return false; var sl = S2.slices[i], c = sliceCanvas(d, S2, null);
+      setImage(sec, c, fmt(t('serName'), { i: i + 1, n: S2.n }), { spacing: sl.spacing, modality: sl.modality, series: DS().sliceMeta(S2, i) }, null, '', null); return true; },
+      function (e) { S2.err = t('serDecErr') + ((e && e.message) || ''); serUpdate(); return false; });
+  }
+  function bindSeries() {
+    var S2 = ui.ser; if ($('shSerClose')) $('shSerClose').onclick = function () { ui.ser = null; renderNow(); };
+    if (!S2 || S2.loading) return;
+    $('shSerRange').oninput = function () { serGo(+this.value); }; $('shSerPrev').onclick = function () { serGo(S2.i - 1); }; $('shSerNext').onclick = function () { serGo(S2.i + 1); };
+    $('shSerCv').onwheel = function (e) { e.preventDefault(); serGo(S2.i + (e.deltaY > 0 ? 1 : -1)); };
+    $('shSeries').onkeydown = function (e) { if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); serGo(S2.i + 1); } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); serGo(S2.i - 1); } };
+    document.querySelectorAll('[data-shwin]').forEach(function (b) { b.onclick = function () { serSetWin(b.dataset.shwin); }; });
+    $('shUseG').onclick = function () { serUse('g'); }; $('shUseH').onclick = function () { serUse('h'); };
+    serPaint();
+  }
+
+  // ---------- render ----------
+  function render() { if (ui.pending) return; ui.pending = true; requestAnimationFrame(function () { ui.pending = false; renderNow(); }); }
+  function renderNow() {
+    var el = $('xShPane'); if (!el) return; var A = API();
+    if (!A || (A.store && A.store.portal)) { el.innerHTML = ''; return; } // doctor-only
+    if (ui.pid !== pid()) { if (ui.recId) resetAll(); ui.pid = pid(); ui.msg = ''; }
+    var P = pid(), v = V(), sec = ui.sec;
+    var head = '<div class="card xhhead"><h2>🦴 ' + esc(t('title')) + '</h2><p class="muted small">' + esc(t('sub')) + '</p>' + (P ? '' : '<p class="xhwarn small" id="shNoPt">' + esc(t('noPt')) + '</p>') +
+      '<div class="seg shsecs" id="shSecSeg" role="tablist">' + ['g', 'h'].map(function (k) { var done = ui.v[k].img && !missing(k).length; return '<button role="tab" data-shsec="' + k + '" class="' + (k === sec ? 'active' : '') + '" aria-selected="' + (k === sec) + '">' + esc(t(k === 'g' ? 'secG' : 'secH')) + (done ? ' ✓' : '') + '</button>'; }).join('') + '</div>' +
+      '<p class="muted small" id="shSecHint">' + esc(t(sec === 'g' ? 'secGT' : 'secHT')) + '</p>' +
+      '<div class="row xhfilm"><input type="file" id="shFile" accept="image/*,.dcm,application/dicom" hidden><label for="shFile" class="btn ' + (v.img ? 'small' : 'primary xhup') + '" id="shUpload" role="button" tabindex="0">' + esc(t('upload')) + '</label>' +
+      '<input type="file" id="shSerFile" multiple accept=".dcm,application/dicom,.zip,application/zip" hidden><label for="shSerFile" class="btn small" id="shSerUp" role="button" tabindex="0" title="' + esc(t('ser_btnT')) + '">' + esc(t('ser_btn')) + '</label>' +
+      '<input type="file" id="shSerDir" webkitdirectory multiple hidden><label for="shSerDir" class="btn small" id="shSerDirUp" role="button" tabindex="0">' + esc(t('ser_dir')) + '</label>' +
+      '<button id="shDemo" class="small">' + esc(t('demo')) + '</button>' + (v.img ? ' <span class="muted small" id="shName">' + esc(v.name) + '</span>' : '') + '</div>' +
+      '<p class="muted small">' + esc(t('fileTypes')) + ' · ' + esc(t('local')) + '</p>' + (v.note ? '<p class="small xhwarn" id="shNote">' + esc(v.note) + '</p>' : '') + (ui.msg && !v.img ? '<p class="xhwarn" id="shMsg0">' + esc(ui.msg) + '</p>' : '') + '</div>';
+    var m = compute(), editor;
+    if (!v.img) {
+      editor = '<div class="card xhempty" id="shEmpty"><h3>' + esc(t(sec === 'g' ? 'noFilmG' : 'noFilmH')) + '</h3><ol class="xhsteps">' + t(sec === 'g' ? 'stepsG' : 'stepsH').map(function (x, i) { var dn = sec === 'g' && i === 0 && P; return '<li class="' + (dn ? 'done' : '') + '">' + esc(x) + (dn ? ' <b>✓ ' + esc(P) + '</b>' : '') + '</li>'; }).join('') + '</ol></div>';
+    } else {
+      var nx = nextPt(), mi = missing(), chips = '<div class="row xhchips" id="shChips">' + mi.map(function (k) { return chip(k, nx); }).join('') +
+        (sec === 'g' ? '<button class="small" id="shAddC">' + esc(t('addC')) + '</button>' + (!v.pts.E2 ? '<button class="small" id="shAddE2">' + esc(t('addE2')) + '</button>' : '') +
+          (v.trace ? '<button class="small primary" id="shTraceEnd">' + esc(t('traceEnd')) + '</button>' : '<button class="small" id="shTrace">' + esc(t('trace')) + '</button>') + (pKeys(v).length ? '<button class="small" id="shTraceClr">' + esc(t('traceClr')) + '</button>' : '') : '') + '</div>';
+      var tools = '<div class="row xhzoom"><button id="shZin" class="small" aria-label="' + esc(t('zin')) + '">＋</button><button id="shZout" class="small" aria-label="' + esc(t('zout')) + '">－</button><button id="shZfit" class="small" aria-label="' + esc(t('zfit')) + '">⤢</button><button id="shZroi" class="small">' + esc(t('zroi')) + '</button>' +
+        (v.sel && v.pts[v.sel] ? '<button id="shDel" class="small">' + esc(t('del')) + ' · ' + esc(nm('s_', v.sel)) + '</button>' : '') + '<button id="shClear" class="small">' + esc(t('clear')) + '</button></div>';
+      editor = '<div class="card xhedit" id="shEditor">' + (ui.recId ? '<p class="small muted">✏️ ' + esc(t('editing')) + '</p>' : '') + (nx ? '<p class="xhprompt" id="shPrompt" data-k="' + nx + '">👉 ' + esc(fmt(t('p_' + kBase(nx)), { i: kIdx(nx) })) + '</p>' : '') + chips + tools +
+        '<div class="xhlmwrap"><canvas id="shCv" aria-label="' + esc(t('title')) + '"></canvas></div><p class="muted small">' + esc(t('lmHelp')) + '</p>' + calHtml() + '</div>';
+    }
+    var sel = function (id, cur, ks) { return '<select id="' + id + '">' + ks.map(function (k) { return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + esc(t('m_' + k)) + '</option>'; }).join('') + '</select>'; };
+    var form = '<div class="row ptsform"><div class="seg" id="shSideSeg" role="group" aria-label="' + esc(t('side')) + '">' + ['R', 'L'].map(function (k) { return '<button data-shside="' + k + '" class="' + (k === ui.side ? 'active' : '') + '">' + esc(t(k)) + '</button>'; }).join('') + '</div>' +
+      '<label class="fld inl">' + esc(t('date')) + ' <input type="date" id="shDate" value="' + esc(ui.date) + '"></label><label class="fld inl">' + esc(t('phase')) + ' <select id="shPhase"><option value="pre"' + (ui.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (ui.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label></div>' +
+      '<div class="row ptsform"><label class="fld inl">' + esc(t('secG')) + ' ' + sel('shModG', ui.modG, ['ct3d', 'ctsag', 'mrisag']) + '</label><label class="fld inl">' + esc(t('secH')) + ' ' + sel('shModH', ui.modH, ['ctax', 'mriax', 'ct3dp']) + '</label></div>';
+    var manOpen = ui.man.D !== '' || ui.man.d !== '' || ui.man.hsi !== '';
+    var man = '<details class="shman" id="shMan"' + (manOpen ? ' open' : '') + '><summary>' + esc(t('man')) + '</summary><p class="muted small">' + esc(t('manHelp')) + '</p><div class="row">' +
+      [['D', 'manD'], ['d', 'mand'], ['hsi', 'manH']].map(function (q) { return '<label class="fld inl small">' + esc(t(q[1])) + ' <input type="number" inputmode="decimal" step="0.1" min="0" max="80" id="shMan_' + q[0] + '" value="' + esc(ui.man[q[0]]) + '"></label>'; }).join('') + '</div></details>';
+    var act = '<div class="row xhact">' + (m.ok ? (ui.confirmed ? '<span class="xhok small" id="shConfd">✔ ' + esc(t('conf')) + '</span>' : '<button id="shConfirm" class="primary">' + esc(t('confirm')) + '</button>') : '') + '<button id="shSave"' + (P ? '' : ' disabled') + '>' + esc(t('save')) + '</button><button id="shPrint"' + (m.ok ? '' : ' disabled') + '>' + esc(t('print')) + '</button></div>' +
+      (m.ok && !ui.confirmed ? '<p class="small xhwarn" id="shNotConf">' + esc(t('notConf')) + '</p>' : '') + (P ? '' : '<p class="small muted">' + esc(t('noPt')) + '</p>') + '<p class="small" id="shMsg" role="status">' + esc(ui.msg) + '</p>';
+    el.innerHTML = head + serHtml() + '<div class="xptsgrid"><div>' + editor + '</div><div class="card xhpanel" id="shPanel">' + form + man + '<div id="shRes">' + resultsHtml(m) + '</div>' + act + '</div></div>' + listHtml();
+    bindHead(); bindSeries(); bindPane(); bindList(); bindEditor(); drawCv();
+  }
+  function chip(k, nx) { return '<button class="small xhchip' + (k === nx ? ' armed' : '') + '" data-shpick="' + k + '"><i style="background:' + colOf(k) + '"></i>' + esc(nm('n_', k)) + '</button>'; }
+  function calHtml() { var v = V(); return '<div class="row sattcal" id="shCalRow"><button id="shCalSet" class="small">' + esc(t('calSet')) + '</button><label class="fld inl small">' + esc(t('calMm')) + ' <input type="number" id="shCalMm" min="1" max="500" step="0.5" value="' + v.calMm + '"></label>' + (v.pts.CAL1 || v.pts.CAL2 ? '<button id="shCalClr" class="small">' + esc(t('calClr')) + '</button>' : '') + '</div>'; }
+  var srcTag = function (s, print) { return s && (!print || s === 'typed') ? ' <span class="shsrc shsrc-' + s + '">' + esc(t('src_' + s)) + '</span>' : ''; };
+  function row(id, label, val, extra) { return '<tr id="' + id + '"><td>' + esc(label) + '</td><td><b>' + esc(val) + '</b>' + (extra || '') + '</td></tr>'; }
+  function resultsHtml(m, print) {
+    var g = m.g, h = m.h, tr = m.tr, ap = function (b) { return b ? '≈' : ''; }, mm = function (x, b) { return x == null ? '–' : ap(b) + f1(x) + ' mm'; }, pc = function (x) { return x == null ? '–' : f1(x) + '%'; };
+    var zone = S0.lossZone(m.lossPct), bands = ['<13,5%', '13,5–20%', '20–25%', '>25%'].map(function (b, i) { b = lang() === 'en' ? b.replace(/,/g, '.') : b; return i === zone ? '<b class="shzone" data-zone="' + i + '">' + esc(b) + '</b>' : esc(b); }).join(' · ');
+    var hG = '<h3>' + esc(t('gT')) + (print ? '' : ' · ' + esc(t(ui.side))) + '</h3>';
+    if (!m.D && !g.pctOk) hG += '<p class="muted small" id="shNeedG">' + esc(t('needG')) + '</p>';
+    else if (!m.ok && g.pctOk && !g.ok) hG += '<p class="xhwarn small" id="shNeedCalG">' + esc(fmt(t('needCalG'), { D: f1(g.Dpx), d: f1(g.dpx) })) + '</p>';
+    hG += '<div class="tblwrap"><table class="tbl xhtbl shtbl" id="shGTable">' + row('shRowD', t('D'), mm(m.D, m.apD), srcTag(m.src.D, print)) + row('shRowd', t('d'), mm(m.d, m.apd), srcTag(m.src.d, print)) +
+      '<tr id="shRowLoss" class="shbig"><td>' + esc(t('lossP')) + '</td><td><b id="shLoss">' + esc(pc(m.lossPct)) + '</b></td></tr>' +
+      row('shRowPico', t('pico'), pc(m.picoPct), m.picoPct != null ? ' <span class="muted small">(' + esc(t(m.picoMode === 'trace' ? 'picoTrace' : 'picoChord')) + ')</span>' : '') + '</table></div>' +
+      '<p class="sattnorm shbands" id="shBands">' + esc(t('thrL')) + bands + '</p>';
+    var hT = '<h3>' + esc(t('gtT')) + '</h3><div class="row shfactor"><label class="fld inl small">' + esc(t('factor')) + ' <input type="number" id="shFactor" step="0.01" min="0.5" max="1" value="' + ui.factor + '"' + (print ? ' disabled' : '') + '></label><span class="small muted" id="shGtF">' + esc(fmt(t('gtF'), { k: num(tr.factor, 2) })) + '</span></div>' +
+      '<div class="sattval" id="shGtVal"><span class="sattk">GT</span> <b id="shGt">' + esc(tr.gt != null ? mm(tr.gt, m.apG) : '–') + '</b></div>';
+    var hH = '<h3>' + esc(t('hsT')) + '</h3>';
+    if (m.hsi == null) hH += h.px != null ? '<p class="xhwarn small" id="shNeedCalH">' + esc(fmt(t('needCalH'), { p: f1(h.px) })) + '</p>' : '<p class="muted small" id="shNeedH">' + esc(t('needH')) + '</p>';
+    hH += '<div class="tblwrap"><table class="tbl xhtbl shtbl" id="shHTable">' + (m.src.hsi === 'img' ? row('shRowW', t('hsW'), mm(h.width, m.apH)) + row('shRowB', t('hsB'), mm(h.bridge, m.apH)) : '') + '<tr id="shRowHsi" class="shbig"><td>' + esc(t('hsi')) + '</td><td><b id="shHsi">' + esc(mm(m.hsi, m.apH)) + '</b>' + srcTag(m.src.hsi, print) + '</td></tr></table></div>';
+    var hR = '<h3>' + esc(t('trT')) + '</h3>';
+    if (tr.ok) {
+      var on = tr.track === 'on', apT = m.apG || m.apH;
+      hR += '<div class="shtrack shtrack-' + tr.track + '" id="shTrack" data-track="' + tr.track + '"><b id="shTrackLbl">' + esc(t(on ? 'on' : 'off')) + '</b> <span class="small" id="shTrackCmp">' + esc(fmt(t(on ? 'cmpOn' : 'cmpOff'), { h: ap(m.apH) + f1(tr.hsi), g: ap(m.apG) + f1(tr.gt) })) + '</span></div>' +
+        '<div class="tblwrap"><table class="tbl xhtbl shtbl" id="shTTable">' + row('shRowDtd', t('dtd'), ap(apT) + (tr.dtd > 0.049 ? '+' : '') + f1(tr.dtd) + ' mm') + row('shRowOcc', t('occ'), tr.occ != null ? f1(tr.occ) + '%' : '–') + '</table></div>' +
+        (on ? '<p class="small" id="shSubTrack"><b>' + esc(t(tr.sub === 'peripheral' ? 'periph' : 'central')) + '</b>' + (tr.near ? ' · <b id="shNear">' + esc(t('nearT')) + '</b>' : '') + '</p>' : '');
+    } else hR += '<p class="muted small" id="shTrackNeed">' + esc(t(m.D ? 'needH' : 'needG')) + '</p>';
+    hR += '<p class="sattnorm" id="shThr">' + esc(t('thrT')) + '</p>';
+    return hG + hT + hH + hR + ((m.apG || m.apH) ? '<p class="muted small" id="shApprox">' + esc(t('approx')) + '</p>' : '') + qualityHtml(m);
+  }
+  function qualityHtml(m) {
+    var g = m.g, h = m.h, cs = function (c) { return esc(t('c_' + c.source)) + (c.mmPerPx ? ' <span class="muted">(' + (c.aniso ? num(c.sx, 3) + ' × ' + num(c.sy, 3) : num(c.mmPerPx, 3)) + ' mm/px)</span>' : ''); };
+    var rows = '<tr><td>' + esc(t('cal')) + ' · ①</td><td id="shCalG">' + (ui.v.g.img ? cs(g.cal) : '–') + '</td></tr><tr><td>' + esc(t('cal')) + ' · ②</td><td id="shCalH">' + (ui.v.h.img ? cs(h.cal) : '–') + '</td></tr>';
+    if (g.rms != null) rows += '<tr><td>' + esc(t('fitRmsL')) + '</td><td>' + esc(f1(g.rms) + (g.cal.mmPerPx ? ' mm' : ' px')) + ' (n = ' + g.nC + ')</td></tr><tr><td>' + esc(t('arcL')) + '</td><td>' + esc(num(g.arcDeg, 0)) + '°</td></tr>';
+    var Q = [].concat(g.quality.map(function (q) { return Object.assign({ s: 'g' }, q); }), h.quality.map(function (q) { return Object.assign({ s: 'h' }, q); }));
+    if (m.src.D === 'typed' || m.src.d === 'typed' || m.src.hsi === 'typed') Q.push({ code: 'typed', lv: 'i' });
+    if (Math.abs(m.factor - S0.FACTOR) > 1e-9) Q.push({ code: 'factor', lv: 'i' });
+    var li = Q.map(function (x) { var lv = x.lv === 'x' ? 'x' : x.lv === 'w' ? 'w' : 'i'; return '<li class="lv-' + lv + '" data-code="' + x.code + '"' + (x.s ? ' data-sec="' + x.s + '"' : '') + '>' + (lv === 'x' ? '⛔ ' : lv === 'w' ? '⚠️ ' : 'ℹ️ ') + (x.s ? esc(x.s === 'g' ? '① ' : '② ') : '') + esc(t('q_' + x.code)) + '</li>'; }).join('');
+    return '<h3>' + esc(t('qT')) + '</h3><div class="tblwrap"><table class="tbl xhtbl" id="shQTable">' + rows + '</table></div><ul class="xhflags" id="shQuality">' + li + '</ul>';
+  }
+  function bindHead() {
+    var f = $('shFile'); if (f) f.onchange = function (e) { loadUpload(e.target.files[0]); this.value = ''; };
+    [['shUpload', 'shFile'], ['shSerUp', 'shSerFile'], ['shSerDirUp', 'shSerDir']].forEach(function (q) { var u = $(q[0]); if (u) u.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(q[1]).click(); } }; });
+    var sf = $('shSerFile'); if (sf) sf.onchange = function (e) { var fs = [].slice.call(e.target.files || []); this.value = ''; if (fs.length === 1 && !/\.zip$/i.test(fs[0].name)) { loadUpload(fs[0]); return; } loadSeries(fs); };
+    var sd = $('shSerDir'); if (sd) sd.onchange = function (e) { var fs = [].slice.call(e.target.files || []); this.value = ''; loadSeries(fs); };
+    if ($('shDemo')) $('shDemo').onclick = loadDemo;
+    document.querySelectorAll('[data-shsec]').forEach(function (b) { b.onclick = function () { ui.sec = b.dataset.shsec; renderNow(); }; });
+  }
+  function changed() { if (ui.confirmed) ui.confirmed = null; ui.msg = ''; }
+  function setFactorFrom(inp) { var x = +String(inp.value).replace(',', '.'); if (x >= 0.5 && x <= 1) { ui.factor = Math.round(x * 1000) / 1000; changed(); } renderNow(); }
+  function bindPane() {
+    document.querySelectorAll('[data-shside]').forEach(function (b) { b.onclick = function () { ui.side = b.dataset.shside; renderNow(); }; });
+    $('shDate').onchange = function () { ui.date = this.value || today(); }; $('shPhase').onchange = function () { ui.phase = this.value; };
+    $('shModG').onchange = function () { ui.modG = this.value; }; $('shModH').onchange = function () { ui.modH = this.value; };
+    ['D', 'd', 'hsi'].forEach(function (k) { var i = $('shMan_' + k); if (i) i.onchange = function () { ui.man[k] = this.value; changed(); renderNow(); }; });
+    if ($('shFactor')) $('shFactor').onchange = function () { setFactorFrom(this); };
+    if ($('shCalMm')) $('shCalMm').onchange = function () { var x = +this.value; if (x > 0) { V().calMm = x; changed(); renderNow(); } };
+    if ($('shCalSet')) $('shCalSet').onclick = function () { var v = V(); delete v.pts.CAL1; delete v.pts.CAL2; v.pick = 'CAL1'; v.sel = null; v.trace = false; changed(); renderNow(); };
+    if ($('shCalClr')) $('shCalClr').onclick = function () { var v = V(); delete v.pts.CAL1; delete v.pts.CAL2; delete v.org.CAL1; delete v.org.CAL2; if (/^CAL/.test(v.pick || '')) v.pick = null; changed(); renderNow(); };
+    if ($('shConfirm')) $('shConfirm').onclick = confirmPts;
+    $('shSave').onclick = function () { save(); }; $('shPrint').onclick = function () { openSheet(); };
+    document.querySelectorAll('[data-shpick]').forEach(function (b) { b.onclick = function () { var v = V(); v.pick = b.dataset.shpick; v.sel = null; renderNow(); }; });
+    if ($('shAddC')) $('shAddC').onclick = function () { var v = V(), ks = cKeys(v), free = ks.filter(function (k) { return !v.pts[k]; })[0]; if (!free) { if (ks.length >= S0.MAX_C) return; v.nC = ks.length + 1; free = 'C' + v.nC; } v.pick = free; v.trace = false; v.sel = null; renderNow(); };
+    if ($('shAddE2')) $('shAddE2').onclick = function () { var v = V(); v.pick = 'E2'; v.trace = false; v.sel = null; renderNow(); };
+    if ($('shTrace')) $('shTrace').onclick = function () { var v = V(); v.trace = true; v.pick = 'P' + (pKeys(v).length + 1); v.sel = null; renderNow(); };
+    if ($('shTraceEnd')) $('shTraceEnd').onclick = function () { var v = V(); v.trace = false; if (/^P/.test(v.pick || '')) v.pick = null; renderNow(); };
+    if ($('shTraceClr')) $('shTraceClr').onclick = function () { var v = V(); pKeys(v).forEach(function (k) { delete v.pts[k]; delete v.org[k]; }); v.trace = false; if (/^P/.test(v.pick || '')) v.pick = null; changed(); renderNow(); };
+  }
+  function confirmPts() { var A = API(), u = A && A.currentUser(); if (!u) { ui.msg = t('needLogin'); renderNow(); return false; } var m = compute(); if (!m.ok) { ui.msg = t('needMeas'); renderNow(); return false; }
+    ui.confirmed = { by: u.email, name: u.name, at: new Date().toISOString() }; ui.msg = ''; renderNow(); return true; }
+
+  // ---------- canvas editor ----------
+  function cvSize(cv) { var w = Math.max(160, cv.parentNode.getBoundingClientRect().width), h = Math.round(Math.min(window.innerHeight * 0.7, Math.max(340, w), 720)), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; } return { w: w, h: h }; }
+  function fitView(v, z) { var k = Math.min(z.w / v.W, z.h / v.H) * 0.97; return { s: k, tx: (z.w - v.W * k) / 2, ty: (z.h - v.H * k) / 2 }; }
+  function roiView(v, z, sec) { var ks = allOf(sec).filter(function (k) { return v.pts[k] && !/^CAL/.test(k); }); if (ks.length < 2) return fitView(v, z); var xs = ks.map(function (k) { return v.pts[k].x; }), ys = ks.map(function (k) { return v.pts[k].y; });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), pad = Math.max(x1 - x0, y1 - y0) * 0.3 + 30; x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
+    var k = Math.min(z.w / (x1 - x0), z.h / (y1 - y0)); return { s: k, tx: z.w / 2 - (x0 + x1) / 2 * k, ty: z.h / 2 - (y0 + y1) / 2 * k }; }
+  function drawCv() { var cv = $('shCv'), v = V(); if (!cv || !v.img) return; var z = cvSize(cv), dpr = window.devicePixelRatio || 1;
+    if (!v.lv || v.lv.img !== v.img) { v.lv = v.roi ? roiView(v, z, ui.sec) : fitView(v, z); v.lv.img = v.img; v.roi = false; }
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); drawScene(g, z.w, z.h, v.lv, ui.sec, false); }
+  function drawScene(g, w, h, vw, sec, print) {
+    var v = ui.v[sec], P = function (q) { return { x: q.x * vw.s + vw.tx, y: q.y * vw.s + vw.ty }; }, p = v.pts, m = ui.last || compute();
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.save(); g.translate(vw.tx, vw.ty); g.scale(vw.s, vw.s); g.drawImage(v.img, 0, 0); g.restore();
+    var L = function (a, b, col, lw, dash) { var A = P(a), B = P(b); g.save(); g.strokeStyle = col; g.lineWidth = lw || 2; g.setLineDash(dash || []); g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke(); g.restore(); };
+    var lab = function (q, s, col, dx, dy) { var A = P(q); g.save(); g.font = '700 13px system-ui,sans-serif'; g.lineWidth = 3.5; g.strokeStyle = 'rgba(0,0,0,.9)'; g.fillStyle = col || '#fff'; g.strokeText(s, A.x + (dx || 0), A.y + (dy || 0)); g.fillText(s, A.x + (dx || 0), A.y + (dy || 0)); g.restore(); };
+    var mid = function (a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }, ap = function (c) { return c && c.approx ? '≈' : ''; }, val = function (x, c) { return c.mmPerPx ? ap(c) + f1(x) + ' mm' : f1(x) + ' px'; };
+    if (sec === 'g') {
+      var G = m.g;
+      if (G.c) { var C0 = P(G.c); g.save(); g.strokeStyle = '#22d3ee'; g.lineWidth = 2.2; g.beginPath(); g.ellipse(C0.x, C0.y, G.rIm.x * vw.s, G.rIm.y * vw.s, 0, 0, 2 * Math.PI); g.stroke(); g.fillStyle = '#22d3ee'; g.beginPath(); g.arc(C0.x, C0.y, 3, 0, 7); g.fill(); g.restore(); }
+      if (G.trace && G.trace.length > 2) { g.save(); g.fillStyle = 'rgba(232,121,249,.35)'; g.strokeStyle = '#e879f9'; g.lineWidth = 1.5; g.beginPath(); G.trace.forEach(function (q, i) { var A = P(q); if (i) g.lineTo(A.x, A.y); else g.moveTo(A.x, A.y); }); g.closePath(); g.fill(); g.stroke(); g.restore(); }
+      if (G.A0 && G.P0) {
+        L(G.P0, G.A0, '#facc15', 2); L(G.A0, G.E0, '#ef4444', 4);
+        if (p.E2 && p.E1) { var dx = p.E2.x - p.E1.x, dy = p.E2.y - p.E1.y, ln = Math.hypot(dx, dy) || 1, ex = Math.max(G.rIm.x, G.rIm.y) * 0.9; L({ x: p.E1.x - dx / ln * ex, y: p.E1.y - dy / ln * ex }, { x: p.E2.x + dx / ln * ex, y: p.E2.y + dy / ln * ex }, '#fb923c', 1.6, [6, 4]); }
+        lab(G.A0, 'd ' + val(G.cal.mmPerPx ? G.d : G.dpx, G.cal), '#fca5a5', 8, -8);
+        lab(G.P0, 'D ' + val(G.cal.mmPerPx ? G.D : G.Dpx, G.cal), '#fde047', -10, 18);
+        if (G.lossPct != null) lab(G.c, f1(G.lossPct) + '%', '#fff', 8, -10);
+      }
+    } else {
+      var H = m.h;
+      if (p.H1 && p.H2) L(p.H1, p.H2, '#ef4444', 3.5); if (p.H2 && p.F) L(p.H2, p.F, '#4ade80', 3.5);
+      if (p.H1 && p.H2 && H.width != null) lab(mid(p.H1, p.H2), 'HS ' + val(H.width, H.cal), '#fca5a5', 8, -8);
+      if (p.H2 && p.F && H.bridge != null) lab(p.F, 'BB ' + val(H.bridge, H.cal), '#86efac', 12, 12);
+      if (H.raw != null) lab(p.F, 'HSI ' + val(H.raw, H.cal), '#fff', 12, 28);
+    }
+    if (p.CAL1 && p.CAL2) L(p.CAL1, p.CAL2, '#60a5fa', 2);
+    allOf(sec).forEach(function (k) { var q = p[k]; if (!q) return; var A = P(q), sl = v.sel === k; g.save(); g.beginPath(); g.arc(A.x, A.y, sl ? 8.5 : 6, 0, 7); g.fillStyle = colOf(k); g.fill(); g.lineWidth = 2; g.strokeStyle = '#000'; g.stroke();
+      if (!print || !/^[CP]\d/.test(k)) { g.font = '600 11px system-ui,sans-serif'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.fillStyle = '#fff'; var s = nm('s_', k); g.strokeText(s, A.x + 9, A.y - 7); g.fillText(s, A.x + 9, A.y - 7); } g.restore(); });
+    if (v.demo) { g.save(); g.font = '600 11px system-ui,sans-serif'; g.fillStyle = '#fbbf24'; g.fillText('DEMO', 6, 14); g.restore(); }
+  }
+  function zoom(f, c) { var vw = V().lv; if (!vw) return; var ns = Math.max(0.02, Math.min(40, vw.s * f)), k = ns / vw.s; vw.tx = c.x - (c.x - vw.tx) * k; vw.ty = c.y - (c.y - vw.ty) * k; vw.s = ns; drawCv(); }
+  function live() { var m = compute(), r = $('shRes'); if (r) { r.innerHTML = resultsHtml(m); var fi = $('shFactor'); if (fi) fi.onchange = function () { setFactorFrom(this); }; } drawCv(); }
+  function afterPlace(v, k) { if (k === 'CAL1') return 'CAL2'; if (/^P\d+$/.test(k) && v.trace) { var n = pKeys(v).length; return n < S0.MAX_C ? 'P' + (n + 1) : null; } return null; }
+  function renumber(v, pre) { var re = new RegExp('^' + pre + '\\d+$'), ks = Object.keys(v.pts).filter(function (k) { return re.test(k); }).sort(function (a, b) { return +a.slice(1) - +b.slice(1); }), keep = ks.map(function (k) { return v.pts[k]; });
+    ks.forEach(function (k) { delete v.pts[k]; delete v.org[k]; }); keep.forEach(function (q, i) { v.pts[pre + (i + 1)] = q; v.org[pre + (i + 1)] = 'manual'; }); return keep.length; }
+  function bindEditor() {
+    var cv = $('shCv'); if (!cv) return; var v = V();
+    var center = function () { return { x: cv.width / (window.devicePixelRatio || 1) / 2, y: cv.height / (window.devicePixelRatio || 1) / 2 }; };
+    $('shZin').onclick = function () { zoom(1.5, center()); }; $('shZout').onclick = function () { zoom(1 / 1.5, center()); }; $('shZfit').onclick = function () { v.lv = null; drawCv(); };
+    $('shZroi').onclick = function () { v.lv = null; v.roi = true; drawCv(); };
+    $('shClear').onclick = function () { var c1 = v.pts.CAL1, c2 = v.pts.CAL2; v.pts = {}; v.org = {}; if (c1) { v.pts.CAL1 = c1; v.org.CAL1 = 'manual'; } if (c2) { v.pts.CAL2 = c2; v.org.CAL2 = 'manual'; } v.nC = 3; v.trace = false; v.pick = null; v.sel = null; changed(); renderNow(); };
+    if ($('shDel')) $('shDel').onclick = function () { var k = v.sel; delete v.pts[k]; delete v.org[k]; v.sel = null; if (/^C\d+$/.test(k)) v.nC = Math.max(3, renumber(v, 'C')); else if (/^P\d+$/.test(k)) renumber(v, 'P'); else v.pick = k; changed(); renderNow(); };
+    var ptr = {}, gest = null, rel = function (e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    var toImg = function (q) { var lv = v.lv; return { x: (q.x - lv.tx) / lv.s, y: (q.y - lv.ty) / lv.s }; };
+    var hit = function (q) { var best = null, bd = 20; allOf(ui.sec).forEach(function (k) { var p = v.pts[k]; if (!p) return; var lv = v.lv, d = Math.hypot(p.x * lv.s + lv.tx - q.x, p.y * lv.s + lv.ty - q.y); if (d < bd) { bd = d; best = k; } }); return best; };
+    cv.onpointerdown = function (e) {
+      if (!v.lv) return; try { cv.setPointerCapture(e.pointerId); } catch (_) {} var q = rel(e); ptr[e.pointerId] = q; e.preventDefault();
+      var ids = Object.keys(ptr); if (ids.length === 2) { var a = ptr[ids[0]], b = ptr[ids[1]]; gest = { type: 'pinch', d: Math.hypot(a.x - b.x, a.y - b.y), c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }; return; }
+      var hk = hit(q); gest = hk ? { type: 'maybe', k: hk, start: q } : { type: 'tap', start: q, last: q };
+    };
+    cv.onpointermove = function (e) {
+      if (!gest) return; var q = rel(e); if (ptr[e.pointerId]) ptr[e.pointerId] = q;
+      if (gest.type === 'pinch') { var ids = Object.keys(ptr); if (ids.length < 2) return; var a = ptr[ids[0]], b = ptr[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; v.lv.tx += c.x - gest.c.x; v.lv.ty += c.y - gest.c.y; zoom(d / (gest.d || d), c); gest.d = d; gest.c = c; return; }
+      if (gest.type === 'maybe' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 5) gest = { type: 'drag', k: gest.k };
+      if (gest.type === 'drag') { v.pts[gest.k] = toImg(q); v.org[gest.k] = 'manual'; changed(); live(); return; }
+      if (gest.type === 'tap' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 9) gest.type = 'pan';
+      if (gest.type === 'pan') { v.lv.tx += q.x - gest.last.x; v.lv.ty += q.y - gest.last.y; drawCv(); }
+      if (gest.last) gest.last = q;
+    };
+    cv.onpointerup = function (e) {
+      var q = rel(e); delete ptr[e.pointerId]; var gs = gest; gest = null; if (!gs || gs.type === 'pinch') { if (Object.keys(ptr).length) gest = { type: 'pan', last: ptr[Object.keys(ptr)[0]] }; return; }
+      if (gs.type === 'maybe') { if (!nextPt()) { v.sel = gs.k; renderNow(); return; } gs = { type: 'tap' }; }
+      if (gs.type === 'drag') { v.sel = gs.k; renderNow(); return; }
+      if (gs.type === 'tap') { var k = nextPt(); if (!k) { v.sel = null; renderNow(); return; } var p = toImg(q); if (p.x < 0 || p.y < 0 || p.x > v.W || p.y > v.H) return; v.pts[k] = p; v.org[k] = 'manual'; v.pick = afterPlace(v, k); v.sel = null; changed(); renderNow(); }
+    };
+    cv.onpointercancel = function (e) { delete ptr[e.pointerId]; gest = null; };
+    cv.onwheel = function (e) { e.preventDefault(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, rel(e)); };
+  }
+
+  // ---------- save / list / reopen ----------
+  var r2 = function (x) { return x == null || !isFinite(x) ? null : Math.round(x * 100) / 100; };
+  var rp = function (pts) { var o = {}; Object.keys(pts || {}).forEach(function (k) { if (pts[k]) o[k] = { x: r2(pts[k].x), y: r2(pts[k].y) }; }); return o; };
+  var calRec = function (c, v) { return { source: c.source, mmPerPx: c.mmPerPx, sx: c.sx, sy: c.sy, calMm: v.calMm }; };
+  var dcm = function (v) { return v.dicom ? { spacing: v.dicom.spacing || null, modality: v.dicom.modality || null } : null; };
+  function save() {
+    var A = API(), u = A && A.currentUser(), say = function (s) { ui.msg = s; var e = $('shMsg'); if (e) e.textContent = s; return null; };
+    if (!u) return say(t('needLogin')); var P = pid(); if (!P) return say(t('needPt')); var m = compute(); if (!m.ok) return say(t('needMeas')); if (!ui.confirmed) return say(t('needConf'));
+    var store = A.store; store.xrays = store.xrays || []; var old = ui.recId ? store.xrays.filter(function (x) { return x.id === ui.recId; })[0] : null, vg = ui.v.g, vh = ui.v.h, tr = m.tr, demo = !!(vg.demo || vh.demo);
+    var res = { D: r2(m.D), d: r2(m.d), lossPct: r2(m.lossPct), picoPct: r2(m.picoPct), picoMode: m.picoMode, factor: tr.factor, gt: r2(tr.gt), hsi: r2(m.hsi), width: m.src.hsi === 'img' ? r2(m.h.width) : null, bridge: m.src.hsi === 'img' ? r2(m.h.bridge) : null,
+      dtd: tr.ok ? r2(tr.dtd) : null, track: tr.ok ? tr.track : null, occ: tr.ok ? r2(tr.occ) : null, sub: tr.sub || null, near: tr.ok && tr.track === 'on' ? !!tr.near : null, zone: S0.lossZone(m.lossPct), apG: !!m.apG, apH: !!m.apH };
+    var rec = { id: old ? old.id : 'x' + Math.random().toString(36).slice(2, 10), patientId: P, date: ui.date, phase: ui.phase, side: ui.side, kind: 'shoulder', view: 'ct', landmarks: {}, results: {}, image: [vg.name, vh.name].filter(Boolean).join(' + ') + (demo ? ' (DEMO)' : ''),
+      savedBy: { email: u.email, name: u.name }, source: 'clinician', landmarkSource: m.src.D === 'typed' && m.src.d === 'typed' && m.src.hsi === 'typed' ? 'typed' : 'manual', confirmed: ui.confirmed, synth: demo ? 'shoulder' : null, thumb: null, filmId: vg.img ? vg.filmId : vh.img ? vh.filmId : null, imgStored: false, localOnly: true,
+      shoulder: { v: 1, version: S0.VERSION, date: today(), by: { email: u.email, name: u.name }, mod: { g: ui.modG, h: ui.modH }, factor: tr.factor, man: { D: typed('D'), d: typed('d'), hsi: typed('hsi') }, src: m.src, result: res,
+        quality: [].concat(m.g.quality.map(function (q) { return 'g:' + q.code; }), m.h.quality.map(function (q) { return 'h:' + q.code; })),
+        g: { pts: rp(vg.pts), nC: vg.nC, cal: calRec(m.g.cal, vg), filmId: vg.img ? vg.filmId : null, name: vg.name, W: vg.W, H: vg.H, dicom: dcm(vg), D: r2(m.g.D), d: r2(m.g.d), R: r2(m.g.R), rms: r2(m.g.rms), arcDeg: r2(m.g.arcDeg), mode: m.g.mode },
+        h: { pts: rp(vh.pts), cal: calRec(m.h.cal, vh), filmId: vh.img ? vh.filmId : null, name: vh.name, W: vh.W, H: vh.H, dicom: dcm(vh) },
+        confirmed: ui.confirmed, synth: demo ? { g: vg.demo ? vg.demo.opt : null, h: vh.demo ? vh.demo.opt : null } : null } };
+    store.xrays = store.xrays.filter(function (x) { return x.id !== rec.id; }); store.xrays.push(rec); ui.recId = rec.id;
+    A.persist(); if (A.audit) A.audit('shoulder-save', P + ' ' + ui.side + ' ' + ui.date + ' ' + headline(rec.shoulder, 'en'));
+    if (!demo) ['g', 'h'].forEach(function (k) { var v = ui.v[k], of = old && old.shoulder && old.shoulder[k] && old.shoulder[k].filmId; if (v.img && v.filmId !== of) storeFilm(P, v); });
+    ui.msg = t('saved') + ': ' + P + ' · ' + t(ui.side) + ' · ' + headline(rec.shoulder); renderNow(); return rec;
+  }
+  /** The image stays on this device only (IndexedDB of the X-ray tab) – it is never sent to the cloud. */
+  function storeFilm(P, v) { var img = v.img, put = function (b) { if (!b) return; var x = XR(); if (x && x.putFilm) x.putFilm(v.filmId, { blob: b, w: img.width, h: img.height, name: v.name, pid: P, dicom: v.dicom, at: new Date().toISOString(), localOnly: true }).catch(function () {}); };
+    if (v.blob) put(v.blob); else if (img.toBlob) img.toBlob(put, 'image/png'); }
+  function recs(P) { var A = API(); return ((A && A.store.xrays) || []).filter(function (x) { return x.patientId === P && x.kind === 'shoulder' && x.shoulder; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); }
+  function listHtml() {
+    var P = pid(); if (!P) return ''; var xs = recs(P);
+    return '<div class="card" id="shList"><h3>🦴 ' + esc(t('listT')) + ' · ' + esc(P) + '</h3>' + (xs.length ? '<div class="tblwrap"><table class="tbl ptslist"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('side')) + '</th><th>' + esc(t('dLoss')) + ' · GT · HSI</th><th>' + esc(t('dTr')) + '</th><th></th></tr>' + xs.map(function (x) { var r = x.shoulder.result || {};
+      return '<tr data-shrec="' + esc(x.id) + '"' + (x.id === ui.recId ? ' class="on"' : '') + '><td>' + esc(x.date) + ' <span class="muted small">' + esc(t(x.phase === 'post' ? 'post' : 'pre')) + '</span></td><td>' + esc(t(x.side)) + '</td><td>' + esc(headline(x.shoulder).replace(/ · (on|off)-track$/, '')) + '</td><td><b>' + esc(trackTxt(r) || '–') + '</b></td><td><button class="small" data-shopen="' + esc(x.id) + '">' + esc(t('open')) + '</button></td></tr>'; }).join('') + '</table></div>' : '<p class="muted small">' + esc(t('none')) + '</p>') +
+      (ui.recId ? '<button id="shNew" class="small">' + esc(t('newM')) + '</button>' : '') + '</div>';
+  }
+  function resetAll() { ui.v = { g: V0(), h: V0() }; ui.recId = null; ui.confirmed = null; ui.man = { D: '', d: '', hsi: '' }; ui.factor = S0.FACTOR; ui.msg = ''; ui.sec = 'g'; }
+  function bindList() { document.querySelectorAll('[data-shopen]').forEach(function (b) { b.onclick = function () { open(b.dataset.shopen); }; }); if ($('shNew')) $('shNew').onclick = function () { resetAll(); renderNow(); }; }
+  function blobCanvas(blob) { return new Promise(function (res, rej) { var u = URL.createObjectURL(blob), im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u); res(c); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('image')); }; im.src = u; }); }
+  function blankCanvas(w, h) { var c = document.createElement('canvas'); c.width = w || 800; c.height = h || 800; var x = c.getContext('2d'); x.fillStyle = '#111'; x.fillRect(0, 0, c.width, c.height); return c; }
+  /** Opens a saved shoulder study (list, patient timeline): switches patient + sub-tab, restores points, values and the images (this device only). */
+  function open(id) {
+    var A = API(), x = ((A && A.store.xrays) || []).filter(function (q) { return q.id === id && q.kind === 'shoulder'; })[0]; if (!x) return Promise.resolve(false);
+    var X2 = XR(); if (X2 && pid() !== x.patientId) X2.selectPatient(x.patientId);
+    var q = x.shoulder; resetAll(); ui.pid = x.patientId; ui.recId = x.id; ui.side = x.side; ui.date = x.date; ui.phase = x.phase; ui.modG = (q.mod && q.mod.g) || 'ct3d'; ui.modH = (q.mod && q.mod.h) || 'ctax'; ui.factor = q.factor || S0.FACTOR;
+    ['D', 'd', 'hsi'].forEach(function (k) { ui.man[k] = q.man && q.man[k] != null ? String(q.man[k]) : ''; }); ui.confirmed = x.confirmed || q.confirmed || null;
+    var jobs = ['g', 'h'].map(function (k) {
+      var s = q[k] || {}, v = ui.v[k]; v.pts = JSON.parse(JSON.stringify(s.pts || {})); Object.keys(v.pts).forEach(function (pk) { v.org[pk] = 'manual'; }); v.nC = s.nC || 3; v.calMm = (s.cal && s.cal.calMm) || 10; v.dicom = s.dicom || null; v.name = s.name || ''; v.filmId = s.filmId; v.roi = true;
+      if (!s.filmId && !(q.synth && q.synth[k]) && !Object.keys(v.pts).length) return Promise.resolve();
+      var done = function (c, note) { if (ui.recId !== x.id) return; v.img = c; v.W = c.width; v.H = c.height; v.lv = null; v.roi = true; v.note = note || ''; };
+      if (q.synth && q.synth[k]) { var sy = k === 'g' ? S0.synthGlenoid(q.synth[k]) : S0.synthHumerus(q.synth[k]); v.demo = { mmPerPx: sy.mmPerPx, opt: q.synth[k] }; done(grayCanvas(sy)); return Promise.resolve(); }
+      var dev = X2 && X2.getFilm && s.filmId ? X2.getFilm(s.filmId).then(function (r) { if (!r || !r.blob) throw new Error('none'); v.dicom = r.dicom || v.dicom; return blobCanvas(r.blob); }) : Promise.reject(new Error('none'));
+      return dev.then(function (c) { done(c); }, function () { done(blankCanvas(s.W, s.H), t('loadFail')); });
+    });
+    return Promise.all(jobs).then(function () { if (ui.recId !== x.id) return false; ui.sec = 'g'; if (X2) X2.setSub('shoulder'); else renderNow(); return true; });
+  }
+
+  // ---------- dashboard section ----------
+  function dashHtml(p) {
+    var xs = recs(p.id); if (!xs.length) return '';
+    return '<h3 style="margin-top:12px">🦴 ' + esc(t('dash')) + '</h3><div class="tblwrap"><table class="tbl" id="shDash"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('side')) + '</th><th>' + esc(t('dLoss')) + '</th><th>GT</th><th>HSI</th><th>' + esc(t('dTr')) + '</th></tr>' +
+      xs.map(function (x) { var r = x.shoulder.result || {}, ap = function (b) { return b ? '≈' : ''; }; return '<tr><td>' + esc(x.date) + '</td><td>' + esc(t(x.side)) + '</td><td>' + esc(r.lossPct != null ? f1(r.lossPct) + '%' : '–') + '</td><td>' + esc(r.gt != null ? ap(r.apG) + f1(r.gt) + ' mm' : '–') + '</td><td>' + esc(r.hsi != null ? ap(r.apH) + f1(r.hsi) + ' mm' : '–') + '</td><td><b>' + esc(trackTxt(r) || '–') + '</b></td></tr>'; }).join('') + '</table></div>';
+  }
+
+  // ---------- A4 print sheet ----------
+  function closeSheet() { document.body.classList.remove('sh-print'); var r = $('shReport'); if (r) r.remove(); }
+  function sheetImage(sec) { var v = ui.v[sec]; if (!v.img) return ''; var c = document.createElement('canvas'), w = 400, h = 360; c.width = w * 2; c.height = h * 2; var g = c.getContext('2d'); g.scale(2, 2); drawScene(g, w, h, roiView(v, { w: w, h: h }, sec), sec, true); return c.toDataURL('image/jpeg', 0.9); }
+  function openSheet() {
+    var m = compute(); if (!m.ok) { ui.msg = t('needMeas'); renderNow(); return; }
+    closeSheet(); var A = API(), u = A && A.currentUser(), P = pid(), pt = A && P ? A.store.patients.filter(function (x) { return x.id === P; })[0] : null, name = pt ? [pt.lastName, pt.firstName].filter(Boolean).join(' ') : '';
+    var demo = ui.v.g.demo || ui.v.h.demo, ig = sheetImage('g'), ih = sheetImage('h');
+    var d = document.createElement('div'); d.id = 'shReport'; d.className = 'htoreport shreport'; d.setAttribute('lang', lang());
+    d.innerHTML = '<div class="xcr-bar noprint"><button id="shPrClose">' + esc(t('close')) + '</button><button id="shPrDo" class="primary">' + esc(t('doPrint')) + '</button></div><div class="htor-page">' +
+      '<div class="htor-head"><div><h1>🦴 ' + esc(t('sheet')) + '</h1><div class="small">OrthoThessaly · ' + esc(t('sub')) + '</div></div><div class="htor-meta">' + esc(t('patient')) + ': <b>' + esc(P || '—') + '</b>' + (name ? ' · ' + esc(name) : '') + '<br>' + esc(t('filmD')) + ': ' + esc(t('m_' + ui.modG)) + ' + ' + esc(t('m_' + ui.modH)) + ' · ' + esc(ui.date) + ' · ' + esc(t(ui.phase)) + ' · ' + esc(t(ui.side)) + '<br>' + esc(t('measD')) + ': ' + esc(today()) + (u ? '<br>' + esc(t('by')) + ': ' + esc(u.name || u.email) : '') + '</div></div>' +
+      (demo ? '<p class="htor-demo">' + esc(t('synth')) + '</p>' : '') + (!ui.confirmed ? '<p class="htor-demo">' + esc(t('unconf')) + '</p>' : '') +
+      '<div class="htor-main shr-main"><div class="htor-figs shr-figs">' + (ig ? '<figure><img src="' + ig + '" alt="glenoid"><figcaption class="small muted">' + esc(t('secG')) + ' · ' + esc(t('legendG')) + '</figcaption></figure>' : '') + (ih ? '<figure><img src="' + ih + '" alt="Hill-Sachs"><figcaption class="small muted">' + esc(t('secH')) + ' · ' + esc(t('legendH')) + '</figcaption></figure>' : '') + '</div><div class="htor-right">' + resultsHtml(m, true) + '</div></div>' +
+      '<div class="htor-foot"><p>' + esc(t('sign')) + ': ______________________ </p><p>' + esc(t('disc')) + '</p></div></div>';
+    document.body.appendChild(d); document.body.classList.add('sh-print');
+    $('shPrClose').onclick = closeSheet; $('shPrDo').onclick = function () { window.print(); };
+  }
+  window.addEventListener('resize', function () { if ($('shCv')) drawCv(); if ($('shSerCv')) serDraw(); });
+  window.__xsh = { render: render, renderNow: renderNow, open: open, save: save, confirm: confirmPts, openSheet: openSheet, closeSheet: closeSheet, headline: headline, dashHtml: dashHtml, loadDemo: loadDemo, loadFile: loadUpload, loadSeries: loadSeries, dropSeries: dropSeries, serUse: serUse, serGo: serGo,
+    serInfo: function () { var S2 = ui.ser; return S2 ? { n: S2.n, i: S2.i, loading: !!S2.loading, spacing: S2.spacing || null } : null; },
+    setSec: function (s) { ui.sec = s === 'h' ? 'h' : 'g'; renderNow(); }, setPoint: function (sec, k, p) { var v = ui.v[sec]; v.pts[k] = p; v.org[k] = 'manual'; var mm = /^C(\d+)$/.exec(k); if (mm) v.nC = Math.max(v.nC, +mm[1]); changed(); renderNow(); },
+    clearPoints: function (sec) { var v = ui.v[sec]; v.pts = {}; v.org = {}; v.nC = 3; v.pick = null; v.trace = false; changed(); renderNow(); },
+    setCal: function (sec, a, b, mmL) { var v = ui.v[sec]; v.pts.CAL1 = a; v.pts.CAL2 = b; v.org.CAL1 = v.org.CAL2 = 'manual'; if (mmL) v.calMm = mmL; changed(); renderNow(); }, setMan: function (o) { Object.keys(o).forEach(function (k) { ui.man[k] = o[k] == null ? '' : String(o[k]); }); changed(); renderNow(); },
+    setFactor: function (k) { ui.factor = k; changed(); renderNow(); }, reset: function () { resetAll(); renderNow(); }, compute: compute, get last() { return ui.last; }, get state() { return ui; },
+    toScreen: function (p) { var cv = $('shCv'), v = V(); if (!cv || !v.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * v.lv.s + v.lv.tx, y: r.top + p.y * v.lv.s + v.lv.ty }; } };
+})();
+</script>
 <!-- ===== TKA pre-op vs post-op comparison + print report ===== -->
 <script id="ortho-xray-compare">
 (function () {
@@ -17674,7 +18408,7 @@ window.OrthoQRGen = qrcode; })();
     return h;
   }
   function rerender(p) {
-    var el = $('xcmp'); if (!el) return; var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'patella' && x.kind !== 'satt'; });
+    var el = $('xcmp'); if (!el) return; var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder'; });
     var d = document.createElement('div'); d.innerHTML = html(p, xs); var nw = d.firstChild; if (nw) { var inf = el.querySelector('#xcInfo'); if (inf && inf.open) nw.querySelector('#xcInfo').open = true; el.parentNode.replaceChild(nw, el); } bind(p);
   }
   function bind(p) {
