@@ -2619,18 +2619,21 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
     var num = function (s) { if (s == null) return null; var v = parseFloat(String(s).split('\\')[0]); return isFinite(v) ? v : null; };
     var vec = function (s, k) { if (s == null) return null; var a = String(s).split('\\').map(parseFloat); return a.length === k && a.every(isFinite) ? a : null; };
     var geo = { ipp: vec(el[0x00200032], 3), iop: vec(el[0x00200037], 6), inst: num(el[0x00200013]), thick: num(el[0x00180050]), between: num(el[0x00180088]), sliceLoc: num(el[0x00201041]), frames: num(el[0x00280008]) || 1 };
-    if (headerOnly) { var ps0 = el[0x00280030] || el[0x00181164];
+    // PixelSpacing (0028,0030) [row, column] mm; if absent / empty / not two positive numbers → ImagerPixelSpacing (0018,1164)
+    var spOf = function (v) { if (v == null) return null; var a = String(v).replace(/\0/g, '').trim(); if (!a) return null; a = a.split('\\').map(parseFloat);
+      if (a.length === 1) a = [a[0], a[0]]; return a.length >= 2 && a[0] > 0 && a[1] > 0 && isFinite(a[0]) && isFinite(a[1]) ? [a[0], a[1]] : null; };
+    var psArr = spOf(el[0x00280030]) || spOf(el[0x00181164]), psTag = spOf(el[0x00280030]) ? 'PixelSpacing' : psArr ? 'ImagerPixelSpacing' : null;
+    if (headerOnly) { var ps0 = psArr;
       return { rows: rows, cols: cols, bits: bits, spp: spp, signed: signed, photometric: el[0x00280004] || 'MONOCHROME2', wc: num(el[0x00281050]), ww: num(el[0x00281051]), intercept: num(el[0x00281052]) || 0, slope: num(el[0x00281053]) || 1,
-        pixelSpacing: ps0 ? ps0.split('\\').map(parseFloat) : null, modality: el[0x00080060] || '', transferSyntax: ts, pixelPos: el.pixelPos, pixelLen: el.pixelLen,
+        pixelSpacing: ps0, spacingTag: psTag, modality: el[0x00080060] || '', transferSyntax: ts, pixelPos: el.pixelPos, pixelLen: el.pixelLen,
         ipp: geo.ipp, iop: geo.iop, inst: geo.inst, thick: geo.thick, between: geo.between, sliceLoc: geo.sliceLoc, frames: geo.frames }; }
     var px, count = rows * cols * spp;
     if (bits === 8) px = new Uint8Array(buf, el.pixelPos, count);
     else if (bits === 16) { px = signed ? new Int16Array(count) : new Uint16Array(count); for (var i = 0; i < count; i++) px[i] = signed ? dv.getInt16(el.pixelPos + 2 * i, true) : dv.getUint16(el.pixelPos + 2 * i, true); }
     else throw new Error('bits-' + bits);
-    var ps = el[0x00280030] || el[0x00181164];
     return { rows: rows, cols: cols, bits: bits, spp: spp, photometric: el[0x00280004] || 'MONOCHROME2', pixels: px,
       wc: num(el[0x00281050]), ww: num(el[0x00281051]), intercept: num(el[0x00281052]) || 0, slope: num(el[0x00281053]) || 1,
-      pixelSpacing: ps ? ps.split('\\').map(parseFloat) : null, modality: el[0x00080060] || '', view: el[0x00185101] || '', transferSyntax: ts,
+      pixelSpacing: psArr, spacingTag: psTag, modality: el[0x00080060] || '', view: el[0x00185101] || '', transferSyntax: ts,
       ipp: geo.ipp, iop: geo.iop, inst: geo.inst, thick: geo.thick, between: geo.between, sliceLoc: geo.sliceLoc, frames: geo.frames };
   }
   /** DICOM → RGBA Uint8ClampedArray with VOI window (DICOM window centre/width, else min–max) and MONOCHROME1 inversion. */
@@ -7388,6 +7391,24 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
     return m;
   }
   function latestAt(subs, pid, inst, tp) { return subs.filter(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; })[0] || null; }
+  var HXT = {
+    el: { F: 'Γυναίκα', M: 'Άνδρας', never: 'Ποτέ', ex: 'Πρώην καπνιστής', current: 'Ενεργός καπνιστής', none: 'Καθόλου', moderate: 'Μέτρια / κοινωνική κατανάλωση', abuse: 'Κατάχρηση / αλκοολισμός' },
+    en: { F: 'Female', M: 'Male', never: 'Never', ex: 'Ex-smoker', current: 'Current smoker', none: 'None', moderate: 'Moderate / social', abuse: 'Abuse / alcoholism' }
+  };
+  /** One history row: identity (code, procedure, side, sex, age) + comorbidities 0/1 (OrthoHistory.CONDS order) + BMI, smoking, alcohol,
+   *  labs, CCI, age-adjusted CCI, suggested ASA, final ASA (+E), ASA confirmation date. No history (or an empty one) → history cells empty.
+   *  Free text (other / medications / allergies) is never exported. */
+  function histRow(HX, p, code, lg, opt) {
+    var age = typeof p.age === 'number' ? p.age : HX.num(p.age), base = { code: code, procName: procName(p.procedure, lg), side: sideName(p.side, lg), sex: HXT[lg][p.sex] || '', age: age };
+    var raw = p.history; if (!raw || typeof raw !== 'object' || HX.isEmpty(raw)) { base.has = false; return base; }
+    var h = HX.normalize(JSON.parse(JSON.stringify(raw))), c = HX.compute({ age: age, sex: p.sex, history: h }), a = h.asa || {}, labs = h.labs || {};
+    base.has = true; base.cond = HX.CONDS.map(function (x) { return HX.has(h, x.k) ? 1 : 0; });
+    base.bmi = c.bmi; base.smoking = HXT[lg][h.smoking] || ''; base.alcohol = HXT[lg][h.alcohol] || '';
+    base.labs = HX.LABS.map(function (l) { return HX.num(labs[l.k]); }); base.labsDate = opt.daysOnly ? null : (labs.date || null);
+    base.cci = c.cci.score; base.cciAge = c.cci.ageAdj; base.asaSug = HX.asaText(c.asa.cls, false); base.asaFinal = a.final ? HX.asaText(a.final, a.e) : '';
+    base.asaAt = a.final && a.confirmedAt && !opt.daysOnly ? String(a.confirmedAt).slice(0, 10) : null;
+    return base;
+  }
   /** All export tables for the filtered set. opt also: tps (timepoint ids kept), anon (default true), daysOnly, lang, today. */
   function build(store, opt) {
     opt = opt || {}; var lg = lgOf(opt), subsAll = store.submissions || [];
@@ -7456,19 +7477,21 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
       }); });
     });
     var completeness = Object.keys(comp).map(function (k) { return comp[k]; }).sort(function (a, b) { return a.procedure < b.procedure ? -1 : a.procedure > b.procedure ? 1 : TP_IDS.indexOf(a.tp) - TP_IDS.indexOf(b.tp) || (a.inst < b.inst ? -1 : a.inst > b.inst ? 1 : 0); });
-    return { lang: lg, patients: pts, code: code, tps: tps, scores: scores, mcid: mcid, summary: summary, completeness: completeness, nSubs: subs.length, unscored: unscored, noBase: noBase, today: today };
+    // ---- Medical history (doctor-only 🩺, patients.extra.history): one row per patient; derived values from OrthoHistory (same as the UI) ----
+    var HX = root.OrthoHistory, history = HX ? pts.map(function (p) { return histRow(HX, p, code[p.id], lg, opt); }) : null;
+    return { lang: lg, patients: pts, code: code, tps: tps, scores: scores, history: history, mcid: mcid, summary: summary, completeness: completeness, nSubs: subs.length, unscored: unscored, noBase: noBase, today: today };
   }
 
   // ===== Sheets (column definitions; headers localised) =====
   var H = {
-    el: { sheets: ['Βαθμολογίες', 'MCID–PASS', 'Σύνοψη', 'Πληροφορίες'], code: 'Κωδικός ασθενή', proc: 'Επέμβαση', procId: 'Κωδ. επέμβασης', side: 'Πλευρά', tp: 'Χρονικό σημείο', tpId: 'Κωδ. χρονικού σημείου', date: 'Ημερομηνία', days: 'Ημέρες από χειρουργείο', inst: 'Ερωτηματολόγιο', sub: 'Υποκλίμακα', subKey: 'Κωδ. υποκλίμακας', score: 'Βαθμολογία', primary: 'Κύρια τιμή', ulType: 'Τύπος (άνω άκρο)', base: 'Προεγχειρητική τιμή', fol: 'Τιμή παρακολούθησης', delta: 'Μεταβολή', mcidThr: 'Όριο MCID', mcid: 'MCID', passThr: 'Όριο PASS', pass: 'PASS', noBase: 'Χωρίς προεγχειρητική', nFol: 'Ασθενείς με απάντηση', mcidN: 'MCID n', mcidD: 'MCID N', mcidPct: 'MCID %', passN: 'PASS n', passD: 'PASS N', passPct: 'PASS %', thr: 'Όρια', key: 'Πεδίο', value: 'Τιμή', expected: 'Αναμενόμενα', done: 'Συμπληρωμένα', open: 'Σε εξέλιξη (παράθυρο ανοιχτό)', overdue: 'Λείπουν (εκπρόθεσμα)', donePct: 'Πληρότητα %' },
-    en: { sheets: ['Scores', 'MCID–PASS', 'Summary', 'Info'], code: 'Patient code', proc: 'Procedure', procId: 'Procedure code', side: 'Side', tp: 'Timepoint', tpId: 'Timepoint code', date: 'Date', days: 'Days from surgery', inst: 'Questionnaire', sub: 'Subscale', subKey: 'Subscale code', score: 'Score', primary: 'Primary value', ulType: 'Type (upper limb)', base: 'Pre-op value', fol: 'Follow-up value', delta: 'Change', mcidThr: 'MCID threshold', mcid: 'MCID', passThr: 'PASS threshold', pass: 'PASS', noBase: 'No pre-op value', nFol: 'Patients with a response', mcidN: 'MCID n', mcidD: 'MCID N', mcidPct: 'MCID %', passN: 'PASS n', passD: 'PASS N', passPct: 'PASS %', thr: 'Thresholds', key: 'Field', value: 'Value', expected: 'Expected', done: 'Completed', open: 'In progress (window open)', overdue: 'Missing (overdue)', donePct: 'Completeness %' }
+    el: { sheets: ['Βαθμολογίες', 'MCID–PASS', 'Σύνοψη', 'Πληροφορίες', 'Ιστορικό'], hxSex: 'Φύλο', hxAge: 'Ηλικία (έτη)', hxBmi: 'BMI (kg/m²)', hxSmk: 'Κάπνισμα', hxAlc: 'Αλκοόλ', hxLabsDate: 'Ημερομηνία εργαστηριακών', hxCci: 'CCI (Charlson)', hxCciAge: 'CCI με ηλικία', hxAsaSug: 'Προτεινόμενο ASA', hxAsaFin: 'Τελικό ASA', hxAsaAt: 'Ημερομηνία επιβεβαίωσης ASA', code: 'Κωδικός ασθενή', proc: 'Επέμβαση', procId: 'Κωδ. επέμβασης', side: 'Πλευρά', tp: 'Χρονικό σημείο', tpId: 'Κωδ. χρονικού σημείου', date: 'Ημερομηνία', days: 'Ημέρες από χειρουργείο', inst: 'Ερωτηματολόγιο', sub: 'Υποκλίμακα', subKey: 'Κωδ. υποκλίμακας', score: 'Βαθμολογία', primary: 'Κύρια τιμή', ulType: 'Τύπος (άνω άκρο)', base: 'Προεγχειρητική τιμή', fol: 'Τιμή παρακολούθησης', delta: 'Μεταβολή', mcidThr: 'Όριο MCID', mcid: 'MCID', passThr: 'Όριο PASS', pass: 'PASS', noBase: 'Χωρίς προεγχειρητική', nFol: 'Ασθενείς με απάντηση', mcidN: 'MCID n', mcidD: 'MCID N', mcidPct: 'MCID %', passN: 'PASS n', passD: 'PASS N', passPct: 'PASS %', thr: 'Όρια', key: 'Πεδίο', value: 'Τιμή', expected: 'Αναμενόμενα', done: 'Συμπληρωμένα', open: 'Σε εξέλιξη (παράθυρο ανοιχτό)', overdue: 'Λείπουν (εκπρόθεσμα)', donePct: 'Πληρότητα %' },
+    en: { sheets: ['Scores', 'MCID–PASS', 'Summary', 'Info', 'History'], hxSex: 'Sex', hxAge: 'Age (years)', hxBmi: 'BMI (kg/m²)', hxSmk: 'Smoking', hxAlc: 'Alcohol', hxLabsDate: 'Lab date', hxCci: 'CCI (Charlson)', hxCciAge: 'Age-adjusted CCI', hxAsaSug: 'Suggested ASA', hxAsaFin: 'Final ASA', hxAsaAt: 'ASA confirmation date', code: 'Patient code', proc: 'Procedure', procId: 'Procedure code', side: 'Side', tp: 'Timepoint', tpId: 'Timepoint code', date: 'Date', days: 'Days from surgery', inst: 'Questionnaire', sub: 'Subscale', subKey: 'Subscale code', score: 'Score', primary: 'Primary value', ulType: 'Type (upper limb)', base: 'Pre-op value', fol: 'Follow-up value', delta: 'Change', mcidThr: 'MCID threshold', mcid: 'MCID', passThr: 'PASS threshold', pass: 'PASS', noBase: 'No pre-op value', nFol: 'Patients with a response', mcidN: 'MCID n', mcidD: 'MCID N', mcidPct: 'MCID %', passN: 'PASS n', passD: 'PASS N', passPct: 'PASS %', thr: 'Thresholds', key: 'Field', value: 'Value', expected: 'Expected', done: 'Completed', open: 'In progress (window open)', overdue: 'Missing (overdue)', donePct: 'Completeness %' }
   };
   var INFO = {
     el: { title: 'OrthoThessaly – Εξαγωγή PROMs', expDate: 'Ημερομηνία εξαγωγής', app: 'Εφαρμογή / έκδοση', mode: 'Δεδομένα', demo: 'DEMO – συνθετικά δεδομένα', db: 'Βάση δεδομένων (μητρώο ιατρών)', scope: 'Εύρος', scopeAll: 'Μητρώο (όλοι οι ασθενείς του φίλτρου)', scopePt: 'Ένας ασθενής', filters: 'Φίλτρα', anon: 'Ανωνυμοποίηση', anonOn: 'Ναι – κωδικοί P001… (σειρά ημερομηνίας χειρουργείου)', anonOff: 'Όχι – εσωτερικός κωδικός ασθενή (χωρίς ονόματα / ΑΜΚΑ)', nPts: 'Ασθενείς', nSubs: 'Υποβολές ερωτηματολογίων', nRows: 'Γραμμές βαθμολογιών', notes: 'Σημειώσεις για ελλείποντα δεδομένα', gdpr: 'Το αρχείο περιέχει δεδομένα υγείας (ειδική κατηγορία, άρθρο 9 GDPR). Φυλάξτε το και διαβιβάστε το μόνο σύμφωνα με τον GDPR και τις διαδικασίες του νοσοκομείου.',
-      n1: 'Δεν περιλαμβάνονται ονόματα ούτε ΑΜΚΑ.', n2: 'Κενό κελί = δεν υπάρχει τιμή (δεν συμπληρώθηκε ή δεν βαθμολογείται). Υποβολές χωρίς υπολογίσιμη βαθμολογία: {0}.', n3: 'MCID: μεταβολή από την προεγχειρητική τιμή (έγκυρη προεγχειρητική υποβολή, η πιο πρόσφατη ως την ημερομηνία χειρουργείου). Οι 6 εβδομάδες δεν αξιολογούνται. Γραμμές χωρίς προεγχειρητική τιμή: {0}.', n4: 'Σύνοψη: ένας ασθενής μετρά μία φορά ανά ερωτηματολόγιο και χρονικό σημείο (η πιο πρόσφατη απάντηση). Ποσοστό μόνο όταν N ≥ 5.', n5: 'Το προφίλ υγείας του EQ-5D-5L (5 ψηφία) δεν εξάγεται ως αριθμός· εξάγεται το EQ VAS και το άθροισμα επιπέδων.', n6: 'Για το MCID χρησιμοποιείται η προεγχειρητική τιμή ακόμη κι όταν το «Προεγχειρητικά» δεν επιλέχθηκε στα χρονικά σημεία.', n7: 'Πληρότητα: αναμενόμενα = χρονικά σημεία του προγράμματος των οποίων το παράθυρο έχει ανοίξει.', n8: 'Χωρίς ημερομηνίες: εξάγονται μόνο οι ημέρες από το χειρουργείο.', compT: 'Πληρότητα ανά χρονικό σημείο', all: 'όλα' },
+      n1: 'Δεν περιλαμβάνονται ονόματα ούτε ΑΜΚΑ.', n2: 'Κενό κελί = δεν υπάρχει τιμή (δεν συμπληρώθηκε ή δεν βαθμολογείται). Υποβολές χωρίς υπολογίσιμη βαθμολογία: {0}.', n3: 'MCID: μεταβολή από την προεγχειρητική τιμή (έγκυρη προεγχειρητική υποβολή, η πιο πρόσφατη ως την ημερομηνία χειρουργείου). Οι 6 εβδομάδες δεν αξιολογούνται. Γραμμές χωρίς προεγχειρητική τιμή: {0}.', n4: 'Σύνοψη: ένας ασθενής μετρά μία φορά ανά ερωτηματολόγιο και χρονικό σημείο (η πιο πρόσφατη απάντηση). Ποσοστό μόνο όταν N ≥ 5.', n5: 'Το προφίλ υγείας του EQ-5D-5L (5 ψηφία) δεν εξάγεται ως αριθμός· εξάγεται το EQ VAS και το άθροισμα επιπέδων.', n6: 'Για το MCID χρησιμοποιείται η προεγχειρητική τιμή ακόμη κι όταν το «Προεγχειρητικά» δεν επιλέχθηκε στα χρονικά σημεία.', n7: 'Πληρότητα: αναμενόμενα = χρονικά σημεία του προγράμματος των οποίων το παράθυρο έχει ανοίξει.', n8: 'Χωρίς ημερομηνίες: εξάγονται μόνο οι ημέρες από το χειρουργείο.', compT: 'Πληρότητα ανά χρονικό σημείο', all: 'όλα', n9: 'Ιστορικό: μία γραμμή ανά ασθενή (παθήσεις 1 = υπάρχει, 0 = όχι)· CCI, προτεινόμενο ASA και BMI υπολογίζονται όπως στην καρτέλα 🩺 Ιστορικό του ασθενή. Κενή γραμμή = δεν έχει καταχωρηθεί ιστορικό. Ελεύθερο κείμενο (άλλα, φάρμακα, αλλεργίες) δεν εξάγεται.' },
     en: { title: 'OrthoThessaly – PROMs export', expDate: 'Export date', app: 'Application / version', mode: 'Data', demo: 'DEMO – synthetic data', db: 'Database (doctors\u2019 registry)', scope: 'Scope', scopeAll: 'Registry (all patients matching the filters)', scopePt: 'Single patient', filters: 'Filters', anon: 'Anonymisation', anonOn: 'Yes – codes P001… (surgery-date order)', anonOff: 'No – internal patient code (no names / AMKA)', nPts: 'Patients', nSubs: 'Questionnaire submissions', nRows: 'Score rows', notes: 'Notes on missing data', gdpr: 'This file contains health data (special category, GDPR Art. 9). Store and share it only in line with the GDPR and hospital procedures.',
-      n1: 'No names or AMKA are included.', n2: 'Empty cell = no value (not answered or not scored). Submissions without a computable score: {0}.', n3: 'MCID: change from the pre-op value (valid pre-op submission, latest on or before the surgery date). 6 weeks is never evaluated. Rows without a pre-op value: {0}.', n4: 'Summary: one patient counts once per questionnaire and timepoint (latest response). Percentage only when N ≥ 5.', n5: 'The EQ-5D-5L health profile (5 digits) is not exported as a number; EQ VAS and the level sum score are.', n6: 'MCID uses the pre-op value even when “Pre-op” is not among the selected timepoints.', n7: 'Completeness: expected = protocol timepoints whose window has opened.', n8: 'Without dates: only days from surgery are exported.', compT: 'Completeness by timepoint', all: 'all' }
+      n1: 'No names or AMKA are included.', n2: 'Empty cell = no value (not answered or not scored). Submissions without a computable score: {0}.', n3: 'MCID: change from the pre-op value (valid pre-op submission, latest on or before the surgery date). 6 weeks is never evaluated. Rows without a pre-op value: {0}.', n4: 'Summary: one patient counts once per questionnaire and timepoint (latest response). Percentage only when N ≥ 5.', n5: 'The EQ-5D-5L health profile (5 digits) is not exported as a number; EQ VAS and the level sum score are.', n6: 'MCID uses the pre-op value even when “Pre-op” is not among the selected timepoints.', n7: 'Completeness: expected = protocol timepoints whose window has opened.', n8: 'Without dates: only days from surgery are exported.', compT: 'Completeness by timepoint', all: 'all', n9: 'History: one row per patient (comorbidities 1 = present, 0 = absent); CCI, suggested ASA and BMI are calculated as in the patient\u2019s 🩺 history tab. Empty row = no history recorded. Free text (other conditions, medications, allergies) is not exported.' }
   };
   function fmtS(s, a) { return String(s).replace('{0}', a); }
   /** Workbook definition for writeXlsx(). meta: {appVersion, demo, scopePt, filters (text), exportedAt (ISO datetime)} */
@@ -7483,13 +7506,26 @@ body.satt-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;o
       rows: d.summary.map(function (r) { return [r.procName, r.instShort, r.ul, r.tpName, r.follow, r.mcidN, r.mcidD, r.mcidPct, r.passN, r.passD, r.passPct, r.noBase, r.thr]; }) };
     var info = [[T.title, ''], [T.expDate, (meta.exportedAt || new Date().toISOString()).slice(0, 16).replace('T', ' ') + ' UTC'], [T.app, meta.appVersion || ('OrthoThessaly · ' + VERSION)], [T.mode, meta.demo ? T.demo : T.db], [T.scope, meta.scopePt ? T.scopePt : T.scopeAll], [T.filters, meta.filters || T.all],
       [T.anon, opt.anon !== false ? T.anonOn : T.anonOff], [T.nPts, d.patients.length], [T.nSubs, d.nSubs], [T.nRows, d.scores.length], ['', ''], ['⚠ GDPR', T.gdpr], ['', ''], [T.notes, ''], ['•', T.n1], ['•', fmtS(T.n2, d.unscored)], ['•', fmtS(T.n3, d.noBase)], ['•', T.n4], ['•', T.n5], ['•', T.n6], ['•', T.n7]];
+    if (d.history) info.push(['•', T.n9]);
     if (opt.daysOnly) info.push(['•', T.n8]);
     info.push(['', ''], [T.compT, '']);
     var s4 = { name: h.sheets[3], cols: [[h.key, 30], [h.value, 70], ['', 12], ['', 12], ['', 12], ['', 12], ['', 14]], rows: info, noFreeze: true, bold: [0, 13, info.length - 1] };
     s4.rows.push([h.proc, h.tp, h.inst, h.expected, h.done, h.overdue, h.donePct]); s4.bold.push(s4.rows.length - 1);
     s4.types = { 3: 'num', 4: 'num', 5: 'num', 6: 'pct' }; s4.typedFrom = s4.rows.length;
     d.completeness.forEach(function (c) { s4.rows.push([c.procName, c.tpName, c.instShort, c.expected, c.done, c.overdue, c.expected ? c.done / c.expected : null]); });
-    return [s1, s2, s3, s4];
+    if (!d.history) return [s1, s2, s3, s4];
+    var HX = root.OrthoHistory, L0 = function (o) { return o == null ? '' : typeof o === 'string' ? o : (o[lg] || o.el); };
+    var hcols = [[h.code, 14], [h.proc, 26], [h.side, 12], [h.hxSex, 10], [h.hxAge, 9, 'num']]
+      .concat(HX.CONDS.map(function (c) { return [L0(c.label), 14, 'num']; }))
+      .concat([[h.hxBmi, 10, 'num'], [h.hxSmk, 18], [h.hxAlc, 22]], HX.LABS.map(function (l) { return [L0(l.label) + ' (' + l.unit + ')', 13, 'num']; }),
+        [[h.hxLabsDate, 12, 'date'], [h.hxCci, 10, 'num'], [h.hxCciAge, 10, 'num'], [h.hxAsaSug, 12], [h.hxAsaFin, 12], [h.hxAsaAt, 14, 'date']]);
+    var nC = HX.CONDS.length, nL = HX.LABS.length, blank = function (k) { var a = []; for (var i = 0; i < k; i++) a.push(null); return a; };
+    var s5 = { name: h.sheets[4], cols: hcols, rows: d.history.map(function (r) {
+      var id = [r.code, r.procName, r.side, r.sex, r.age];
+      if (!r.has) return id.concat(blank(nC + 3 + nL + 6));
+      return id.concat(r.cond, [r.bmi, r.smoking, r.alcohol], r.labs, [r.labsDate, r.cci, r.cciAge, r.asaSug, r.asaFinal, r.asaAt]);
+    }) };
+    return [s1, s2, s3, s5, s4];
   }
 
   // ===== Minimal OOXML (.xlsx) writer: shared strings, styles (bold header, date, %), frozen header, column widths, autofilter; ZIP (stored) + CRC-32 =====
@@ -13142,14 +13178,37 @@ window.OrthoQRGen = qrcode; })();
     return Math.atan2(along, across) * R2D;
   }
   function angleBetween(u, v) { var a = Math.abs(Math.atan2(u.x * v.y - u.y * v.x, dot(u, v))) * R2D; return a > 90 ? 180 - a : a; }
+  /** DICOM PixelSpacing [row, column] (mm; ImagerPixelSpacing as the fallback, already chosen by the parser) → { sx (mm per px along x /
+   *  columns), sy (along y / rows) } or null. Accepts an array, a DICOM string "r\\c" or a single number. Invalid / ≤ 0 axes borrow the other axis. */
+  function spacingXY(s) {
+    if (s == null || s === '') return null; if (typeof s === 'number') return s > 0 && isFinite(s) ? { sx: s, sy: s } : null;
+    if (typeof s === 'string') s = s.split('\\').map(parseFloat); if (!s || typeof s.length !== 'number') return null;
+    var r = +s[0], c = s.length > 1 ? +s[1] : r; if (!(r > 0 && isFinite(r))) r = c; if (!(c > 0 && isFinite(c))) c = r;
+    return r > 0 && c > 0 && isFinite(r) && isFinite(c) ? { sx: c, sy: r } : null;
+  }
   function calibration(o) {
     o = o || {};
-    if (o.spacing > 0) return { mmPerPx: +o.spacing, source: 'dicom' };
+    // DICOM PixelSpacing is an ARRAY [row, column] – a plain `o.spacing > 0` test is false for any 2-value array (NaN), so a DICOM film
+    // silently fell back to the ≈ estimate. Per-axis spacing is kept (sx, sy); mmPerPx is the mean, aniso flags unequal axes.
+    var sp = spacingXY(o.spacing);
+    if (sp) return { mmPerPx: (sp.sx + sp.sy) / 2, sx: sp.sx, sy: sp.sy, aniso: Math.abs(sp.sx - sp.sy) > 1e-3 * Math.max(sp.sx, sp.sy), source: 'dicom' };
     if (okP(o.cal1) && okP(o.cal2) && o.calMm > 0 && len(sub(o.cal1, o.cal2)) > 3) return { mmPerPx: o.calMm / len(sub(o.cal1, o.cal2)), source: 'marker' };
     if (o.demoMmPerPx > 0) return { mmPerPx: o.demoMmPerPx, source: 'demo' };
     if (okP(o.PA) && okP(o.PP) && len(sub(o.PA, o.PP)) > 5) return { mmPerPx: PLATEAU_MM / len(sub(o.PA, o.PP)), source: 'est' };
     if (okP(o.LA) && okP(o.LP) && len(sub(o.LA, o.LP)) > 5) return { mmPerPx: PLATEAU_LAT_MM / len(sub(o.LA, o.LP)), source: 'est', lat: true };
     return { mmPerPx: null, source: 'none' };
+  }
+  /** measure() with a calibration from calibration(): with anisotropic DICOM spacing (row ≠ column) the points are first mapped to an
+   *  isotropic grid (x·sx/m, y·sy/m, m = mean spacing) so that angles AND mm are physical; the drawing geometry (M1, M2, axis) is mapped back
+   *  to image pixels (axis un-normalised, so M1 + axis·t is exact). Isotropic / non-DICOM → plain measure(). */
+  function measureCal(pts, cal, calSource) {
+    cal = cal || {}; var src = calSource || cal.source;
+    if (!(cal.aniso && cal.sx > 0 && cal.sy > 0 && cal.mmPerPx > 0)) return measure(pts, { mmPerPx: cal.mmPerPx, calSource: src });
+    var kx = cal.sx / cal.mmPerPx, ky = cal.sy / cal.mmPerPx, q = {}, back = function (p) { return p ? { x: p.x / kx, y: p.y / ky } : p; };
+    Object.keys(pts || {}).forEach(function (k) { var p = pts[k]; q[k] = okP(p) ? { x: p.x * kx, y: p.y * ky } : p; });
+    var out = measure(q, { mmPerPx: cal.mmPerPx, calSource: src });
+    if (out.M1) out.M1 = back(out.M1); if (out.M2) out.M2 = back(out.M2); if (out.axis) out.axis = back(out.axis);
+    out.cal.sx = cal.sx; out.cal.sy = cal.sy; out.cal.aniso = true; return out;
   }
   /** All methods + quality checks. pts: point map; o: { mmPerPx, calSource }. */
   function measure(pts, o) {
@@ -13569,7 +13628,7 @@ window.OrthoQRGen = qrcode; })();
     if (o.pat && o.pat.truth) { var PT0 = o.pat.truth({ xa: xa, yTop: yTop }); Object.keys(PT0).forEach(function (k) { T[k] = toImg(PT0[k].x, PT0[k].y); }); }
     return { W: W, H: H, data: out, truth: T, theta: o.theta, mmPerPx: 1 / o.ppm, opt: o };
   }
-  root.OrthoPTS = { measure: measure, detect: detect, detectClassic: detectClassic, secondPlateau: secondPlateau, addPlateaus: addPlateaus, synth: synth, slopeDeg: slopeDeg, calibration: calibration, normRange: normRange, normStatus: normStatus, NORMS: NORMS, NORMS_LAT: NORMS_LAT,
+  root.OrthoPTS = { measure: measure, detect: detect, detectClassic: detectClassic, secondPlateau: secondPlateau, addPlateaus: addPlateaus, synth: synth, slopeDeg: slopeDeg, calibration: calibration, spacingXY: spacingXY, measureCal: measureCal, normRange: normRange, normStatus: normStatus, NORMS: NORMS, NORMS_LAT: NORMS_LAT,
     POINTS: POINTS, REQ: REQ, METHODS: METHODS, LEVELS_MM: LEVELS_MM, PLATEAU_MM: PLATEAU_MM, PLATEAU_LAT_MM: PLATEAU_LAT_MM, VERSION: VERSION, _u: { otsu3: otsu3, ransacLine: ransacLine, angleBetween: angleBetween } };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -13701,7 +13760,7 @@ window.OrthoQRGen = qrcode; })();
   function shown(k) { return !((MEDK.indexOf(k) >= 0 && !ui.use.med) || (LATK.indexOf(k) >= 0 && !ui.use.lat)); }
   function usedPts() { var o = {}; Object.keys(ui.pts).forEach(function (k) { if (shown(k)) o[k] = ui.pts[k]; }); return o; }
   function calOf() { var q = usedPts(); return O.calibration({ spacing: ui.dicom && ui.dicom.spacing ? ui.dicom.spacing : null, cal1: q.CAL1, cal2: q.CAL2, calMm: ui.calMm, demoMmPerPx: ui.demo ? ui.demo.mmPerPx : null, PA: q.PA, PP: q.PP, LA: q.LA, LP: q.LP }); }
-  function compute() { var c = calOf(); ui.last = O.measure(usedPts(), { mmPerPx: c.mmPerPx, calSource: c.source === 'est' && c.lat ? 'estL' : c.source }); return ui.last; }
+  function compute() { var c = calOf(); ui.last = O.measureCal(usedPts(), c, c.source === 'est' && c.lat ? 'estL' : c.source); return ui.last; } // per-axis DICOM spacing
   function missing() { return man().filter(function (k) { return !ui.pts[k]; }); }
   function nextPt() { if (ui.pick && !ui.pts[ui.pick]) return ui.pick; return missing()[0] || null; }
   function headline(p, L) {
@@ -13833,7 +13892,7 @@ window.OrthoQRGen = qrcode; })();
     if (m.plateauMm != null) rows += '<tr><td>' + esc(t('plat')) + '</td><td>' + esc(mm(m.plateauMm)) + '</td></tr>';
     if (m.plateauLatMm != null) rows += '<tr><td>' + esc(t('platL')) + '</td><td>' + esc(mm(m.plateauLatMm)) + '</td></tr>';
     if (m.condyle) rows += '<tr><td>' + esc(t('cond')) + '</td><td>' + esc(mm(m.condyle.offsetMm) + ' · ' + t('g_' + m.condyle.grade)) + '</td></tr>';
-    rows += '<tr><td>' + esc(t('cal')) + '</td><td>' + esc(t('c_' + m.cal.source)) + (m.cal.mmPerPx ? ' <span class="muted">(' + num(m.cal.mmPerPx, 3) + ' mm/px)</span>' : '') + '</td></tr>';
+    rows += '<tr><td>' + esc(t('cal')) + '</td><td>' + esc(t('c_' + m.cal.source)) + (m.cal.mmPerPx ? ' <span class="muted" id="ptsCalPx">(' + (m.cal.aniso ? 'x ' + num(m.cal.sx, 3) + ' · y ' + num(m.cal.sy, 3) : num(m.cal.mmPerPx, 3)) + ' mm/px)</span>' : '') + '</td></tr>';
     var q = (m.quality || []).map(function (x) { var lv = x.lv === 'x' ? 'x' : x.lv === 'w' ? 'w' : x.lv === 'ok' ? 'ok' : 'i'; return '<li class="lv-' + lv + '" data-code="' + x.code + '">' + (lv === 'x' ? '⛔ ' : lv === 'w' ? '⚠️ ' : lv === 'ok' ? '✓ ' : 'ℹ️ ') + esc(t('q_' + x.code)) + '</li>'; }).join('');
     return '<h3>' + esc(t('qT')) + '</h3><div class="tblwrap"><table class="tbl xhtbl" id="ptsQTable">' + rows + '</table></div><ul class="xhflags" id="ptsQuality">' + q + '</ul>';
   }
@@ -13961,7 +14020,7 @@ window.OrthoQRGen = qrcode; })();
     var rec = { id: old ? old.id : 'x' + Math.random().toString(36).slice(2, 10), patientId: P, date: ui.date, phase: ui.phase, side: ui.side, kind: 'pts', view: 'lateral', landmarks: {}, results: {}, image: ui.name + (ui.demo ? ' (DEMO)' : ''),
       savedBy: { email: u.email, name: u.name }, source: 'clinician', landmarkSource: src, confirmed: ui.confirmed, synth: ui.demo ? 'pts' : null, thumb: thumbOf(), filmId: ui.filmId, imgStored: !ui.demo,
       pts: { v: 2, date: today(), by: { email: u.email, name: u.name }, method: 'paa', values: vals, lat: lvals, med: r2(m.medPts), latPts: r2(m.latPts), delta: r2(m.delta), mean: r2(m.mean), use: { med: !!ui.use.med, lat: !!ui.use.lat }, norms: nm(m.norms), normsLat: nm(m.normsLat),
-        pts: JSON.parse(JSON.stringify(usedPts())), org: JSON.parse(JSON.stringify(ui.org)), cal: { source: m.cal.source, mmPerPx: m.cal.mmPerPx, calMm: ui.calMm }, quality: m.quality.map(function (q) { return q.code; }),
+        pts: JSON.parse(JSON.stringify(usedPts())), org: JSON.parse(JSON.stringify(ui.org)), cal: { source: m.cal.source, mmPerPx: m.cal.mmPerPx, sx: m.cal.sx || null, sy: m.cal.sy || null, calMm: ui.calMm }, quality: m.quality.map(function (q) { return q.code; }),
         condyle: m.condyle ? { offsetMm: r2(m.condyle.offsetMm), ratio: r2(m.condyle.ratio), grade: m.condyle.grade } : null, levels: m.levels ? { l1Mm: r2(m.levels.l1Mm), l2Mm: r2(m.levels.l2Mm) } : null, shaftMm: r2(m.shaftMm), plateauMm: r2(m.plateauMm), plateauLatMm: r2(m.plateauLatMm),
         detector: ui.det ? { version: ui.det.version || O.VERSION, status: ui.det.status, reason: ui.det.reason || null, method: ui.det.method || null, level: ui.det.level || null, conf: ui.det.conf && ui.det.conf.score != null ? Math.round(ui.det.conf.score * 100) / 100 : null, lat: ui.det.lat ? { found: !!ui.det.lat.found, sure: !!ui.det.lat.sure, swapped: !!ui.det.lat.swapped, level: ui.det.lat.level || null, conf: ui.det.lat.conf != null ? ui.det.lat.conf : null } : null } : null, confirmed: ui.confirmed, synth: ui.demo ? ui.demo.opt : null, dicom: ui.dicom ? { spacing: ui.dicom.spacing || null } : null } };
     if (old && old.filmPath && old.filmId === rec.filmId) rec.filmPath = old.filmPath;
