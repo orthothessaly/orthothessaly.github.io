@@ -1050,6 +1050,15 @@ body.sh-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ove
 .qzrevi{border-top:1px dashed #c9d6dc;padding-top:8px;margin-top:8px}.qzx{font-size:.94rem;line-height:1.5;color:#33454d}
 .qzstats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.qzlast{margin:0;padding-left:18px;font-size:.9rem}.qznote{font-size:.8rem;color:var(--muted)}
 @media (min-width:760px){#tab-quiz .card{padding:18px 22px}.qzq,.qzsum,.qzrev{max-width:860px;width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box}.qzstem{font-size:1.12rem}}
+/* ===== 🎓 Surgical anatomy 3D (doctors only) ===== */
+#tab-anat{padding-bottom:0}
+.anbar{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin:0 0 6px}.anbar .ansp{flex:1}.anbar .anttl{color:var(--brand);font-size:1.02rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.anbar button,.anbar a{flex:none}
+.anbar .anlink{text-decoration:none;font-size:.85rem;padding:6px 10px;border-radius:8px}
+.anwrap{position:relative;border-radius:10px;overflow:hidden;background:#0d1117;border:1px solid rgba(0,0,0,.15)}
+#anFrame{display:block;width:100%;height:70vh;border:0;background:#0d1117}
+.anload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8b96a5;font-size:.95rem;pointer-events:none}
+body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
+@media (min-width:900px){#tab-anat .anwrap,#tab-anat .anbar{width:calc(100vw - 40px);max-width:1680px;position:relative;left:50%;transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -5678,7 +5687,7 @@ body.sh-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ove
     [].forEach.call($('tabs').children, function (b) { b.classList.toggle('active', b.dataset.tab === name); b.setAttribute('aria-selected', b.dataset.tab === name); });
     var m = document.querySelector('main'); if (m) m.classList.toggle('hidden', name !== 'measure'); if ($('measCtx')) $('measCtx').classList.toggle('hidden', name !== 'measure');
     if (name === 'measure') window.dispatchEvent(new Event('ortho-measure-open'));
-    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-video')) $('tab-video').classList.toggle('hidden', name !== 'video'); if (name === 'video' && window.__video) window.__video.show(); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show(); if ($('tab-quiz')) $('tab-quiz').classList.toggle('hidden', name !== 'quiz'); if (name === 'quiz' && window.__quiz) window.__quiz.show();
+    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-video')) $('tab-video').classList.toggle('hidden', name !== 'video'); if (name === 'video' && window.__video) window.__video.show(); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show(); if ($('tab-quiz')) $('tab-quiz').classList.toggle('hidden', name !== 'quiz'); if (name === 'quiz' && window.__quiz) window.__quiz.show(); if ($('tab-anat')) $('tab-anat').classList.toggle('hidden', name !== 'anat'); if (name === 'anat' && window.__anat) window.__anat.show();
     if (name === 'proms') renderProms(); if (name === 'dash') renderDash(); if (name === 'xray' && window.__xray) window.__xray.render();
   }
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
@@ -6633,6 +6642,7 @@ body.sh-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ove
     if (window.__video) window.__video.sync(u, CLOUD);
     if (window.__qlib) window.__qlib.sync(u);
     if (window.__quiz) window.__quiz.sync(u);
+    if (window.__anat) window.__anat.sync(u);
   }
   function afterLogin(u) {
     cloudUser = u; cloudBusy = true; renderDash();
@@ -18601,6 +18611,55 @@ window.OrthoQRGen = qrcode; })();
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 
+<!-- ===== 🎓 Surgical anatomy 3D (doctors only): tab that lazily loads anatomy.html (separate static file; Z-Anatomy / BodyParts3D derived data, CC BY-SA) ===== -->
+<script id="ortho-anatomy">
+(function () {
+  'use strict';
+  // ===== 🎓 Surgical anatomy 3D (doctors only) =====
+  // The 3D explorer is a separate static file (anatomy.html, ~2.8 MB, Z-Anatomy / BodyParts3D derived data, CC BY-SA)
+  // so the patient-facing page stays light. It is loaded into an iframe only when a signed-in doctor opens this tab,
+  // and unloaded again on sign-out. No patient data is passed to it.
+  if (typeof document === 'undefined') return;
+  var A = window.__orthoProms; if (!A) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var ui = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var SRC = 'anatomy.html';
+  var S = {
+    el: { tab: '🎓 Ανατομία 3D', T: '🎓 Εκπαίδευση · Χειρουργική ανατομία 3D', back: '← Πίσω', newTab: 'Νέα καρτέλα ↗', loading: 'Φόρτωση τρισδιάστατης ανατομίας…' },
+    en: { tab: '🎓 Anatomy 3D', T: '🎓 Training · Surgical anatomy 3D', back: '← Back', newTab: 'New tab ↗', loading: 'Loading 3D anatomy…' }
+  };
+  var t = function (k) { return S[ui()][k]; };
+  var btn = document.createElement('button'); btn.setAttribute('role', 'tab'); btn.dataset.tab = 'anat'; btn.id = 'tabAnatBtn'; btn.className = 'hidden';
+  var tabs = $('tabs'), xb = tabs && tabs.querySelector('[data-tab=xray]'); if (tabs) tabs.insertBefore(btn, (xb && xb.nextSibling) || $('tabChatBtn') || $('tabMeasureBtn') || null); // next to X-rays (keeps the mobile tab rows compact)
+  var pane = document.createElement('section'); pane.className = 'pane hidden'; pane.id = 'tab-anat'; pane.setAttribute('aria-label', 'Surgical anatomy 3D');
+  var anchor = $('tab-quiz') || $('tab-xray'); if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(pane, anchor.nextSibling); else document.body.appendChild(pane);
+  var user = null, prev = 'dash', frame = null;
+  function head() {
+    return '<div class="anbar"><button class="ghost" id="anBack">' + t('back') + '</button><b class="anttl">' + t('T') + '</b><span class="ansp"></span>' +
+      '<a class="ghost anlink" id="anNew" href="' + SRC + '" target="_blank" rel="noopener">' + t('newTab') + '</a></div>';
+  }
+  function fit() { if (!frame || pane.classList.contains('hidden')) return; var top = frame.getBoundingClientRect().top; frame.style.height = Math.max(320, window.innerHeight - Math.max(0, top) - 6) + 'px'; }
+  function show() {
+    if (!user) { unload(); return; }
+    if (!frame) {
+      pane.innerHTML = head() + '<div class="anwrap"><div class="anload" id="anLoad">' + t('loading') + '</div><iframe id="anFrame" title="' + t('T') + '" allow="fullscreen" allowfullscreen></iframe></div>';
+      frame = $('anFrame'); frame.addEventListener('load', function () { var l = $('anLoad'); if (l) l.remove(); });
+      frame.src = SRC; // lazy: requested only now
+      $('anBack').onclick = back;
+    }
+    setTimeout(fit, 0);
+  }
+  function back() { var b = document.querySelector('#tabs [data-tab="' + (prev && prev !== 'anat' ? prev : 'dash') + '"]') || document.querySelector('#tabs [data-tab="dash"]'); if (b) b.click(); }
+  function unload() { if (frame) { try { frame.src = 'about:blank'; } catch (e) {} } frame = null; pane.innerHTML = ''; }
+  function sync(u) { user = u || null; btn.classList.toggle('hidden', !user); btn.textContent = t('tab'); if (!user) unload(); }
+  // remember the tab we came from (for ← Back)
+  if (tabs) tabs.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b && b.dataset.tab !== 'anat') prev = b.dataset.tab; }, true);
+  window.addEventListener('resize', fit);
+  new MutationObserver(function () { btn.textContent = t('tab'); if (frame) { $('anBack').textContent = t('back'); $('anNew').textContent = t('newTab'); var h = pane.querySelector('.anttl'); if (h) h.textContent = t('T'); } }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  window.__anat = { sync: sync, show: show, unload: unload, get loaded() { return !!frame; }, src: SRC };
+  sync(A.currentUser ? A.currentUser() : null);
+})();
+</script>
 <!-- ===== App (ES module; MediaPipe from official CDN) ===== -->
 <script type="module" id="ortho-app">
 const M = window.OrthoMath;
