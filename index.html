@@ -5995,7 +5995,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       '<button class="ptsize" id="ptSize" aria-pressed="' + (pst.large ? 'true' : 'false') + '" aria-label="' + esc(t('ptSizeL') + ': ' + (pst.large ? t('ptNormal') : t('ptBigger'))) + '"><span class="aa" aria-hidden="true">Α<span>Α</span></span> ' + esc(pst.large ? t('ptNormal') : t('ptBigger')) + '</button></div>';
   }
 
-  // ---------- Patient consent gate (approved text, v1): shown once after the ΑΜΚΑ sign-in, before any questionnaire; patient sessions only ----------
+  // ---------- Patient consent gate (approved text, v1): shown once after the ΑΜΚΑ sign-in, before any questionnaire (own device or a doctor's device) ----------
   var CONSENT = {
     el: { title: 'Συγκατάθεση για ερωτηματολόγια και ανώνυμη έρευνα',
       intro: 'Καλώς ήρθατε στην εφαρμογή OrthoThessaly της ορθοπαιδικής ομάδας του Πανεπιστημιακού Γενικού Νοσοκομείου Λάρισας (ΠΓΝΛ).',
@@ -6008,7 +6008,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       accTail: 'Για να συνεχίσετε στα ερωτηματολόγια χρειάζεται να πατήσετε «Αποδοχή». Αν δεν αποδέχεστε, δεν μπορείτε να συμπληρώσετε τα ερωτηματολόγια μέσω αυτής της εφαρμογής.',
       yes: 'Αποδοχή', no: 'Δεν αποδέχομαι',
       declined: 'Χωρίς αποδοχή δεν μπορείτε να συνεχίσετε στα ερωτηματολόγια. Αν έχετε απορίες, επικοινωνήστε με τον γιατρό σας.', back: 'Επιστροφή στην είσοδο',
-      doc: 'Συγκατάθεση ερωτηματολογίων: αποδεκτή' },
+      doc: 'Συγκατάθεση ερωτηματολογίων: αποδεκτή', docNone: 'Συγκατάθεση ερωτηματολογίων: δεν έχει καταγραφεί' },
     en: { title: 'Consent for questionnaires and anonymous research',
       intro: 'Welcome to the OrthoThessaly app of the orthopaedic team of the University General Hospital of Larissa (UGHL).',
       secs: [['What we are asking of you', ['After your orthopaedic operation we invite you to complete short questionnaires about your pain, your movement, your daily activities and your quality of life. This happens at specific points in time, for example before the operation and in the months that follow.', 'Your answers help your doctor follow your recovery and take better care of your health.']],
@@ -6020,12 +6020,12 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       accTail: 'To continue to the questionnaires you need to press “Accept”. If you do not accept, you cannot complete the questionnaires through this app.',
       yes: 'Accept', no: 'I do not accept',
       declined: 'Without acceptance you cannot continue to the questionnaires. If you have any questions, please contact your doctor.', back: 'Back to sign-in',
-      doc: 'Questionnaire consent: accepted' }
+      doc: 'Questionnaire consent: accepted', docNone: 'Questionnaire consent: not recorded' }
   };
   function CT() { return CONSENT[lang() === 'en' ? 'en' : 'el']; }
   function hasConsent(p) { var c = p && p.promsConsent; return !!(c && c.at && +c.ver >= CONSENT_VER); }
   function consentDay(iso) { try { return new Intl.DateTimeFormat(lang() === 'en' ? 'en-GB' : 'el-GR', { timeZone: 'Europe/Athens', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(iso)); } catch (e) { return String(iso).slice(0, 10); } }
-  function consentLineHtml(p) { var c = p && p.promsConsent; return c && c.at ? '<div class="muted small ptconsentline" id="ptConsentLine">✔︎ ' + esc(CT().doc) + ' · ' + esc(consentDay(c.at)) + '</div>' : ''; }
+  function consentLineHtml(p) { var c = p && p.promsConsent; return c && c.at ? '<div class="muted small ptconsentline" id="ptConsentLine">✔︎ ' + esc(CT().doc) + ' · ' + esc(consentDay(c.at)) + '</div>' : p ? '<div class="muted small ptconsentline" id="ptConsentNone">' + esc(CT().docNone) + '</div>' : ''; }
   var ptDeclined = false;
   function ptConsent(el, pt) {
     var C = CT();
@@ -6037,7 +6037,8 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     $('ptAccept').onclick = function () {
       var b = this; b.disabled = true; $('ptConsentMsg').textContent = '';
       var done = function (c) { pt.promsConsent = { at: c.at, ver: +c.ver || CONSENT_VER }; if (!CLOUD) persist(); prun = null; renderProms(); ptFocus(el); };
-      if (CLOUD && !cloudUser) CL.acceptConsent(portalKey || pt.id).then(function (r) { if (!r || !r.ok || !r.at) { b.disabled = false; $('ptConsentMsg').textContent = t('cSendFail'); return; } done(r); },
+      // cloud: always through the RPC (the only write path for extra.promsConsent) – also on a device where a doctor is signed in (key: ΑΜΚΑ, else the code)
+      if (CLOUD) CL.acceptConsent(portalKey || pt.amka || pt.id).then(function (r) { if (!r || !r.ok || !r.at) { b.disabled = false; $('ptConsentMsg').textContent = t('cSendFail'); return; } done(r); },
         function (e) { b.disabled = false; var m = $('ptConsentMsg'); if (m) m.textContent = e && e.code === 'ORTHO_LOCKED' ? t('ptLocked') : t('cSendFail'); });
       else done({ at: new Date().toISOString(), ver: CONSENT_VER });
     };
@@ -6057,7 +6058,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     JP = ctx.pid; el.classList.toggle('large', !!pst.large); document.documentElement.classList.toggle('pt-large', !!pst.large);
     var pt = patientById(ctx.pid);
     if (!pt) { prun = null; if (ptDeclined) ptDeclinedView(el); else ptLogin(el); }
-    else if (!isDoc() && !hasConsent(pt)) { prun = null; ptDeclined = false; ptConsent(el, pt); } // consent gate: patient sessions only (doctor / clinic entry never blocked)
+    else if (!hasConsent(pt)) { prun = null; ptDeclined = false; ptConsent(el, pt); } // consent gate for every patient sign-in on this tab, also on a device where a doctor is signed in (clinic tablet); doctor clinic entry («Συμπλήρωση στο ιατρείο», dashboard) is not affected
     else if (!prun) ptHome(el, pt);
     else if (prun.screen === 'intro') ptIntro(el);
     else if (prun.screen === 'q') ptQuestion(el);
@@ -6805,7 +6806,9 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
         CL.submit(portalKey || pt.id, s).then(function (sid) {
           if (!sid) throw new Error('not found');
           s.id = sid; store.submissions.push(s); delete drafts[dkey(id)]; save(DKEY, drafts); prun = { inst: id, screen: 'thanks' }; renderProms(); ptFocus(el);
-        }, function (e) { sub.disabled = false; var m = $('ptMsg'); if (m) m.textContent = t('cSendFail'); });
+        }, function (e) {
+          if (e && e.code === 'ORTHO_NO_CONSENT') { saveDraft(); delete pt.promsConsent; prun = null; renderProms(); ptFocus(el); return; } // server requires consent (sql/proms_submit_requires_consent.sql) → consent form, answers kept as a draft
+          sub.disabled = false; var m = $('ptMsg'); if (m) m.textContent = t('cSendFail'); });
       };
     }
   }
