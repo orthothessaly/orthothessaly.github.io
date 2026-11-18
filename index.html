@@ -550,6 +550,8 @@ body.op-print .opreport{display:block;position:fixed;inset:0;z-index:100000;over
 .hxheadsum{display:inline-flex;flex-wrap:wrap;gap:6px}
 .hxnp{border:1px solid #d6e3e8;border-radius:10px;margin:8px 0;padding:6px 10px}.hxnp>summary{cursor:pointer;padding:2px 0}
 .hxbar{align-items:center;gap:10px}
+.hxsavebar{align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(127,127,127,.3);flex-wrap:wrap}
+.hxsavebar #hxSaveBtn{min-height:44px;min-width:160px}
 .hxfs{border:1px solid #d6e3e8;border-radius:10px;margin:8px 0;padding:6px 10px 10px;min-width:0}.hxfs legend{font-weight:700;color:#0b3d4a;padding:0 4px}
 .hxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 12px}
 .hxf{display:flex;flex-direction:column;margin:0;min-width:0}.hxf.wide{grid-column:1/-1}.hxf>span{font-size:.86em;color:#33464e;margin-bottom:2px}
@@ -4253,11 +4255,14 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (/jwt expired/i.test(m)) return 'JWT_EXPIRED';
     return 'HTTP_' + (status || 0);
   }
+  var REQ_MS = 30000;
   function raw(method, path, body, headers) {
     var h = { apikey: CFG.key }; for (var k in headers || {}) h[k] = headers[k];
     if (body !== undefined && !(body instanceof Blob) && !h['Content-Type']) h['Content-Type'] = 'application/json';
-    return fetch(CFG.url + path, { method: method, headers: h, body: body === undefined ? undefined : (body instanceof Blob ? body : JSON.stringify(body)) })
-      .catch(function (e) { throw CloudError('NETWORK', String(e && e.message || e)); })
+    // database calls get a time limit, so a request that hangs on a bad network cannot block every later save (files: no limit)
+    var ac = /^\/(rest|auth)\//.test(path) && root.AbortController ? new root.AbortController() : null, tm = ac ? setTimeout(function () { ac.abort(); }, REQ_MS) : null;
+    return fetch(CFG.url + path, { method: method, headers: h, signal: ac ? ac.signal : undefined, body: body === undefined ? undefined : (body instanceof Blob ? body : JSON.stringify(body)) })
+      .then(function (r) { clearTimeout(tm); return r; }, function (e) { clearTimeout(tm); throw CloudError(ac && ac.signal.aborted ? 'TIMEOUT' : 'NETWORK', String(e && e.message || e)); })
       .then(function (r) {
         var ct = r.headers.get('content-type') || '';
         var p = r.status === 204 ? Promise.resolve(null) : /json/.test(ct) ? r.json().catch(function () { return null; }) : /^(image|application\/(octet|dicom))/.test(ct) ? r.blob() : r.text();
@@ -4414,6 +4419,9 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     st.opnotes = (rows.opnotes || []).map(function (r) { return M.opnotes.fromRow(r, pc); });
     return st;
   }
+  // Rows share nested objects with the live store (pick() is shallow: extra.history IS patient.history). The sync baseline must be
+  // a frozen copy, or an in-place edit (medical history, labs…) changes the baseline too and the diff never sends it.
+  function snap(rows) { return JSON.parse(JSON.stringify(rows)); }
   /** Diff two row snapshots -> { upsert: {c: [rows]}, del: {c: [keys]} } */
   function diff(base, cur) {
     var up = {}, del = {};
@@ -4435,13 +4443,13 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   function emit(s, err) { state = { status: s, error: err || null, at: new Date().toISOString() }; listeners.forEach(function (f) { try { f(state); } catch (e) {} }); }
   function loadAll() {
     return Promise.all([getAll('patients'), getAll('prom_submissions'), getAll('rom_sessions'), getAll('xray_studies'), getAll('operative_notes')]).then(function (r) {
-      var st = rowsToStore({ patients: r[0], submissions: r[1], rom: r[2], xrays: r[3], opnotes: r[4] }); base = storeRows(st); emit('saved'); return st;
+      var st = rowsToStore({ patients: r[0], submissions: r[1], rom: r[2], xrays: r[3], opnotes: r[4] }); base = snap(storeRows(st)); emit('saved'); return st;
     });
   }
   function upsert(table, rows) { if (!rows.length) return Promise.resolve(); return req('POST', '/rest/v1/' + table + '?on_conflict=id', rows, { Prefer: 'resolution=merge-duplicates,return=minimal' }); }
   function remove(table, ids) { if (!ids.length) return Promise.resolve(); return req('DELETE', '/rest/v1/' + table + '?id=in.(' + ids.map(function (i) { return '"' + String(i).replace(/"/g, '') + '"'; }).join(',') + ')'); }
   function syncOnce(store) {
-    var cur = storeRows(store), d = diff(base || {}, cur), T = function (c) { return M[c].table; };
+    var cur = snap(storeRows(store)), d = diff(base || {}, cur), T = function (c) { return M[c].table; };
     var steps = [function () { return upsert('patients', d.upsert.patients); }]
       .concat(['submissions', 'rom', 'xrays', 'opnotes'].map(function (c) { return function () { return upsert(T(c), d.upsert[c]); }; }))
       .concat(['submissions', 'rom', 'xrays', 'opnotes'].map(function (c) { return function () { return remove(T(c), d.del[c]); }; }))
@@ -4450,7 +4458,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   }
   /** Debounce-free serialized sync: the latest store state always wins; errors keep the old baseline so the next call retries. */
   function sync(store) {
-    if (!base) return Promise.resolve();
+    if (!base) return Promise.reject(CloudError('NOT_LOADED', 'records not loaded yet'));
     if (syncing) { again = store; return syncing; }
     emit('saving');
     syncing = syncOnce(store).then(function () { syncing = null; if (again) { var s = again; again = false; return sync(s); } emit('saved'); }, function (e) { syncing = null; again = false; emit('error', e); throw e; });
@@ -4588,7 +4596,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     chatList: chatList, chatPost: chatPost, chatEdit: chatEdit, chatDelete: chatDelete, chatUpload: chatUpload, chatFile: chatFile, chatRemoveFiles: chatRemoveFiles, doctorsList: doctorsList, setMyName: setMyName, realtime: realtime, channel: channel, uuid: uuid,
     portal: portal, acceptConsent: acceptConsent, submit: submit, submitRom: submitRom, inviteStatus: inviteStatus,
     // pure helpers (unit-tested in Node)
-    _M: M, _storeRows: storeRows, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
+    _M: M, _storeRows: storeRows, _snap: snap, _rowsToStore: rowsToStore, _diff: diff, _errCode: errCode, _uuid: uuid, req: req, rpc: rpc };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <!-- ===== Patient identifiers: ΑΜΚΑ validation (doctor-side identity + patient sign-in) + internal codes (pure; tested in Node) ===== -->
@@ -5202,14 +5210,14 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       packYears: 'Πακέτα-έτη', alcohol: 'Αλκοόλ', alc_none: 'Καθόλου', alc_moderate: 'Μέτρια / κοινωνική κατανάλωση', alc_abuse: 'Κατάχρηση / αλκοολισμός', cond: 'Παθήσεις', other: 'Άλλα', meds: 'Φάρμακα', allergies: 'Αλλεργίες',
       labs: 'Εργαστηριακά', labDate: 'Ημ/νία εξετάσεων', ref: 'Στόχος', cci: 'Charlson Comorbidity Index', cciS: 'CCI', cciScore: 'Δείκτης συννοσηρότητας', agePts: 'Μόρια ηλικίας', cciAge: 'Ηλικιακά προσαρμοσμένος', surv: 'Εκτιμώμενη 10ετής επιβίωση',
       noItems: 'Καμία πάθηση του δείκτη', asa: 'ASA', asaSug: 'Προτεινόμενο ASA', asaFinal: 'Τελικό ASA', asaE: 'Επείγον (E)', asaOk: '✔ Επιβεβαίωση ASA', asaConf: 'Επιβεβαιώθηκε', asaNot: 'Δεν έχει επιβεβαιωθεί', asaDiff: 'Το προτεινόμενο ASA άλλαξε μετά την επιβεβαίωση',
-      saved: '✓ Αποθηκεύτηκε', print: 'Εκτύπωση / PDF', close: 'Κλείσιμο', open: 'Άνοιγμα', smoker: 'Καπνιστής', exSmoker: 'Πρώην καπνιστής', empty: 'Δεν έχει συμπληρωθεί ιστορικό.', fill: 'Συμπλήρωση ιστορικού',
+      saved: '✓ Αποθηκεύτηκε', saving: 'Αποθήκευση…', saveBtn: '💾 Αποθήκευση', saveErr: '⚠ Δεν αποθηκεύτηκε – ελέγξτε τη σύνδεση. Νέα προσπάθεια αυτόματα.', retry: 'Δοκιμή ξανά', unsaved: 'Υπάρχουν αλλαγές στο ιστορικό που δεν έχουν αποθηκευτεί.', print: 'Εκτύπωση / PDF', close: 'Κλείσιμο', open: 'Άνοιγμα', smoker: 'Καπνιστής', exSmoker: 'Πρώην καπνιστής', empty: 'Δεν έχει συμπληρωθεί ιστορικό.', fill: 'Συμπλήρωση ιστορικού',
       patient: 'Ασθενής', printed: 'Εκτυπώθηκε', updated: 'Τελευταία αλλαγή', by: 'από', none: '–', yrs: 'έτη', demoMark: 'DEMO – συνθετικά δεδομένα', busy: 'Η επεξεργασία του ιστορικού γίνεται αφού κλείσει η φόρμα νέου ασθενή.', basisAge: 'από τον ηλικιακά προσαρμοσμένο δείκτη', basisScore: 'από τον δείκτη συννοσηρότητας' },
     en: { T: 'History', full: 'Medical history', lead: 'Doctors only – never shown to the patient. Changes are saved automatically.', npLead: 'Optional – can also be completed later from the patient page.',
       demo: 'Demographics', age: 'Age (years)', sex: 'Sex', sexF: 'Female', sexM: 'Male', height: 'Height (cm)', weight: 'Weight (kg)', bmi: 'BMI', smoking: 'Smoking', smk_never: 'Never', smk_ex: 'Ex-smoker', smk_current: 'Current smoker',
       packYears: 'Pack-years', alcohol: 'Alcohol', alc_none: 'None', alc_moderate: 'Moderate / social', alc_abuse: 'Abuse / alcoholism', cond: 'Conditions', other: 'Other', meds: 'Medications', allergies: 'Allergies',
       labs: 'Laboratory', labDate: 'Test date', ref: 'Target', cci: 'Charlson Comorbidity Index', cciS: 'CCI', cciScore: 'Comorbidity score', agePts: 'Age points', cciAge: 'Age-adjusted', surv: 'Estimated 10-year survival',
       noItems: 'No index conditions', asa: 'ASA', asaSug: 'Suggested ASA', asaFinal: 'Final ASA', asaE: 'Emergency (E)', asaOk: '✔ Confirm ASA', asaConf: 'Confirmed', asaNot: 'Not confirmed', asaDiff: 'The suggested ASA changed after confirmation',
-      saved: '✓ Saved', print: 'Print / PDF', close: 'Close', open: 'Open', smoker: 'Smoker', exSmoker: 'Ex-smoker', empty: 'No history recorded yet.', fill: 'Fill in history',
+      saved: '✓ Saved', saving: 'Saving…', saveBtn: '💾 Save', saveErr: '⚠ Not saved – check the connection. Retrying automatically.', retry: 'Retry', unsaved: 'There are unsaved changes in the medical history.', print: 'Print / PDF', close: 'Close', open: 'Open', smoker: 'Smoker', exSmoker: 'Ex-smoker', empty: 'No history recorded yet.', fill: 'Fill in history',
       patient: 'Patient', printed: 'Printed', updated: 'Last change', by: 'by', none: '–', yrs: 'y', demoMark: 'DEMO – synthetic data', busy: 'History can be edited once the new-patient form is closed.', basisAge: 'from the age-adjusted score', basisScore: 'from the comorbidity score' }
   };
   var t = function (k, lg) { var L = S[lg || lang()]; return L[k] != null ? L[k] : k; };
@@ -5230,7 +5238,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (ctx.mode === 'pt') x += '<label class="hxf"><span>' + esc(t('age')) + '</span><input type="number" id="hx-age" min="0" max="130" inputmode="numeric" value="' + esc(p.age == null ? '' : p.age) + '"></label>' +
       '<label class="hxf"><span>' + esc(t('sex')) + '</span><select id="hx-sex">' + opt('', '—', !p.sex) + opt('F', t('sexF'), p.sex === 'F') + opt('M', t('sexM'), p.sex === 'M') + '</select></label>';
     x += '<label class="hxf"><span>' + esc(t('height')) + '</span><input type="number" id="hx-h" min="50" max="250" step="1" inputmode="decimal" value="' + esc(h.heightCm == null ? '' : h.heightCm) + '"></label>' +
-      '<label class="hxf"><span>' + esc(t('weight')) + '</span><input type="number" id="hx-w" min="10" max="400" step="0.1" inputmode="decimal" value="' + esc(h.weightKg == null ? '' : h.weightKg) + '"></label>' +
+      '<label class="hxf"><span>' + esc(t('weight')) + '</span><input type="text" autocomplete="off" id="hx-w" min="10" max="400" step="0.1" inputmode="decimal" value="' + esc(h.weightKg == null ? '' : h.weightKg) + '"></label>' +
       '<div class="hxf hxbmi"><span>' + esc(t('bmi')) + ' (kg/m²)</span><output id="hx-bmi">–</output></div>' +
       '<label class="hxf"><span>' + esc(t('smoking')) + '</span><select id="hx-smk">' + opt('', '—', !h.smoking) + ['never', 'ex', 'current'].map(function (k) { return opt(k, t('smk_' + k), h.smoking === k); }).join('') + '</select></label>' +
       '<label class="hxf' + (h.smoking === 'ex' || h.smoking === 'current' ? '' : ' hidden') + '" id="hx-pyw"><span>' + esc(t('packYears')) + '</span><input type="number" id="hx-py" min="0" max="300" step="1" inputmode="decimal" value="' + esc(h.packYears == null ? '' : h.packYears) + '"></label>' +
@@ -5247,7 +5255,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       '<label class="hxf wide"><span>' + esc(t('meds')) + '</span><textarea id="hx-meds" rows="2" maxlength="2000">' + esc(h.meds || '') + '</textarea></label>' +
       '<label class="hxf wide"><span>' + esc(t('allergies')) + '</span><textarea id="hx-all" rows="1" maxlength="1000">' + esc(h.allergies || '') + '</textarea></label></div></fieldset>';
     x += '<fieldset class="hxfs"><legend>' + esc(t('labs')) + '</legend><div class="hxgrid"><label class="hxf"><span>' + esc(t('labDate')) + '</span><input type="date" id="hx-ldate" value="' + esc(h.labs.date || '') + '"></label>' +
-      H.LABS.map(function (l) { var v = h.labs[l.k]; return '<label class="hxf hxlab" data-hxlabw="' + l.k + '"><span>' + esc(lb(l.label, lg)) + ' (' + esc(l.unit) + ')</span><input type="number" data-hxl="' + l.k + '" min="' + l.min + '" max="' + l.max + '" step="' + l.step + '" inputmode="decimal" value="' + esc(v == null ? '' : v) + '"><small class="hxref" data-hxref="' + l.k + '">' + esc(t('ref')) + ' ' + esc(l.ref(sexOf(ctx))) + '</small></label>'; }).join('') + '</div></fieldset>';
+      H.LABS.map(function (l) { var v = h.labs[l.k]; return '<label class="hxf hxlab" data-hxlabw="' + l.k + '"><span>' + esc(lb(l.label, lg)) + ' (' + esc(l.unit) + ')</span><input type="text" autocomplete="off" data-hxl="' + l.k + '" min="' + l.min + '" max="' + l.max + '" step="' + l.step + '" inputmode="decimal" value="' + esc(v == null ? '' : v) + '"><small class="hxref" data-hxref="' + l.k + '">' + esc(t('ref')) + ' ' + esc(l.ref(sexOf(ctx))) + '</small></label>'; }).join('') + '</div></fieldset>';
     x += '<div class="hxcalc" id="hxCalc">' + calcHtml(h, ctx) + '</div></div>';
     return x;
   }
@@ -5304,7 +5312,26 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     refresh(h, ctx);
     if (ctx.mode === 'pt') save(now);
   }
-  function save(now) { clearTimeout(timer); var go = function () { api().persist(); var s = $('hxSaved'); if (s) s.textContent = t('saved'); }; if (now) go(); else timer = setTimeout(go, 500); }
+  // ---------- saving: the confirmation appears only once the record is really stored (database in cloud mode); errors are shown and retried ----------
+  var sv = { st: '', at: null, seq: 0, retry: null }; // st: '' | 'pending' | 'saving' | 'saved' | 'err'
+  var hm = function (iso) { var d = new Date(iso), z = function (n) { return ('0' + n).slice(-2); }; return z(d.getHours()) + ':' + z(d.getMinutes()); };
+  function stText() { return sv.st === 'saved' ? t('saved') + (sv.at ? ' ' + hm(sv.at) : '') : sv.st === 'err' ? t('saveErr') : sv.st === 'saving' || sv.st === 'pending' ? t('saving') : ''; }
+  function stClass() { return sv.st === 'err' ? 'err small hxsavest' : sv.st === 'saved' ? 'ok small hxsavest' : 'muted small hxsavest'; }
+  function showSt() { ['hxSaved', 'hxSaveMsg'].forEach(function (id) { var e = $(id); if (e) { e.textContent = stText(); e.className = stClass(); e.dataset.st = sv.st; } }); var r = $('hxRetry'); if (r) r.classList.toggle('hidden', sv.st !== 'err'); }
+  function dirty() { return sv.st === 'pending' || sv.st === 'saving' || sv.st === 'err'; }
+  function go() {
+    clearTimeout(timer); timer = null; clearTimeout(sv.retry); sv.retry = null;
+    var A = api(); if (!A) return Promise.resolve(); var my = ++sv.seq; sv.st = 'saving'; showSt();
+    var pr = A.persistP ? A.persistP() : Promise.resolve(A.persist());
+    return pr.then(function () { if (my !== sv.seq) return; sv.st = 'saved'; sv.at = new Date().toISOString(); showSt(); },
+      function (e) { if (my !== sv.seq) return; sv.st = 'err'; showSt(); console.warn('history save failed', e && e.code); sv.retry = setTimeout(function () { if (sv.st === 'err') go(); }, 15000); });
+  }
+  function save(now) { clearTimeout(timer); sv.st = 'pending'; showSt(); if (now) return go(); timer = setTimeout(go, 500); return Promise.resolve(); }
+  function flush() { if (timer || sv.st === 'err') go(); }
+  window.addEventListener('online', function () { if (sv.st === 'err') go(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); }); // phone: app switched right after typing
+  window.addEventListener('pagehide', flush);
+  window.addEventListener('beforeunload', function (e) { if (!dirty()) return; flush(); e.preventDefault(); e.returnValue = t('unsaved'); return t('unsaved'); });
   function bindEditor(h, ctx) {
     var ed = $('hxEd'); if (!ed) return;
     var on = function (e) { var tg = e.target; if (!tg || !tg.matches || !tg.matches('input,select,textarea') || tg.closest('#hxCalc')) return; readInto(h, ctx); after(h, ctx); };
@@ -5341,18 +5368,23 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   function headInner(p) { return chips(p, lang()); }
   function badge(p) { var s = stat(p); return s ? ' <span class="pill hxb" data-hxbadge="' + esc(p.id) + '">' + esc(s.asa) + ' · CCI ' + s.c.cci.score + '</span>' : ''; }
   function html(p, busy) {
-    if (ui.pid !== p.id) ui = { pid: p.id, open: false };
+    if (ui.pid !== p.id) { if (timer || sv.st === 'err') go(); ui = { pid: p.id, open: false }; if (!dirty()) sv.st = ''; }
     var h = p.history ? H.normalize(p.history) : H.empty(); cur = h;
     if (busy) return '<span class="fuanchor" id="hxSec"></span><div class="hxcard" id="hxCard"><h3>🩺 ' + esc(t('full')) + '</h3> <span class="hxheadsum" id="hxHeadSum">' + headInner(p) + '</span><p class="muted small">' + esc(t('busy')) + '</p></div>';
     return '<span class="fuanchor" id="hxSec"></span><details class="hxcard" id="hxCard"' + (ui.open ? ' open' : '') + '><summary><h3>🩺 ' + esc(t('full')) + '</h3> <span class="hxheadsum" id="hxHeadSum">' + headInner(p) + '</span></summary>' +
-      '<p class="muted">🔒 ' + esc(t('lead')) + '</p><div class="row hxbar"><button class="small" id="hxPrint">🖨 ' + esc(t('print')) + '</button><span class="ok small" id="hxSaved" aria-live="polite"></span>' + (h.updatedAt ? '<span class="muted small">' + esc(t('updated')) + ' ' + esc(dt(h.updatedAt)) + (h.updatedBy && h.updatedBy.name ? ' · ' + esc(h.updatedBy.name) : '') + '</span>' : '') + '</div>' +
-      editorHtml(h, { mode: 'pt', p: p }) + '</details>';
+      '<p class="muted">🔒 ' + esc(t('lead')) + '</p><div class="row hxbar"><button class="small" id="hxPrint">🖨 ' + esc(t('print')) + '</button><span class="' + stClass() + '" id="hxSaved" aria-live="polite">' + esc(stText()) + '</span>' + (h.updatedAt ? '<span class="muted small">' + esc(t('updated')) + ' ' + esc(dt(h.updatedAt)) + (h.updatedBy && h.updatedBy.name ? ' · ' + esc(h.updatedBy.name) : '') + '</span>' : '') + '</div>' +
+      editorHtml(h, { mode: 'pt', p: p }) +
+      '<div class="row hxsavebar" id="hxSaveBar"><button class="primary" id="hxSaveBtn">' + esc(t('saveBtn')) + '</button><span class="' + stClass() + '" id="hxSaveMsg" role="status" aria-live="polite">' + esc(stText()) + '</span><button class="small' + (sv.st === 'err' ? '' : ' hidden') + '" id="hxRetry">↻ ' + esc(t('retry')) + '</button></div></details>';
   }
   function bind(p) {
     var d = $('hxCard'); if (!d) return; bindSummary(p);
     if (d.tagName === 'DETAILS') d.addEventListener('toggle', function () { ui.open = d.open; });
-    if (!$('hxEd')) return; bindEditor(cur, { mode: 'pt', p: p }); bindSummary(p);
+    if (!$('hxEd')) return; var ctx = { mode: 'pt', p: p }, h = cur; bindEditor(h, ctx); bindSummary(p);
     var pr = $('hxPrint'); if (pr) pr.onclick = function () { printHx(p.id); };
+    var sb = $('hxSaveBtn'), rt = $('hxRetry'); // explicit save at the bottom of the form: reads every field now and waits for the database
+    var now = function () { readInto(h, ctx); after(h, ctx, true); };
+    if (sb) sb.onclick = now; if (rt) rt.onclick = now;
+    showSt();
   }
 
   // ---------- A4 print ----------
@@ -5389,7 +5421,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   function reportLine(p, lg) { var c = chips(p, lg || lang()); return c ? '<div class="per-id hxline">🩺 ' + c + '</div>' : ''; }
   /** Final ASA (or null) – used to pre-fill the operative note. */
   function asaFinal(p) { var a = p && p.history && p.history.asa; return a && a.final ? String(a.final) : ''; }
-  window.__hx = { npHtml: npHtml, npBind: npBind, npFinal: npFinal, html: html, bind: bind, summaryHtml: summaryHtml, bindSummary: bindSummary, badge: badge, print: printHx, closeReport: closeReport, reportLine: reportLine, asaFinal: asaFinal, get ui() { return ui; } };
+  window.__hx = { get saveState() { return sv.st; }, flush: flush, npHtml: npHtml, npBind: npBind, npFinal: npFinal, html: html, bind: bind, summaryHtml: summaryHtml, bindSummary: bindSummary, badge: badge, print: printHx, closeReport: closeReport, reportLine: reportLine, asaFinal: asaFinal, get ui() { return ui; } };
 })();
 </script>
 <!-- ===== PROMs + doctor dashboard UI (DEMO = localStorage, cloud = database) ===== -->
@@ -5615,12 +5647,15 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
 
   // ---------- storage ----------
   /** Single write path for the clinical store: localStorage in demo mode, database sync for a signed-in doctor in cloud mode. */
-  function persist() {
-    if (!CLOUD) return save(KEY, store);
-    if (cloudUser && CL) return CL.sync(store).catch(function (e) { console.warn('sync failed', e && e.code); });
+  function persist() { var pr = persistP(); pr.catch(function (e) { console.warn('save failed', e && e.code); }); return pr; }
+  /** Same write, as a promise that settles only when the record is really stored (local) or confirmed by the database (cloud). */
+  function persistP() {
+    if (!CLOUD) return save(KEY, store) ? Promise.resolve() : Promise.reject({ code: 'LOCAL' });
+    if (cloudUser && CL) return CL.sync(store);
+    return Promise.reject({ code: 'NO_SESSION' });
   }
   function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
-  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.warn('localStorage unavailable'); } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { console.warn('localStorage unavailable'); return false; } }
   // Demo patients are anchored to TODAY (computed at load, never hard-coded dates): off = days since surgery today,
   // chosen inside a measurement window and before that timepoint's nominal day, so a questionnaire is always open.
   var DEMO_PTS = [
@@ -7032,7 +7067,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   if (urlPt) [0, 300, 900].forEach(function (ms, k) { setTimeout(function () { // late re-renders (language, cloud start-up) are re-checked; never steals focus once the patient typed
     if (curTab !== 'proms' && !k) showTab('proms'); var i = $('pPid'); if (!i || i.value || document.activeElement === i) return; if (!k) window.scrollTo(0, 0); try { i.focus({ preventScroll: true }); } catch (e) { i.focus(); }
   }, ms); });
-  window.__orthoProms = { goDash: function () { if (!isDoc()) docGate = true; showTab('dash'); renderDash(); }, openPatient: function (pid, anchor) { openPts(pid, anchor); }, openPatients: function () { openPts(); }, ptsSub: function (s) { setPsub(s); }, get ptsSubs() { return PSUBS.slice(); }, ptsBack: function () { var b = $('psBack'); if (b) b.click(); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
+  window.__orthoProms = { goDash: function () { if (!isDoc()) docGate = true; showTab('dash'); renderDash(); }, openPatient: function (pid, anchor) { openPts(pid, anchor); }, openPatients: function () { openPts(); }, ptsSub: function (s) { setPsub(s); }, get ptsSubs() { return PSUBS.slice(); }, ptsBack: function () { var b = $('psBack'); if (b) b.click(); }, get store() { return store; }, get auth() { return auth; }, showTab: showTab, seed: seed, exportCsv: exportCsv, openMeasure: openMeasure, get measCtx() { return measCtx; }, persist: function () { persist(); }, persistP: function () { return persistP(); }, audit: audit, cloud: { get mode() { return MODE; }, get user() { return cloudUser; }, get busy() { return cloudBusy; }, idle: function () { return CL ? CL.idle() : Promise.resolve(); }, importLocal: function (o) { return cloudImport(o); }, setMode: setMode }, currentUser: function () { return currentUser(); },
     lib: { I: I, P: P, PR: PR, PROC: PROC, ROLE: ROLE, TPS: TPS, TP_ORDER: TP_ORDER, tx: tx, jt: jt, setJoint: function (j) { JOVR = j || ''; }, variant: variant, srcNote: srcNote, thrText: thrText, tpName: tpName,
       fmtScore: fmtScore, subsHtml: subsHtml, bandHtml: bandHtml, actLabel: actLabel, ptTitle: ptTitle, ptInstr: function (id) { return PT_INSTR[id] || I[id].instructions; }, abbr: PT_ABBR, noSec: PT_NOSEC, srcLab: srcLab, esc: esc, lang: lang,
       get curTab() { return curTab; }, patientById: function (id) { return patientById(id); }, chartSvg: chartSvg, subName: subName }, refreshUser: function () { chatSync(); if (curTab === 'dash' || curTab === 'pts' || curTab === 'set') renderDash(); },
