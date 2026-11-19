@@ -768,6 +768,34 @@ body.pe-print .pereport{display:block;position:fixed;inset:0;z-index:100000;over
   .per-tbl tr{break-inside:avoid}
   .pereport *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+/* ===== 📊 Μελέτες (doctors only): cohort → Table 1 / outcomes / abstract text ===== */
+body.ptonly #tabStudyBtn,body.ptonly #tab-study,body.ptonly #dStudy{display:none!important}
+#tab-study .stdtop h2{margin:0 0 4px}
+.stdpriv{background:#eef7f0;border:1px solid #cfe6d5;border-radius:8px;padding:7px 10px;color:#1f4d2c;font-size:.88rem;margin:8px 0 0}
+.stdrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:6px 0}.stdrow>.fld{margin:0}
+.stdflds .fld{min-width:9.5em;flex:0 1 auto}.stdflds .stdnum{min-width:6.5em;max-width:8em}
+.stdlab{font-weight:700;min-width:7.5em}.stdchk{display:inline-flex;gap:5px;align-items:center;font-size:.9rem}
+.stdcount{margin:8px 0 0;font-size:.95rem}
+.stdchips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 0;min-width:0}
+.stdchip{display:inline-flex;align-items:center;gap:5px;border:1px solid #cdd8dd;border-radius:999px;padding:4px 10px;font-size:.85rem;background:#fff;cursor:pointer}
+.stdchip.on{border-color:var(--brand);background:#e3f4f7;color:var(--brand);font-weight:600}.stdchip input{margin:0}
+.stdseg{display:inline-flex;border:1px solid #cdd8dd;border-radius:10px;overflow:hidden}.stdseg .stdl{border:0;border-radius:0;padding:6px 14px;background:#fff;font-weight:700;color:var(--ink)}.stdseg .stdl.on{background:var(--brand);color:#fff}
+.stdhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 10px;margin-bottom:6px}.stdhead h3{margin:0!important}
+.stdbtns{display:flex;flex-wrap:wrap;gap:6px}
+.stdscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e3eaee;border-radius:8px}
+.stdman{max-height:340px;overflow-y:auto}
+.stdtbl{width:100%;border-collapse:collapse;font-size:.85rem}
+.stdtbl th,.stdtbl td{padding:5px 8px;border-bottom:1px solid #e9eff2;text-align:left;vertical-align:top}
+.stdtbl th{background:#eef4f6;position:sticky;top:0;font-weight:700;white-space:nowrap}
+.stdtbl td.num,.stdtbl th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stdt1 td:first-child{min-width:12em}.stdt1 td:nth-child(2){white-space:nowrap;color:var(--muted);font-size:.8rem}.stdt1 tr.stdc2 td{color:#41545c;border-bottom-color:#dfe7ea}.stdt1 tr.stdc2 td:first-child{color:transparent}
+.stdt1 tr.stdgh td{font-weight:600}.stdt1 tr.stdsect td{background:#f6fafb;font-weight:700;color:var(--brand)}
+.stdout tr.stdfirst td{border-top:2px solid #cfdbe0}.stdout td:first-child{font-weight:600;min-width:9em}
+.stdfoot{margin:8px 0 0;font-size:.78rem}
+.stdtxt{background:#fbfdfe;border:1px solid #dbe5e9;border-radius:10px;padding:10px 14px;line-height:1.55;font-size:.95rem;user-select:text}
+.stdtxt p{margin:0 0 .7em}.stdtxt p:last-child{margin:0;color:var(--muted);font-size:.85rem}
+.stdcpmsg{min-height:1em;margin:4px 0 0}
+@media (max-width:640px){.stdlab{min-width:0;width:100%}.stdflds .fld{flex:1 1 42%;min-width:0;max-width:none}.stdbtns{width:100%}.stdbtns button{flex:1}.stdtbl{font-size:.8rem}.stdtbl th,.stdtbl td{padding:4px 6px}.stdt1 td:first-child{min-width:9.5em}}
 /* ===== Patient QR card + clinic QR poster ===== */
 .qrbtnrow{margin:8px 0 2px}.qrbtn{background:#fff;border:2px solid #0b5f73;color:#0b4a5a;font-weight:700}
 body.qr-open{overflow:hidden}
@@ -5767,7 +5795,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (name === 'set') { var tb = $('tabs'), sb = $('tabSetBtn'); if (tb && sb && tb.scrollWidth > tb.clientWidth) tb.scrollLeft = sb.offsetLeft - tb.offsetLeft; } // keep the last tab (⚙️) visible in a scrolling tab bar
     var m = document.querySelector('main'); if (m) m.classList.toggle('hidden', name !== 'measure'); if ($('measCtx')) $('measCtx').classList.toggle('hidden', name !== 'measure');
     if (name === 'measure') window.dispatchEvent(new Event('ortho-measure-open'));
-    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-pts')) $('tab-pts').classList.toggle('hidden', name !== 'pts'); if ($('tab-set')) $('tab-set').classList.toggle('hidden', name !== 'set'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-video')) $('tab-video').classList.toggle('hidden', name !== 'video'); if (name === 'video' && window.__video) window.__video.show(); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show(); if ($('tab-quiz')) $('tab-quiz').classList.toggle('hidden', name !== 'quiz'); if (name === 'quiz' && window.__quiz) window.__quiz.show(); if ($('tab-anat')) $('tab-anat').classList.toggle('hidden', name !== 'anat'); if (name === 'anat' && window.__anat) window.__anat.show();
+    $('tab-proms').classList.toggle('hidden', name !== 'proms'); $('tab-dash').classList.toggle('hidden', name !== 'dash'); if ($('tab-pts')) $('tab-pts').classList.toggle('hidden', name !== 'pts'); if ($('tab-set')) $('tab-set').classList.toggle('hidden', name !== 'set'); if ($('tab-xray')) $('tab-xray').classList.toggle('hidden', name !== 'xray'); if ($('tab-chat')) $('tab-chat').classList.toggle('hidden', name !== 'chat'); if ($('tab-video')) $('tab-video').classList.toggle('hidden', name !== 'video'); if (name === 'video' && window.__video) window.__video.show(); if ($('tab-lib')) $('tab-lib').classList.toggle('hidden', name !== 'lib'); if (name === 'lib' && window.__qlib) window.__qlib.show(); if (name === 'chat' && window.__chat) window.__chat.show(); if ($('tab-quiz')) $('tab-quiz').classList.toggle('hidden', name !== 'quiz'); if (name === 'quiz' && window.__quiz) window.__quiz.show(); if ($('tab-anat')) $('tab-anat').classList.toggle('hidden', name !== 'anat'); if (name === 'anat' && window.__anat) window.__anat.show(); if ($('tab-study')) $('tab-study').classList.toggle('hidden', name !== 'study'); if (name === 'study' && window.__study) window.__study.show();
     if (noRender) return; if (name === 'proms') renderProms(); if (name === 'dash' || name === 'pts' || name === 'set') renderDash(); if (name === 'xray' && window.__xray) window.__xray.render();
   }
   $('tabs').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; if ((b.dataset.tab === 'pts' || curTab === 'pts' || b.dataset.tab === 'set' || curTab === 'set') && isDoc()) nav(function () { showTab(b.dataset.tab); }); else showTab(b.dataset.tab); };
@@ -5793,13 +5821,13 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       psNoDate: 'χωρίς ημερομηνία επέμβασης', psPre: 'σε {0} ημ. (πριν την επέμβαση)', psPodD: '{0}η μετεγχειρητική ημέρα', psPodW: '{0} εβδομάδες μετά', psPodM: '{0} μήνες μετά',
       psLatest: 'Τελευταίο PROM', psPending: 'Εκκρεμότητες', psNoPending: 'καμία', psDue: '{0} εκκρεμή', psOver: '{0} εκπρόθεσμα', psNoConsent: 'χωρίς συγκατάθεση',
       sumT: 'Ασθενείς – σύνοψη', sumLead: 'Πατήστε έναν ασθενή για να ανοίξει ο πλήρης φάκελος στην καρτέλα «Ασθενείς».', colProc: 'Επέμβαση · πλευρά', colPod: 'Μετά την επέμβαση',
-      infoT: 'Στοιχεία ασθενή', infoSum: 'Σύνοψη', infoAct: 'Ενέργειες', fldName: 'Ονοματεπώνυμο', psXrNone: 'Δεν υπάρχουν ακόμη μετρήσεις ακτινογραφιών για αυτόν τον ασθενή.', psXrGo: 'Άνοιγμα καρτέλας «Ακτινογραφίες»', npDoneOpen: '📂 Άνοιγμα φακέλου', tabSet: 'Ρυθμίσεις', setT: '⚙️ Ρυθμίσεις', setBtn: '⚙️ Ρυθμίσεις', setLead: 'Διαχείριση λογαριασμών ιατρών και αρχείο πρόσβασης. Δεν περιέχει δεδομένα ασθενών.', setNone: 'Η πρόσκληση ιατρών και το αρχείο πρόσβασης είναι διαθέσιμα μόνο στον ιδιοκτήτη του λογαριασμού.' },
+      infoT: 'Στοιχεία ασθενή', infoSum: 'Σύνοψη', infoAct: 'Ενέργειες', fldName: 'Ονοματεπώνυμο', psXrNone: 'Δεν υπάρχουν ακόμη μετρήσεις ακτινογραφιών για αυτόν τον ασθενή.', psXrGo: 'Άνοιγμα καρτέλας «Ακτινογραφίες»', npDoneOpen: '📂 Άνοιγμα φακέλου', tabSet: 'Ρυθμίσεις', setT: '⚙️ Ρυθμίσεις', setBtn: '⚙️ Ρυθμίσεις', studyBtn: '📊 Μελέτες', setLead: 'Διαχείριση λογαριασμών ιατρών και αρχείο πρόσβασης. Δεν περιέχει δεδομένα ασθενών.', setNone: 'Η πρόσκληση ιατρών και το αρχείο πρόσβασης είναι διαθέσιμα μόνο στον ιδιοκτήτη του λογαριασμού.' },
     en: { tabPts: 'Patients', psT: 'Patients', psSearch: 'Search: name, AMKA or code', psBack: '← Patient list', psToDash: '← Dashboard', psOpenTab: '«Patients» tab',
       psSub_info: 'Details', psSub_fu: 'Follow-up', psSub_proms: 'PROMs', psSub_hx: 'History', psSub_op: 'Surgery', psSub_xr: 'X-rays', psSub_rom: 'Range of motion',
       psNoDate: 'no surgery date', psPre: 'in {0} d (before surgery)', psPodD: 'post-op day {0}', psPodW: '{0} weeks post-op', psPodM: '{0} months post-op',
       psLatest: 'Latest PROM', psPending: 'Pending', psNoPending: 'none', psDue: '{0} due', psOver: '{0} overdue', psNoConsent: 'no consent',
       sumT: 'Patients – summary', sumLead: 'Tap a patient to open the full record in the «Patients» tab.', colProc: 'Procedure · side', colPod: 'Since surgery',
-      infoT: 'Patient details', infoSum: 'Summary', infoAct: 'Actions', fldName: 'Full name', psXrNone: 'No X-ray measurements for this patient yet.', psXrGo: 'Open the «X-rays» tab', npDoneOpen: '📂 Open record', tabSet: 'Settings', setT: '⚙️ Settings', setBtn: '⚙️ Settings', setLead: 'Doctor accounts and access log. Contains no patient data.', setNone: 'Doctor invitations and the access log are available to the account owner only.' }
+      infoT: 'Patient details', infoSum: 'Summary', infoAct: 'Actions', fldName: 'Full name', psXrNone: 'No X-ray measurements for this patient yet.', psXrGo: 'Open the «X-rays» tab', npDoneOpen: '📂 Open record', tabSet: 'Settings', setT: '⚙️ Settings', setBtn: '⚙️ Settings', studyBtn: '📊 Studies', setLead: 'Doctor accounts and access log. Contains no patient data.', setNone: 'Doctor invitations and the access log are available to the account owner only.' }
   };
   Object.keys(S4).forEach(function (lg) { Object.keys(S4[lg]).forEach(function (k) { S[lg][k] = S4[lg][k]; }); });
   var measCtx = null, measMsg = '';
@@ -6628,7 +6656,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     var pts = store.patients.filter(function (p) { return (!dsel.proc || p.procedure === dsel.proc) && ptMatches(p, dq); });
     var instIds = Object.keys(I).filter(function (id) { return !dsel.proc || PROC[dsel.proc].recommended.concat(PROC[dsel.proc].other).indexOf(id) >= 0; });
     if (dsel.inst && instIds.indexOf(dsel.inst) < 0) dsel.inst = '';
-    var h = '<div class="card"><div class="row" style="justify-content:space-between;margin:0"><span>' + esc(t('signedAs')) + ' <b>' + esc(u.name) + '</b> (' + esc(u.email) + ') · <span class="pill">' + esc(u.role === 'owner' ? t('owner') : t('doctor')) + '</span> ' + (CLOUD ? '<span class="pill yes" id="cSync" title="' + esc(t('cDbT')) + '">' + esc(syncLabel()) + '</span>' : '<span class="pill demo">' + esc(lang() === 'el' ? 'ΠΡΟΣΟΜΟΙΩΣΗ' : 'SIMULATION') + '</span>') + '</span><span><button class="ghost small" id="dDemoMeas">' + esc(t('demoMeas')) + '</button> <button class="ghost small" id="dSettings">' + esc(t('setBtn')) + '</button> <button id="dOut">' + esc(t('logout')) + '</button></span></div></div>';
+    var h = '<div class="card"><div class="row" style="justify-content:space-between;margin:0"><span>' + esc(t('signedAs')) + ' <b>' + esc(u.name) + '</b> (' + esc(u.email) + ') · <span class="pill">' + esc(u.role === 'owner' ? t('owner') : t('doctor')) + '</span> ' + (CLOUD ? '<span class="pill yes" id="cSync" title="' + esc(t('cDbT')) + '">' + esc(syncLabel()) + '</span>' : '<span class="pill demo">' + esc(lang() === 'el' ? 'ΠΡΟΣΟΜΟΙΩΣΗ' : 'SIMULATION') + '</span>') + '</span><span><button class="ghost small" id="dDemoMeas">' + esc(t('demoMeas')) + '</button> <button class="ghost small" id="dStudy">' + esc(t('studyBtn')) + '</button> <button class="ghost small" id="dSettings">' + esc(t('setBtn')) + '</button> <button id="dOut">' + esc(t('logout')) + '</button></span></div></div>';
     h += '<div class="card npbar"><button class="primary npbig" id="dNewPt">' + esc(t('npBtn')) + '</button><button class="npbig qllibbtn" id="dLib">📚 ' + esc(lang() === 'en' ? 'Questionnaire library' : 'Βιβλιοθήκη ερωτηματολογίων') + '</button>' + (window.__qr ? window.__qr.dashBtn() : '') + (store.patients.length ? '<label class="fld npsearch">🔎 ' + esc(t('npSearch')) + '<input id="dSearch" type="search" autocomplete="off" value="' + esc(dq) + '"></label>' : '') + '</div>';
     h += npHtml();
     if (!store.patients.length && !np.open) h += '<div class="card npempty" id="dEmpty"><p>👥 ' + esc(t('npEmpty')) + '</p><button class="primary" id="dNewPt2">' + esc(t('npBtn')) + '</button></div>';
@@ -6658,6 +6686,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     var sh = CLOUD ? cloudPanels(u) : u.role === 'owner' ? ownerPanel() : ''; // ⚙️ Settings: doctor invitations + access log (owner), local import (cloud)
     $('setBody').innerHTML = '<div class="card" id="setHead"><h2>' + esc(t('setT')) + '</h2><p class="muted">' + esc(t('setLead')) + '</p>' + (u.role === 'owner' ? '' : '<p class="muted" id="setNone">' + esc(t('setNone')) + '</p>') + '</div>' + sh;
     $('dSettings').onclick = function () { nav(function () { showTab('set'); }); window.scrollTo(0, 0); };
+    if ($('dStudy')) $('dStudy').onclick = function () { showTab('study'); window.scrollTo(0, 0); }; // 📊 Studies (also the way in on phones, where the tab button is hidden to keep the tab rows compact)
     $('dDemoMeas').onclick = function () { audit('demo-measurement'); openMeasure({ pid: null, procedure: null, mode: 'knee', demo: true }); };
     $('dOut').onclick = function () { audit('sign-out'); if (CLOUD) return cloudLogout(); auth.session = null; saveAuth(); renderDash(); };
     $('fProc').onchange = function () { dsel.proc = this.value; renderDash(); };
@@ -6857,6 +6886,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (window.__qlib) window.__qlib.sync(u);
     if (window.__quiz) window.__quiz.sync(u);
     if (window.__anat) window.__anat.sync(u);
+    if (window.__study) window.__study.sync(u);
   }
   function afterLogin(u) {
     cloudUser = u; cloudBusy = true; renderDash();
@@ -8036,6 +8066,785 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   window.addEventListener('afterprint', function () { if (!window.__peNoPrint) closeReport(); });
   window.__pexp = { dashHtml: dashHtml, bind: bind, ptBtn: ptBtn, bindPt: bindPt, xlsx: xlsx, pdf: pdf, closeReport: closeReport, opts: opts, get ui() { return ui; } };
   if ((X.curTab === 'dash' || X.curTab === 'pts') && A.refreshUser) A.refreshUser();
+})();
+</script>
+<!-- ===== 📊 Studies (doctor-only): cohort → Table 1, PROM / ROM outcomes, two-group tests (pure stats core, tested in Node against SciPy), abstract «Results» text; anonymised study codes only ===== -->
+<script id="ortho-study-stats">
+(function (root) {
+  'use strict';
+  // ===== 📊 Study statistics (pure, dependency-free; unit-tested in Node against SciPy reference values) =====
+  // Descriptives, Shapiro–Wilk (Royston 1995), Welch / Student / paired t, Mann–Whitney U, Wilcoxon signed-rank,
+  // Pearson χ², Fisher exact (2×k, Freeman–Halton). Two-sided p-values throughout.
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function clean(a) { return (a || []).filter(isNum); }
+  function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  function mean(a) { a = clean(a); return a.length ? sum(a) / a.length : null; }
+  function variance(a) { a = clean(a); var n = a.length; if (n < 2) return null; var m = sum(a) / n, s = 0; for (var i = 0; i < n; i++) s += (a[i] - m) * (a[i] - m); return s / (n - 1); }
+  function sd(a) { var v = variance(a); return v == null ? null : Math.sqrt(v); }
+  function sorted(a) { return clean(a).slice().sort(function (x, y) { return x - y; }); }
+  /** Quantile, type 7 (R default / NumPy linear). */
+  function quantile(a, q) { var s = sorted(a), n = s.length; if (!n) return null; var h = (n - 1) * q, lo = Math.floor(h), hi = Math.ceil(h); return s[lo] + (h - lo) * (s[hi] - s[lo]); }
+  function median(a) { return quantile(a, 0.5); }
+  function describe(a) { var c = clean(a); return { n: c.length, mean: mean(c), sd: sd(c), median: median(c), q1: quantile(c, 0.25), q3: quantile(c, 0.75), min: c.length ? Math.min.apply(null, c) : null, max: c.length ? Math.max.apply(null, c) : null }; }
+
+  // ---------- special functions ----------
+  var LG = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  function gammaln(x) { var y = x, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp); var ser = 1.000000000190015; for (var j = 0; j < 6; j++) ser += LG[j] / ++y; return -tmp + Math.log(2.5066282746310005 * ser / x); }
+  var LF = [0]; function lfact(n) { for (var i = LF.length; i <= n; i++) LF[i] = LF[i - 1] + Math.log(i); return LF[n]; }
+  function betacf(x, a, b) {
+    var FPMIN = 1e-300, qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap; if (Math.abs(d) < FPMIN) d = FPMIN; d = 1 / d; var h = d;
+    for (var m = 1; m <= 300; m++) {
+      var m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN; c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN; c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d; var del = d * c; h *= del;
+      if (Math.abs(del - 1) < 3e-16) break;
+    }
+    return h;
+  }
+  /** Regularised incomplete beta I_x(a, b). */
+  function ibeta(x, a, b) {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    var bt = Math.exp(gammaln(a + b) - gammaln(a) - gammaln(b) + a * Math.log(x) + b * Math.log(1 - x));
+    return x < (a + 1) / (a + b + 2) ? bt * betacf(x, a, b) / a : 1 - bt * betacf(1 - x, b, a) / b;
+  }
+  /** Regularised upper incomplete gamma Q(a, x). */
+  function gammaQ(a, x) {
+    if (x <= 0) return 1; var gln = gammaln(a), i;
+    if (x < a + 1) { var ap = a, s = 1 / a, del = s; for (i = 0; i < 1000; i++) { ap++; del *= x / ap; s += del; if (Math.abs(del) < Math.abs(s) * 3e-16) break; } return 1 - s * Math.exp(-x + a * Math.log(x) - gln); }
+    var FP = 1e-300, b = x + 1 - a, c = 1 / FP, d = 1 / b, h = d;
+    for (i = 1; i < 1000; i++) { var an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < FP) d = FP; c = b + an / c; if (Math.abs(c) < FP) c = FP; d = 1 / d; var dl = d * c; h *= dl; if (Math.abs(dl - 1) < 3e-16) break; }
+    return Math.exp(-x + a * Math.log(x) - gln) * h;
+  }
+  /** erfc(x) = Q(1/2, x²) for x ≥ 0 (full double precision via the incomplete gamma). */
+  function erfc(x) { var r = gammaQ(0.5, x * x); return x >= 0 ? r : 2 - r; }
+  function pnorm(z) { return 0.5 * erfc(-z / Math.SQRT2); }
+  /** Inverse standard normal (Acklam, one Halley refinement step). */
+  function qnorm(p) {
+    if (p <= 0) return -Infinity; if (p >= 1) return Infinity;
+    var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00],
+      b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01],
+      c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00],
+      d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00], q, r, x;
+    if (p < 0.02425) { q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    else if (p <= 1 - 0.02425) { q = p - 0.5; r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+    else { q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+    var e = pnorm(x) - p, u = e * Math.sqrt(2 * Math.PI) * Math.exp(x * x / 2); return x - u / (1 + x * u / 2);
+  }
+  function pt2(t, df) { if (!isFinite(t)) return 0; return ibeta(df / (df + t * t), df / 2, 0.5); } // two-sided P(|T| ≥ |t|)
+  function pchisqUpper(x, df) { return gammaQ(df / 2, x / 2); }
+  function cap(p) { return p == null ? null : Math.max(0, Math.min(1, p)); }
+
+  // ---------- normality ----------
+  function poly(cc, x) { var r = cc[cc.length - 1]; for (var i = cc.length - 2; i >= 0; i--) r = r * x + cc[i]; return r; }
+  /** Shapiro–Wilk W and p (Royston 1995, algorithm AS R94), 3 ≤ n ≤ 5000. */
+  function shapiro(a) {
+    var x = sorted(a), n = x.length; if (n < 3 || n > 5000) return null;
+    if (x[n - 1] - x[0] < 1e-12 * Math.max(1, Math.abs(x[0]))) return null; // all equal
+    var nn2 = Math.floor(n / 2), w = [], i;
+    if (n === 3) w[0] = Math.SQRT1_2;
+    else {
+      var an25 = n + 0.25, m = [], summ2 = 0;
+      for (i = 0; i < nn2; i++) { m[i] = qnorm((i + 1 - 0.375) / an25); summ2 += m[i] * m[i]; }
+      summ2 *= 2; var ssumm2 = Math.sqrt(summ2), rsn = 1 / Math.sqrt(n), fac, i1;
+      var a1 = poly([0, 0.221157, -0.147981, -2.07119, 4.434685, -2.706056], rsn) - m[0] / ssumm2;
+      if (n > 5) { i1 = 2; var a2 = -m[1] / ssumm2 + poly([0, 0.042981, -0.293762, -1.752461, 5.682633, -3.582633], rsn);
+        fac = Math.sqrt((summ2 - 2 * m[0] * m[0] - 2 * m[1] * m[1]) / (1 - 2 * a1 * a1 - 2 * a2 * a2)); w[1] = a2; }
+      else { i1 = 1; fac = Math.sqrt((summ2 - 2 * m[0] * m[0]) / (1 - 2 * a1 * a1)); }
+      w[0] = a1; for (i = i1; i < nn2; i++) w[i] = -m[i] / fac;
+    }
+    var num = 0; for (i = 0; i < nn2; i++) num += w[i] * (x[n - 1 - i] - x[i]);
+    var mu = sum(x) / n, ss = 0; for (i = 0; i < n; i++) ss += (x[i] - mu) * (x[i] - mu);
+    var W = Math.min(1, num * num / ss), pw;
+    if (n === 3) { pw = 1.90985931710274 * (Math.asin(Math.sqrt(W)) - 1.04719755119660); return { W: W, p: cap(pw) }; }
+    var y = Math.log(1 - W), lx = Math.log(n), mm, s;
+    if (n <= 11) { var g = poly([-2.273, 0.459], n); if (y >= g) return { W: W, p: 1e-99 }; y = -Math.log(g - y); mm = poly([0.544, -0.39978, 0.025054, -6.714e-4], n); s = Math.exp(poly([1.3822, -0.77857, 0.062767, -0.0020322], n)); }
+    else { mm = poly([-1.5861, -0.31082, -0.083751, 0.0038915], lx); s = Math.exp(poly([-0.4803, -0.082676, 0.0030302], lx)); }
+    pw = pnorm(-(y - mm) / s); return { W: W, p: cap(pw) };
+  }
+
+  // ---------- t tests ----------
+  function tWelch(x, y) {
+    x = clean(x); y = clean(y); var n1 = x.length, n2 = y.length; if (n1 < 2 || n2 < 2) return null;
+    var v1 = variance(x) / n1, v2 = variance(y) / n2, se = Math.sqrt(v1 + v2); if (!(se > 0)) return null;
+    var t = (mean(x) - mean(y)) / se, df = (v1 + v2) * (v1 + v2) / (v1 * v1 / (n1 - 1) + v2 * v2 / (n2 - 1));
+    return { test: 'welch', t: t, df: df, p: cap(pt2(t, df)) };
+  }
+  function tStudent(x, y) {
+    x = clean(x); y = clean(y); var n1 = x.length, n2 = y.length; if (n1 < 2 || n2 < 2) return null;
+    var sp = ((n1 - 1) * variance(x) + (n2 - 1) * variance(y)) / (n1 + n2 - 2), se = Math.sqrt(sp * (1 / n1 + 1 / n2)); if (!(se > 0)) return null;
+    var t = (mean(x) - mean(y)) / se, df = n1 + n2 - 2; return { test: 'student', t: t, df: df, p: cap(pt2(t, df)) };
+  }
+  /** Paired t on pairs [[a, b], …] (b − a). */
+  function tPaired(pairs) {
+    var d = pairs.filter(function (q) { return isNum(q[0]) && isNum(q[1]); }).map(function (q) { return q[1] - q[0]; }), n = d.length; if (n < 2) return null;
+    var s = sd(d); if (!(s > 0)) return null; var t = mean(d) / (s / Math.sqrt(n));
+    return { test: 'paired-t', t: t, df: n - 1, p: cap(pt2(t, n - 1)) };
+  }
+  // ---------- ranks ----------
+  function rank(v) { // average ranks for ties; returns {r, ties: [t…]}
+    var idx = v.map(function (x, i) { return i; }).sort(function (i, j) { return v[i] - v[j]; }), r = new Array(v.length), ties = [];
+    for (var i = 0; i < idx.length;) { var j = i; while (j + 1 < idx.length && v[idx[j + 1]] === v[idx[i]]) j++; var rr = (i + j + 2) / 2; for (var k = i; k <= j; k++) r[idx[k]] = rr; if (j > i) ties.push(j - i + 1); i = j + 1; }
+    return { r: r, ties: ties };
+  }
+  /** Exact null distribution of the Mann–Whitney U (counts), n1 × n2 small. */
+  function uDist(n1, n2) {
+    // f[i][j] = counts array of U for sizes i, j; recurrence f(i,j,u) = f(i-1,j,u-j) + f(i,j-1,u)
+    var prev = [], cur, i, j, u;
+    for (i = 0; i <= n1; i++) { cur = [];
+      for (j = 0; j <= n2; j++) {
+        if (i === 0 || j === 0) { cur[j] = [1]; continue; }
+        var a = prev[j], b = cur[j - 1], out = new Array(i * j + 1);
+        for (u = 0; u <= i * j; u++) out[u] = (u - j >= 0 && u - j < a.length ? a[u - j] : 0) + (u < b.length ? b[u] : 0);
+        cur[j] = out;
+      }
+      prev = cur; }
+    return prev[n2];
+  }
+  /** Mann–Whitney U (two-sided). Exact when there are no ties and both n < 50 (as R wilcox.test); otherwise normal approximation
+   *  with tie correction and continuity correction. opt.method: 'exact' | 'asymptotic' to force. */
+  function mannWhitney(x, y, opt) {
+    opt = opt || {}; x = clean(x); y = clean(y); var n1 = x.length, n2 = y.length; if (!n1 || !n2) return null;
+    var rk = rank(x.concat(y)), R1 = 0, i; for (i = 0; i < n1; i++) R1 += rk.r[i];
+    var U1 = R1 - n1 * (n1 + 1) / 2, N = n1 + n2, mu = n1 * n2 / 2;
+    var exact = opt.method ? opt.method === 'exact' : (!rk.ties.length && n1 < 50 && n2 < 50);
+    if (exact && !rk.ties.length) {
+      var f = uDist(n1, n2), tot = 0, lo = 0, hi = 0; for (i = 0; i < f.length; i++) { tot += f[i]; if (i <= U1) lo += f[i]; if (i >= U1) hi += f[i]; }
+      return { test: 'mwu', U: U1, p: cap(2 * Math.min(lo, hi) / tot), method: 'exact' };
+    }
+    var tc = rk.ties.reduce(function (s, t) { return s + t * t * t - t; }, 0), sig = Math.sqrt(n1 * n2 / 12 * ((N + 1) - tc / (N * (N - 1))));
+    if (!(sig > 0)) return { test: 'mwu', U: U1, p: 1, method: 'asymptotic' };
+    var dz = U1 - mu, z = (dz - (dz > 0 ? 0.5 : dz < 0 ? -0.5 : 0)) / sig;
+    return { test: 'mwu', U: U1, z: z, p: cap(2 * pnorm(-Math.abs(z))), method: 'asymptotic' };
+  }
+  /** Wilcoxon signed-rank on pairs (b − a); zeros dropped. Exact when no ties/zeros and n < 50, else normal approx with
+   *  tie + continuity correction (R wilcox.test(paired = TRUE)). */
+  function wilcoxon(pairs, opt) {
+    opt = opt || {}; var d0 = pairs.filter(function (q) { return isNum(q[0]) && isNum(q[1]); }).map(function (q) { return q[1] - q[0]; });
+    var d = d0.filter(function (v) { return v !== 0; }), n = d.length, zeros = d0.length - n; if (!n) return null;
+    var rk = rank(d.map(Math.abs)), Tp = 0, i; for (i = 0; i < n; i++) if (d[i] > 0) Tp += rk.r[i];
+    var mu = n * (n + 1) / 4, exact = opt.method ? opt.method === 'exact' : (!rk.ties.length && !zeros && n < 50);
+    if (exact && !rk.ties.length) {
+      var M = n * (n + 1) / 2, c = [1]; for (i = 1; i <= M; i++) c[i] = 0;
+      for (var k = 1; k <= n; k++) for (var s = M; s >= k; s--) c[s] += c[s - k];
+      var tot = Math.pow(2, n), lo = 0, hi = 0; for (i = 0; i <= M; i++) { if (i <= Tp) lo += c[i]; if (i >= Tp) hi += c[i]; }
+      return { test: 'wilcoxon', V: Tp, n: n, p: cap(2 * Math.min(lo, hi) / tot), method: 'exact' };
+    }
+    var tc = rk.ties.reduce(function (s, t) { return s + t * t * t - t; }, 0), sig = Math.sqrt(n * (n + 1) * (2 * n + 1) / 24 - tc / 48);
+    if (!(sig > 0)) return { test: 'wilcoxon', V: Tp, n: n, p: 1, method: 'asymptotic' };
+    var dz = Tp - mu, z = (dz - (dz > 0 ? 0.5 : dz < 0 ? -0.5 : 0)) / sig;
+    return { test: 'wilcoxon', V: Tp, n: n, z: z, p: cap(2 * pnorm(-Math.abs(z))), method: 'asymptotic' };
+  }
+  // ---------- contingency tables (rows = groups, columns = categories) ----------
+  function trimTable(t) { // drop all-zero columns / rows
+    var cols = t[0].map(function (_, j) { return t.some(function (r) { return r[j] > 0; }); });
+    return t.map(function (r) { return r.filter(function (_, j) { return cols[j]; }); }).filter(function (r) { return r.some(function (v) { return v > 0; }); });
+  }
+  function expected(t) { var R = t.map(sum), C = t[0].map(function (_, j) { return sum(t.map(function (r) { return r[j]; })); }), N = sum(R); return t.map(function (r, i) { return r.map(function (_, j) { return R[i] * C[j] / N; }); }); }
+  /** Pearson χ² without continuity correction. */
+  function chisq(t) {
+    t = trimTable(t); if (t.length < 2 || t[0].length < 2) return null; var e = expected(t), x2 = 0;
+    for (var i = 0; i < t.length; i++) for (var j = 0; j < t[0].length; j++) x2 += (t[i][j] - e[i][j]) * (t[i][j] - e[i][j]) / e[i][j];
+    var df = (t.length - 1) * (t[0].length - 1); return { test: 'chisq', x2: x2, df: df, p: cap(pchisqUpper(x2, df)) };
+  }
+  /** Fisher exact for 2 × k tables (k = 2: classic; k > 2: Freeman–Halton). Two-sided: sum of P(table) ≤ P(observed). */
+  function fisher(t, limit) {
+    t = trimTable(t); if (t.length !== 2 || t[0].length < 2) return null;
+    var k = t[0].length, C = t[0].map(function (_, j) { return t[0][j] + t[1][j]; }), r1 = sum(t[0]), N = sum(C);
+    var space = C.reduce(function (s, c) { return s * (Math.min(c, r1) + 1); }, 1); if (space > (limit || 3e6)) return null;
+    var base = lfact(r1) + lfact(N - r1) - lfact(N); C.forEach(function (c) { base += lfact(c); });
+    function lp(x) { var s = base; for (var j = 0; j < k; j++) s -= lfact(x[j]) + lfact(C[j] - x[j]); return s; }
+    var pObs = Math.exp(lp(t[0])), tot = 0, x = new Array(k), tail = [];
+    tail[k] = 0; for (var j = k - 1; j >= 0; j--) tail[j] = tail[j + 1] + C[j];
+    (function rec(j, left) {
+      if (j === k - 1) { if (left > C[j]) return; x[j] = left; var p = Math.exp(lp(x)); if (p <= pObs * (1 + 1e-7)) tot += p; return; }
+      var lo = Math.max(0, left - tail[j + 1]), hi = Math.min(C[j], left);
+      for (var v = lo; v <= hi; v++) { x[j] = v; rec(j + 1, left - v); }
+    })(0, r1);
+    return { test: 'fisher', p: cap(tot), k: k };
+  }
+  /** Categorical comparison: Fisher exact when any expected count < 5 (2 groups, feasible), otherwise Pearson χ². */
+  function categorical(t) {
+    var tt = trimTable(t); if (tt.length < 2 || !tt[0] || tt[0].length < 2) return null;
+    var e = expected(tt), low = e.some(function (r) { return r.some(function (v) { return v < 5; }); });
+    if (low && tt.length === 2) { var f = fisher(tt); if (f) return f; }
+    var c = chisq(tt); if (c && low) c.lowExpected = true; return c;
+  }
+  /** Two independent samples: Welch t when both groups look normal (Shapiro–Wilk p ≥ 0.05, n ≥ 3), else Mann–Whitney U. */
+  function compare2(x, y) {
+    x = clean(x); y = clean(y); if (x.length < 2 || y.length < 2) return null;
+    var sx = x.length >= 3 ? shapiro(x) : null, sy = y.length >= 3 ? shapiro(y) : null, normal = !!(sx && sy && sx.p >= 0.05 && sy.p >= 0.05);
+    var r = normal ? tWelch(x, y) : mannWhitney(x, y); if (!r) r = mannWhitney(x, y);
+    if (r) r.normal = normal; return r;
+  }
+  /** Paired (pre → post): paired t when the differences look normal (Shapiro–Wilk p ≥ 0.05, n ≥ 3), else Wilcoxon signed-rank. */
+  function comparePaired(pairs) {
+    var ok = pairs.filter(function (q) { return isNum(q[0]) && isNum(q[1]); }); if (ok.length < 2) return null;
+    var d = ok.map(function (q) { return q[1] - q[0]; }), sw = d.length >= 3 ? shapiro(d) : null, normal = !!(sw && sw.p >= 0.05);
+    var r = normal ? tPaired(ok) : wilcoxon(ok); if (!r) r = wilcoxon(ok); if (!r) return null; r.normal = normal; return r;
+  }
+  root.OrthoStudyStats = { isNum: isNum, mean: mean, sd: sd, variance: variance, median: median, quantile: quantile, describe: describe, gammaln: gammaln, ibeta: ibeta, gammaQ: gammaQ,
+    pnorm: pnorm, qnorm: qnorm, pt2: pt2, pchisqUpper: pchisqUpper, shapiro: shapiro, tWelch: tWelch, tStudent: tStudent, tPaired: tPaired, rank: rank, mannWhitney: mannWhitney,
+    wilcoxon: wilcoxon, chisq: chisq, fisher: fisher, categorical: categorical, compare2: compare2, comparePaired: comparePaired };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-study">
+(function (root) {
+  'use strict';
+  // ===== 📊 Studies core (pure; unit-tested in Node): cohort → anonymised analysis rows, Table 1, PROM / ROM outcomes,
+  // two-group comparison and an abstract-style «Results» paragraph (EN / EL). Descriptive numbers and p-values only:
+  // no interpretation, no citations. Never outputs names, ΑΜΚΑ, internal patient codes or dates of individual patients.
+  var S = root.OrthoStudyStats, P = root.OrthoPROMs;
+  var VERSION = 'study-1.0';
+  var TPS = ['pre', '6w', '3m', '6m', '1y', '2y'];
+  function HX() { return root.OrthoHistory; }
+  function OPN() { return root.OrthoOpNote; }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function num(v) { if (v === '' || v == null) return null; var x = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; }
+  function tr(o, lg) { return o == null ? '' : typeof o === 'string' ? o : (o[lg] != null ? o[lg] : (o.el || o.en || '')); }
+  var TX = {
+    el: { n: 'Ασθενείς, n', age: 'Ηλικία (έτη)', female: 'Γυναίκες', sex: 'Φύλο', F: 'Γυναίκα', M: 'Άνδρας', bmi: 'BMI (kg/m²)', asa: 'ASA', cci: 'Charlson (CCI)', cciAge: 'Charlson με ηλικία', side: 'Πλευρά', R: 'Δεξιά', L: 'Αριστερά', B: 'Αμφοτερόπλευρα',
+      proc: 'Επέμβαση', smoking: 'Κάπνισμα', never: 'Ποτέ', ex: 'Πρώην', current: 'Ενεργός', comorb: 'Συννοσηρότητες', labs: 'Εργαστηριακά', op: 'Χειρουργείο (πρακτικό)', dur: 'Διάρκεια επέμβασης (min)', tq: 'Χρόνος ισχαιμίας (min)', ebl: 'Απώλεια αίματος (ml)', anaes: 'Αναισθησία',
+      fu: 'Παρακολούθηση (μήνες)', meanSd: 'μέση τιμή ± SD', medIqr: 'διάμεσος [IQR]', nPct: 'n (%)', fix: 'Καθήλωση εμφυτεύματος', cemented: 'Με τσιμέντο', uncemented: 'Χωρίς τσιμέντο', hybrid: 'Υβριδική', manu: 'Κατασκευαστής εμφυτεύματος',
+      ageLt: 'Ηλικία < {0}', ageGe: 'Ηλικία ≥ {0}', bmiLt: 'BMI < {0}', bmiGe: 'BMI ≥ {0}', asaLo: 'ASA I–II', asaHi: 'ASA III–V', others: 'Όλοι οι άλλοι', grpA: 'Ομάδα Α', grpB: 'Ομάδα Β', romMax: 'Εύρος κίνησης: μέγιστη κάμψη (°)', romMin: 'Εύρος κίνησης: ελάχιστη κάμψη / έλλειμμα έκτασης (°)' },
+    en: { n: 'Patients, n', age: 'Age (years)', female: 'Female', sex: 'Sex', F: 'Female', M: 'Male', bmi: 'BMI (kg/m²)', asa: 'ASA grade', cci: 'Charlson Comorbidity Index', cciAge: 'Age-adjusted Charlson index', side: 'Side', R: 'Right', L: 'Left', B: 'Bilateral',
+      proc: 'Procedure', smoking: 'Smoking', never: 'Never', ex: 'Former', current: 'Current', comorb: 'Comorbidities', labs: 'Laboratory values', op: 'Surgery (operative note)', dur: 'Operative time (min)', tq: 'Tourniquet time (min)', ebl: 'Blood loss (ml)', anaes: 'Anaesthesia',
+      fu: 'Follow-up (months)', meanSd: 'mean ± SD', medIqr: 'median [IQR]', nPct: 'n (%)', fix: 'Implant fixation', cemented: 'Cemented', uncemented: 'Uncemented', hybrid: 'Hybrid', manu: 'Implant manufacturer',
+      ageLt: 'Age < {0}', ageGe: 'Age ≥ {0}', bmiLt: 'BMI < {0}', bmiGe: 'BMI ≥ {0}', asaLo: 'ASA I–II', asaHi: 'ASA III–V', others: 'All others', grpA: 'Group A', grpB: 'Group B', romMax: 'Range of motion: maximum flexion (°)', romMin: 'Range of motion: minimum flexion / extension deficit (°)' }
+  };
+  var TESTN = {
+    el: { welch: 'Welch t-test', student: 'Student t-test', 'paired-t': 'ζευγαρωτό t-test', mwu: 'Mann–Whitney U', wilcoxon: 'Wilcoxon signed-rank', chisq: 'χ²', fisher: 'ακριβές Fisher' },
+    en: { welch: 'Welch t-test', student: 'Student t-test', 'paired-t': 'paired t-test', mwu: 'Mann–Whitney U test', wilcoxon: 'Wilcoxon signed-rank test', chisq: 'χ² test', fisher: 'Fisher exact test' }
+  };
+  function T(lg, k) { var v = TX[lg][k]; return v == null ? k : v; }
+  function fmtS(s) { var a = [].slice.call(arguments, 1); return String(s).replace(/\{(\d)\}/g, function (_, i) { return a[+i]; }); }
+  // ---------- number formatting (EL: decimal comma) ----------
+  function fx(v, d, lg) { if (!isNum(v)) return '–'; var s = (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); if (s === '-0' || /^-0\.0*$/.test(s)) s = s.slice(1); return lg === 'el' ? s.replace('.', ',') : s; }
+  function sg(v, d, lg) { if (!isNum(v)) return '–'; var s = fx(v, d, lg); return (v > 0 && s.replace(/[0,.]/g, '') !== '' ? '+' : '') + s; }
+  function fp(p, lg) { if (!isNum(p)) return '–'; if (p < 0.001) return '< ' + fx(0.001, 3, lg); return fx(p, 3, lg); }
+  function pTxt(p, lg) { if (!isNum(p)) return ''; return p < 0.001 ? 'p < ' + fx(0.001, 3, lg) : 'p = ' + fx(p, 3, lg); }
+  function pct(n, N, lg) { return N ? fx(100 * n / N, 1, lg) + '%' : '–'; }
+  function meanSd(d, dp, lg) { return d && d.n ? fx(d.mean, dp, lg) + (d.n > 1 ? ' ± ' + fx(d.sd, dp, lg) : '') : '–'; }
+  function medIqr(d, dp, lg) { return d && d.n ? fx(d.median, dp, lg) + ' [' + fx(d.q1, dp, lg) + '–' + fx(d.q3, dp, lg) + ']' : '–'; }
+  function nPct(n, N, lg) { return N ? n + ' (' + pct(n, N, lg) + ')' : '–'; }
+
+  // ---------- operative note helpers ----------
+  function noteOf(store, pid) { var ns = (store.opnotes || []).filter(function (n) { return n.patientId === pid; }); ns.sort(function (a, b) { return (a.status === 'final') - (b.status === 'final') || ((a.date || '') < (b.date || '') ? -1 : 1); }); return ns[ns.length - 1] || null; }
+  function fixation(note) {
+    var f = (note && note.fields && note.fields.implants || []).map(function (x) { return x && x.fixation; }).filter(function (v) { return v === 'cemented' || v === 'uncemented'; });
+    if (!f.length) return null; var c = f.indexOf('cemented') >= 0, u = f.indexOf('uncemented') >= 0; return c && u ? 'hybrid' : c ? 'cemented' : 'uncemented';
+  }
+  function manufacturer(note) { var m = (note && note.fields && note.fields.implants || []).map(function (x) { return x && String(x.manufacturer || '').trim(); }).filter(Boolean); return m.length ? m[0] : null; }
+  /** Operative-note select fields usable for grouping (general + procedure-specific), as [{k, label, o:[{v, el, en}], procs}] */
+  function opSelFields() {
+    var O = OPN(); if (!O) return []; var out = [], seen = {};
+    function add(f, proc) { if (f.t !== 'sel' || !f.o || f.k === 'side' || f.k === 'asa') return; if (seen[f.k]) { if (proc && seen[f.k].procs.indexOf(proc) < 0) seen[f.k].procs.push(proc); return; } seen[f.k] = { k: f.k, label: f.l, o: f.o, procs: proc ? [proc] : [] }; out.push(seen[f.k]); }
+    O.SECTIONS.GENERAL.fields.forEach(function (f) { add(f, null); });
+    Object.keys(O.SECTIONS.SPEC).forEach(function (p) { O.SECTIONS.SPEC[p].fields.forEach(function (f) { add(f, p); }); });
+    return out;
+  }
+  // ---------- cohort ----------
+  /** filt: {procs:[], side, from, to, ageMin, ageMax, sex, excludeDemo, ids (manual subset)} */
+  function filterPatients(store, filt) {
+    filt = filt || {};
+    return (store.patients || []).filter(function (p) {
+      if (filt.excludeDemo && p.demo) return false;
+      if (filt.procs && filt.procs.length && filt.procs.indexOf(p.procedure) < 0) return false;
+      if (filt.side && String(p.side || '').charAt(0).toUpperCase() !== filt.side) return false;
+      if ((filt.from || filt.to) && !p.surgeryDate) return false;
+      if (filt.from && p.surgeryDate < filt.from) return false;
+      if (filt.to && p.surgeryDate > filt.to) return false;
+      var age = num(p.age);
+      if (isNum(num(filt.ageMin)) && !(age != null && age >= num(filt.ageMin))) return false;
+      if (isNum(num(filt.ageMax)) && !(age != null && age <= num(filt.ageMax))) return false;
+      if (filt.sex && p.sex !== filt.sex) return false;
+      return true;
+    }).sort(function (a, b) { var x = (a.surgeryDate || '9999') + '|' + a.id, y = (b.surgeryDate || '9999') + '|' + b.id; return x < y ? -1 : x > y ? 1 : 0; });
+  }
+  /** One analysis row per patient (no names / ΑΜΚΑ / internal ids except `pid`, which stays in memory and is never exported). */
+  function rows(store, filt) {
+    var pts = filterPatients(store, filt), w = Math.max(3, String(pts.length).length), H = HX(), subs = store.submissions || [];
+    return pts.map(function (p, i) {
+      var note = noteOf(store, p.id), nf = note && note.fields || {}, raw = p.history, hasHx = !!(H && raw && typeof raw === 'object' && !H.isEmpty(raw));
+      var h = hasHx ? H.normalize(JSON.parse(JSON.stringify(raw))) : null, c = hasHx ? H.compute({ age: num(p.age), sex: p.sex, history: h }) : null;
+      var asaF = h && h.asa && num(h.asa.final), asaN = num(nf.asa), side = String(p.side || nf.side || '').charAt(0).toUpperCase();
+      var fu = null; subs.forEach(function (s) { if (s.patientId !== p.id || !s.date || !p.surgeryDate || s.timepoint === 'pre') return; var d = P.daysBetween(p.surgeryDate, s.date); if (d > 0 && (fu == null || d > fu)) fu = d; });
+      var r = { pid: p.id, code: 'S' + String(i + 1).padStart(w, '0'), proc: p.procedure, ulType: p.ulType || null, sex: p.sex === 'F' || p.sex === 'M' ? p.sex : null, age: num(p.age), side: /^[RLB]$/.test(side) ? side : null,
+        hasHx: hasHx, bmi: c ? c.bmi : null, cci: c ? c.cci.score : null, cciAge: c ? c.cci.ageAdj : null, asa: asaF || asaN || null, smoking: h && h.smoking || null,
+        cond: hasHx ? H.CONDS.reduce(function (o, x) { o[x.k] = H.has(h, x.k) ? 1 : 0; return o; }, {}) : null, labs: hasHx ? H.LABS.reduce(function (o, l) { o[l.k] = H.num(h.labs && h.labs[l.k]); return o; }, {}) : null,
+        hasNote: !!note, op: nf, dur: num(nf.duration), tq: num(nf.tqTime), ebl: num(nf.ebl), fix: fixation(note), manu: manufacturer(note), fuDays: fu, fuMonths: fu != null ? fu / 30.4375 : null, g: null };
+      return r;
+    });
+  }
+  // ---------- groups ----------
+  /** Grouping variables with ≥ 2 values present in the cohort: [{id, label, kind: 'cat'|'cut', values:[{v, label, n}], def}] */
+  function groupOptions(rs, lg) {
+    var out = [];
+    function cat(id, label, get, lab) {
+      var c = {}; rs.forEach(function (r) { var v = get(r); if (v == null || v === '') return; c[v] = (c[v] || 0) + 1; });
+      var vs = Object.keys(c); if (vs.length < 2) return; out.push({ id: id, label: label, kind: 'cat', values: vs.map(function (v) { return { v: v, label: lab ? lab(v) : v, n: c[v] }; }) });
+    }
+    cat('proc', T(lg, 'proc'), function (r) { return r.proc; }, function (v) { return P.PROCEDURES[v] ? tr(P.PROCEDURES[v].name, lg) : v; });
+    cat('sex', T(lg, 'sex'), function (r) { return r.sex; }, function (v) { return T(lg, v); });
+    cat('side', T(lg, 'side'), function (r) { return r.side; }, function (v) { return T(lg, v); });
+    if (rs.filter(function (r) { return isNum(r.age); }).length >= 2) out.push({ id: 'age', label: T(lg, 'age'), kind: 'cut', def: 65 });
+    if (rs.filter(function (r) { return isNum(r.bmi); }).length >= 2) out.push({ id: 'bmi', label: T(lg, 'bmi'), kind: 'cut', def: 30 });
+    var asa = rs.filter(function (r) { return isNum(r.asa); }); if (asa.some(function (r) { return r.asa <= 2; }) && asa.some(function (r) { return r.asa >= 3; })) out.push({ id: 'asa', label: T(lg, 'asa'), kind: 'cat', values: [{ v: 'lo', label: T(lg, 'asaLo'), n: asa.filter(function (r) { return r.asa <= 2; }).length }, { v: 'hi', label: T(lg, 'asaHi'), n: asa.filter(function (r) { return r.asa >= 3; }).length }] });
+    cat('fix', T(lg, 'fix'), function (r) { return r.fix; }, function (v) { return T(lg, v); });
+    cat('manu', T(lg, 'manu'), function (r) { return r.manu; });
+    opSelFields().forEach(function (f) { cat('op:' + f.k, tr(f.label, lg), function (r) { return r.op ? r.op[f.k] : null; }, function (v) { var o = f.o.filter(function (x) { return x.v === v; })[0]; return o ? tr(o, lg) : v; }); });
+    return out;
+  }
+  function valueOf(r, by) {
+    if (by === 'proc') return r.proc; if (by === 'sex') return r.sex; if (by === 'side') return r.side; if (by === 'fix') return r.fix; if (by === 'manu') return r.manu;
+    if (by === 'asa') return isNum(r.asa) ? (r.asa <= 2 ? 'lo' : 'hi') : null;
+    if (by.indexOf('op:') === 0) { var v = r.op ? r.op[by.slice(3)] : null; return v == null || v === '' ? null : v; }
+    return null;
+  }
+  /** spec: {by: ''|'proc'|'sex'|'side'|'age'|'bmi'|'asa'|'fix'|'manu'|'op:<field>'|'manual', a, b ('*' = all others), cut, manual: {pid: 'A'|'B'}} → sets r.g ('A' | 'B' | null). Returns {on, nA, nB, nOut}. */
+  function assign(rs, spec) {
+    spec = spec || {}; var on = !!spec.by;
+    rs.forEach(function (r) {
+      r.g = null; if (!on) return;
+      if (spec.by === 'manual') { var m = spec.manual && spec.manual[r.pid]; r.g = m === 'A' || m === 'B' ? m : null; return; }
+      if (spec.by === 'age' || spec.by === 'bmi') { var x = r[spec.by], c = num(spec.cut); if (!isNum(x) || !isNum(c)) return; r.g = x < c ? 'A' : 'B'; return; }
+      var v = valueOf(r, spec.by); if (v == null) return;
+      if (String(v) === String(spec.a)) r.g = 'A'; else if (spec.b === '*' || String(v) === String(spec.b)) r.g = 'B';
+    });
+    var nA = rs.filter(function (r) { return r.g === 'A'; }).length, nB = rs.filter(function (r) { return r.g === 'B'; }).length;
+    return { on: on, nA: nA, nB: nB, nOut: on ? rs.length - nA - nB : 0 };
+  }
+  /** Default group labels for a spec. */
+  function groupLabels(rs, spec, lg) {
+    spec = spec || {}; var o = groupOptions(rs, lg).filter(function (x) { return x.id === spec.by; })[0], c = num(spec.cut), cut = isNum(c) ? fx(c, c % 1 ? 1 : 0, lg) : '';
+    if (spec.by === 'age') return { A: fmtS(T(lg, 'ageLt'), cut), B: fmtS(T(lg, 'ageGe'), cut) };
+    if (spec.by === 'bmi') return { A: fmtS(T(lg, 'bmiLt'), cut), B: fmtS(T(lg, 'bmiGe'), cut) };
+    var lab = function (v) { var x = o && o.values.filter(function (y) { return String(y.v) === String(v); })[0]; return x ? x.label : null; };
+    return { A: (spec.by && spec.by !== 'manual' && lab(spec.a)) || T(lg, 'grpA'), B: spec.b === '*' ? T(lg, 'others') : ((spec.by && spec.by !== 'manual' && lab(spec.b)) || T(lg, 'grpB')) };
+  }
+
+  // ---------- Table 1 ----------
+  /** {groups: bool, nAll, nA, nB, rows: [{label, sub, kind: 'n'|'head'|'cont'|'cat', all, A, B, p, test, missing, indent}]} */
+  function table1(rs, lg, opt) {
+    opt = opt || {}; var grp = rs.some(function (r) { return r.g; }), A = rs.filter(function (r) { return r.g === 'A'; }), B = rs.filter(function (r) { return r.g === 'B'; }), out = [], H = HX();
+    var sets = grp ? [rs, A, B] : [rs];
+    out.push({ kind: 'n', label: T(lg, 'n'), all: String(rs.length), A: grp ? String(A.length) : '', B: grp ? String(B.length) : '' });
+    function cont(label, get, dp) {
+      var vals = sets.map(function (s) { return s.map(get).filter(isNum); }), miss = rs.length - vals[0].length; if (!vals[0].length) return;
+      var d = vals.map(S.describe), t = grp ? S.compare2(vals[1], vals[2]) : null, par = t && (t.test === 'welch' || t.test === 'student');
+      out.push({ kind: 'cont', label: label, sub: T(lg, 'meanSd'), all: meanSd(d[0], dp, lg), A: grp ? meanSd(d[1], dp, lg) : '', B: grp ? meanSd(d[2], dp, lg) : '', p: par ? t.p : null, test: par ? t.test : '', missing: miss, desc: d });
+      out.push({ kind: 'cont2', label: label, sub: T(lg, 'medIqr'), all: medIqr(d[0], dp, lg), A: grp ? medIqr(d[1], dp, lg) : '', B: grp ? medIqr(d[2], dp, lg) : '', p: t && !par ? t.p : null, test: t && !par ? t.test : '', missing: null, desc: d });
+    }
+    function cat(label, get, levels, labOf, binary) {
+      var have = rs.filter(function (r) { return get(r) != null; }), miss = rs.length - have.length; if (!have.length) return;
+      var lv = levels.filter(function (l) { return have.some(function (r) { return String(get(r)) === String(l); }); }); if (!lv.length) return;
+      var tbl = grp ? [A, B].map(function (s) { var h = s.filter(function (r) { return get(r) != null; }); return levels.map(function (l) { return h.filter(function (r) { return String(get(r)) === String(l); }).length; }); }) : null;
+      var t = grp ? S.categorical(tbl) : null, cnt = function (s, l) { var h = s.filter(function (r) { return get(r) != null; }); return nPct(h.filter(function (r) { return String(get(r)) === String(l); }).length, h.length, lg); };
+      if (binary) { var l1 = binary; out.push({ kind: 'cat', label: label, sub: T(lg, 'nPct'), all: cnt(rs, l1), A: grp ? cnt(A, l1) : '', B: grp ? cnt(B, l1) : '', p: t ? t.p : null, test: t ? t.test : '', missing: miss }); return; }
+      out.push({ kind: 'head', label: label, sub: T(lg, 'nPct'), all: '', A: '', B: '', p: t ? t.p : null, test: t ? t.test : '', missing: miss });
+      lv.forEach(function (l) { out.push({ kind: 'cat', indent: true, label: labOf(l), all: cnt(rs, l), A: grp ? cnt(A, l) : '', B: grp ? cnt(B, l) : '', p: null, test: '' }); });
+    }
+    cont(T(lg, 'age'), function (r) { return r.age; }, 1);
+    cat(T(lg, 'female'), function (r) { return r.sex; }, ['F', 'M'], null, 'F');
+    cont(T(lg, 'bmi'), function (r) { return r.bmi; }, 1);
+    cat(T(lg, 'asa'), function (r) { return isNum(r.asa) ? r.asa : null; }, [1, 2, 3, 4, 5], function (v) { return 'ASA ' + ['', 'I', 'II', 'III', 'IV', 'V'][v]; });
+    cont(T(lg, 'cci'), function (r) { return r.cci; }, 1);
+    cont(T(lg, 'cciAge'), function (r) { return r.cciAge; }, 1);
+    if (new Set(rs.map(function (r) { return r.proc; })).size > 1) cat(T(lg, 'proc'), function (r) { return r.proc; }, Object.keys(P.PROCEDURES), function (v) { return tr(P.PROCEDURES[v].name, lg); });
+    cat(T(lg, 'side'), function (r) { return r.side; }, ['R', 'L', 'B'], function (v) { return T(lg, v); });
+    cat(T(lg, 'smoking'), function (r) { return r.smoking || null; }, ['never', 'ex', 'current'], function (v) { return T(lg, v); });
+    if (H) {
+      var hx = rs.filter(function (r) { return r.hasHx; });
+      var cs = H.CONDS.filter(function (c) { return hx.some(function (r) { return r.cond[c.k]; }); });
+      if (cs.length) { out.push({ kind: 'sect', label: T(lg, 'comorb'), sub: T(lg, 'nPct'), all: '', A: '', B: '', missing: rs.length - hx.length });
+        cs.forEach(function (c) { cat(tr(c.label, lg), function (r) { return r.hasHx ? r.cond[c.k] : null; }, [1, 0], null, 1); out[out.length - 1].indent = true; out[out.length - 1].sub = ''; }); }
+      var ls = H.LABS.filter(function (l) { return hx.some(function (r) { return isNum(r.labs[l.k]); }); });
+      if (ls.length) { out.push({ kind: 'sect', label: T(lg, 'labs'), all: '', A: '', B: '' }); ls.forEach(function (l) { cont(tr(l.label, lg) + ' (' + l.unit + ')', function (r) { return r.labs ? r.labs[l.k] : null; }, 1); }); }
+    }
+    if (rs.some(function (r) { return r.hasNote; })) {
+      var before = out.length; out.push({ kind: 'sect', label: T(lg, 'op'), all: '', A: '', B: '' });
+      cont(T(lg, 'dur'), function (r) { return r.dur; }, 0); cont(T(lg, 'tq'), function (r) { return r.tq; }, 0); cont(T(lg, 'ebl'), function (r) { return r.ebl; }, 0);
+      var an = (opSelFields().filter(function (f) { return f.k === 'anaesthesia'; })[0] || { o: [] }).o;
+      cat(T(lg, 'anaes'), function (r) { return r.op && r.op.anaesthesia || null; }, an.map(function (o) { return o.v; }), function (v) { var o = an.filter(function (x) { return x.v === v; })[0]; return o ? tr(o, lg) : v; });
+      cat(T(lg, 'fix'), function (r) { return r.fix; }, ['cemented', 'uncemented', 'hybrid'], function (v) { return T(lg, v); });
+      if (out.length === before + 1) out.pop();
+    }
+    cont(T(lg, 'fu'), function (r) { return r.fuMonths; }, 1);
+    return { groups: grp, nAll: rs.length, nA: A.length, nB: B.length, rows: out, lang: lg };
+  }
+
+  // ---------- outcomes ----------
+  function I() { return P.INSTRUMENTS; }
+  function subLabel(inst, key, lg) {
+    var it = I()[inst]; if (!it) return inst; if (inst === 'EQ5D5L' && (key === 'vas' || key === 'total')) return 'EQ VAS';
+    if (key === 'total') return it.short; var sn = (it.subNames && it.subNames[key]) || (P.SUBNAMES && P.SUBNAMES[key]); return it.short + ' – ' + (tr(sn, lg) || key);
+  }
+  function mLabel(id, lg) { var k = id.split('|'); if (k[0] === 'ROM') return T(lg, k[1] === 'max' ? 'romMax' : 'romMin'); return subLabel(k[0], k[1], lg); }
+  /** Measures with data in the cohort: [{id: 'OKS|total', inst, key, label, n, primary}], protocol order (core first). ROM last. */
+  function measures(store, rs, lg) {
+    var ids = {}, cnt = {}; rs.forEach(function (r) { ids[r.pid] = r; });
+    (store.submissions || []).forEach(function (s) { if (!ids[s.patientId] || !I()[s.instrument]) return; cnt[s.instrument] = (cnt[s.instrument] || 0) + 1; });
+    var order = []; rs.forEach(function (r) { var pr = P.PROTOCOLS[r.proc]; if (pr) pr.core.concat(pr.optional).forEach(function (i) { if (order.indexOf(i) < 0) order.push(i); }); });
+    Object.keys(cnt).forEach(function (i) { if (order.indexOf(i) < 0) order.push(i); });
+    var out = [];
+    order.filter(function (i) { return cnt[i]; }).forEach(function (inst) {
+      var it = I()[inst], keys = (it.chart && it.chart.length ? it.chart : [it.primary]);
+      keys.forEach(function (k) { out.push({ id: inst + '|' + k, inst: inst, key: k, label: subLabel(inst, k, lg), n: cnt[inst], primary: k === it.primary, core: rs.some(function (r) { var pr = P.PROTOCOLS[r.proc]; return pr && pr.core.indexOf(inst) >= 0; }) }); });
+    });
+    var rom = (store.rom || []).filter(function (x) { return ids[x.patientId]; });
+    if (rom.length) { out.push({ id: 'ROM|max', inst: 'ROM', key: 'max', label: T(lg, 'romMax'), n: rom.length, primary: true, core: false }); out.push({ id: 'ROM|min', inst: 'ROM', key: 'min', label: T(lg, 'romMin'), n: rom.length, primary: false, core: false }); }
+    return out;
+  }
+  function subVal(s, key) { if (!s) return null; var v = key === 'total' ? s.total : (s.subscales || {})[key]; if (s.instrument === 'EQ5D5L' && key === 'vas' && !isNum(v)) v = s.total; return isNum(v) ? v : null; }
+  function latestAt(subs, pid, inst, tp, key) { var c = subs.filter(function (s) { return s.patientId === pid && s.instrument === inst && s.timepoint === tp && isNum(subVal(s, key)); }); c.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); return c[0] || null; }
+  function baseSub(subs, p, inst, key) { var c = subs.filter(function (s) { return s.patientId === p.id && s.instrument === inst && s.timepoint === 'pre' && isNum(subVal(s, key)) && (!p.surgeryDate || !s.date || s.date <= p.surgeryDate); }); c.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); return c[0] || null; }
+  function romAt(store, p, tp, key) {
+    var w = P.WINDOWS[tp]; if (!w || !p.surgeryDate) return null;
+    var c = (store.rom || []).filter(function (x) { if (x.patientId !== p.id || !x.date || !isNum(x[key])) return false; var d = P.daysBetween(p.surgeryDate, x.date); return d >= w.from && d <= w.to; });
+    c.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); return c[0] ? c[0][key] : null;
+  }
+  /** Per-patient value table for one measure: {pid: {tp: value}} and MCID flags {pid: {tp: true|false|null}}. */
+  function valuesFor(store, rs, m) {
+    var subs = store.submissions || [], byId = {}, val = {}, mc = {}; (store.patients || []).forEach(function (p) { byId[p.id] = p; });
+    rs.forEach(function (r) {
+      var p = byId[r.pid], v = val[r.pid] = {}, f = mc[r.pid] = {}; if (!p) return;
+      if (m.inst === 'ROM') { TPS.forEach(function (tp) { v[tp] = romAt(store, p, tp, m.key); }); return; }
+      var b = baseSub(subs, p, m.inst, m.key); v.pre = b ? subVal(b, m.key) : null;
+      TPS.slice(1).forEach(function (tp) {
+        var s = latestAt(subs, p.id, m.inst, tp, m.key); v[tp] = s ? subVal(s, m.key) : null;
+        if (!s || !P.thresholdFor(m.inst, p.procedure, p.ulType)) return;
+        var full = b || null, mm = P.meaningful(m.inst, full, s, tp, p.procedure, { ulType: p.ulType }); if (!mm) return;
+        if (mm.subs) { if (mm.subs[m.key]) f[tp] = mm.subs[m.key].mcid; } else if (m.key === I()[m.inst].primary || (m.inst === 'EQ5D5L' && m.key === 'vas')) f[tp] = mm.mcid;
+      });
+    });
+    return { val: val, mcid: mc };
+  }
+  function bucket(rs, g) { return g ? rs.filter(function (r) { return r.g === g; }) : rs; }
+  /** Outcome analysis for the selected measures: [{id, label, inst, better, rows:[{tp, all, A, B, pairedAll, pairedA, pairedB, between, betweenChange, mcid…}]}] */
+  function outcomes(store, rs, measureIds, lg) {
+    var grp = rs.some(function (r) { return r.g; }), all = measures(store, rs, lg);
+    return measureIds.map(function (id) {
+      var m = all.filter(function (x) { return x.id === id; })[0]; if (!m) return null;
+      var V = valuesFor(store, rs, m), better = m.inst === 'ROM' ? (m.key === 'min' ? 'low' : 'high') : I()[m.inst].better, out = [];
+      TPS.forEach(function (tp) {
+        var col = function (g) { return bucket(rs, g).map(function (r) { return V.val[r.pid][tp]; }).filter(isNum); };
+        var x = col(null); if (!x.length) return;
+        var row = { tp: tp, all: S.describe(x) };
+        var pairs = function (g) { return bucket(rs, g).map(function (r) { return [V.val[r.pid].pre, V.val[r.pid][tp]]; }).filter(function (q) { return isNum(q[0]) && isNum(q[1]); }); };
+        var pairStats = function (g) { var pr = pairs(g); if (!pr.length) return null; var t = S.comparePaired(pr); return { n: pr.length, pre: S.describe(pr.map(function (q) { return q[0]; })), post: S.describe(pr.map(function (q) { return q[1]; })), diff: S.describe(pr.map(function (q) { return q[1] - q[0]; })), test: t, d: pr.map(function (q) { return q[1] - q[0]; }) }; };
+        var mc = function (g) { var f = bucket(rs, g).map(function (r) { return V.mcid[r.pid][tp]; }).filter(function (v) { return v === true || v === false; }); return f.length ? { n: f.filter(Boolean).length, N: f.length } : null; };
+        if (tp !== 'pre') { row.pairedAll = pairStats(null); row.mcidAll = mc(null); }
+        if (grp) {
+          var a = col('A'), b = col('B'); row.A = S.describe(a); row.B = S.describe(b); row.between = S.compare2(a, b);
+          if (tp !== 'pre') {
+            row.pairedA = pairStats('A'); row.pairedB = pairStats('B');
+            row.betweenChange = row.pairedA && row.pairedB ? S.compare2(row.pairedA.d, row.pairedB.d) : null;
+            row.mcidA = mc('A'); row.mcidB = mc('B');
+            row.mcidTest = row.mcidA && row.mcidB ? S.categorical([[row.mcidA.n, row.mcidA.N - row.mcidA.n], [row.mcidB.n, row.mcidB.N - row.mcidB.n]]) : null;
+          }
+        }
+        out.push(row);
+      });
+      return { id: id, label: m.label, inst: m.inst, key: m.key, better: better, rows: out, values: V };
+    }).filter(Boolean);
+  }
+  // ---------- text ----------
+  var TPT = { el: { '6w': 'στις 6 εβδομάδες', '3m': 'στους 3 μήνες', '6m': 'στους 6 μήνες', '1y': 'στο 1 έτος', '2y': 'στα 2 έτη' }, en: { '6w': 'at 6 weeks', '3m': 'at 3 months', '6m': 'at 6 months', '1y': 'at 1 year', '2y': 'at 2 years' } };
+  var TPN = { el: { pre: 'Προεγχ.', '6w': '6 εβδ.', '3m': '3 μήνες', '6m': '6 μήνες', '1y': '1 έτος', '2y': '2 έτη' }, en: { pre: 'Pre-op', '6w': '6 weeks', '3m': '3 months', '6m': '6 months', '1y': '1 year', '2y': '2 years' } };
+  function tName(t, lg) { return t ? TESTN[lg][t.test] || t.test : ''; }
+  function isPar(t) { return t && (t.test === 'welch' || t.test === 'student' || t.test === 'paired-t'); }
+  /** Central value consistent with the test: mean ± SD (parametric) or median (IQR a–b). */
+  function cv(d, par, dp, lg) { if (!d || !d.n) return '–'; return par ? fx(d.mean, dp, lg) + ' ± ' + fx(d.sd, dp, lg) : lg === 'el' ? fx(d.median, dp, lg) + ' (διάμεσος· IQR ' + fx(d.q1, dp, lg) + '–' + fx(d.q3, dp, lg) + ')' : 'median ' + fx(d.median, dp, lg) + ' (IQR ' + fx(d.q1, dp, lg) + '–' + fx(d.q3, dp, lg) + ')'; }
+  /** Signed change, consistent with the test: mean ± SD or median (IQR). */
+  function cvd(d, par, dp, lg) { if (!d || !d.n) return '–'; return par ? sg(d.mean, dp, lg) + ' ± ' + fx(d.sd, dp, lg) : lg === 'el' ? sg(d.median, dp, lg) + ' (διάμεσος· IQR ' + sg(d.q1, dp, lg) + ' έως ' + sg(d.q3, dp, lg) + ')' : 'median ' + sg(d.median, dp, lg) + ' (IQR ' + sg(d.q1, dp, lg) + ' to ' + sg(d.q3, dp, lg) + ')'; }
+  function pt(t, lg) { return t && isNum(t.p) ? pTxt(t.p, lg) + ', ' + tName(t, lg) : ''; }
+  function rowOf(t1, label) { return t1.rows.filter(function (r) { return r.label === label && (r.kind === 'cont' || r.kind === 'cat'); })[0]; }
+  function contRows(t1, label) { var a = t1.rows.filter(function (r) { return r.label === label && r.kind === 'cont'; })[0], b = t1.rows.filter(function (r) { return r.label === label && r.kind === 'cont2'; })[0]; return a ? { mean: a, med: b, d: a.desc } : null; }
+  /** Abstract-style «Results» paragraph(s). ctx: {labels:{A,B}, tps:[…follow-up tps to report], procs} */
+  function resultsText(rs, t1, outs, ctx, lg) {
+    ctx = ctx || {}; var E = lg === 'en', L = ctx.labels || { A: T(lg, 'grpA'), B: T(lg, 'grpB') }, s = [], N = rs.length;
+    if (!N) return '';
+    var pc = {}; rs.forEach(function (r) { pc[r.proc] = (pc[r.proc] || 0) + 1; });
+    var procs = Object.keys(pc).map(function (k) { return { k: k, n: pc[k], name: P.PROCEDURES[k] ? tr(P.PROCEDURES[k].name, lg).toLowerCase() : k }; });
+    if (procs.length === 1) s.push(E ? fmtS('A total of {0} patients who underwent {1} were included.', N, procs[0].name.replace(/^acl/, 'ACL')) : fmtS('Συνολικά συμπεριλήφθηκαν {0} ασθενείς που υποβλήθηκαν σε {1}.', N, procs[0].name));
+    else s.push(E ? fmtS('A total of {0} patients were included ({1}).', N, procs.map(function (p) { return p.name.replace(/^acl/, 'ACL') + ', n = ' + p.n; }).join('; ')) : fmtS('Συνολικά συμπεριλήφθηκαν {0} ασθενείς ({1}).', N, procs.map(function (p) { return p.name + ', n = ' + p.n; }).join('· ')));
+    var age = contRows(t1, T(lg, 'age')), fem = rs.filter(function (r) { return r.sex === 'F'; }).length, sexN = rs.filter(function (r) { return r.sex; }).length;
+    var bits = [];
+    if (age) bits.push(E ? 'mean age was ' + meanSd(age.d[0], 1, lg) + ' years' : 'η μέση ηλικία ήταν ' + meanSd(age.d[0], 1, lg) + ' έτη');
+    if (sexN) bits.push(E ? fem + (sexN < N ? '/' + sexN : '') + ' patients (' + pct(fem, sexN, lg) + ') were female' : fem + (sexN < N ? '/' + sexN : '') + ' (' + pct(fem, sexN, lg) + ') ήταν γυναίκες');
+    var bmi = contRows(t1, T(lg, 'bmi')); if (bmi) bits.push(E ? 'mean BMI was ' + meanSd(bmi.d[0], 1, lg) + ' kg/m²' + (bmi.d[0].n < N ? ' (n = ' + bmi.d[0].n + ')' : '') : 'ο μέσος BMI ήταν ' + meanSd(bmi.d[0], 1, lg) + ' kg/m²' + (bmi.d[0].n < N ? ' (n = ' + bmi.d[0].n + ')' : ''));
+    var cci = contRows(t1, T(lg, 'cci')); if (cci) bits.push(E ? 'median Charlson Comorbidity Index was ' + fx(cci.d[0].median, 1, lg) + ' (IQR ' + fx(cci.d[0].q1, 1, lg) + '–' + fx(cci.d[0].q3, 1, lg) + ')' : 'ο διάμεσος δείκτης Charlson ήταν ' + fx(cci.d[0].median, 1, lg) + ' (IQR ' + fx(cci.d[0].q1, 1, lg) + '–' + fx(cci.d[0].q3, 1, lg) + ')');
+    if (bits.length) { var j = bits.length > 1 ? bits.slice(0, -1).join(', ') + (E ? ' and ' : ' και ') + bits[bits.length - 1] : bits[0]; s.push(j.charAt(0).toUpperCase() + j.slice(1) + '.'); }
+    var fu = contRows(t1, T(lg, 'fu')); if (fu) s.push(E ? 'Median follow-up was ' + fx(fu.d[0].median, 1, lg) + ' months (IQR ' + fx(fu.d[0].q1, 1, lg) + '–' + fx(fu.d[0].q3, 1, lg) + ').' : 'Η διάμεση παρακολούθηση ήταν ' + fx(fu.d[0].median, 1, lg) + ' μήνες (IQR ' + fx(fu.d[0].q1, 1, lg) + '–' + fx(fu.d[0].q3, 1, lg) + ').');
+    var grp = t1.groups, paras = [s.join(' ')];
+    if (grp) {
+      var g = [E ? fmtS('{0} (n = {1}) and {2} (n = {3}) were compared.', L.A, t1.nA, L.B, t1.nB) : fmtS('Συγκρίθηκαν οι ομάδες «{0}» (n = {1}) και «{2}» (n = {3}).', L.A, t1.nA, L.B, t1.nB)], gb = [];
+      if (age) { var at = age.mean.p != null ? age.mean : age.med, par = !!(age.mean.p != null); gb.push((E ? 'age ' : 'ηλικία ') + cv(age.d[1], par || at.p == null, 1, lg) + (E ? ' vs ' : ' έναντι ') + cv(age.d[2], par || at.p == null, 1, lg) + (E ? ' years' : ' έτη') + (at.p != null ? ' (' + pTxt(at.p, lg) + ')' : '')); }
+      var fr = rowOf(t1, T(lg, 'female')); if (fr && fr.A !== '–') gb.push((E ? 'female ' : 'γυναίκες ') + fr.A + (E ? ' vs ' : ' έναντι ') + fr.B + (fr.p != null ? ' (' + pTxt(fr.p, lg) + ')' : ''));
+      if (bmi) { var bt = bmi.mean.p != null ? bmi.mean : bmi.med, bp = bmi.mean.p != null; gb.push('BMI ' + cv(bmi.d[1], bp || bt.p == null, 1, lg) + (E ? ' vs ' : ' έναντι ') + cv(bmi.d[2], bp || bt.p == null, 1, lg) + ' kg/m²' + (bt.p != null ? ' (' + pTxt(bt.p, lg) + ')' : '')); }
+      if (gb.length) g.push((E ? 'Baseline: ' : 'Αρχικά χαρακτηριστικά: ') + gb.join('; ') + '.');
+      paras.push(g.join(' '));
+    }
+    var tpsWanted = ctx.tps && ctx.tps.length ? ctx.tps : TPS.slice(1);
+    outs.forEach(function (o) {
+      var dp = o.inst === 'ROM' ? 0 : 1, x = [], rowsF = o.rows.filter(function (r) { return r.tp !== 'pre' && tpsWanted.indexOf(r.tp) >= 0; }); if (!rowsF.length) return;
+      if (!grp) {
+        var cl = rowsF.map(function (r) {
+          var pa = r.pairedAll;
+          if (!pa) return (E ? cv(r.all, true, dp, lg) + ' ' + TPT.en[r.tp] + ' (n = ' + r.all.n + ')' : cv(r.all, true, dp, lg) + ' ' + TPT.el[r.tp] + ' (n = ' + r.all.n + ')');
+          var par = isPar(pa.test) || !pa.test;
+          return (E ? 'from ' + cv(pa.pre, par, dp, lg) + ' pre-operatively to ' + cv(pa.post, par, dp, lg) + ' ' + TPT.en[r.tp] + ' (n = ' + pa.n + '; ' + (par ? 'mean change ' : 'change ') + cvd(pa.diff, par, dp, lg) + (pa.test ? '; ' + pt(pa.test, lg) : '') + ')'
+            : 'από ' + cv(pa.pre, par, dp, lg) + ' προεγχειρητικά σε ' + cv(pa.post, par, dp, lg) + ' ' + TPT.el[r.tp] + ' (n = ' + pa.n + '· ' + (par ? 'μέση μεταβολή ' : 'μεταβολή ') + cvd(pa.diff, par, dp, lg) + (pa.test ? '· ' + pt(pa.test, lg) : '') + ')');
+        });
+        var anyPair = rowsF.some(function (r) { return r.pairedAll; });
+        x.push(E ? (anyPair ? 'The ' + o.label + ' changed ' : 'The ' + o.label + ' was ') + cl.join('; ') + '.' : (anyPair ? 'Το ' + o.label + ' μεταβλήθηκε ' : 'Το ' + o.label + ' ήταν ') + cl.join('· ') + '.');
+        var mm = rowsF.filter(function (r) { return r.mcidAll && r.mcidAll.N; });
+        if (mm.length) x.push(E ? 'The MCID was reached by ' + mm.map(function (r) { return r.mcidAll.n + '/' + r.mcidAll.N + ' patients (' + pct(r.mcidAll.n, r.mcidAll.N, lg) + ') ' + TPT.en[r.tp]; }).join(' and ') + '.'
+          : 'Την MCID πέτυχαν ' + mm.map(function (r) { return r.mcidAll.n + '/' + r.mcidAll.N + ' ασθενείς (' + pct(r.mcidAll.n, r.mcidAll.N, lg) + ') ' + TPT.el[r.tp]; }).join(' και ') + '.');
+      } else {
+        rowsF.forEach(function (r) {
+          if (!r.A || !r.B || (!r.A.n && !r.B.n)) return;
+          var par = isPar(r.between) || !r.between, c = [];
+          c.push(E ? TPT.en[r.tp].charAt(0).toUpperCase() + TPT.en[r.tp].slice(1) + ', the ' + o.label + ' was ' + cv(r.A, par, dp, lg) + ' in ' + L.A + ' (n = ' + r.A.n + ') and ' + cv(r.B, par, dp, lg) + ' in ' + L.B + ' (n = ' + r.B.n + ')' + (r.between ? ' (' + pt(r.between, lg) + ')' : '')
+            : TPT.el[r.tp].charAt(0).toUpperCase() + TPT.el[r.tp].slice(1) + ', το ' + o.label + ' ήταν ' + cv(r.A, par, dp, lg) + ' στην ομάδα «' + L.A + '» (n = ' + r.A.n + ') και ' + cv(r.B, par, dp, lg) + ' στην ομάδα «' + L.B + '» (n = ' + r.B.n + ')' + (r.between ? ' (' + pt(r.between, lg) + ')' : ''));
+          var pc = isPar(r.betweenChange) || !r.betweenChange;
+          if (r.pairedA && r.pairedB) c.push(E ? 'the change from the pre-operative value was ' + cvd(r.pairedA.diff, pc, dp, lg) + ' vs ' + cvd(r.pairedB.diff, pc, dp, lg) + (r.betweenChange ? ' (' + pt(r.betweenChange, lg) + ')' : '')
+            : 'η μεταβολή από την προεγχειρητική τιμή ήταν ' + cvd(r.pairedA.diff, pc, dp, lg) + ' έναντι ' + cvd(r.pairedB.diff, pc, dp, lg) + (r.betweenChange ? ' (' + pt(r.betweenChange, lg) + ')' : ''));
+          if (r.mcidA && r.mcidB) c.push(E ? 'the MCID was reached by ' + r.mcidA.n + '/' + r.mcidA.N + ' (' + pct(r.mcidA.n, r.mcidA.N, lg) + ') vs ' + r.mcidB.n + '/' + r.mcidB.N + ' (' + pct(r.mcidB.n, r.mcidB.N, lg) + ') patients' + (r.mcidTest ? ' (' + pt(r.mcidTest, lg) + ')' : '')
+            : 'την MCID πέτυχαν ' + r.mcidA.n + '/' + r.mcidA.N + ' (' + pct(r.mcidA.n, r.mcidA.N, lg) + ') έναντι ' + r.mcidB.n + '/' + r.mcidB.N + ' (' + pct(r.mcidB.n, r.mcidB.N, lg) + ') ασθενών' + (r.mcidTest ? ' (' + pt(r.mcidTest, lg) + ')' : ''));
+          x.push(c.join('; ') + '.');
+        });
+      }
+      if (x.length) paras.push(x.join(' '));
+    });
+    var note = E ? 'Values are mean ± SD unless stated otherwise; p-values are two-sided.' : 'Οι τιμές είναι μέση τιμή ± SD εκτός αν αναφέρεται διαφορετικά· οι τιμές p είναι αμφίπλευρες.';
+    paras.push(note);
+    return paras.join('\n\n');
+  }
+  // ---------- exports (anonymised) ----------
+  function t1Header(t1, labels, lg) { var h = [lg === 'en' ? 'Characteristic' : 'Χαρακτηριστικό', '', (lg === 'en' ? 'All' : 'Σύνολο') + ' (n = ' + t1.nAll + ')']; if (t1.groups) h.push((labels.A) + ' (n = ' + t1.nA + ')', (labels.B) + ' (n = ' + t1.nB + ')', 'p', lg === 'en' ? 'Test' : 'Έλεγχος'); h.push(lg === 'en' ? 'Missing' : 'Ελλείπουν'); return h; }
+  function t1Matrix(t1, labels, lg) {
+    var out = [t1Header(t1, labels, lg)];
+    t1.rows.forEach(function (r) { if (r.kind === 'n') return; var row = [(r.indent ? '   ' : '') + r.label, r.sub || '', r.all]; if (t1.groups) row.push(r.A, r.B, r.p != null ? fp(r.p, lg) : '', r.test ? TESTN[lg][r.test] : ''); row.push(r.missing ? String(r.missing) : ''); out.push(row); });
+    return out;
+  }
+  function csv(m) { return '\ufeff' + m.map(function (r) { return r.map(function (c) { c = c == null ? '' : String(c); return /[",;\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n') + '\r\n'; }
+  function tsv(m) { return m.map(function (r) { return r.map(function (c) { return String(c == null ? '' : c).replace(/[\t\n]/g, ' '); }).join('\t'); }).join('\n'); }
+  function outMatrix(outs, grp, labels, lg) {
+    var E = lg === 'en', h = grp ? [E ? 'Measure' : 'Μέτρηση', E ? 'Timepoint' : 'Χρονικό σημείο', labels.A + ' n', labels.A, labels.B + ' n', labels.B, 'p', E ? 'Test' : 'Έλεγχος', labels.A + (E ? ' change' : ' μεταβολή'), labels.B + (E ? ' change' : ' μεταβολή'), 'p', 'MCID ' + labels.A, 'MCID ' + labels.B, 'p']
+      : [E ? 'Measure' : 'Μέτρηση', E ? 'Timepoint' : 'Χρονικό σημείο', 'n', E ? 'Mean ± SD' : 'Μέση τιμή ± SD', E ? 'Median [IQR]' : 'Διάμεσος [IQR]', E ? 'Paired n' : 'n ζευγών', E ? 'Change (mean ± SD)' : 'Μεταβολή (μέση ± SD)', 'p', E ? 'Test' : 'Έλεγχος', 'MCID n/N (%)'];
+    var out = [h];
+    outs.forEach(function (o) { var dp = o.inst === 'ROM' ? 0 : 1; o.rows.forEach(function (r) {
+      var mc = function (x) { return x ? x.n + '/' + x.N + ' (' + pct(x.n, x.N, lg) + ')' : ''; }, ch = function (pq) { return pq ? sg(pq.diff.mean, dp, lg) + ' ± ' + fx(pq.diff.sd, dp, lg) + ' (n = ' + pq.n + ')' : ''; };
+      if (grp) out.push([o.label, TPN[lg][r.tp], r.A.n, meanSd(r.A, dp, lg) + ' · ' + medIqr(r.A, dp, lg), r.B.n, meanSd(r.B, dp, lg) + ' · ' + medIqr(r.B, dp, lg), r.between ? fp(r.between.p, lg) : '', r.between ? tName(r.between, lg) : '', ch(r.pairedA), ch(r.pairedB), r.betweenChange ? fp(r.betweenChange.p, lg) : '', mc(r.mcidA), mc(r.mcidB), r.mcidTest ? fp(r.mcidTest.p, lg) : '']);
+      else out.push([o.label, TPN[lg][r.tp], r.all.n, meanSd(r.all, dp, lg), medIqr(r.all, dp, lg), r.pairedAll ? r.pairedAll.n : '', r.pairedAll ? sg(r.pairedAll.diff.mean, dp, lg) + ' ± ' + fx(r.pairedAll.diff.sd, dp, lg) : '', r.pairedAll && r.pairedAll.test ? fp(r.pairedAll.test.p, lg) : '', r.pairedAll && r.pairedAll.test ? tName(r.pairedAll.test, lg) : '', mc(r.mcidAll)]);
+    }); });
+    return out;
+  }
+  /** Anonymised per-patient data (study code; no names, ΑΜΚΑ, internal codes or dates). */
+  function dataMatrix(rs, outs, labels, lg) {
+    var E = lg === 'en', h = [E ? 'Study code' : 'Κωδικός μελέτης', E ? 'Group' : 'Ομάδα', E ? 'Procedure' : 'Επέμβαση', T(lg, 'side'), T(lg, 'sex'), T(lg, 'age'), T(lg, 'bmi'), 'ASA', 'CCI', T(lg, 'fu')];
+    outs.forEach(function (o) { TPS.forEach(function (tp) { if (o.rows.some(function (r) { return r.tp === tp; })) h.push(o.label + ' · ' + TPN[lg][tp]); }); });
+    var out = [h];
+    rs.forEach(function (r) {
+      var row = [r.code, r.g ? labels[r.g] : '', r.proc, r.side || '', r.sex || '', isNum(r.age) ? r.age : '', isNum(r.bmi) ? r.bmi : '', isNum(r.asa) ? r.asa : '', isNum(r.cci) ? r.cci : '', isNum(r.fuMonths) ? Math.round(r.fuMonths * 10) / 10 : ''];
+      outs.forEach(function (o) { TPS.forEach(function (tp) { if (!o.rows.some(function (x) { return x.tp === tp; })) return; var v = o.values.val[r.pid] ? o.values.val[r.pid][tp] : null; row.push(isNum(v) ? Math.round(v * 1000) / 1000 : ''); }); });
+      out.push(row);
+    });
+    return out;
+  }
+  root.OrthoStudy = { VERSION: VERSION, TPS: TPS, TX: TX, TESTN: TESTN, TPN: TPN, fx: fx, fp: fp, sg: sg, pct: pct, meanSd: meanSd, medIqr: medIqr, filterPatients: filterPatients, rows: rows, groupOptions: groupOptions, assign: assign, groupLabels: groupLabels,
+    table1: table1, measures: measures, mLabel: mLabel, outcomes: outcomes, resultsText: resultsText, t1Matrix: t1Matrix, outMatrix: outMatrix, dataMatrix: dataMatrix, csv: csv, tsv: tsv, opSelFields: opSelFields };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-study-ui">
+(function () {
+  'use strict';
+  // ===== 📊 Μελέτες (doctors only): cohort builder → Table 1, PROM / ROM outcomes, two-group comparison, abstract «Results» text =====
+  // Everything is computed on this device from the data already loaded for the signed-in doctor; no new tables, nothing uploaded.
+  // Outputs (tables, text, CSV / Excel) use study codes S001… only: never names, ΑΜΚΑ, internal patient codes or patient dates.
+  var A = window.__orthoProms, St = window.OrthoStudy, E = window.OrthoExport; if (!A || !St) return;
+  var P = window.OrthoPROMs;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var ui = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var S = {
+    el: { tab: '📊 Μελέτες', T: '📊 Μελέτες – αποτελέσματα για abstract', lead: 'Επιλέξτε κοορτή ασθενών και (προαιρετικά) δύο ομάδες σύγκρισης. Η εφαρμογή φτιάχνει τον Πίνακα 1, τα αποτελέσματα PROMs και κείμενο «Results» για abstract συνεδρίου.',
+      privacy: 'Όλοι οι υπολογισμοί γίνονται σε αυτή τη συσκευή. Πίνακες, κείμενο και αρχεία έχουν μόνο κωδικούς μελέτης (S001…): χωρίς ονόματα, ΑΜΚΑ ή ημερομηνίες ασθενών.',
+      c1: '1. Κοορτή', proc: 'Επέμβαση', side: 'Πλευρά', any: 'Όλες', anyS: 'Όλα', R: 'Δεξιά', L: 'Αριστερά', B: 'Αμφοτερόπλευρα', from: 'Χειρουργείο από', to: 'έως', ageMin: 'Ηλικία από', ageMax: 'έως', sex: 'Φύλο', F: 'Γυναίκες', M: 'Άνδρες',
+      nPts: '{0} ασθενείς', none: 'Κανένας ασθενής δεν ταιριάζει στα φίλτρα.', c2: '2. Σύγκριση δύο ομάδων (προαιρετικά)', by: 'Ομαδοποίηση κατά', noGrp: 'Χωρίς σύγκριση (μία κοορτή)', manual: 'Χειροκίνητη επιλογή ασθενών',
+      gA: 'Ομάδα Α', gB: 'Ομάδα Β', others: 'Όλοι οι άλλοι', cut: 'Όριο', lblA: 'Όνομα ομάδας Α', lblB: 'Όνομα ομάδας Β', grpSum: 'Α: {0} · Β: {1} · εκτός σύγκρισης: {2}', mPick: 'Για κάθε ασθενή επιλέξτε Α, Β ή — (εκτός).', mCode: 'Κωδ. μελέτης', mPt: 'Ασθενής', mSurg: 'Χειρουργείο',
+      c3: '3. Μετρήσεις αποτελέσματος', meas: 'Μετρήσεις', tps: 'Χρονικά σημεία στο κείμενο', noMeas: 'Δεν υπάρχουν απαντήσεις ερωτηματολογίων για αυτή την κοορτή.', lang: 'Γλώσσα αποτελεσμάτων',
+      t1: 'Πίνακας 1 – Χαρακτηριστικά ασθενών', out: 'Αποτελέσματα', txt: 'Κείμενο «Results» για abstract', copy: '📋 Αντιγραφή', copyT: '📋 Αντιγραφή πίνακα', copyX: '📋 Αντιγραφή κειμένου', copied: '✓ Αντιγράφηκε', csv: '⬇ CSV (Πίνακας 1)', xlsx: '⬇ Excel (.xlsx)',
+      foot: 'Τιμές: μέση τιμή ± SD, διάμεσος [IQR], n (%). Έλεγχοι: Shapiro–Wilk για την επιλογή t-test (Welch / ζευγαρωτό) ή Mann–Whitney U / Wilcoxon· χ² ή ακριβές Fisher όταν κάποια αναμενόμενη συχνότητα είναι < 5. Αμφίπλευρα p. MCID με τα ίδια όρια με το Dashboard.',
+      tp: 'Χρονικό σημείο', n: 'n', ms: 'Μέση ± SD', md: 'Διάμεσος [IQR]', np: 'n ζευγών', ch: 'Μεταβολή', pPre: 'p (vs προεγχ.)', mcid: 'MCID', p: 'p', test: 'Έλεγχος', chA: 'Μεταβολή Α', chB: 'Μεταβολή Β', pCh: 'p μεταβολής', pM: 'p MCID', miss: 'Ελλείπουν', all: 'Σύνολο' },
+    en: { tab: '📊 Studies', T: '📊 Studies – results for an abstract', lead: 'Choose a patient cohort and (optionally) two comparison groups. The app builds Table 1, the PROM results and a «Results» text for a congress abstract.',
+      privacy: 'All calculations run on this device. Tables, text and files carry study codes only (S001…): no names, AMKA or patient dates.',
+      c1: '1. Cohort', proc: 'Procedure', side: 'Side', any: 'All', anyS: 'All', R: 'Right', L: 'Left', B: 'Bilateral', from: 'Surgery from', to: 'to', ageMin: 'Age from', ageMax: 'to', sex: 'Sex', F: 'Female', M: 'Male',
+      nPts: '{0} patients', none: 'No patient matches the filters.', c2: '2. Two-group comparison (optional)', by: 'Group by', noGrp: 'No comparison (single cohort)', manual: 'Manual patient selection',
+      gA: 'Group A', gB: 'Group B', others: 'All others', cut: 'Cut-off', lblA: 'Group A name', lblB: 'Group B name', grpSum: 'A: {0} · B: {1} · not compared: {2}', mPick: 'For each patient choose A, B or — (excluded).', mCode: 'Study code', mPt: 'Patient', mSurg: 'Surgery',
+      c3: '3. Outcome measures', meas: 'Measures', tps: 'Timepoints in the text', noMeas: 'No questionnaire responses for this cohort.', lang: 'Output language',
+      t1: 'Table 1 – Patient characteristics', out: 'Outcomes', txt: '«Results» text for an abstract', copy: '📋 Copy', copyT: '📋 Copy table', copyX: '📋 Copy text', copied: '✓ Copied', csv: '⬇ CSV (Table 1)', xlsx: '⬇ Excel (.xlsx)',
+      foot: 'Values: mean ± SD, median [IQR], n (%). Tests: Shapiro–Wilk selects t-test (Welch / paired) or Mann–Whitney U / Wilcoxon; χ² or Fisher exact when an expected count is < 5. Two-sided p. MCID with the same thresholds as the Dashboard.',
+      tp: 'Timepoint', n: 'n', ms: 'Mean ± SD', md: 'Median [IQR]', np: 'Paired n', ch: 'Change', pPre: 'p (vs pre-op)', mcid: 'MCID', p: 'p', test: 'Test', chA: 'Change A', chB: 'Change B', pCh: 'p change', pM: 'p MCID', miss: 'Missing', all: 'All' }
+  };
+  var t = function (k) { var v = S[ui()][k]; return v == null ? k : v; };
+  var f = function (k) { var a = [].slice.call(arguments, 1); return t(k).replace(/\{(\d)\}/g, function (_, i) { return a[+i]; }); };
+  var st = { procs: {}, side: '', from: '', to: '', ageMin: '', ageMax: '', sex: '', by: '', a: '', b: '*', cut: '', manual: {}, lblA: '', lblB: '', meas: null, tps: null, lg: 'en' };
+  var btn = document.createElement('button'); btn.setAttribute('role', 'tab'); btn.dataset.tab = 'study'; btn.id = 'tabStudyBtn'; btn.className = 'hidden'; btn.textContent = t('tab');
+  var tabs = $('tabs'); if (tabs) tabs.insertBefore(btn, $('tabSetBtn') || $('tabMeasureBtn') || null);
+  var pane = document.createElement('section'); pane.className = 'pane hidden'; pane.id = 'tab-study'; pane.setAttribute('aria-label', 'Μελέτες / Studies');
+  var anchor = $('tab-set') || $('tab-xray'); if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(pane, anchor.nextSibling); else document.body.appendChild(pane);
+  var user = null, last = null;
+  function cloud() { return A.cloud && A.cloud.mode === 'cloud'; }
+  // phones (≤ 640 px): no tab button – the wrapped tab rows stay as they were; the way in is «📊 Μελέτες» on the doctor dashboard
+  var narrow = window.matchMedia ? window.matchMedia('(max-width: 640px)') : { matches: false };
+  function btnSync() { btn.classList.toggle('hidden', !user || !!narrow.matches); }
+  if (narrow.addEventListener) narrow.addEventListener('change', btnSync); else if (narrow.addListener) narrow.addListener(btnSync);
+  function sync(u) { user = u || null; btnSync(); btn.textContent = t('tab'); if (!user) { pane.innerHTML = ''; st.manual = {}; } }
+  function show() { if (!user) { pane.innerHTML = ''; return; } render(); }
+  function filt() { return { procs: Object.keys(st.procs).filter(function (k) { return st.procs[k]; }), side: st.side, from: st.from, to: st.to, ageMin: st.ageMin, ageMax: st.ageMax, sex: st.sex, excludeDemo: cloud() }; }
+  function spec() { return st.by ? { by: st.by, a: st.a, b: st.b, cut: st.cut, manual: st.manual } : {}; }
+  function opt(v, l, sel) { return '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(l) + '</option>'; }
+  function compute() {
+    var lg = st.lg, rs = St.rows(A.store, filt()), gopts = St.groupOptions(rs, ui());
+    if (st.by && st.by !== 'manual' && !gopts.some(function (g) { return g.id === st.by; })) st.by = '';
+    var go = gopts.filter(function (g) { return g.id === st.by; })[0];
+    if (go && go.kind === 'cat') { var vs = go.values.map(function (v) { return String(v.v); }); if (vs.indexOf(String(st.a)) < 0) st.a = vs[0]; if (st.b !== '*' && (vs.indexOf(String(st.b)) < 0 || st.b === st.a)) st.b = vs.filter(function (v) { return v !== st.a; })[0] || '*'; }
+    if (go && go.kind === 'cut' && st.cut === '') st.cut = String(go.def);
+    var gs = St.assign(rs, spec()), dl = St.groupLabels(rs, spec(), lg), labels = { A: st.lblA.trim() || dl.A, B: st.lblB.trim() || dl.B };
+    var ms = St.measures(A.store, rs, lg);
+    if (!st.meas) st.meas = null;
+    var sel = (st.meas || ms.filter(function (m) { return m.primary && m.core && P.THRESHOLDS[m.inst]; }).map(function (m) { return m.id; })).filter(function (id) { return ms.some(function (m) { return m.id === id; }); });
+    var t1 = St.table1(rs, lg), outs = St.outcomes(A.store, rs, sel, lg);
+    var tpsAvail = St.TPS.slice(1).filter(function (tp) { return outs.some(function (o) { return o.rows.some(function (r) { return r.tp === tp; }); }); });
+    var tps = (st.tps || ['6m', '1y']).filter(function (tp) { return tpsAvail.indexOf(tp) >= 0; }); if (!tps.length) tps = tpsAvail.slice(-1);
+    var txt = St.resultsText(rs, t1, outs, { labels: labels, tps: tps }, lg);
+    last = { rs: rs, gopts: gopts, go: go, gs: gs, labels: labels, dl: dl, ms: ms, sel: sel, t1: t1, outs: outs, tpsAvail: tpsAvail, tps: tps, txt: txt, lg: lg };
+    return last;
+  }
+  // ---------- HTML ----------
+  function cohortHtml(c) {
+    var X = A.lib, h = '<div class="card stdcard" id="stdCohort"><h3>' + esc(t('c1')) + '</h3><div class="stdrow"><span class="stdlab">' + esc(t('proc')) + '</span>';
+    Object.keys(P.PROCEDURES).forEach(function (k) { h += '<label class="stdchk"><input type="checkbox" data-stdproc="' + k + '"' + (st.procs[k] ? ' checked' : '') + '> ' + esc(X.tx(P.PROCEDURES[k].name)) + '</label>'; });
+    h += '</div><div class="stdrow stdflds"><label class="fld">' + esc(t('side')) + '<select id="stdSide">' + opt('', t('any'), !st.side) + ['R', 'L', 'B'].map(function (k) { return opt(k, t(k), st.side === k); }).join('') + '</select></label>' +
+      '<label class="fld">' + esc(t('sex')) + '<select id="stdSex">' + opt('', t('anyS'), !st.sex) + opt('F', t('F'), st.sex === 'F') + opt('M', t('M'), st.sex === 'M') + '</select></label>' +
+      '<label class="fld">' + esc(t('from')) + '<input type="date" id="stdFrom" value="' + esc(st.from) + '"></label><label class="fld">' + esc(t('to')) + '<input type="date" id="stdTo" value="' + esc(st.to) + '"></label>' +
+      '<label class="fld stdnum">' + esc(t('ageMin')) + '<input type="number" inputmode="numeric" min="0" max="120" id="stdAgeMin" value="' + esc(st.ageMin) + '"></label><label class="fld stdnum">' + esc(t('ageMax')) + '<input type="number" inputmode="numeric" min="0" max="120" id="stdAgeMax" value="' + esc(st.ageMax) + '"></label></div>';
+    h += '<p class="stdcount" id="stdCount"><b>' + esc(c.rs.length ? f('nPts', c.rs.length) : t('none')) + '</b></p></div>';
+    return h;
+  }
+  function groupHtml(c) {
+    var h = '<div class="card stdcard" id="stdGroups"><h3>' + esc(t('c2')) + '</h3><div class="stdrow stdflds"><label class="fld">' + esc(t('by')) + '<select id="stdBy">' + opt('', t('noGrp'), !st.by);
+    c.gopts.forEach(function (g) { h += opt(g.id, g.label, st.by === g.id); }); h += opt('manual', t('manual'), st.by === 'manual') + '</select></label>';
+    if (c.go && c.go.kind === 'cat') {
+      h += '<label class="fld">' + esc(t('gA')) + '<select id="stdA">' + c.go.values.map(function (v) { return opt(v.v, v.label + ' (n = ' + v.n + ')', String(st.a) === String(v.v)); }).join('') + '</select></label>';
+      h += '<label class="fld">' + esc(t('gB')) + '<select id="stdB">' + opt('*', t('others'), st.b === '*') + c.go.values.filter(function (v) { return String(v.v) !== String(st.a); }).map(function (v) { return opt(v.v, v.label + ' (n = ' + v.n + ')', String(st.b) === String(v.v)); }).join('') + '</select></label>';
+    } else if (c.go && c.go.kind === 'cut') h += '<label class="fld stdnum">' + esc(t('cut')) + '<input type="number" step="any" id="stdCut" value="' + esc(st.cut) + '"></label>';
+    h += '</div>';
+    if (st.by) {
+      h += '<div class="stdrow stdflds"><label class="fld">' + esc(t('lblA')) + '<input type="text" id="stdLblA" maxlength="40" placeholder="' + esc(c.dl.A) + '" value="' + esc(st.lblA) + '"></label><label class="fld">' + esc(t('lblB')) + '<input type="text" id="stdLblB" maxlength="40" placeholder="' + esc(c.dl.B) + '" value="' + esc(st.lblB) + '"></label></div>';
+      h += '<p class="stdcount" id="stdGrpSum">' + esc(f('grpSum', c.gs.nA, c.gs.nB, c.gs.nOut)) + '</p>';
+    }
+    if (st.by === 'manual') {
+      var byId = {}; A.store.patients.forEach(function (p) { byId[p.id] = p; });
+      h += '<p class="muted">' + esc(t('mPick')) + '</p><div class="stdscroll stdman"><table class="stdtbl" id="stdManual"><thead><tr><th>' + esc(t('mCode')) + '</th><th>' + esc(t('mPt')) + '</th><th>' + esc(t('mSurg')) + '</th><th>A</th><th>B</th><th>—</th></tr></thead><tbody>';
+      c.rs.forEach(function (r) { var p = byId[r.pid] || {}, nm = ((p.lastName || '') + ' ' + (p.firstName || '')).trim(), g = st.manual[r.pid] || '';
+        h += '<tr><td>' + esc(r.code) + '</td><td>' + esc((nm ? nm + ' · ' : '') + r.pid) + '</td><td>' + esc(p.surgeryDate || '') + ' · ' + esc(r.proc) + '</td>' + ['A', 'B', ''].map(function (v) { return '<td><input type="radio" name="stdm_' + esc(r.code) + '" data-stdm="' + esc(r.pid) + '" value="' + v + '"' + (g === v ? ' checked' : '') + ' aria-label="' + esc(r.code + ' ' + (v || '—')) + '"></td>'; }).join('') + '</tr>'; });
+      h += '</tbody></table></div>';
+    }
+    return h + '</div>';
+  }
+  function measHtml(c) {
+    var h = '<div class="card stdcard" id="stdMeasures"><h3>' + esc(t('c3')) + '</h3>';
+    if (!c.ms.length) return h + '<p class="muted">' + esc(t('noMeas')) + '</p></div>';
+    h += '<div class="stdrow"><span class="stdlab">' + esc(t('meas')) + '</span><span class="stdchips">' + c.ms.map(function (m) { var on = c.sel.indexOf(m.id) >= 0; return '<label class="stdchip' + (on ? ' on' : '') + '"><input type="checkbox" data-stdmeas="' + esc(m.id) + '"' + (on ? ' checked' : '') + '> ' + esc(St.mLabel(m.id, ui())) + '</label>'; }).join('') + '</span></div>';
+    if (c.tpsAvail.length) h += '<div class="stdrow"><span class="stdlab">' + esc(t('tps')) + '</span>' + c.tpsAvail.map(function (tp) { return '<label class="stdchk"><input type="checkbox" data-stdtp="' + tp + '"' + (c.tps.indexOf(tp) >= 0 ? ' checked' : '') + '> ' + esc(St.TPN[ui()][tp]) + '</label>'; }).join('') + '</div>';
+    h += '<div class="stdrow"><span class="stdlab">' + esc(t('lang')) + '</span><span class="stdseg" role="group" aria-label="' + esc(t('lang')) + '"><button class="stdl' + (st.lg === 'en' ? ' on' : '') + '" data-stdlg="en" aria-pressed="' + (st.lg === 'en') + '">EN</button><button class="stdl' + (st.lg === 'el' ? ' on' : '') + '" data-stdlg="el" aria-pressed="' + (st.lg === 'el') + '">ΕΛ</button></span></div>';
+    return h + '</div>';
+  }
+  function t1Html(c) {
+    var m = St.t1Matrix(c.t1, c.labels, c.lg), hd = m[0], grp = c.t1.groups;
+    var h = '<div class="card stdcard" id="stdT1"><div class="stdhead"><h3>' + esc(t('t1')) + '</h3><span class="stdbtns"><button class="small" id="stdCopyT1">' + esc(t('copyT')) + '</button><button class="small" id="stdCsv">' + esc(t('csv')) + '</button><button class="small primary" id="stdXlsx">' + esc(t('xlsx')) + '</button></span></div>';
+    h += '<div class="stdscroll"><table class="stdtbl stdt1" id="stdT1Tbl"><thead><tr>' + hd.map(function (x, i) { return '<th' + (i > 1 ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    var src = c.t1.rows.filter(function (r) { return r.kind !== 'n'; });
+    m.slice(1).forEach(function (row, i) { var r = src[i], cls = r.kind === 'sect' ? 'stdsect' : r.kind === 'head' ? 'stdgh' : r.kind === 'cont2' ? 'stdc2' : '';
+      h += '<tr' + (cls ? ' class="' + cls + '"' : '') + '>' + row.map(function (x, j) { return '<td' + (j > 1 ? ' class="num"' : '') + (j === 0 && r.indent ? ' style="padding-left:1.4em"' : '') + '>' + esc(String(x).replace(/^ +/, '')) + '</td>'; }).join('') + '</tr>'; });
+    h += '</tbody></table></div><p class="muted stdfoot">' + esc(t('foot')) + (grp ? '' : '') + '</p></div>';
+    return h;
+  }
+  function outHtml(c) {
+    if (!c.outs.length) return '';
+    var L = c.lg, grp = c.t1.groups, fx = St.fx, h = '<div class="card stdcard" id="stdOut"><div class="stdhead"><h3>' + esc(t('out')) + '</h3><span class="stdbtns"><button class="small" id="stdCopyOut">' + esc(t('copyT')) + '</button></span></div>';
+    var m = St.outMatrix(c.outs, grp, c.labels, L);
+    h += '<div class="stdscroll"><table class="stdtbl stdout" id="stdOutTbl"><thead><tr>' + m[0].map(function (x, i) { return '<th' + (i > 1 ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    var prev = null; m.slice(1).forEach(function (row) { var first = row[0] !== prev; prev = row[0]; h += '<tr' + (first ? ' class="stdfirst"' : '') + '>' + row.map(function (x, j) { return '<td' + (j > 1 ? ' class="num"' : '') + '>' + (j === 0 && !first ? '' : esc(x)) + '</td>'; }).join('') + '</tr>'; });
+    h += '</tbody></table></div></div>';
+    return h;
+  }
+  function txtHtml(c) {
+    if (!c.rs.length) return '';
+    return '<div class="card stdcard" id="stdText"><div class="stdhead"><h3>' + esc(t('txt')) + ' <span class="pill">' + (c.lg === 'en' ? 'EN' : 'ΕΛ') + '</span></h3><span class="stdbtns"><button class="small primary" id="stdCopyTxt">' + esc(t('copyX')) + '</button></span></div>' +
+      '<div class="stdtxt" id="stdTxt" lang="' + c.lg + '">' + c.txt.split('\n\n').map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div><p class="muted stdcpmsg" id="stdCpMsg" role="status" aria-live="polite"></p></div>';
+  }
+  function render() {
+    if (!user) { pane.innerHTML = ''; return; }
+    var y = window.scrollY, c = compute();
+    pane.innerHTML = '<div class="card stdtop"><h2>' + esc(t('T')) + '</h2><p class="muted">' + esc(t('lead')) + '</p><p class="stdpriv" id="stdPriv">🔒 ' + esc(t('privacy')) + '</p></div>' +
+      cohortHtml(c) + groupHtml(c) + (c.rs.length ? measHtml(c) + t1Html(c) + outHtml(c) + txtHtml(c) : '');
+    bind(); if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+  }
+  // ---------- actions ----------
+  function copy(text, html, btnEl) {
+    var done = function (okk) { var m = $('stdCpMsg'); if (btnEl) { var o = btnEl.textContent; btnEl.textContent = okk ? t('copied') : o; setTimeout(function () { btnEl.textContent = o; }, 1500); } if (m && okk) m.textContent = t('copied'); window.__lastStudyCopy = { text: text, ok: okk }; };
+    try {
+      if (navigator.clipboard && window.ClipboardItem && html) { navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob([text], { type: 'text/plain' }), 'text/html': new Blob([html], { type: 'text/html' }) })]).then(function () { done(true); }, function () { fallback(); }); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallback(); }); return; }
+    } catch (e) {}
+    fallback();
+    function fallback() { var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); var r = false; try { r = document.execCommand('copy'); } catch (e) {} ta.remove(); done(r); }
+  }
+  function tableHtml(m) { return '<table border="1" cellspacing="0" cellpadding="3">' + m.map(function (r, i) { return '<tr>' + r.map(function (x) { return (i ? '<td>' : '<th>') + esc(x) + (i ? '</td>' : '</th>'); }).join('') + '</tr>'; }).join('') + '</table>'; }
+  function today() { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); }
+  function download(bytes, name, type) { window.__lastStudyFile = { name: name, bytes: bytes }; var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); }
+  function csvOut() { var c = last; if (!c || !c.rs.length) return; var s = St.csv(St.t1Matrix(c.t1, c.labels, c.lg)); A.audit('study-export', 'table1 csv · ' + c.rs.length + ' pts · anonymised'); download(s, 'orthothessaly_table1_' + today() + '.csv', 'text/csv;charset=utf-8'); }
+  function xlsxOut() {
+    var c = last; if (!c || !c.rs.length || !E) return; var L = c.lg, en = L === 'en';
+    var sheet = function (name, m, widths) { return { name: name, cols: m[0].map(function (h, i) { return [h, widths ? (widths[i] || 14) : 16]; }), rows: m.slice(1), noFreeze: false }; };
+    var info = [[en ? 'Item' : 'Στοιχείο', en ? 'Value' : 'Τιμή'], ['OrthoThessaly', 'v0.3 · ' + St.VERSION], [en ? 'Generated' : 'Δημιουργία', new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC'], [en ? 'Data' : 'Δεδομένα', cloud() ? (en ? 'Database (doctors\u2019 registry)' : 'Βάση δεδομένων (μητρώο ιατρών)') : 'DEMO'], [en ? 'Patients' : 'Ασθενείς', c.rs.length],
+      [en ? 'Groups' : 'Ομάδες', c.t1.groups ? c.labels.A + ' (n = ' + c.t1.nA + ') / ' + c.labels.B + ' (n = ' + c.t1.nB + ')' : '–'], [en ? 'Anonymisation' : 'Ανωνυμοποίηση', en ? 'Study codes S001… (surgery-date order); no names, AMKA, internal codes or dates' : 'Κωδικοί μελέτης S001… (σειρά χειρουργείου)· χωρίς ονόματα, ΑΜΚΑ, εσωτερικούς κωδικούς ή ημερομηνίες'],
+      ['⚠ GDPR', en ? 'Health data (special category, GDPR Art. 9): store and share only in line with the GDPR and hospital procedures.' : 'Δεδομένα υγείας (ειδική κατηγορία, άρθρο 9 GDPR): φύλαξη και διαβίβαση μόνο σύμφωνα με τον GDPR και τις διαδικασίες του νοσοκομείου.'], [en ? 'Methods' : 'Μέθοδοι', S[L].foot]];
+    var defs = [sheet(en ? 'Table 1' : 'Πίνακας 1', St.t1Matrix(c.t1, c.labels, L), [34, 16, 22, 22, 22, 9, 18, 10])];
+    if (c.outs.length) defs.push(sheet(en ? 'Outcomes' : 'Αποτελέσματα', St.outMatrix(c.outs, c.t1.groups, c.labels, L), [26, 12, 14, 22, 14, 22, 10, 20, 20, 20, 10, 16, 16, 10]));
+    defs.push(sheet(en ? 'Data (anonymised)' : 'Δεδομένα (ανώνυμα)', St.dataMatrix(c.rs, c.outs, c.labels, L)));
+    defs.push({ name: 'Results', cols: [[en ? 'Results (text)' : 'Κείμενο Results', 120]], rows: c.txt.split('\n\n').map(function (p) { return [p]; }), noFreeze: true });
+    defs.push({ name: en ? 'Info' : 'Πληροφορίες', cols: [[info[0][0], 24], [info[0][1], 100]], rows: info.slice(1), noFreeze: true });
+    var bytes = E.writeXlsx(defs, { title: 'OrthoThessaly – Study', created: new Date().toISOString() });
+    A.audit('study-export', 'xlsx · ' + c.rs.length + ' pts · anonymised'); window.__lastStudyXlsx = { defs: defs };
+    download(bytes, 'orthothessaly_study_' + today() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }
+  function bind() {
+    var on = function (id, ev, fn) { var e = $(id); if (e) e[ev] = fn; };
+    pane.querySelectorAll('[data-stdproc]').forEach(function (b) { b.onchange = function () { st.procs[b.dataset.stdproc] = b.checked; st.meas = null; render(); }; });
+    on('stdSide', 'onchange', function () { st.side = this.value; render(); }); on('stdSex', 'onchange', function () { st.sex = this.value; render(); });
+    on('stdFrom', 'onchange', function () { st.from = this.value; render(); }); on('stdTo', 'onchange', function () { st.to = this.value; render(); });
+    on('stdAgeMin', 'onchange', function () { st.ageMin = this.value; render(); }); on('stdAgeMax', 'onchange', function () { st.ageMax = this.value; render(); });
+    on('stdBy', 'onchange', function () { st.by = this.value; st.a = ''; st.b = '*'; st.cut = ''; st.lblA = ''; st.lblB = ''; render(); });
+    on('stdA', 'onchange', function () { st.a = this.value; if (st.b === st.a) st.b = '*'; st.lblA = ''; render(); }); on('stdB', 'onchange', function () { st.b = this.value; st.lblB = ''; render(); });
+    on('stdCut', 'onchange', function () { st.cut = this.value; render(); });
+    on('stdLblA', 'onchange', function () { st.lblA = this.value; render(); }); on('stdLblB', 'onchange', function () { st.lblB = this.value; render(); });
+    pane.querySelectorAll('[data-stdm]').forEach(function (b) { b.onchange = function () { if (b.value) st.manual[b.dataset.stdm] = b.value; else delete st.manual[b.dataset.stdm]; render(); }; });
+    pane.querySelectorAll('[data-stdmeas]').forEach(function (b) { b.onchange = function () { var cur = last.sel.slice(), id = b.dataset.stdmeas, i = cur.indexOf(id); if (b.checked && i < 0) cur.push(id); if (!b.checked && i >= 0) cur.splice(i, 1); st.meas = last.ms.map(function (m) { return m.id; }).filter(function (x) { return cur.indexOf(x) >= 0; }); render(); }; });
+    pane.querySelectorAll('[data-stdtp]').forEach(function (b) { b.onchange = function () { var cur = last.tps.slice(), i = cur.indexOf(b.dataset.stdtp); if (b.checked && i < 0) cur.push(b.dataset.stdtp); if (!b.checked && i >= 0) cur.splice(i, 1); st.tps = St.TPS.filter(function (x) { return cur.indexOf(x) >= 0; }); render(); }; });
+    pane.querySelectorAll('[data-stdlg]').forEach(function (b) { b.onclick = function () { st.lg = b.dataset.stdlg; render(); }; });
+    on('stdCopyT1', 'onclick', function () { var m = St.t1Matrix(last.t1, last.labels, last.lg); A.audit('study-copy', 'table1'); copy(St.tsv(m), tableHtml(m), this); });
+    on('stdCopyOut', 'onclick', function () { var m = St.outMatrix(last.outs, last.t1.groups, last.labels, last.lg); A.audit('study-copy', 'outcomes'); copy(St.tsv(m), tableHtml(m), this); });
+    on('stdCopyTxt', 'onclick', function () { A.audit('study-copy', 'results text ' + last.lg); copy(last.txt, null, this); });
+    on('stdCsv', 'onclick', csvOut); on('stdXlsx', 'onclick', xlsxOut);
+  }
+  new MutationObserver(function () { btn.textContent = t('tab'); if (!pane.classList.contains('hidden') && user) render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  window.__study = { sync: sync, show: show, render: render, get state() { return st; }, get last() { return last; } };
+  try { sync(A.currentUser()); } catch (e) {}
 })();
 </script>
 <!-- ===== Patient QR (discharge card) + clinic QR poster; QR encoder: qrcode-generator 2.0.4 (c) 2009 Kazuhiko Arase, MIT licence, inlined (no CDN) ===== -->
