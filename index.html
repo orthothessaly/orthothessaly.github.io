@@ -590,6 +590,42 @@ body.hx-print .hxreport{display:block;position:fixed;inset:0;z-index:100000;over
   .hxreport *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 .npopt{min-width:0}.npopt .optsel,.npform>.optsel{white-space:normal;overflow-wrap:anywhere}
+/* ===== ⚠️ Complications & implants registry (doctor-only patient file) ===== */
+body.ptonly .rgcard,body.ptonly .rgb{display:none!important}
+.rgcard{border:1px solid #d6e3e8;border-radius:12px;padding:6px 12px 10px;margin:12px 0;background:#fbfdfe}
+.rgcard h3{margin:6px 0}
+.rgsum{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+.hxchip.rgwarn{border-color:#e8a317;background:#fff7e6}.hxchip.rgrev{border-color:#b42318;background:#fdecea;color:#7a1610;font-weight:700}
+.rgbar{align-items:center;gap:10px}
+.rgsec{border:1px solid #d6e3e8;border-radius:10px;margin:10px 0;padding:6px 10px 10px;background:#fff}
+.rgsec>h4{margin:4px 0 8px;color:#0b3d4a}
+.rggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 10px;flex:1 1 auto;min-width:0}
+.rgf{display:flex;flex-direction:column;margin:0;min-width:0}.rgf.rgwide{grid-column:1/-1}.rgf>span{font-size:.82em;color:#33464e;margin-bottom:2px}
+.rgf input,.rgf select,.rgf textarea{width:100%;max-width:none;box-sizing:border-box;font:inherit;min-height:36px;padding:6px 8px;border-radius:8px;border:1px solid #cdd8dd;background:#fff}.rgf textarea{resize:vertical}
+.rgsg{border:1px solid #e1eaee;border-radius:10px;padding:8px;margin:0 0 10px;background:#fbfdfe}.rgsg.rgidx{border-color:#9cc7d2}
+.rgsghead{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;flex-wrap:wrap}.rgsghead>b{color:#0b5f73}
+.rgimp{display:flex;align-items:flex-start;gap:8px;border-top:1px dashed #d6e3e8;padding:8px 0}
+.rgimpn{flex:0 0 auto;width:1.7em;height:1.7em;border-radius:50%;background:#e4f3f6;color:#0b5f73;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.85em;margin-top:18px}
+.rgdel{flex:0 0 auto;margin-top:16px}
+.rgbtns{gap:8px;margin-top:4px}
+.rgcxlist{list-style:none;margin:0 0 8px;padding:0}
+.rgcx{display:flex;align-items:flex-start;gap:8px;border:1px solid #e6d9c3;border-left:4px solid #e8a317;background:#fffdf8;border-radius:8px;padding:7px 9px;margin:0 0 6px}
+.rgcxmain{flex:1 1 auto;min-width:0}.rgcxt{line-height:1.45}.rgcxnote{margin-top:2px;color:#33464e;white-space:pre-wrap}
+.rgcxbtns{display:flex;gap:4px;flex:0 0 auto}.rgcxbtns button{min-width:38px;min-height:38px;margin:0;padding:4px 8px}
+.rgcd{display:inline-block;border-radius:6px;padding:0 6px;font-size:.78em;font-weight:700;background:#eef2f4;color:#33464e;white-space:nowrap}
+.rgcd3,.rgcd4{background:#fff1cc;color:#7a5a00}.rgcd5,.rgcd6,.rgcd7{background:#fde2e2;color:#9b1c1c}
+.rgro{display:inline-block;border-radius:6px;padding:0 6px;font-size:.78em;font-weight:700;background:#e6eef1;color:#24414b;white-space:nowrap}.rgro.rgrv{background:#b42318;color:#fff}
+.rgform{border:1px solid #9cc7d2;border-radius:10px;padding:8px 10px;background:#f3f9fb;margin:6px 0}.rgform h4{margin:2px 0 8px}
+.rgform .row{gap:8px}.rgform .row button{min-height:40px}
+.rgsavebar #rgSaveBtn{min-height:44px;min-width:160px}
+.pill.rgb{font-size:.74em;background:#fff3cd;color:#8a5a00}.pill.rgb.rgbrev{background:#fde2e2;color:#9b1c1c}
+.rgformg{grid-template-columns:repeat(3,minmax(0,1fr))}.rgformg .rgsg2{grid-column:span 2}
+@media (min-width:900px){.rgimpg{grid-template-columns:repeat(5,minmax(0,1fr))}.rgimpg .rgcat{grid-column:span 2}}
+@media (max-width:640px){.rggrid.rgformg{grid-template-columns:1fr}.rgformg .rgsg2{grid-column:auto}.rgimpg .rgcat{grid-column:1/-1}.rggrid{grid-template-columns:1fr 1fr}.rgf.rgsm{grid-column:auto}.rgimp{flex-wrap:nowrap}.rgimpn{margin-top:0}.rgsavebar #rgSaveBtn{flex:1 1 100%}}
+/* Studies: complications + Kaplan–Meier */
+.stdkm{width:100%;max-width:760px;height:auto;display:block;background:#fff;border:1px solid #e3eaee;border-radius:8px}
+.stdkm text{font:12px system-ui,sans-serif;fill:#33464e}.stdkm .kmA{stroke:#0b5f73}.stdkm .kmB{stroke:#c2410c}.stdkm .kmAll{stroke:#0b5f73}
+.stdkmleg{display:flex;flex-wrap:wrap;gap:12px;font-size:.85rem;margin:6px 0}.stdkmleg i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:5px}
 /* ===== team chat ===== */
 .tabs button[data-tab=chat]{position:relative}
 .chatbadge{display:inline-block;min-width:20px;padding:1px 6px;margin-left:6px;border-radius:999px;background:#d63031;color:#fff;font-size:.74rem;font-weight:800;line-height:1.4;text-align:center}
@@ -5463,6 +5499,342 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   window.__hx = { get saveState() { return sv.st; }, flush: flush, npHtml: npHtml, npBind: npBind, npFinal: npFinal, html: html, bind: bind, summaryHtml: summaryHtml, bindSummary: bindSummary, badge: badge, print: printHx, closeReport: closeReport, reportLine: reportLine, asaFinal: asaFinal, get ui() { return ui; } };
 })();
 </script>
+<!-- ===== ⚠️ Complications & implant registry (doctor-only): per-surgery implants, complications (Clavien–Dindo), revision endpoint; core pure, tested in Node + patient-file UI ===== -->
+<script id="ortho-registry">
+(function (root) {
+  'use strict';
+  // ===== ⚠️ Complications & implant registry (doctor-only) – pure core, unit-tested in Node =====
+  // Stored per patient in patient.registry (cloud: patients.extra.registry; demo: localStorage) – same sync as the medical history.
+  // Never part of the patient portal. Revision (implant exchange / removal) of the index surgery is the survival endpoint.
+  var VERSION = 'reg-1.0';
+  function L(el, en) { return { el: el, en: en }; }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function isDate(d) { return typeof d === 'string' && /^\d{4}-\d\d-\d\d$/.test(d); }
+  function days(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5); }
+  var MONTH = 30.4375;
+  var CX = [
+    { k: 'ssi', l: L('Επιφανειακή λοίμωξη χειρουργικού πεδίου', 'Superficial surgical site infection'), s: L('Επιφανειακή λοίμωξη', 'Superficial infection') },
+    { k: 'pji', l: L('Εν τω βάθει λοίμωξη / περιπροθετική λοίμωξη (PJI)', 'Deep infection / periprosthetic joint infection (PJI)'), s: L('Εν τω βάθει λοίμωξη / PJI', 'Deep infection / PJI') },
+    { k: 'disloc', l: L('Εξάρθρημα', 'Dislocation'), s: L('Εξάρθρημα', 'Dislocation') },
+    { k: 'ppfx', l: L('Περιπροθετικό κάταγμα', 'Periprosthetic fracture'), s: L('Περιπροθετικό κάταγμα', 'Periprosthetic fracture') },
+    { k: 'dvt', l: L('Εν τω βάθει φλεβοθρόμβωση (DVT)', 'Deep vein thrombosis (DVT)'), s: L('DVT', 'DVT') },
+    { k: 'pe', l: L('Πνευμονική εμβολή (PE)', 'Pulmonary embolism (PE)'), s: L('Πνευμονική εμβολή', 'Pulmonary embolism') },
+    { k: 'nerve', l: L('Νευρική βλάβη', 'Nerve injury'), s: L('Νευρική βλάβη', 'Nerve injury') },
+    { k: 'wound', l: L('Πρόβλημα τραύματος (αιμάτωμα, διαπύηση, διάσπαση, καθυστερημένη επούλωση)', 'Wound problem (haematoma, drainage, dehiscence, delayed healing)'), s: L('Πρόβλημα τραύματος', 'Wound problem') },
+    { k: 'stiff', l: L('Δυσκαμψία / κινητοποίηση υπό νάρκωση (MUA)', 'Stiffness / manipulation under anaesthesia (MUA)'), s: L('Δυσκαμψία / MUA', 'Stiffness / MUA') },
+    { k: 'loosen', l: L('Άσηπτη χαλάρωση', 'Aseptic loosening'), s: L('Άσηπτη χαλάρωση', 'Aseptic loosening') },
+    { k: 'revision', l: L('Αναθεώρηση', 'Revision'), s: L('Αναθεώρηση', 'Revision') },
+    { k: 'reop', l: L('Επανεπέμβαση (χωρίς αλλαγή προθέσεων)', 'Reoperation (implants retained)'), s: L('Επανεπέμβαση', 'Reoperation') },
+    { k: 'death', l: L('Θάνατος', 'Death'), s: L('Θάνατος', 'Death') },
+    { k: 'other', l: L('Άλλη', 'Other'), s: L('Άλλη', 'Other') }
+  ];
+  var CXK = {}; CX.forEach(function (c) { CXK[c.k] = c; });
+  var CD = [
+    { k: 'I', l: L('Απόκλιση από τη συνήθη πορεία χωρίς ειδική θεραπεία (αντιεμετικά, αναλγητικά, διουρητικά, ηλεκτρολύτες, φυσικοθεραπεία· τοπική περιποίηση τραύματος)', 'Deviation from the normal course without specific treatment (antiemetics, analgesics, diuretics, electrolytes, physiotherapy; bedside wound care)') },
+    { k: 'II', l: L('Φαρμακευτική θεραπεία πέραν της βαθμίδας I (π.χ. αντιβιοτικά, αντιπηκτικά), μετάγγιση, παρεντερική διατροφή', 'Pharmacological treatment beyond grade I (e.g. antibiotics, anticoagulation), transfusion, parenteral nutrition') },
+    { k: 'IIIa', l: L('Χειρουργική / ενδοσκοπική / επεμβατική ακτινολογική παρέμβαση χωρίς γενική αναισθησία', 'Surgical / endoscopic / radiological intervention not under general anaesthesia') },
+    { k: 'IIIb', l: L('Παρέμβαση υπό γενική αναισθησία', 'Intervention under general anaesthesia') },
+    { k: 'IVa', l: L('Απειλητική για τη ζωή – ανεπάρκεια ενός οργάνου (ΜΕΘ)', 'Life-threatening – single-organ dysfunction (ICU)') },
+    { k: 'IVb', l: L('Απειλητική για τη ζωή – πολυοργανική ανεπάρκεια (ΜΕΘ)', 'Life-threatening – multi-organ dysfunction (ICU)') },
+    { k: 'V', l: L('Θάνατος', 'Death') }
+  ];
+  var CDR = { I: 1, II: 2, IIIa: 3, IIIb: 4, IVa: 5, IVb: 6, V: 7 };
+  var REOP = [{ k: 'no', l: L('Όχι', 'No') }, { k: 'reop', l: L('Επανεπέμβαση – οι προθέσεις παραμένουν (π.χ. καθαρισμός, DAIR)', 'Reoperation – implants retained (e.g. washout, DAIR)') }, { k: 'revision', l: L('Αναθεώρηση – αλλαγή / αφαίρεση πρόθεσης', 'Revision – implant exchange / removal') }];
+  var IMPL = [
+    { k: 'femoral', l: L('Μηριαία πρόθεση', 'Femoral component') }, { k: 'tibial', l: L('Κνημιαία βάση', 'Tibial tray') }, { k: 'insert', l: L('Ένθεμα πολυαιθυλενίου', 'Polyethylene insert') },
+    { k: 'patella', l: L('Επιγονατιδική πρόθεση', 'Patellar component') }, { k: 'cup', l: L('Κοτύλη', 'Acetabular cup') }, { k: 'liner', l: L('Ένθεμα κοτύλης', 'Acetabular liner') },
+    { k: 'stem', l: L('Μηριαίο στέλεχος', 'Femoral stem') }, { k: 'head', l: L('Μηριαία κεφαλή', 'Femoral head') }, { k: 'augment', l: L('Συμπλήρωμα / σφήνα (augment, cone, sleeve)', 'Augment / cone / sleeve') },
+    { k: 'graft', l: L('Μόσχευμα', 'Graft') }, { k: 'fixdev', l: L('Μέσο καθήλωσης μοσχεύματος (κομβίο, βίδα)', 'Graft fixation (button, screw)') }, { k: 'plate', l: L('Πλάκα', 'Plate') },
+    { k: 'nail', l: L('Ενδομυελικός ήλος', 'Intramedullary nail') }, { k: 'screw', l: L('Βίδες', 'Screws') }, { k: 'anchor', l: L('Άγκυρες', 'Suture anchors') },
+    { k: 'cement', l: L('Οστικό τσιμέντο', 'Bone cement') }, { k: 'other', l: L('Άλλο', 'Other') }
+  ];
+  var FIX = [{ k: 'cemented', l: L('Με τσιμέντο', 'Cemented') }, { k: 'uncemented', l: L('Χωρίς τσιμέντο', 'Uncemented') }, { k: 'na', l: L('Δεν εφαρμόζεται', 'Not applicable') }];
+  var KIND = [{ k: 'primary', l: L('Πρωτογενής', 'Primary') }, { k: 'revision', l: L('Αναθεώρηση', 'Revision') }, { k: 'reop', l: L('Επανεπέμβαση', 'Reoperation') }, { k: 'other', l: L('Άλλη', 'Other') }];
+  var SIDES = ['R', 'L', 'B'];
+  // op-note component names → implant category
+  var FROM_NOTE = [[/μηρια[ίι]ο εξ|μηρια[ίι]α πρ[όο]θ|femoral comp|^μηρια[ίι]ο$/i, 'femoral'], [/κνημια[ίι]α β|tibial|^κνημια[ίι]ο$/i, 'tibial'], [/πολυαιθ|insert/i, 'insert'], [/επιγονατ|patell/i, 'patella'],
+    [/ένθεμα κοτ|ενθεμα κοτ|liner/i, 'liner'], [/κοτ[ύυ]λη|cup|acetab/i, 'cup'], [/στέλεχ|στελεχ|stem/i, 'stem'], [/κεφαλ|head/i, 'head'], [/καθ[ήη]λωση|fixation|button|κομβ/i, 'fixdev'], [/μόσχευ|μοσχευ|graft/i, 'graft']];
+  function lab(list, k, lg) { var x = list.filter(function (o) { return o.k === k; })[0]; return x ? x.l[lg === 'en' ? 'en' : 'el'] : (k || ''); }
+  function cxLabel(k, lg, short) { var c = CXK[k]; return c ? (short ? c.s : c.l)[lg === 'en' ? 'en' : 'el'] : (k || ''); }
+  function uid(pfx) { return pfx + Math.random().toString(36).slice(2, 10); }
+  function empty() { return { v: VERSION, surgeries: [], complications: [], lastFu: '' }; }
+  function str(v, n) { return v == null ? '' : String(v).slice(0, n || 200); }
+  function normImplant(i) { i = i || {}; return { id: str(i.id, 40) || uid('im'), cat: str(i.cat, 20), manufacturer: str(i.manufacturer, 80), model: str(i.model, 120), size: str(i.size, 40), ref: str(i.ref, 60), lot: str(i.lot, 60), fixation: ['cemented', 'uncemented', 'na'].indexOf(i.fixation) >= 0 ? i.fixation : '', side: SIDES.indexOf(i.side) >= 0 ? i.side : '', date: isDate(i.date) ? i.date : '' }; }
+  function normSurgery(s) { s = s || {}; return { id: str(s.id, 40) || uid('sg'), index: !!s.index, date: isDate(s.date) ? s.date : '', proc: str(s.proc, 20), kind: KIND.some(function (k) { return k.k === s.kind; }) ? s.kind : (s.index ? 'primary' : 'other'), side: SIDES.indexOf(s.side) >= 0 ? s.side : '', note: str(s.note, 500), implants: (Array.isArray(s.implants) ? s.implants : []).map(normImplant) }; }
+  function normCx(c) {
+    c = c || {}; var type = CXK[c.type] ? c.type : 'other', reop = ['no', 'reop', 'revision'].indexOf(c.reop) >= 0 ? c.reop : (type === 'revision' ? 'revision' : type === 'reop' ? 'reop' : 'no');
+    return { id: str(c.id, 40) || uid('cx'), surgeryId: str(c.surgeryId, 40), type: type, date: isDate(c.date) ? c.date : '', cd: CDR[c.cd] ? c.cd : (type === 'death' ? 'V' : ''), treatment: str(c.treatment, 300), reop: reop, note: str(c.note, 1000), other: str(c.other, 120), at: str(c.at, 40), by: c.by && typeof c.by === 'object' ? { name: str(c.by.name, 80), email: str(c.by.email, 120) } : null };
+  }
+  function normalize(r) {
+    if (!r || typeof r !== 'object') return empty();
+    var o = { v: VERSION, surgeries: (Array.isArray(r.surgeries) ? r.surgeries : []).map(normSurgery), complications: (Array.isArray(r.complications) ? r.complications : []).map(normCx), lastFu: isDate(r.lastFu) ? r.lastFu : '' };
+    if (r.updatedAt) o.updatedAt = str(r.updatedAt, 40); if (r.updatedBy) o.updatedBy = r.updatedBy;
+    var seen = false; o.surgeries.forEach(function (s) { if (s.index) { if (seen) s.index = false; seen = true; } });
+    return o;
+  }
+  function isEmpty(r) { return !r || (!(r.complications || []).length && !(r.surgeries || []).some(function (s) { return (s.implants || []).length || !s.index; }) && !r.lastFu); }
+  /** The index surgery (the patient's recorded operation); created on demand, mirrors the patient's date / procedure / side. */
+  function indexSurgery(reg, p) {
+    var s = reg.surgeries.filter(function (x) { return x.index; })[0];
+    if (!s) { s = normSurgery({ id: 'idx', index: true, kind: 'primary' }); reg.surgeries.unshift(s); }
+    if (p) { s.date = isDate(p.surgeryDate) ? p.surgeryDate : s.date; s.proc = p.procedure || s.proc; s.side = SIDES.indexOf(p.side) >= 0 ? p.side : s.side; }
+    return s;
+  }
+  function isRevision(c) { return !!c && (c.reop === 'revision' || c.type === 'revision'); }
+  function isReop(c) { return !!c && (isRevision(c) || c.reop === 'reop' || c.type === 'reop'); }
+  function cdRank(cd) { return CDR[cd] || 0; }
+  function ofIndex(reg, c) { var s = reg.surgeries.filter(function (x) { return x.id === c.surgeryId; })[0]; return !c.surgeryId || !s || s.index; }
+  function summary(p) {
+    var r = p && p.registry ? normalize(p.registry) : null; if (!r) return { n: 0, rev: 0, reop: 0, maxCd: '', implants: 0, death: false, types: [] };
+    var cx = r.complications, max = '';
+    cx.forEach(function (c) { if (cdRank(c.cd) > cdRank(max)) max = c.cd; });
+    return { n: cx.length, rev: cx.filter(isRevision).length, reop: cx.filter(isReop).length, maxCd: max, implants: r.surgeries.reduce(function (s, x) { return s + x.implants.length; }, 0), death: cx.some(function (c) { return c.type === 'death'; }), types: cx.map(function (c) { return c.type; }) };
+  }
+  /** Last documented contact with the patient (registry follow-up date, complications, PROMs, ROM, X-rays, op notes). */
+  function lastContact(store, p) {
+    var best = '', src = '', put = function (d, s) { if (isDate(d) && d > best) { best = d; src = s; } };
+    var r = p.registry ? normalize(p.registry) : null;
+    if (r) { put(r.lastFu, 'fu'); r.complications.forEach(function (c) { put(c.date, 'cx'); }); r.surgeries.forEach(function (s) { if (!s.index) put(s.date, 'surgery'); }); }
+    (store && store.submissions || []).forEach(function (s) { if (s.patientId === p.id) put(String(s.date || '').slice(0, 10), 'prom'); });
+    (store && store.rom || []).forEach(function (s) { if (s.patientId === p.id) put(String(s.date || '').slice(0, 10), 'rom'); });
+    (store && store.xrays || []).forEach(function (s) { if (s.patientId === p.id) put(String(s.date || s.studyDate || '').slice(0, 10), 'xray'); });
+    return best ? { date: best, src: src } : null;
+  }
+  /** Survival record of the index implant: {ok, t (months), e (1 revision), why}. opt: {endpoint: 'revision'|'reop', censor: 'last'|'today', today}. */
+  function survivalOf(store, p, opt) {
+    opt = opt || {}; var t0 = p.surgeryDate; if (!isDate(t0)) return { ok: false, why: 'nodate' };
+    var r = p.registry ? normalize(p.registry) : empty(), hit = opt.endpoint === 'reop' ? isReop : isRevision;
+    var ev = r.complications.filter(function (c) { return hit(c) && isDate(c.date) && c.date >= t0 && ofIndex(r, c); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
+    var death = r.complications.filter(function (c) { return c.type === 'death' && isDate(c.date) && c.date >= t0; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
+    if (ev && (!death || ev.date <= death.date)) return { ok: true, t: days(t0, ev.date) / MONTH, e: 1, date: ev.date };
+    var end = null;
+    if (death) end = death.date;
+    else if (opt.censor === 'today' && isDate(opt.today)) end = opt.today;
+    else { var lc = lastContact(store, p); end = lc ? lc.date : null; }
+    if (!end || end <= t0) return { ok: false, why: 'nofu' };
+    return { ok: true, t: days(t0, end) / MONTH, e: 0, death: !!death };
+  }
+  /** Per-patient complication flags within an optional window (days after the index surgery). */
+  function flags(p, opt) {
+    opt = opt || {}; var r = p.registry ? normalize(p.registry) : empty(), t0 = p.surgeryDate, w = isNum(opt.days) ? opt.days : null;
+    var inW = function (c) { if (w == null) return true; if (!isDate(c.date) || !isDate(t0)) return false; var d = days(t0, c.date); return d >= 0 && d <= w; };
+    var cx = r.complications.filter(inW), by = {}; CX.forEach(function (c) { by[c.k] = 0; });
+    cx.forEach(function (c) { by[c.type] = 1; });
+    return { recorded: !!p.registry && !isEmpty(r), n: cx.length, any: cx.length ? 1 : 0, by: by,
+      cd3: cx.some(function (c) { return cdRank(c.cd) >= 3; }) ? 1 : 0, reop: cx.some(isReop) ? 1 : 0, rev: cx.some(isRevision) ? 1 : 0, death: cx.some(function (c) { return c.type === 'death'; }) ? 1 : 0 };
+  }
+  /** Implants of an operative note → registry implants. */
+  function fromOpNote(note) {
+    var f = note && note.fields || {}, date = isDate(f.date) ? f.date : (isDate(note && note.date) ? note.date : '');
+    return (f.implants || []).filter(function (x) { return x && ['manufacturer', 'model', 'size', 'ref', 'lot'].some(function (k) { return x[k]; }); }).map(function (x) {
+      var cat = 'other', comp = String(x.component || ''); for (var i = 0; i < FROM_NOTE.length; i++) if (FROM_NOTE[i][0].test(comp)) { cat = FROM_NOTE[i][1]; break; }
+      return normImplant({ cat: cat, manufacturer: x.manufacturer, model: x.model || (cat === 'other' ? comp : ''), size: x.size, ref: x.ref, lot: x.lot, fixation: x.fixation, side: SIDES.indexOf(String(f.side || '').charAt(0).toUpperCase()) >= 0 ? String(f.side).charAt(0).toUpperCase() : '', date: date });
+    });
+  }
+  /** Fixation / manufacturer of the index implants (fallback for the Studies tab when there is no operative note). */
+  function indexImplants(p) {
+    var r = p && p.registry ? normalize(p.registry) : null, s = r && r.surgeries.filter(function (x) { return x.index; })[0]; if (!s || !s.implants.length) return null;
+    var f = s.implants.map(function (i) { return i.fixation; }).filter(function (v) { return v === 'cemented' || v === 'uncemented'; }), c = f.indexOf('cemented') >= 0, u = f.indexOf('uncemented') >= 0;
+    var m = s.implants.map(function (i) { return i.manufacturer.trim(); }).filter(Boolean);
+    return { fix: c && u ? 'hybrid' : c ? 'cemented' : u ? 'uncemented' : null, manu: m.length ? m[0] : null, n: s.implants.length };
+  }
+  root.OrthoRegistry = { VERSION: VERSION, CX: CX, CD: CD, CDR: CDR, REOP: REOP, IMPL: IMPL, FIX: FIX, KIND: KIND, MONTH: MONTH, lab: lab, cxLabel: cxLabel, uid: uid, empty: empty, normalize: normalize, normImplant: normImplant, normSurgery: normSurgery, normCx: normCx,
+    isEmpty: isEmpty, indexSurgery: indexSurgery, isRevision: isRevision, isReop: isReop, cdRank: cdRank, summary: summary, lastContact: lastContact, survivalOf: survivalOf, flags: flags, fromOpNote: fromOpNote, indexImplants: indexImplants, days: days };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-registry-ui">
+(function () {
+  'use strict';
+  // ===== ⚠️ Επιπλοκές & Προθέσεις – sub-tab of the doctor-only patient file («👥 Ασθενείς»). Never rendered for patients. =====
+  // Data: patient.registry (cloud: patients.extra.registry, same upsert as the medical history; DEMO: localStorage).
+  // «✓ Αποθηκεύτηκε» only after the database confirms; errors are shown and retried (same behaviour as «Ιστορικό»).
+  var R = window.OrthoRegistry; if (!R) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var api = function () { return window.__orthoProms; };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var S = {
+    el: { T: 'Επιπλοκές & Προθέσεις', lead: 'Μόνο για ιατρούς – δεν εμφανίζεται ποτέ στον ασθενή. Οι αλλαγές αποθηκεύονται αυτόματα.', sg: 'Επεμβάσεις & προθέσεις', idx: 'Κύρια επέμβαση', addSg: '➕ Νέα επέμβαση (αναθεώρηση / επανεπέμβαση)', addImp: '➕ Πρόθεση', fromNote: '⤵ Από το πρακτικό χειρουργείου', fromNoteNone: 'Το πρακτικό δεν έχει προθέσεις με στοιχεία.', fromNoteDone: 'Προστέθηκαν {0} προθέσεις από το πρακτικό.', fromNoteDone1: 'Προστέθηκε 1 πρόθεση από το πρακτικό.',
+      noImp: 'Δεν έχουν καταχωριστεί προθέσεις.', cat: 'Κατηγορία', manu: 'Κατασκευαστής', model: 'Μοντέλο', size: 'Μέγεθος', ref: 'REF', lot: 'LOT', fix: 'Καθήλωση', side: 'Πλευρά', date: 'Ημερομηνία', del: 'Διαγραφή', delImpQ: 'Διαγραφή της πρόθεσης;', delSgQ: 'Διαγραφή της επέμβασης και των προθέσεών της;', delCxQ: 'Διαγραφή της επιπλοκής;',
+      proc: 'Επέμβαση', kind: 'Είδος', note: 'Σημείωση', R: 'Δεξιά', L: 'Αριστερά', B: 'Αμφοτερόπλευρα', REV: 'Αναθεώρηση αρθροπλαστικής', OTHER: 'Άλλη επέμβαση',
+      cx: 'Επιπλοκές', noCx: 'Δεν έχουν καταγραφεί επιπλοκές.', addCx: '➕ Νέα επιπλοκή', editCx: 'Επεξεργασία επιπλοκής', newCx: 'Νέα επιπλοκή', type: 'Τύπος επιπλοκής', otherTxt: 'Περιγραφή', cxDate: 'Ημερομηνία διάγνωσης', cxSg: 'Σχετική επέμβαση', cd: 'Clavien–Dindo', cdNone: '— επιλέξτε —',
+      tx: 'Αντιμετώπιση', reop: 'Επανεπέμβαση', cxNote: 'Σημείωση', ok: '✓ Καταχώριση', upd: '✓ Ενημέρωση', cancel: 'Ακύρωση', edit: '✎', needType: 'Επιλέξτε τύπο και ημερομηνία.', badDate: 'Η ημερομηνία είναι πριν από την κύρια επέμβαση.',
+      fu: 'Παρακολούθηση', lastFu: 'Τελευταία κλινική εκτίμηση', lastFuHelp: 'Χρησιμοποιείται ως ημερομηνία λογοκρισίας (censoring) στην καμπύλη επιβίωσης στις «📊 Μελέτες».', lastKnown: 'Τελευταία καταγεγραμμένη επαφή', src: { fu: 'κλινική εκτίμηση', cx: 'επιπλοκή', surgery: 'επέμβαση', prom: 'ερωτηματολόγιο', rom: 'εύρος κίνησης', xray: 'ακτινογραφία' },
+      sumCx: 'Επιπλοκές', sumMax: 'Μέγιστος Clavien–Dindo', sumRev: 'Αναθεώρηση', sumImp: 'Προθέσεις', none: '–', endpoint: '🔁 τελικό σημείο επιβίωσης', by: 'από',
+      saved: '✓ Αποθηκεύτηκε', saving: 'Αποθήκευση…', saveBtn: '💾 Αποθήκευση', saveErr: '⚠ Δεν αποθηκεύτηκε – ελέγξτε τη σύνδεση. Νέα προσπάθεια αυτόματα.', retry: 'Δοκιμή ξανά', unsaved: 'Υπάρχουν αλλαγές στο μητρώο επιπλοκών που δεν έχουν αποθηκευτεί.', updated: 'Τελευταία αλλαγή',
+      bCx: '{0} επιπλοκές', bCx1: '1 επιπλοκή', bRev: 'αναθεώρηση', busy: 'Η επεξεργασία γίνεται αφού κλείσει η φόρμα νέου ασθενή.' },
+    en: { T: 'Complications & Implants', lead: 'Doctors only – never shown to the patient. Changes are saved automatically.', sg: 'Surgeries & implants', idx: 'Index surgery', addSg: '➕ New surgery (revision / reoperation)', addImp: '➕ Implant', fromNote: '⤵ From the operative note', fromNoteNone: 'The operative note has no implants with details.', fromNoteDone: '{0} implants added from the operative note.',
+      noImp: 'No implants recorded.', cat: 'Category', manu: 'Manufacturer', model: 'Model', size: 'Size', ref: 'REF', lot: 'LOT', fix: 'Fixation', side: 'Side', date: 'Date', del: 'Delete', delImpQ: 'Delete this implant?', delSgQ: 'Delete this surgery and its implants?', delCxQ: 'Delete this complication?',
+      proc: 'Procedure', kind: 'Type', note: 'Note', R: 'Right', L: 'Left', B: 'Bilateral', REV: 'Revision arthroplasty', OTHER: 'Other procedure',
+      cx: 'Complications', noCx: 'No complications recorded.', addCx: '➕ New complication', editCx: 'Edit complication', newCx: 'New complication', type: 'Complication', otherTxt: 'Description', cxDate: 'Date of diagnosis', cxSg: 'Related surgery', cd: 'Clavien–Dindo', cdNone: '— choose —',
+      tx: 'Treatment', reop: 'Reoperation', cxNote: 'Note', ok: '✓ Add', upd: '✓ Update', cancel: 'Cancel', edit: '✎', needType: 'Choose a type and a date.', badDate: 'The date is before the index surgery.',
+      fu: 'Follow-up', lastFu: 'Last clinical review', lastFuHelp: 'Used as the censoring date of the survival curve in «📊 Studies».', lastKnown: 'Last documented contact', src: { fu: 'clinical review', cx: 'complication', surgery: 'surgery', prom: 'questionnaire', rom: 'range of motion', xray: 'X-ray' },
+      sumCx: 'Complications', sumMax: 'Highest Clavien–Dindo', sumRev: 'Revision', sumImp: 'Implants', none: '–', endpoint: '🔁 survival endpoint', by: 'by',
+      saved: '✓ Saved', saving: 'Saving…', saveBtn: '💾 Save', saveErr: '⚠ Not saved – check the connection. Retrying automatically.', retry: 'Retry', unsaved: 'There are unsaved changes in the complications registry.', updated: 'Last change',
+      bCx: '{0} complications', bCx1: '1 complication', bRev: 'revision', busy: 'Editing is available once the new-patient form is closed.' }
+  };
+  var t = function (k) { var L = S[lang()]; return L[k] != null ? L[k] : k; };
+  var f = function (k) { var a = [].slice.call(arguments, 1); return String(t(k)).replace(/\{(\d)\}/g, function (_, i) { return a[+i]; }); };
+  var dmy = function (d) { return /^\d{4}-\d\d-\d\d/.test(d || '') ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : (d || ''); };
+  var dt = function (iso) { if (!iso) return ''; var d = new Date(iso), z = function (n) { return ('0' + n).slice(-2); }; return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); };
+  var opt = function (v, l, sel) { return '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(l) + '</option>'; };
+  var lb = function (list, k) { return R.lab(list, k, lang()); };
+  function procName(k) { var A = api(), P = A && A.lib && A.lib.PROC; if (P && P[k]) return A.lib.tx(P[k].name); if (k === 'REV') return t('REV'); return t('OTHER'); }
+  function me() { var A = api(), u = A && A.currentUser && A.currentUser(); return u ? { name: u.name || u.full_name || '', email: u.email || '' } : null; }
+  var ui = { pid: '', form: null, msg: '' }, cur = null, curP = null;
+
+  // ---------- saving (same contract as «Ιστορικό») ----------
+  var sv = { st: '', at: null, seq: 0, retry: null }, timer = null;
+  var hm = function (iso) { var d = new Date(iso), z = function (n) { return ('0' + n).slice(-2); }; return z(d.getHours()) + ':' + z(d.getMinutes()); };
+  function stText() { return sv.st === 'saved' ? t('saved') + (sv.at ? ' ' + hm(sv.at) : '') : sv.st === 'err' ? t('saveErr') : sv.st === 'saving' || sv.st === 'pending' ? t('saving') : ''; }
+  function stClass() { return sv.st === 'err' ? 'err small rgsavest' : sv.st === 'saved' ? 'ok small rgsavest' : 'muted small rgsavest'; }
+  function showSt() { ['rgSaved', 'rgSaveMsg'].forEach(function (id) { var e = $(id); if (e) { e.textContent = stText(); e.className = stClass(); e.dataset.st = sv.st; } }); var r = $('rgRetry'); if (r) r.classList.toggle('hidden', sv.st !== 'err'); }
+  function dirty() { return sv.st === 'pending' || sv.st === 'saving' || sv.st === 'err'; }
+  function go() {
+    clearTimeout(timer); timer = null; clearTimeout(sv.retry); sv.retry = null;
+    var A = api(); if (!A) return Promise.resolve(); var my = ++sv.seq; sv.st = 'saving'; showSt();
+    var pr = A.persistP ? A.persistP() : Promise.resolve(A.persist());
+    return pr.then(function () { if (my !== sv.seq) return; sv.st = 'saved'; sv.at = new Date().toISOString(); showSt(); },
+      function (e) { if (my !== sv.seq) return; sv.st = 'err'; showSt(); console.warn('registry save failed', e && e.code); sv.retry = setTimeout(function () { if (sv.st === 'err') go(); }, 15000); });
+  }
+  function save(now) { clearTimeout(timer); sv.st = 'pending'; showSt(); if (now) return go(); timer = setTimeout(go, 500); return Promise.resolve(); }
+  function flush() { if (timer || sv.st === 'err') go(); }
+  window.addEventListener('online', function () { if (sv.st === 'err') go(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+  window.addEventListener('pagehide', flush);
+  window.addEventListener('beforeunload', function (e) { if (!dirty()) return; flush(); e.preventDefault(); e.returnValue = t('unsaved'); return t('unsaved'); });
+  /** Commit the working copy into the patient record and save (debounced, or now). */
+  function commit(now) { if (!curP || !cur) return; cur.updatedAt = new Date().toISOString(); cur.updatedBy = me(); curP.registry = cur; return save(now); }
+
+  // ---------- summary / badge ----------
+  function cdPill(cd) { return cd ? '<span class="rgcd rgcd' + R.cdRank(cd) + '">CD ' + esc(cd) + '</span>' : ''; }
+  function chips(p) {
+    var s = R.summary(p); var x = [];
+    x.push('<span class="hxchip' + (s.n ? ' rgwarn' : '') + '" data-rgchip="n">' + esc(t('sumCx')) + ': <b>' + s.n + '</b></span>');
+    if (s.maxCd) x.push('<span class="hxchip" data-rgchip="cd">' + esc(t('sumMax')) + ': <b>' + esc(s.maxCd) + '</b></span>');
+    if (s.rev) { var r = R.normalize(p.registry).complications.filter(R.isRevision).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0]; x.push('<span class="hxchip rgrev" data-rgchip="rev">🔁 ' + esc(t('sumRev')) + (r && r.date ? ' ' + esc(dmy(r.date)) : '') + '</span>'); }
+    x.push('<span class="hxchip" data-rgchip="imp">' + esc(t('sumImp')) + ': <b>' + s.implants + '</b></span>');
+    return x.join('');
+  }
+  function badge(p) {
+    var s = R.summary(p); if (!s.n) return '';
+    return ' <span class="pill rgb' + (s.rev ? ' rgbrev' : '') + '" data-rgbadge="' + esc(p.id) + '" title="' + esc((s.n === 1 ? t('bCx1') : f('bCx', s.n)) + (s.rev ? ' · ' + t('bRev') : '')) + '">⚠️ ' + s.n + (s.rev ? ' · 🔁' : '') + '</span>';
+  }
+
+  // ---------- HTML ----------
+  function sideSel(id, v, attr) { return '<select ' + (id ? 'id="' + id + '" ' : '') + (attr || '') + '>' + opt('', '—', !v) + ['R', 'L', 'B'].map(function (k) { return opt(k, t(k), v === k); }).join('') + '</select>'; }
+  function listSel(list, v, attr, blank) { return '<select ' + attr + '>' + (blank ? opt('', blank, !v) : '') + list.map(function (o) { return opt(o.k, o.l[lang()], v === o.k); }).join('') + '</select>'; }
+  function fld(label, inner, cls) { return '<label class="rgf' + (cls ? ' ' + cls : '') + '"><span>' + esc(label) + '</span>' + inner + '</label>'; }
+  function implantHtml(sg, im, i) {
+    var k = function (fl) { return 'data-rgimp="' + esc(sg.id + '|' + im.id + '|' + fl) + '"'; }, inp = function (fl, ml) { return '<input type="text" maxlength="' + ml + '" autocomplete="off" ' + k(fl) + ' value="' + esc(im[fl]) + '">'; };
+    return '<div class="rgimp" data-rgimprow="' + esc(im.id) + '"><span class="rgimpn">' + (i + 1) + '</span><div class="rggrid rgimpg">' +
+      fld(t('cat'), listSel(R.IMPL, im.cat, k('cat'), '—'), 'rgcat') + fld(t('manu'), inp('manufacturer', 80)) + fld(t('model'), inp('model', 120)) + fld(t('size'), inp('size', 40), 'rgsm') +
+      fld(t('ref'), inp('ref', 60)) + fld(t('lot'), inp('lot', 60)) + fld(t('fix'), listSel(R.FIX, im.fixation, k('fixation'), '—')) + fld(t('side'), sideSel('', im.side, k('side')), 'rgsm') +
+      fld(t('date'), '<input type="date" ' + k('date') + ' value="' + esc(im.date) + '">') + '</div><button class="small ghost rgdel" data-rgdelimp="' + esc(sg.id + '|' + im.id) + '" title="' + esc(t('del')) + '" aria-label="' + esc(t('del')) + '">🗑</button></div>';
+  }
+  function hasNoteImplants(p) { var n = noteOf(p); return !!(n && R.fromOpNote(n).length); }
+  function noteOf(p) { var A = api(), ns = ((A && A.store.opnotes) || []).filter(function (n) { return n.patientId === p.id; }); ns.sort(function (a, b) { return (a.status === 'final') - (b.status === 'final') || ((a.updatedAt || '') < (b.updatedAt || '') ? -1 : 1); }); return ns[ns.length - 1] || null; }
+  function surgeryHtml(p, sg) {
+    var h = '<div class="rgsg' + (sg.index ? ' rgidx' : '') + '" data-rgsgid="' + esc(sg.id) + '"><div class="rgsghead">';
+    if (sg.index) h += '<b>' + esc(t('idx')) + '</b> · ' + esc(procName(sg.proc)) + (sg.side ? ' · ' + esc(t(sg.side)) : '') + ' · ' + esc(dmy(sg.date) || '—');
+    else {
+      var k = function (fl) { return 'data-rgsg="' + esc(sg.id + '|' + fl) + '"'; }, A = api(), procs = Object.keys((A && A.lib && A.lib.PROC) || {}).concat(['REV', 'OTHER']);
+      h += '<div class="rggrid rgsgflds">' + fld(t('kind'), listSel(R.KIND, sg.kind, k('kind'))) + fld(t('proc'), '<select ' + k('proc') + '>' + procs.map(function (x) { return opt(x, procName(x), sg.proc === x); }).join('') + '</select>') +
+        fld(t('date'), '<input type="date" ' + k('date') + ' value="' + esc(sg.date) + '">') + fld(t('side'), sideSel('', sg.side, k('side')), 'rgsm') + fld(t('note'), '<input type="text" maxlength="500" ' + k('note') + ' value="' + esc(sg.note) + '">', 'rgwide') + '</div>' +
+        '<button class="small ghost rgdel" data-rgdelsg="' + esc(sg.id) + '" title="' + esc(t('del')) + '" aria-label="' + esc(t('del')) + '">🗑</button>';
+    }
+    h += '</div>' + (sg.implants.length ? sg.implants.map(function (im, i) { return implantHtml(sg, im, i); }).join('') : '<p class="muted small rgnoimp">' + esc(t('noImp')) + '</p>');
+    h += '<div class="row rgbtns"><button class="small" data-rgaddimp="' + esc(sg.id) + '">' + esc(t('addImp')) + '</button>' + (sg.index && hasNoteImplants(p) ? '<button class="small ghost" id="rgFromNote" data-rgnote="' + esc(sg.id) + '">' + esc(t('fromNote')) + '</button>' : '') + '</div></div>';
+    return h;
+  }
+  function sgLabel(sg) { return (sg.index ? t('idx') : lb(R.KIND, sg.kind)) + ' · ' + procName(sg.proc) + (sg.date ? ' · ' + dmy(sg.date) : ''); }
+  function cxItemHtml(c) {
+    var sg = cur.surgeries.filter(function (s) { return s.id === c.surgeryId; })[0];
+    return '<li class="rgcx" data-rgcx="' + esc(c.id) + '"><div class="rgcxmain"><div class="rgcxt"><b>' + esc(R.cxLabel(c.type, lang())) + (c.type === 'other' && c.other ? ': ' + esc(c.other) : '') + '</b> ' + cdPill(c.cd) +
+      (c.reop !== 'no' ? ' <span class="rgro' + (R.isRevision(c) ? ' rgrv' : '') + '">' + (R.isRevision(c) ? '🔁 ' : '↺ ') + esc(R.isRevision(c) ? lb(R.KIND, 'revision') : t('reop')) + '</span>' : '') + '</div>' +
+      '<div class="muted small">' + esc(dmy(c.date) || '—') + (sg ? ' · ' + esc(sgLabel(sg)) : '') + (c.treatment ? ' · ' + esc(t('tx')) + ': ' + esc(c.treatment) : '') + '</div>' + (c.note ? '<div class="small rgcxnote">' + esc(c.note) + '</div>' : '') + '</div>' +
+      '<span class="rgcxbtns"><button class="small ghost" data-rgeditcx="' + esc(c.id) + '" title="' + esc(t('editCx')) + '" aria-label="' + esc(t('editCx')) + '">✎</button><button class="small ghost rgdel" data-rgdelcx="' + esc(c.id) + '" title="' + esc(t('del')) + '" aria-label="' + esc(t('del')) + '">🗑</button></span></li>';
+  }
+  function formHtml() {
+    var c = ui.form, lg = lang(); if (!c) return '';
+    return '<div class="rgform" id="rgCxForm" role="group" aria-label="' + esc(c._edit ? t('editCx') : t('newCx')) + '"><h4>' + esc(c._edit ? t('editCx') : t('newCx')) + '</h4><div class="rggrid rgformg">' +
+      fld(t('type'), '<select id="rgCxType">' + opt('', t('cdNone'), !c.type) + R.CX.map(function (x) { return opt(x.k, x.l[lg], c.type === x.k); }).join('') + '</select>', 'rgwide') +
+      (c.type === 'other' ? fld(t('otherTxt'), '<input type="text" id="rgCxOther" maxlength="120" value="' + esc(c.other) + '">', 'rgwide') : '') +
+      fld(t('cxDate'), '<input type="date" id="rgCxDate" value="' + esc(c.date) + '">') +
+      fld(t('cxSg'), '<select id="rgCxSg">' + cur.surgeries.map(function (s) { return opt(s.id, sgLabel(s), c.surgeryId === s.id); }).join('') + '</select>', 'rgsg2') +
+      fld(t('cd'), '<select id="rgCxCd">' + opt('', t('cdNone'), !c.cd) + R.CD.map(function (x) { return opt(x.k, x.k + ' – ' + x.l[lg], c.cd === x.k); }).join('') + '</select>', 'rgwide') +
+      fld(t('reop'), listSel(R.REOP, c.reop, 'id="rgCxReop"'), 'rgwide') +
+      fld(t('tx'), '<input type="text" id="rgCxTx" maxlength="300" value="' + esc(c.treatment) + '">', 'rgwide') +
+      fld(t('cxNote'), '<textarea id="rgCxNote" rows="2" maxlength="1000">' + esc(c.note) + '</textarea>', 'rgwide') + '</div>' +
+      '<p class="err small" id="rgCxErr" role="alert">' + esc(ui.msg || '') + '</p><div class="row"><button class="primary" id="rgCxOk">' + esc(c._edit ? t('upd') : t('ok')) + '</button><button id="rgCxCancel">' + esc(t('cancel')) + '</button></div></div>';
+  }
+  function html(p, busy) {
+    if (ui.pid !== p.id) { if (timer || sv.st === 'err') go(); ui = { pid: p.id, form: null, msg: '' }; if (!dirty()) sv.st = ''; cur = null; }
+    if (cur && curP && curP.id === p.id && dirty()) p.registry = cur; // a re-render while a save is pending keeps the working copy
+    cur = R.normalize(p.registry); curP = p; R.indexSurgery(cur, p);
+    var head = '<span class="fuanchor" id="rgSec"></span><div class="rgcard" id="rgCard"><h3>⚠️ ' + esc(t('T')) + '</h3><div class="rgsum" id="rgSum">' + chips(p) + '</div>';
+    if (busy) return head + '<p class="muted small">' + esc(t('busy')) + '</p></div>';
+    var reg = p.registry ? R.normalize(p.registry) : null, lc = R.lastContact(api().store, Object.assign({}, p, { registry: cur }));
+    var h = head + '<p class="muted">🔒 ' + esc(t('lead')) + '</p><div class="row rgbar"><span class="' + stClass() + '" id="rgSaved" aria-live="polite">' + esc(stText()) + '</span>' + (reg && reg.updatedAt ? '<span class="muted small">' + esc(t('updated')) + ' ' + esc(dt(reg.updatedAt)) + (reg.updatedBy && reg.updatedBy.name ? ' · ' + esc(reg.updatedBy.name) : '') + '</span>' : '') + '</div>';
+    var cx = cur.complications.slice().sort(function (a, b) { return (a.date || '9') < (b.date || '9') ? -1 : 1; });
+    h += '<section class="rgsec" id="rgCxSec"><h4>' + esc(t('cx')) + ' <span class="muted">(' + cx.length + ')</span></h4>' + (cx.length ? '<ul class="rgcxlist" id="rgCxList">' + cx.map(cxItemHtml).join('') + '</ul>' : '<p class="muted" id="rgNoCx">' + esc(t('noCx')) + '</p>') +
+      (ui.form ? formHtml() : '<div class="row"><button class="small primary" id="rgAddCx">' + esc(t('addCx')) + '</button></div>') + '</section>';
+    h += '<section class="rgsec" id="rgSgSec"><h4>' + esc(t('sg')) + '</h4>' + cur.surgeries.map(function (s) { return surgeryHtml(p, s); }).join('') + '<div class="row"><button class="small" id="rgAddSg">' + esc(t('addSg')) + '</button></div><p class="ok small" id="rgNoteMsg" role="status"></p></section>';
+    h += '<section class="rgsec" id="rgFuSec"><h4>' + esc(t('fu')) + '</h4><div class="rggrid">' + fld(t('lastFu'), '<input type="date" id="rgLastFu" value="' + esc(cur.lastFu) + '">') + '</div><p class="muted small">' + esc(t('lastFuHelp')) + '</p>' +
+      (lc ? '<p class="small" id="rgLastKnown">' + esc(t('lastKnown')) + ': <b>' + esc(dmy(lc.date)) + '</b> <span class="muted">(' + esc(S[lang()].src[lc.src] || lc.src) + ')</span></p>' : '') + '</section>';
+    h += '<div class="row hxsavebar rgsavebar" id="rgSaveBar"><button class="primary" id="rgSaveBtn">' + esc(t('saveBtn')) + '</button><span class="' + stClass() + '" id="rgSaveMsg" role="status" aria-live="polite">' + esc(stText()) + '</span><button class="small' + (sv.st === 'err' ? '' : ' hidden') + '" id="rgRetry">↻ ' + esc(t('retry')) + '</button></div></div>';
+    return h;
+  }
+  function rerender() { var c = $('rgCard'), p = curP; if (!c || !p) return; var y = window.scrollY, w = document.createElement('div'); w.innerHTML = html(p); var a = $('rgSec'); if (a) a.remove(); c.replaceWith.apply(c, [].slice.call(w.childNodes)); bind(p); refreshBadges(); if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }
+  function refreshBadges() { // patient list + dashboard table badges, without re-rendering the whole page
+    if (!curP) return; var p = Object.assign({}, curP, { registry: cur }), html = badge(p);
+    document.querySelectorAll('[data-rgbadge="' + curP.id + '"]').forEach(function (e) { e.remove(); });
+    if (!html) return; var it = document.querySelector('#psItems [data-pspid="' + curP.id + '"] .psbadges'); if (it) it.insertAdjacentHTML('beforeend', html);
+  }
+  function refreshSum() { var s = $('rgSum'); if (s && curP) s.innerHTML = chips(Object.assign({}, curP, { registry: cur })); }
+  function findSg(id) { return cur.surgeries.filter(function (s) { return s.id === id; })[0]; }
+  function readForm() {
+    var c = ui.form; if (!c) return; var v = function (id) { var e = $(id); return e ? e.value : null; }, before = c.type;
+    ['type:rgCxType', 'date:rgCxDate', 'surgeryId:rgCxSg', 'cd:rgCxCd', 'reop:rgCxReop', 'treatment:rgCxTx', 'note:rgCxNote', 'other:rgCxOther'].forEach(function (x) { var q = x.split(':'), val = v(q[1]); if (val != null) c[q[0]] = val; });
+    if (c.type !== before) { if (c.type === 'death') c.cd = 'V'; if (c.type === 'revision') c.reop = 'revision'; if (c.type === 'reop' && c.reop === 'no') c.reop = 'reop'; }
+  }
+  function bind(p) {
+    var card = $('rgCard'); if (!card || !$('rgSaveBtn')) return;
+    card.addEventListener('input', onEdit); card.addEventListener('change', onEdit);
+    function onEdit(e) {
+      var tg = e.target; if (!tg || !tg.matches || !tg.matches('input,select,textarea')) return;
+      if (tg.closest('#rgCxForm')) { var before = ui.form && ui.form.type; readForm(); if (ui.msg) { ui.msg = ''; var em = $('rgCxErr'); if (em) em.textContent = ''; } if (tg.id === 'rgCxType' && ui.form.type !== before) rerender(); return; }
+      if (tg.dataset.rgimp) { var q = tg.dataset.rgimp.split('|'), sg = findSg(q[0]), im = sg && sg.implants.filter(function (x) { return x.id === q[1]; })[0]; if (!im) return; im[q[2]] = tg.value; }
+      else if (tg.dataset.rgsg) { var z = tg.dataset.rgsg.split('|'), s2 = findSg(z[0]); if (!s2) return; s2[z[1]] = tg.value; }
+      else if (tg.id === 'rgLastFu') cur.lastFu = tg.value;
+      else return;
+      commit(); refreshSum();
+    }
+    var on = function (id, fn) { var e = $(id); if (e) e.onclick = fn; };
+    on('rgAddCx', function () { ui.form = R.normCx({ surgeryId: (cur.surgeries.filter(function (s) { return s.index; })[0] || {}).id, reop: 'no' }); ui.form.type = ''; ui.msg = ''; rerender(); var e = $('rgCxType'); if (e) e.focus(); });
+    on('rgCxCancel', function () { ui.form = null; ui.msg = ''; rerender(); });
+    on('rgCxOk', function () {
+      readForm(); var c = ui.form; if (!c.type || !/^\d{4}-\d\d-\d\d$/.test(c.date || '')) { ui.msg = t('needType'); var m = $('rgCxErr'); if (m) m.textContent = ui.msg; return; }
+      var idx = cur.surgeries.filter(function (s) { return s.index; })[0]; if (idx && idx.date && c.date < idx.date && (!c.surgeryId || c.surgeryId === idx.id)) { ui.msg = t('badDate'); var m2 = $('rgCxErr'); if (m2) m2.textContent = ui.msg; return; }
+      var n = R.normCx(c); n.at = n.at || new Date().toISOString(); n.by = n.by || me();
+      var i = cur.complications.map(function (x) { return x.id; }).indexOf(n.id); if (i >= 0) cur.complications[i] = n; else cur.complications.push(n);
+      ui.form = null; ui.msg = ''; commit(true); var A = api(); if (A && A.audit) A.audit(i >= 0 ? 'registry-edit-complication' : 'registry-add-complication', p.id + ' · ' + n.type); rerender();
+    });
+    card.querySelectorAll('[data-rgeditcx]').forEach(function (b) { b.onclick = function () { var c = cur.complications.filter(function (x) { return x.id === b.dataset.rgeditcx; })[0]; if (!c) return; ui.form = JSON.parse(JSON.stringify(c)); ui.form._edit = true; ui.msg = ''; rerender(); var e = $('rgCxForm'); if (e && e.scrollIntoView) e.scrollIntoView({ block: 'nearest' }); }; });
+    card.querySelectorAll('[data-rgdelcx]').forEach(function (b) { b.onclick = function () { if (!window.confirm(t('delCxQ'))) return; cur.complications = cur.complications.filter(function (x) { return x.id !== b.dataset.rgdelcx; }); commit(true); var A = api(); if (A && A.audit) A.audit('registry-delete-complication', p.id); rerender(); }; });
+    card.querySelectorAll('[data-rgaddimp]').forEach(function (b) { b.onclick = function () { var sg = findSg(b.dataset.rgaddimp); if (!sg) return; sg.implants.push(R.normImplant({ side: sg.side, date: sg.date })); commit(); rerender(); var rows = card.ownerDocument.querySelectorAll('[data-rgsgid="' + sg.id + '"] .rgimp'), last = rows[rows.length - 1]; if (last) { var s = last.querySelector('select'); if (s) s.focus(); } }; });
+    card.querySelectorAll('[data-rgdelimp]').forEach(function (b) { b.onclick = function () { if (!window.confirm(t('delImpQ'))) return; var q = b.dataset.rgdelimp.split('|'), sg = findSg(q[0]); if (!sg) return; sg.implants = sg.implants.filter(function (x) { return x.id !== q[1]; }); commit(true); rerender(); }; });
+    card.querySelectorAll('[data-rgdelsg]').forEach(function (b) { b.onclick = function () { if (!window.confirm(t('delSgQ'))) return; var id = b.dataset.rgdelsg; cur.surgeries = cur.surgeries.filter(function (x) { return x.id !== id; }); cur.complications.forEach(function (c) { if (c.surgeryId === id) c.surgeryId = ''; }); commit(true); rerender(); }; });
+    on('rgAddSg', function () { var td = new Date(), d = new Date(td.getTime() - td.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); cur.surgeries.push(R.normSurgery({ kind: 'revision', proc: p.procedure === 'TKA' || p.procedure === 'THA' ? 'REV' : (p.procedure || 'OTHER'), side: p.side, date: d })); commit(); rerender(); });
+    var fn = $('rgFromNote'); if (fn) fn.onclick = function () { var sg = findSg(fn.dataset.rgnote), list = R.fromOpNote(noteOf(p)); if (!sg) return; if (!list.length) { $('rgNoteMsg').textContent = t('fromNoteNone'); return; }
+      var key = function (i) { return [i.cat, i.manufacturer, i.model, i.size, i.ref, i.lot].join('|'); }, have = sg.implants.map(key), add = list.filter(function (i) { return have.indexOf(key(i)) < 0; });
+      add.forEach(function (i) { sg.implants.push(i); }); commit(true); rerender(); var m = $('rgNoteMsg'); if (m) m.textContent = add.length === 1 ? t('fromNoteDone1') : f('fromNoteDone', add.length); };
+    var now = function () { commit(true); };
+    on('rgSaveBtn', now); on('rgRetry', now);
+  }
+  window.__reg = { get saveState() { return sv.st; }, flush: flush, html: html, bind: bind, badge: badge, chips: chips, get ui() { return ui; }, get cur() { return cur; } };
+})();
+</script>
 <!-- ===== PROMs + doctor dashboard UI (DEMO = localStorage, cloud = database) ===== -->
 <script id="ortho-proms-app">
 (function () {
@@ -5828,13 +6200,13 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   Object.keys(S3).forEach(function (lg) { Object.keys(S3[lg]).forEach(function (k) { S[lg][k] = S3[lg][k]; }); });
   var S4 = { // 👥 Patients tab (doctor-only) + concise Dashboard summaries
     el: { tabPts: 'Ασθενείς', psT: 'Ασθενείς', psSearch: 'Αναζήτηση: όνομα, ΑΜΚΑ ή κωδικός', psBack: '← Λίστα ασθενών', psToDash: '← Dashboard', psOpenTab: 'Καρτέλα «Ασθενείς»',
-      psSub_info: 'Στοιχεία', psSub_fu: 'Παρακολούθηση', psSub_proms: 'PROMs', psSub_hx: 'Ιστορικό', psSub_op: 'Επέμβαση', psSub_xr: 'Ακτινογραφίες', psSub_rom: 'Εύρος κίνησης',
+      psSub_info: 'Στοιχεία', psSub_fu: 'Παρακολούθηση', psSub_proms: 'PROMs', psSub_hx: 'Ιστορικό', psSub_op: 'Επέμβαση', psSub_cx: 'Επιπλοκές & Προθέσεις', psSub_xr: 'Ακτινογραφίες', psSub_rom: 'Εύρος κίνησης',
       psNoDate: 'χωρίς ημερομηνία επέμβασης', psPre: 'σε {0} ημ. (πριν την επέμβαση)', psPodD: '{0}η μετεγχειρητική ημέρα', psPodW: '{0} εβδομάδες μετά', psPodM: '{0} μήνες μετά',
       psLatest: 'Τελευταίο PROM', psPending: 'Εκκρεμότητες', psNoPending: 'καμία', psDue: '{0} εκκρεμή', psOver: '{0} εκπρόθεσμα', psNoConsent: 'χωρίς συγκατάθεση',
       sumT: 'Ασθενείς – σύνοψη', sumLead: 'Πατήστε έναν ασθενή για να ανοίξει ο πλήρης φάκελος στην καρτέλα «Ασθενείς».', colProc: 'Επέμβαση · πλευρά', colPod: 'Μετά την επέμβαση',
       infoT: 'Στοιχεία ασθενή', infoSum: 'Σύνοψη', infoAct: 'Ενέργειες', fldName: 'Ονοματεπώνυμο', psXrNone: 'Δεν υπάρχουν ακόμη μετρήσεις ακτινογραφιών για αυτόν τον ασθενή.', psXrGo: 'Άνοιγμα καρτέλας «Ακτινογραφίες»', npDoneOpen: '📂 Άνοιγμα φακέλου', tabSet: 'Ρυθμίσεις', setT: '⚙️ Ρυθμίσεις', setBtn: '⚙️ Ρυθμίσεις', studyBtn: '📊 Μελέτες', setLead: 'Διαχείριση λογαριασμών ιατρών και αρχείο πρόσβασης. Δεν περιέχει δεδομένα ασθενών.', setNone: 'Η πρόσκληση ιατρών και το αρχείο πρόσβασης είναι διαθέσιμα μόνο στον ιδιοκτήτη του λογαριασμού.' },
     en: { tabPts: 'Patients', psT: 'Patients', psSearch: 'Search: name, AMKA or code', psBack: '← Patient list', psToDash: '← Dashboard', psOpenTab: '«Patients» tab',
-      psSub_info: 'Details', psSub_fu: 'Follow-up', psSub_proms: 'PROMs', psSub_hx: 'History', psSub_op: 'Surgery', psSub_xr: 'X-rays', psSub_rom: 'Range of motion',
+      psSub_info: 'Details', psSub_fu: 'Follow-up', psSub_proms: 'PROMs', psSub_hx: 'History', psSub_op: 'Surgery', psSub_cx: 'Complications & Implants', psSub_xr: 'X-rays', psSub_rom: 'Range of motion',
       psNoDate: 'no surgery date', psPre: 'in {0} d (before surgery)', psPodD: 'post-op day {0}', psPodW: '{0} weeks post-op', psPodM: '{0} months post-op',
       psLatest: 'Latest PROM', psPending: 'Pending', psNoPending: 'none', psDue: '{0} due', psOver: '{0} overdue', psNoConsent: 'no consent',
       sumT: 'Patients – summary', sumLead: 'Tap a patient to open the full record in the «Patients» tab.', colProc: 'Procedure · side', colPod: 'Since surgery',
@@ -6592,7 +6964,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   function clearFails() { try { localStorage.removeItem(LOCKKEY); } catch (e) {} }
   var dsel = { proc: '', inst: '', pid: '', tp: '' }, dashProtoOpen = false, libAfterLogin = false;
   // ---------- 👥 Patients tab (doctor-only): searchable patient list + full patient file with sub-tabs; the Dashboard keeps only summaries ----------
-  var PSUBS = ['info', 'fu', 'proms', 'hx', 'op', 'xr', 'rom'], psub = 'info', pq = '', pproc = '', navPopping = false, subsOpen = false;
+  var PSUBS = ['info', 'fu', 'proms', 'hx', 'op', 'cx', 'xr', 'rom'], psub = 'info', pq = '', pproc = '', navPopping = false, subsOpen = false;
   function postOp(p, td) {
     if (!p || !p.surgeryDate) return { d: null, txt: t('psNoDate') };
     var d = P.daysBetween(p.surgeryDate, td);
@@ -6677,7 +7049,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       '<label class="fld">' + esc(t('filterInst')) + '<select id="fInst">' + opt('', t('all'), !dsel.inst) + instIds.map(function (k) { return opt(k, I[k].short, dsel.inst === k); }).join('') + '</select></label><button id="dCsv" style="align-self:flex-end">⬇ ' + esc(t('csv')) + '</button><button id="dToPts" class="ghost" style="align-self:flex-end">👥 ' + esc(t('psOpenTab')) + ' →</button></div>';
     h += '<div class="tblwrap"><table class="tbl pssum" id="ptTable"><tr><th>' + esc(t('npPatient')) + '</th><th>' + esc(t('colProc')) + '</th><th>' + esc(t('colPod')) + '</th><th>' + esc(t('psLatest')) + '</th><th>' + esc(t('mcidN')) + '</th><th>' + esc(t('psPending')) + '</th></tr>' + pts.map(function (p) {
       var r = ptSummary(p, td, dsel.inst);
-      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '" tabindex="0"><td data-l=""><b class="ptnm">' + esc(ptLabel(p)) + '</b>' + (ptName(p) ? ' <span class="muted npcode">' + esc(p.id) + '</span>' : '') + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + (camAllowed(p) ? ' <span class="pill clin" title="' + esc(t('camT')) + '">📷 ' + esc(t('camPill')) + '</span>' : '') + (window.__hx ? window.__hx.badge(p) : '') +
+      return '<tr class="click' + (dsel.pid === p.id ? ' selrow' : '') + '" data-pid="' + esc(p.id) + '" tabindex="0"><td data-l=""><b class="ptnm">' + esc(ptLabel(p)) + '</b>' + (ptName(p) ? ' <span class="muted npcode">' + esc(p.id) + '</span>' : '') + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + (camAllowed(p) ? ' <span class="pill clin" title="' + esc(t('camT')) + '">📷 ' + esc(t('camPill')) + '</span>' : '') + (window.__hx ? window.__hx.badge(p) : '') + (window.__reg ? window.__reg.badge(p) : '') +
         '<br><span class="muted small amkam">' + esc(t('npAmka')) + ' ' + esc(p.amka ? ID.maskAmka(p.amka) : '–') + '</span></td>' +
         '<td data-l="' + esc(t('colProc')) + '">' + esc(tx(PROC[p.procedure].name)) + (p.side ? ' · ' + esc(sideTxt(p)) : '') + '</td>' +
         '<td data-l="' + esc(t('colPod')) + '">' + esc(r.po.txt) + (p.surgeryDate ? '<br><span class="muted small">' + esc(p.surgeryDate) + '</span>' : '') + '</td>' +
@@ -6715,7 +7087,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (window.__pexp) { window.__pexp.bind(); window.__pexp.bindPt(); }
     document.querySelectorAll('#ptTable tr[data-pid]').forEach(function (r) { var go = function () { if (r.dataset.pid !== dsel.pid) audit('view-patient', r.dataset.pid); openPts(r.dataset.pid); }; r.onclick = go; r.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }; });
     bindPts(sp);
-    if (sp) { bindCamera(sp); bindAssign(sp); if (window.__hx) window.__hx.bind(sp); }
+    if (sp) { bindCamera(sp); bindAssign(sp); if (window.__hx) window.__hx.bind(sp); if (window.__reg) window.__reg.bind(sp); }
     if (sp && window.__xcmp) window.__xcmp.bind(sp);
     if (sp && window.__opnote) window.__opnote.bind(sp);
     if (sp && window.__qlib) window.__qlib.bindAnswers(sp);
@@ -6733,7 +7105,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
         var r = ptSummary(p, td), on = sp === p;
         return '<button class="psitem' + (on ? ' on' : '') + '" role="option" aria-selected="' + on + '" data-pspid="' + esc(p.id) + '"><span class="psnm"><b>' + esc(ptLabel(p)) + '</b>' + (!CLOUD || p.demo ? ' <span class="pill demo">DEMO</span>' : '') + '</span>' +
           '<span class="muted small">' + esc(tx(PROC[p.procedure].name)) + (p.side ? ' · ' + esc(sideTxt(p)) : '') + ' · ' + esc(r.po.txt) + '</span>' +
-          '<span class="psbadges">' + (r.over ? '<span class="badge psbad">✗ ' + r.over + '</span>' : '') + (r.due ? '<span class="badge pswarn">● ' + r.due + '</span>' : '') + (!r.consent ? '<span class="badge pswarn psnocons" title="' + esc(t('psNoConsent')) + '">✍︎</span>' : '') + (r.mT ? '<span class="badge ' + (r.mOk ? 'ok' : 'na') + '">MCID ' + r.mOk + '/' + r.mT + '</span>' : '') + '</span></button>';
+          '<span class="psbadges">' + (r.over ? '<span class="badge psbad">✗ ' + r.over + '</span>' : '') + (r.due ? '<span class="badge pswarn">● ' + r.due + '</span>' : '') + (!r.consent ? '<span class="badge pswarn psnocons" title="' + esc(t('psNoConsent')) + '">✍︎</span>' : '') + (r.mT ? '<span class="badge ' + (r.mOk ? 'ok' : 'na') + '">MCID ' + r.mOk + '/' + r.mT + '</span>' : '') + (window.__reg ? window.__reg.badge(p) : '') + '</span></button>';
       }).join('') : '<p class="muted" id="psNone">' + esc(t('npNoMatch')) + '</p>') + '</div></aside>';
     h += '<div class="psmain">' + (sp ? ptFileHtml(sp, td) : '<div class="card muted psempty" id="psEmpty">' + esc(t('selectPt')) + '</div>') + '</div></div>';
     return h;
@@ -6770,6 +7142,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     h += sec('proms', promsSecHtml(p, td));
     h += sec('hx', window.__hx ? window.__hx.html(p, !!np.open) : '');
     h += sec('op', window.__opnote ? window.__opnote.html(p) : '');
+    h += sec('cx', window.__reg ? window.__reg.html(p, !!np.open) : '');
     var xr = window.__xray ? window.__xray.dashHtml(p) : '';
     h += sec('xr', '<span class="fuanchor" id="xrSec"></span>' + (xr || '<p class="muted" id="psXrNone">' + esc(t('psXrNone')) + '</p>') + '<p><button class="small" id="psXrGo">🩻 ' + esc(t('psXrGo')) + '</button></p>');
     h += sec('rom', '<span class="fuanchor" id="camSec"></span>' + cameraHtml(p));
@@ -8294,9 +8667,67 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     var d = ok.map(function (q) { return q[1] - q[0]; }), sw = d.length >= 3 ? shapiro(d) : null, normal = !!(sw && sw.p >= 0.05);
     var r = normal ? tPaired(ok) : wilcoxon(ok); if (!r) r = wilcoxon(ok); if (!r) return null; r.normal = normal; return r;
   }
+  // ---------- proportions + survival (complications / implant survival) ----------
+  /** Inverse of the regularised incomplete beta in x (bisection; I_x(a, b) is monotone in x). */
+  function qbeta(p, a, b) { if (p <= 0) return 0; if (p >= 1) return 1; var lo = 0, hi = 1; for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (ibeta(m, a, b) < p) lo = m; else hi = m; if (hi - lo < 1e-15) break; } return (lo + hi) / 2; }
+  /** Exact (Clopper–Pearson) two-sided CI for k / n. */
+  function binomCI(k, n, conf) {
+    if (!(n > 0)) return null; var a = 1 - (conf || 0.95);
+    return { p: k / n, lo: k === 0 ? 0 : qbeta(a / 2, k, n - k + 1), hi: k === n ? 1 : qbeta(1 - a / 2, k + 1, n - k), method: 'clopper-pearson' };
+  }
+  /** Kaplan–Meier product-limit estimate. t: times (≥ 0), e: 1 = event, 0 = censored. Steps at each distinct time with
+   *  {t, nRisk, d (events), c (censored), S, se (Greenwood SE of S), lo, hi (95% CI, log(−log) transform as in lifelines)}. */
+  function kaplanMeier(t, e, conf) {
+    var z = qnorm(1 - (1 - (conf || 0.95)) / 2), idx = [];
+    for (var i = 0; i < t.length; i++) if (isNum(t[i]) && t[i] >= 0) idx.push(i);
+    idx.sort(function (a, b) { return t[a] - t[b]; });
+    var n = idx.length, S = 1, gw = 0, steps = [], k = 0;
+    while (k < idx.length) {
+      var tt = t[idx[k]], d = 0, c = 0, nr = n;
+      while (k < idx.length && t[idx[k]] === tt) { if (e[idx[k]]) d++; else c++; k++; }
+      if (d) { S *= 1 - d / nr; if (nr > d) gw += d / (nr * (nr - d)); }
+      var lo = S, hi = S;
+      if (S > 0 && S < 1 && gw > 0) { var v = Math.log(S), w = z * Math.sqrt(gw) / v; lo = Math.exp(-Math.exp(Math.log(-v) - w)); hi = Math.exp(-Math.exp(Math.log(-v) + w)); }
+      else if (S === 0) { lo = 0; hi = 0; }
+      steps.push({ t: tt, nRisk: nr, d: d, c: c, S: S, se: S * Math.sqrt(gw), lo: lo, hi: hi });
+      n -= d + c;
+    }
+    var med = null; for (var j = 0; j < steps.length; j++) if (steps[j].S <= 0.5) { med = steps[j].t; break; }
+    return { n: idx.length, events: steps.reduce(function (s, x) { return s + x.d; }, 0), steps: steps, median: med, maxT: steps.length ? steps[steps.length - 1].t : 0 };
+  }
+  /** S(t) from a KM fit (right-continuous step). Returns null beyond the last observed time. */
+  function kmAt(km, time) {
+    if (!km || !km.n || time > km.maxT) return null;
+    var r = { S: 1, lo: 1, hi: 1, nRisk: km.n, t: time };
+    for (var i = 0; i < km.steps.length; i++) { var s = km.steps[i]; if (s.t > time) { r.nRisk = s.nRisk; return r; } r.S = s.S; r.lo = s.lo; r.hi = s.hi; r.nRisk = s.nRisk - s.d - s.c; }
+    return r;
+  }
+  /** Number at risk at time x (subjects with time ≥ x). */
+  function atRisk(t, x) { var n = 0; for (var i = 0; i < t.length; i++) if (isNum(t[i]) && t[i] >= x) n++; return n; }
+  /** Two-group log-rank test (Mantel–Cox, hypergeometric variance), χ² with 1 df. */
+  function logRank(t1, e1, t2, e2) {
+    var all = [];
+    t1.forEach(function (x, i) { if (isNum(x) && x >= 0) all.push([x, e1[i] ? 1 : 0, 0]); });
+    t2.forEach(function (x, i) { if (isNum(x) && x >= 0) all.push([x, e2[i] ? 1 : 0, 1]); });
+    if (!all.length) return null;
+    all.sort(function (a, b) { return a[0] - b[0]; });
+    var n1 = all.filter(function (r) { return !r[2]; }).length, n2 = all.length - n1, O1 = 0, E1 = 0, V = 0, D = 0, k = 0;
+    if (!n1 || !n2) return null;
+    while (k < all.length) {
+      var tt = all[k][0], d1 = 0, d2 = 0, c1 = 0, c2 = 0;
+      while (k < all.length && all[k][0] === tt) { var r = all[k]; if (r[2]) { if (r[1]) d2++; else c2++; } else { if (r[1]) d1++; else c1++; } k++; }
+      var d = d1 + d2, n = n1 + n2;
+      if (d && n > 0) { O1 += d1; E1 += d * n1 / n; if (n > 1) V += d * (n1 / n) * (1 - n1 / n) * (n - d) / (n - 1); D += d; }
+      n1 -= d1 + c1; n2 -= d2 + c2;
+    }
+    if (!D || !(V > 0)) return { test: 'logrank', chi2: 0, df: 1, p: 1, O1: O1, E1: E1, O2: D - O1, E2: D - E1 };
+    var chi2 = (O1 - E1) * (O1 - E1) / V;
+    return { test: 'logrank', chi2: chi2, df: 1, p: cap(pchisqUpper(chi2, 1)), O1: O1, E1: E1, O2: D - O1, E2: D - E1 };
+  }
   root.OrthoStudyStats = { isNum: isNum, mean: mean, sd: sd, variance: variance, median: median, quantile: quantile, describe: describe, gammaln: gammaln, ibeta: ibeta, gammaQ: gammaQ,
     pnorm: pnorm, qnorm: qnorm, pt2: pt2, pchisqUpper: pchisqUpper, shapiro: shapiro, tWelch: tWelch, tStudent: tStudent, tPaired: tPaired, rank: rank, mannWhitney: mannWhitney,
-    wilcoxon: wilcoxon, chisq: chisq, fisher: fisher, categorical: categorical, compare2: compare2, comparePaired: comparePaired };
+    wilcoxon: wilcoxon, chisq: chisq, fisher: fisher, categorical: categorical, compare2: compare2, comparePaired: comparePaired,
+    qbeta: qbeta, binomCI: binomCI, kaplanMeier: kaplanMeier, kmAt: kmAt, atRisk: atRisk, logRank: logRank };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script id="ortho-study">
@@ -8310,13 +8741,14 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   var TPS = ['pre', '6w', '3m', '6m', '1y', '2y'];
   function HX() { return root.OrthoHistory; }
   function OPN() { return root.OrthoOpNote; }
+  function RG() { return root.OrthoRegistry; }
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function num(v) { if (v === '' || v == null) return null; var x = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; }
   function tr(o, lg) { return o == null ? '' : typeof o === 'string' ? o : (o[lg] != null ? o[lg] : (o.el || o.en || '')); }
   var TX = {
     el: { n: 'Ασθενείς, n', age: 'Ηλικία (έτη)', female: 'Γυναίκες', sex: 'Φύλο', F: 'Γυναίκα', M: 'Άνδρας', bmi: 'BMI (kg/m²)', asa: 'ASA', cci: 'Charlson (CCI)', cciAge: 'Charlson με ηλικία', side: 'Πλευρά', R: 'Δεξιά', L: 'Αριστερά', B: 'Αμφοτερόπλευρα',
       proc: 'Επέμβαση', smoking: 'Κάπνισμα', never: 'Ποτέ', ex: 'Πρώην', current: 'Ενεργός', comorb: 'Συννοσηρότητες', labs: 'Εργαστηριακά', op: 'Χειρουργείο (πρακτικό)', dur: 'Διάρκεια επέμβασης (min)', tq: 'Χρόνος ισχαιμίας (min)', ebl: 'Απώλεια αίματος (ml)', anaes: 'Αναισθησία',
-      fu: 'Παρακολούθηση (μήνες)', meanSd: 'μέση τιμή ± SD', medIqr: 'διάμεσος [IQR]', nPct: 'n (%)', fix: 'Καθήλωση εμφυτεύματος', cemented: 'Με τσιμέντο', uncemented: 'Χωρίς τσιμέντο', hybrid: 'Υβριδική', manu: 'Κατασκευαστής εμφυτεύματος',
+      fu: 'Παρακολούθηση (μήνες)', meanSd: 'μέση τιμή ± SD', medIqr: 'διάμεσος [IQR]', nPct: 'n (%)', fix: 'Καθήλωση πρόθεσης', cemented: 'Με τσιμέντο', uncemented: 'Χωρίς τσιμέντο', hybrid: 'Υβριδική', manu: 'Κατασκευαστής πρόθεσης',
       ageLt: 'Ηλικία < {0}', ageGe: 'Ηλικία ≥ {0}', bmiLt: 'BMI < {0}', bmiGe: 'BMI ≥ {0}', asaLo: 'ASA I–II', asaHi: 'ASA III–V', others: 'Όλοι οι άλλοι', grpA: 'Ομάδα Α', grpB: 'Ομάδα Β', romMax: 'Εύρος κίνησης: μέγιστη κάμψη (°)', romMin: 'Εύρος κίνησης: ελάχιστη κάμψη / έλλειμμα έκτασης (°)' },
     en: { n: 'Patients, n', age: 'Age (years)', female: 'Female', sex: 'Sex', F: 'Female', M: 'Male', bmi: 'BMI (kg/m²)', asa: 'ASA grade', cci: 'Charlson Comorbidity Index', cciAge: 'Age-adjusted Charlson index', side: 'Side', R: 'Right', L: 'Left', B: 'Bilateral',
       proc: 'Procedure', smoking: 'Smoking', never: 'Never', ex: 'Former', current: 'Current', comorb: 'Comorbidities', labs: 'Laboratory values', op: 'Surgery (operative note)', dur: 'Operative time (min)', tq: 'Tourniquet time (min)', ebl: 'Blood loss (ml)', anaes: 'Anaesthesia',
@@ -8378,12 +8810,13 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     return pts.map(function (p, i) {
       var note = noteOf(store, p.id), nf = note && note.fields || {}, raw = p.history, hasHx = !!(H && raw && typeof raw === 'object' && !H.isEmpty(raw));
       var h = hasHx ? H.normalize(JSON.parse(JSON.stringify(raw))) : null, c = hasHx ? H.compute({ age: num(p.age), sex: p.sex, history: h }) : null;
+      var ii = RG() ? RG().indexImplants(p) : null;
       var asaF = h && h.asa && num(h.asa.final), asaN = num(nf.asa), side = String(p.side || nf.side || '').charAt(0).toUpperCase();
       var fu = null; subs.forEach(function (s) { if (s.patientId !== p.id || !s.date || !p.surgeryDate || s.timepoint === 'pre') return; var d = P.daysBetween(p.surgeryDate, s.date); if (d > 0 && (fu == null || d > fu)) fu = d; });
       var r = { pid: p.id, code: 'S' + String(i + 1).padStart(w, '0'), proc: p.procedure, ulType: p.ulType || null, sex: p.sex === 'F' || p.sex === 'M' ? p.sex : null, age: num(p.age), side: /^[RLB]$/.test(side) ? side : null,
         hasHx: hasHx, bmi: c ? c.bmi : null, cci: c ? c.cci.score : null, cciAge: c ? c.cci.ageAdj : null, asa: asaF || asaN || null, smoking: h && h.smoking || null,
         cond: hasHx ? H.CONDS.reduce(function (o, x) { o[x.k] = H.has(h, x.k) ? 1 : 0; return o; }, {}) : null, labs: hasHx ? H.LABS.reduce(function (o, l) { o[l.k] = H.num(h.labs && h.labs[l.k]); return o; }, {}) : null,
-        hasNote: !!note, op: nf, dur: num(nf.duration), tq: num(nf.tqTime), ebl: num(nf.ebl), fix: fixation(note), manu: manufacturer(note), fuDays: fu, fuMonths: fu != null ? fu / 30.4375 : null, g: null };
+        hasNote: !!note, op: nf, dur: num(nf.duration), tq: num(nf.tqTime), ebl: num(nf.ebl), fix: fixation(note) || (ii && ii.fix) || null, manu: manufacturer(note) || (ii && ii.manu) || null, hasReg: !!(RG() && p.registry && !RG().isEmpty(RG().normalize(p.registry))), fuDays: fu, fuMonths: fu != null ? fu / 30.4375 : null, g: null };
       return r;
     });
   }
@@ -8629,8 +9062,104 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       if (x.length) paras.push(x.join(' '));
     });
     var note = E ? 'Values are mean ± SD unless stated otherwise; p-values are two-sided.' : 'Οι τιμές είναι μέση τιμή ± SD εκτός αν αναφέρεται διαφορετικά· οι τιμές p είναι αμφίπλευρες.';
+    if (ctx.cx || ctx.surv) { var cxp = cxText(ctx.cx, ctx.surv, L, lg); if (cxp) { paras.push(cxp); note += E ? ' Proportions with exact (Clopper–Pearson) 95% CI; implant survival by the Kaplan–Meier method (95% CI, log(−log) transformation), groups compared with the log-rank test.' : ' Ποσοστά με ακριβές (Clopper–Pearson) 95% CI· επιβίωση πρόθεσης με τη μέθοδο Kaplan–Meier (95% CI, μετασχηματισμός log(−log)), σύγκριση ομάδων με τον έλεγχο log-rank.'; } }
     paras.push(note);
     return paras.join('\n\n');
+  }
+  // ---------- ⚠️ complications + implant survival (from the registry in the patient file) ----------
+  var CXT = {
+    el: { any: 'Οποιαδήποτε επιπλοκή', cd3: 'Clavien–Dindo ≥ III', reopAny: 'Επανεπέμβαση (οποιαδήποτε)', rev: 'Αναθεώρηση', death: 'Θάνατος', win: { all: 'οποτεδήποτε μετά το χειρουργείο', 30: 'εντός 30 ημερών', 90: 'εντός 90 ημερών', 365: 'εντός 1 έτους' },
+      epRev: 'αναθεώρηση για οποιαδήποτε αιτία', epReop: 'οποιαδήποτε επανεπέμβαση', yr: function (n) { return n === 1 ? '1 έτος' : n + ' έτη'; }, atYr: function (n) { return n === 1 ? 'στο 1 έτος' : 'στα ' + n + ' έτη'; } },
+    en: { any: 'Any complication', cd3: 'Clavien–Dindo grade ≥ III', reopAny: 'Reoperation (any)', rev: 'Revision', death: 'Death', win: { all: 'at any time after surgery', 30: 'within 30 days', 90: 'within 90 days', 365: 'within 1 year' },
+      epRev: 'revision for any reason', epReop: 'any reoperation', yr: function (n) { return n === 1 ? '1 year' : n + ' years'; }, atYr: function (n) { return n === 1 ? 'at 1 year' : 'at ' + n + ' years'; } }
+  };
+  function ci(k, n, lg) { var c = S.binomCI(k, n); return c ? fx(100 * c.lo, 1, lg) + '–' + fx(100 * c.hi, 1, lg) + '%' : '–'; }
+  function cell(x, lg) { return x && x.N ? x.k + ' (' + pct(x.k, x.N, lg) + ')' : '–'; }
+  /** Complication rates in the cohort. opt: {days: null|30|90|365, denom: 'all'|'recorded'} →
+   *  {N, recorded, groups, nA, nB, rows: [{k, label, all:{k, N, ci}, A, B, p, test}]}; per-row flags in r.cx. */
+  function complications(store, rs, opt, lg) {
+    opt = opt || {}; var R = RG(); if (!R) return null; var byId = {}; (store.patients || []).forEach(function (p) { byId[p.id] = p; });
+    rs.forEach(function (r) { r.cx = R.flags(byId[r.pid] || {}, { days: isNum(num(opt.days)) ? num(opt.days) : null }); });
+    var use = opt.denom === 'recorded' ? rs.filter(function (r) { return r.hasReg; }) : rs, grp = rs.some(function (r) { return r.g; });
+    var A = use.filter(function (r) { return r.g === 'A'; }), B = use.filter(function (r) { return r.g === 'B'; }), C = CXT[lg];
+    function row(k, label, get, indent) {
+      var cnt = function (set) { var kk = set.filter(function (r) { return get(r.cx); }).length; return { k: kk, N: set.length, ci: S.binomCI(kk, set.length) }; };
+      var o = { k: k, label: label, indent: !!indent, all: cnt(use) };
+      if (grp) { o.A = cnt(A); o.B = cnt(B); var t = A.length && B.length ? S.categorical([[o.A.k, o.A.N - o.A.k], [o.B.k, o.B.N - o.B.k]]) : null; o.p = t ? t.p : null; o.test = t ? t.test : ''; if (!t && A.length && B.length && !o.A.k && !o.B.k) { o.p = null; } }
+      return o;
+    }
+    var out = [row('any', C.any, function (f) { return f.any; })];
+    R.CX.forEach(function (c) { if (c.k === 'revision' || c.k === 'reop' || c.k === 'death') return; if (use.some(function (r) { return r.cx.by[c.k]; })) out.push(row(c.k, R.cxLabel(c.k, lg, true), function (f) { return f.by[c.k]; }, true)); });
+    out.push(row('cd3', C.cd3, function (f) { return f.cd3; })); out.push(row('reop', C.reopAny, function (f) { return f.reop; })); out.push(row('rev', C.rev, function (f) { return f.rev; }));
+    if (use.some(function (r) { return r.cx.death; })) out.push(row('death', C.death, function (f) { return f.death; }));
+    return { N: use.length, cohort: rs.length, recorded: rs.filter(function (r) { return r.hasReg; }).length, denom: opt.denom === 'recorded' ? 'recorded' : 'all', days: isNum(num(opt.days)) ? num(opt.days) : null, groups: grp, nA: A.length, nB: B.length, rows: out };
+  }
+  /** Kaplan–Meier survival of the index implant. opt: {endpoint: 'revision'|'reop', censor: 'last'|'today', today} →
+   *  {n, events, excluded, all: km, A, B, logrank, at: [{m, all, A, B}], fu: describe(times)}; per-row r.surv = {t, e}. */
+  var SURV_AT = [12, 24, 60, 120];
+  function survival(store, rs, opt) {
+    opt = opt || {}; var R = RG(); if (!R) return null; var byId = {}; (store.patients || []).forEach(function (p) { byId[p.id] = p; });
+    rs.forEach(function (r) { var s = R.survivalOf(store, byId[r.pid] || {}, opt); r.surv = s.ok ? { t: s.t, e: s.e } : null; });
+    var ok = rs.filter(function (r) { return r.surv; }), grp = rs.some(function (r) { return r.g; });
+    var fit = function (set) { return S.kaplanMeier(set.map(function (r) { return r.surv.t; }), set.map(function (r) { return r.surv.e; })); };
+    var A = ok.filter(function (r) { return r.g === 'A'; }), B = ok.filter(function (r) { return r.g === 'B'; });
+    var o = { endpoint: opt.endpoint === 'reop' ? 'reop' : 'revision', censor: opt.censor === 'today' ? 'today' : 'last', n: ok.length, excluded: rs.length - ok.length, events: ok.filter(function (r) { return r.surv.e; }).length, all: fit(ok), groups: grp,
+      fu: S.describe(ok.map(function (r) { return r.surv.t; })) };
+    if (grp) { o.A = fit(A); o.B = fit(B); o.nA = A.length; o.nB = B.length; o.logrank = A.length && B.length ? S.logRank(A.map(function (r) { return r.surv.t; }), A.map(function (r) { return r.surv.e; }), B.map(function (r) { return r.surv.t; }), B.map(function (r) { return r.surv.e; })) : null; }
+    o.at = SURV_AT.map(function (m) { var x = { m: m, all: S.kmAt(o.all, m) }; if (grp) { x.A = S.kmAt(o.A, m); x.B = S.kmAt(o.B, m); } return x; }).filter(function (x) { return x.all || x.A || x.B; });
+    return o;
+  }
+  function survTxt(x, lg) { return x ? fx(100 * x.S, 1, lg) + '% (95% CI ' + fx(100 * x.lo, 1, lg) + '–' + fx(100 * x.hi, 1, lg) + '%)' : '–'; }
+  /** «Results» sentences for complications + survival (numbers only). */
+  function cxText(cx, sv, L, lg) {
+    var E = lg === 'en', C = CXT[lg], x = [];
+    if (cx && cx.N) {
+      var w = C.win[cx.days == null ? 'all' : cx.days] || (E ? 'within ' + cx.days + ' days' : 'εντός ' + cx.days + ' ημερών'), any = cx.rows[0];
+      var den = cx.denom === 'recorded' ? (E ? ' (patients with a completed registry, n = ' + cx.N + ')' : ' (ασθενείς με συμπληρωμένο μητρώο, n = ' + cx.N + ')') : '';
+      if (!cx.groups) {
+        var types = cx.rows.filter(function (r) { return r.indent && r.all.k; }).map(function (r) { return r.label.toLowerCase().replace(/^dvt/, 'DVT').replace(/ pji$/, ' PJI').replace(/ mua$/, ' MUA') + ', n = ' + r.all.k + ' (' + pct(r.all.k, r.all.N, lg) + ')'; });
+        x.push(E ? 'Complications ' + w + ' occurred in ' + any.all.k + '/' + any.all.N + ' patients' + den + ' (' + pct(any.all.k, any.all.N, lg) + '; 95% CI ' + ci(any.all.k, any.all.N, lg) + ')' + (types.length ? ': ' + types.join('; ') : '') + '.'
+          : 'Επιπλοκές ' + w + ' εμφανίστηκαν σε ' + any.all.k + '/' + any.all.N + ' ασθενείς' + den + ' (' + pct(any.all.k, any.all.N, lg) + '· 95% CI ' + ci(any.all.k, any.all.N, lg) + ')' + (types.length ? ': ' + types.join('· ') : '') + '.');
+        var g = function (k) { return cx.rows.filter(function (r) { return r.k === k; })[0]; }, c3 = g('cd3'), ro = g('reop'), rv = g('rev'), de = g('death');
+        var bits = [[c3, E ? 'Clavien–Dindo grade ≥ III' : 'Clavien–Dindo ≥ III'], [ro, E ? 'reoperation' : 'επανεπέμβαση'], [rv, E ? 'revision' : 'αναθεώρηση'], [de, E ? 'death' : 'θάνατος']].filter(function (b) { return b[0]; })
+          .map(function (b) { return b[1] + ': ' + b[0].all.k + ' (' + pct(b[0].all.k, b[0].all.N, lg) + (E ? '; ' : '· ') + '95% CI ' + ci(b[0].all.k, b[0].all.N, lg) + ')'; });
+        if (bits.length) { var j = bits.join(E ? '; ' : '· '); x.push(j.charAt(0).toUpperCase() + j.slice(1) + '.'); }
+      } else {
+        var ln = function (r, nm) { return nm + ' ' + r.A.k + '/' + r.A.N + ' (' + pct(r.A.k, r.A.N, lg) + ')' + (E ? ' vs ' : ' έναντι ') + r.B.k + '/' + r.B.N + ' (' + pct(r.B.k, r.B.N, lg) + ')' + (isNum(r.p) ? ' (' + pTxt(r.p, lg) + ', ' + TESTN[lg][r.test] + ')' : ''); };
+        var parts = [ln(any, E ? 'complications ' + w : 'επιπλοκές ' + w)];
+        var NM = { cd3: E ? 'Clavien–Dindo grade ≥ III' : 'Clavien–Dindo ≥ III', reop: E ? 'reoperation' : 'επανεπέμβαση', rev: E ? 'revision' : 'αναθεώρηση', death: E ? 'death' : 'θάνατος' };
+        cx.rows.filter(function (r) { return NM[r.k] && (r.A.k || r.B.k); }).forEach(function (r) { parts.push(ln(r, NM[r.k])); });
+        x.push((E ? 'In ' + L.A + ' vs ' + L.B + den + ': ' : 'Στην ομάδα «' + L.A + '» έναντι «' + L.B + '»' + den + ': ') + parts.join(E ? '; ' : '· ') + '.');
+      }
+    }
+    if (sv && sv.n) {
+      var ep = sv.endpoint === 'reop' ? C.epReop : C.epRev, at = sv.at.filter(function (a) { return a.all; });
+      var fu = E ? 'median follow-up ' + fx(sv.fu.median, 1, lg) + ' months, IQR ' + fx(sv.fu.q1, 1, lg) + '–' + fx(sv.fu.q3, 1, lg) : 'διάμεση παρακολούθηση ' + fx(sv.fu.median, 1, lg) + ' μήνες, IQR ' + fx(sv.fu.q1, 1, lg) + '–' + fx(sv.fu.q3, 1, lg);
+      var evn = E ? sv.events + (sv.events === 1 ? ' event' : ' events') : sv.events + (sv.events === 1 ? ' συμβάν' : ' συμβάντα');
+      if (!sv.groups) {
+        x.push(E ? 'Kaplan–Meier implant survival with ' + ep + ' as the endpoint was ' + (at.length ? at.map(function (a) { return survTxt(a.all, lg) + ' ' + C.atYr(a.m / 12); }).join(' and ') : survTxt(S.kmAt(sv.all, sv.all.maxT), lg) + ' at ' + fx(sv.all.maxT, 1, lg) + ' months') + ' (n = ' + sv.n + '; ' + evn + '; ' + fu + ').'
+          : 'Η επιβίωση της πρόθεσης κατά Kaplan–Meier με τελικό σημείο ' + ep + ' ήταν ' + (at.length ? at.map(function (a) { return survTxt(a.all, lg) + ' ' + C.atYr(a.m / 12); }).join(' και ') : survTxt(S.kmAt(sv.all, sv.all.maxT), lg) + ' στους ' + fx(sv.all.maxT, 1, lg) + ' μήνες') + ' (n = ' + sv.n + '· ' + evn + '· ' + fu + ').');
+      } else {
+        var last = sv.at.filter(function (a) { return a.A && a.B; }).slice(-1)[0];
+        var lr = sv.logrank && isNum(sv.logrank.p) ? (E ? ' (log-rank ' + pTxt(sv.logrank.p, lg) + ')' : ' (log-rank ' + pTxt(sv.logrank.p, lg) + ')') : '';
+        x.push(E ? 'Kaplan–Meier implant survival with ' + ep + ' as the endpoint ' + (last ? C.atYr(last.m / 12) + ' was ' + survTxt(last.A, lg) + ' in ' + L.A + ' (n = ' + sv.nA + ') and ' + survTxt(last.B, lg) + ' in ' + L.B + ' (n = ' + sv.nB + ')' : 'was compared between ' + L.A + ' (n = ' + sv.nA + ') and ' + L.B + ' (n = ' + sv.nB + ')') + lr + '; ' + evn + ', ' + fu + '.'
+          : 'Η επιβίωση της πρόθεσης κατά Kaplan–Meier με τελικό σημείο ' + ep + ' ' + (last ? C.atYr(last.m / 12) + ' ήταν ' + survTxt(last.A, lg) + ' στην ομάδα «' + L.A + '» (n = ' + sv.nA + ') και ' + survTxt(last.B, lg) + ' στην ομάδα «' + L.B + '» (n = ' + sv.nB + ')' : 'συγκρίθηκε μεταξύ «' + L.A + '» (n = ' + sv.nA + ') και «' + L.B + '» (n = ' + sv.nB + ')') + lr + '· ' + evn + ', ' + fu + '.');
+      }
+    }
+    return x.join(' ');
+  }
+  function cxMatrix(cx, labels, lg) {
+    var E = lg === 'en', h = cx.groups ? [E ? 'Complication' : 'Επιπλοκή', labels.A + ' n (%)', labels.A + ' 95% CI', labels.B + ' n (%)', labels.B + ' 95% CI', 'p', E ? 'Test' : 'Έλεγχος'] : [E ? 'Complication' : 'Επιπλοκή', 'n (%)', '95% CI (Clopper–Pearson)'];
+    var out = [h];
+    cx.rows.forEach(function (r) { var l = (r.indent ? '   ' : '') + r.label; if (cx.groups) out.push([l, cell(r.A, lg), ci(r.A.k, r.A.N, lg), cell(r.B, lg), ci(r.B.k, r.B.N, lg), isNum(r.p) ? fp(r.p, lg) : '', r.test ? TESTN[lg][r.test] : '']); else out.push([l, cell(r.all, lg), ci(r.all.k, r.all.N, lg)]); });
+    return out;
+  }
+  function survMatrix(sv, labels, lg) {
+    var E = lg === 'en', yr = CXT[lg].yr, out = [sv.groups ? [E ? 'Time' : 'Χρόνος', labels.A + ' S(t) (95% CI)', labels.A + (E ? ' at risk' : ' σε κίνδυνο'), labels.B + ' S(t) (95% CI)', labels.B + (E ? ' at risk' : ' σε κίνδυνο')] : [E ? 'Time' : 'Χρόνος', 'S(t) (95% CI)', E ? 'At risk' : 'Σε κίνδυνο']];
+    sv.at.forEach(function (a) { if (sv.groups) out.push([yr(a.m / 12), survTxt(a.A, lg), a.A ? a.A.nRisk : '', survTxt(a.B, lg), a.B ? a.B.nRisk : '']); else out.push([yr(a.m / 12), survTxt(a.all, lg), a.all ? a.all.nRisk : '']); });
+    out.push([E ? 'Patients / events' : 'Ασθενείς / συμβάντα'].concat(sv.groups ? [sv.nA + ' / ' + sv.A.events, '', sv.nB + ' / ' + sv.B.events, ''] : [sv.n + ' / ' + sv.events, '']));
+    if (sv.groups && sv.logrank) out.push(['Log-rank', 'χ² = ' + fx(sv.logrank.chi2, 2, lg), '', 'p = ' + fp(sv.logrank.p, lg), '']);
+    return out;
   }
   // ---------- exports (anonymised) ----------
   function t1Header(t1, labels, lg) { var h = [lg === 'en' ? 'Characteristic' : 'Χαρακτηριστικό', '', (lg === 'en' ? 'All' : 'Σύνολο') + ' (n = ' + t1.nAll + ')']; if (t1.groups) h.push((labels.A) + ' (n = ' + t1.nA + ')', (labels.B) + ' (n = ' + t1.nB + ')', 'p', lg === 'en' ? 'Test' : 'Έλεγχος'); h.push(lg === 'en' ? 'Missing' : 'Ελλείπουν'); return h; }
@@ -8655,16 +9184,19 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   /** Anonymised per-patient data (study code; no names, ΑΜΚΑ, internal codes or dates). */
   function dataMatrix(rs, outs, labels, lg) {
     var E = lg === 'en', h = [E ? 'Study code' : 'Κωδικός μελέτης', E ? 'Group' : 'Ομάδα', E ? 'Procedure' : 'Επέμβαση', T(lg, 'side'), T(lg, 'sex'), T(lg, 'age'), T(lg, 'bmi'), 'ASA', 'CCI', T(lg, 'fu')];
+    var X = !!(arguments[4] && arguments[4].cx); if (X) h.push(E ? 'Any complication' : 'Επιπλοκή', 'Clavien–Dindo ≥ III', E ? 'Reoperation' : 'Επανεπέμβαση', E ? 'Revision' : 'Αναθεώρηση', E ? 'Survival time (months)' : 'Χρόνος επιβίωσης (μήνες)', E ? 'Survival event (1 = endpoint)' : 'Συμβάν (1 = τελικό σημείο)');
     outs.forEach(function (o) { TPS.forEach(function (tp) { if (o.rows.some(function (r) { return r.tp === tp; })) h.push(o.label + ' · ' + TPN[lg][tp]); }); });
     var out = [h];
     rs.forEach(function (r) {
       var row = [r.code, r.g ? labels[r.g] : '', r.proc, r.side || '', r.sex || '', isNum(r.age) ? r.age : '', isNum(r.bmi) ? r.bmi : '', isNum(r.asa) ? r.asa : '', isNum(r.cci) ? r.cci : '', isNum(r.fuMonths) ? Math.round(r.fuMonths * 10) / 10 : ''];
+      if (X) row.push(r.cx ? r.cx.any : '', r.cx ? r.cx.cd3 : '', r.cx ? r.cx.reop : '', r.cx ? r.cx.rev : '', r.surv ? Math.round(r.surv.t * 10) / 10 : '', r.surv ? r.surv.e : '');
       outs.forEach(function (o) { TPS.forEach(function (tp) { if (!o.rows.some(function (x) { return x.tp === tp; })) return; var v = o.values.val[r.pid] ? o.values.val[r.pid][tp] : null; row.push(isNum(v) ? Math.round(v * 1000) / 1000 : ''); }); });
       out.push(row);
     });
     return out;
   }
   root.OrthoStudy = { VERSION: VERSION, TPS: TPS, TX: TX, TESTN: TESTN, TPN: TPN, fx: fx, fp: fp, sg: sg, pct: pct, meanSd: meanSd, medIqr: medIqr, filterPatients: filterPatients, rows: rows, groupOptions: groupOptions, assign: assign, groupLabels: groupLabels,
+    complications: complications, survival: survival, cxText: cxText, cxMatrix: cxMatrix, survMatrix: survMatrix, CXT: CXT, SURV_AT: SURV_AT, survTxt: survTxt,
     table1: table1, measures: measures, mLabel: mLabel, outcomes: outcomes, resultsText: resultsText, t1Matrix: t1Matrix, outMatrix: outMatrix, dataMatrix: dataMatrix, csv: csv, tsv: tsv, opSelFields: opSelFields };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -8688,6 +9220,9 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       c3: '3. Μετρήσεις αποτελέσματος', meas: 'Μετρήσεις', tps: 'Χρονικά σημεία στο κείμενο', noMeas: 'Δεν υπάρχουν απαντήσεις ερωτηματολογίων για αυτή την κοορτή.', lang: 'Γλώσσα αποτελεσμάτων',
       t1: 'Πίνακας 1 – Χαρακτηριστικά ασθενών', out: 'Αποτελέσματα', txt: 'Κείμενο «Results» για abstract', copy: '📋 Αντιγραφή', copyT: '📋 Αντιγραφή πίνακα', copyX: '📋 Αντιγραφή κειμένου', copied: '✓ Αντιγράφηκε', csv: '⬇ CSV (Πίνακας 1)', xlsx: '⬇ Excel (.xlsx)',
       foot: 'Τιμές: μέση τιμή ± SD, διάμεσος [IQR], n (%). Έλεγχοι: Shapiro–Wilk για την επιλογή t-test (Welch / ζευγαρωτό) ή Mann–Whitney U / Wilcoxon· χ² ή ακριβές Fisher όταν κάποια αναμενόμενη συχνότητα είναι < 5. Αμφίπλευρα p. MCID με τα ίδια όρια με το Dashboard.',
+      c4: '4. Επιπλοκές & επιβίωση πρόθεσης', cxLead: 'Από το «⚠️ Επιπλοκές & Προθέσεις» του φακέλου κάθε ασθενή. Μητρώο συμπληρωμένο σε {0}/{1} ασθενείς της κοορτής.', cxNone: 'Κανένας ασθενής της κοορτής δεν έχει καταχωρίσεις στο μητρώο επιπλοκών.', win: 'Χρονικό παράθυρο', winAll: 'Οποτεδήποτε', win30: '30 ημέρες', win90: '90 ημέρες', win365: '1 έτος',
+      denom: 'Παρονομαστής', denAll: 'Όλοι οι ασθενείς της κοορτής', denRec: 'Μόνο με συμπληρωμένο μητρώο', ep: 'Τελικό σημείο', epRev: 'Αναθεώρηση (οποιαδήποτε αιτία)', epReop: 'Οποιαδήποτε επανεπέμβαση', cens: 'Λογοκρισία (censoring)', censLast: 'Τελευταία καταγεγραμμένη επαφή', censToday: 'Ημερομηνία ανάλυσης (σήμερα)', inTxt: 'Στο κείμενο «Results»',
+      cxT: 'Επιπλοκές', km: 'Επιβίωση πρόθεσης (Kaplan–Meier)', kmY: 'Επιβίωση (%)', kmX: 'Μήνες από την επέμβαση', risk: 'Σε κίνδυνο', kmN: 'n = {0} · συμβάντα: {1} · εκτός ανάλυσης (χωρίς παρακολούθηση): {2}', all2: 'Κοορτή', kmFoot: 'Κάθε ασθενής από την ημερομηνία της κύριας επέμβασης έως το τελικό σημείο ή τη λογοκρισία· ο θάνατος λογοκρίνεται. 95% CI: Greenwood, μετασχηματισμός log(−log). Ποσοστά επιπλοκών με ακριβές 95% CI (Clopper–Pearson).',
       tp: 'Χρονικό σημείο', n: 'n', ms: 'Μέση ± SD', md: 'Διάμεσος [IQR]', np: 'n ζευγών', ch: 'Μεταβολή', pPre: 'p (vs προεγχ.)', mcid: 'MCID', p: 'p', test: 'Έλεγχος', chA: 'Μεταβολή Α', chB: 'Μεταβολή Β', pCh: 'p μεταβολής', pM: 'p MCID', miss: 'Ελλείπουν', all: 'Σύνολο' },
     en: { tab: '📊 Studies', T: '📊 Studies – results for an abstract', lead: 'Choose a patient cohort and (optionally) two comparison groups. The app builds Table 1, the PROM results and a «Results» text for a congress abstract.',
       privacy: 'All calculations run on this device. Tables, text and files carry study codes only (S001…): no names, AMKA or patient dates.',
@@ -8697,11 +9232,14 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       c3: '3. Outcome measures', meas: 'Measures', tps: 'Timepoints in the text', noMeas: 'No questionnaire responses for this cohort.', lang: 'Output language',
       t1: 'Table 1 – Patient characteristics', out: 'Outcomes', txt: '«Results» text for an abstract', copy: '📋 Copy', copyT: '📋 Copy table', copyX: '📋 Copy text', copied: '✓ Copied', csv: '⬇ CSV (Table 1)', xlsx: '⬇ Excel (.xlsx)',
       foot: 'Values: mean ± SD, median [IQR], n (%). Tests: Shapiro–Wilk selects t-test (Welch / paired) or Mann–Whitney U / Wilcoxon; χ² or Fisher exact when an expected count is < 5. Two-sided p. MCID with the same thresholds as the Dashboard.',
+      c4: '4. Complications & implant survival', cxLead: 'From «⚠️ Complications & Implants» in each patient file. Registry completed for {0}/{1} patients of the cohort.', cxNone: 'No patient of the cohort has entries in the complications registry.', win: 'Time window', winAll: 'Any time', win30: '30 days', win90: '90 days', win365: '1 year',
+      denom: 'Denominator', denAll: 'All patients of the cohort', denRec: 'Only with a completed registry', ep: 'Endpoint', epRev: 'Revision (any reason)', epReop: 'Any reoperation', cens: 'Censoring', censLast: 'Last documented contact', censToday: 'Analysis date (today)', inTxt: 'In the «Results» text',
+      cxT: 'Complications', km: 'Implant survival (Kaplan–Meier)', kmY: 'Survival (%)', kmX: 'Months after surgery', risk: 'At risk', kmN: 'n = {0} · events: {1} · not analysed (no follow-up): {2}', all2: 'Cohort', kmFoot: 'Each patient from the index surgery date to the endpoint or censoring; death is censored. 95% CI: Greenwood, log(−log) transformation. Complication rates with exact 95% CI (Clopper–Pearson).',
       tp: 'Timepoint', n: 'n', ms: 'Mean ± SD', md: 'Median [IQR]', np: 'Paired n', ch: 'Change', pPre: 'p (vs pre-op)', mcid: 'MCID', p: 'p', test: 'Test', chA: 'Change A', chB: 'Change B', pCh: 'p change', pM: 'p MCID', miss: 'Missing', all: 'All' }
   };
   var t = function (k) { var v = S[ui()][k]; return v == null ? k : v; };
   var f = function (k) { var a = [].slice.call(arguments, 1); return t(k).replace(/\{(\d)\}/g, function (_, i) { return a[+i]; }); };
-  var st = { procs: {}, side: '', from: '', to: '', ageMin: '', ageMax: '', sex: '', by: '', a: '', b: '*', cut: '', manual: {}, lblA: '', lblB: '', meas: null, tps: null, lg: 'en' };
+  var st = { procs: {}, side: '', from: '', to: '', ageMin: '', ageMax: '', sex: '', by: '', a: '', b: '*', cut: '', manual: {}, lblA: '', lblB: '', meas: null, tps: null, lg: 'en', cxDays: '', cxDenom: 'all', svEnd: 'revision', svCens: 'last', cxText: true };
   var btn = document.createElement('button'); btn.setAttribute('role', 'tab'); btn.dataset.tab = 'study'; btn.id = 'tabStudyBtn'; btn.className = 'hidden'; btn.textContent = t('tab');
   var tabs = $('tabs'); if (tabs) tabs.insertBefore(btn, $('tabSetBtn') || $('tabMeasureBtn') || null);
   var pane = document.createElement('section'); pane.className = 'pane hidden'; pane.id = 'tab-study'; pane.setAttribute('aria-label', 'Μελέτες / Studies');
@@ -8730,8 +9268,10 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     var t1 = St.table1(rs, lg), outs = St.outcomes(A.store, rs, sel, lg);
     var tpsAvail = St.TPS.slice(1).filter(function (tp) { return outs.some(function (o) { return o.rows.some(function (r) { return r.tp === tp; }); }); });
     var tps = (st.tps || ['6m', '1y']).filter(function (tp) { return tpsAvail.indexOf(tp) >= 0; }); if (!tps.length) tps = tpsAvail.slice(-1);
-    var txt = St.resultsText(rs, t1, outs, { labels: labels, tps: tps }, lg);
-    last = { rs: rs, gopts: gopts, go: go, gs: gs, labels: labels, dl: dl, ms: ms, sel: sel, t1: t1, outs: outs, tpsAvail: tpsAvail, tps: tps, txt: txt, lg: lg };
+    var anyReg = !!St.complications && rs.some(function (r) { return r.hasReg; }), cx = null, sv = null;
+    if (anyReg) { cx = St.complications(A.store, rs, { days: st.cxDays === '' ? null : +st.cxDays, denom: st.cxDenom }, lg); sv = St.survival(A.store, rs, { endpoint: st.svEnd, censor: st.svCens, today: today() }); }
+    var txt = St.resultsText(rs, t1, outs, { labels: labels, tps: tps, cx: anyReg && st.cxText ? cx : null, surv: anyReg && st.cxText ? sv : null }, lg);
+    last = { rs: rs, gopts: gopts, go: go, gs: gs, labels: labels, dl: dl, ms: ms, sel: sel, t1: t1, outs: outs, tpsAvail: tpsAvail, tps: tps, txt: txt, lg: lg, anyReg: anyReg, cx: cx, sv: sv };
     return last;
   }
   // ---------- HTML ----------
@@ -8793,6 +9333,59 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     h += '</tbody></table></div></div>';
     return h;
   }
+  // ---------- 4. complications + Kaplan–Meier ----------
+  function kmSvg(sv, labels, lg) {
+    var W = 720, H = 380, ml = sv.groups ? 100 : 56, mr = 18, mt = 14, pb = 44, rows = sv.groups ? 2 : 1, rh = 18, ph = H - mt - pb - rows * rh - 18, pw = W - ml - mr;
+    var curves = sv.groups ? [{ km: sv.A, cls: 'kmA', name: labels.A, n: sv.nA }, { km: sv.B, cls: 'kmB', name: labels.B, n: sv.nB }] : [{ km: sv.all, cls: 'kmAll', name: t('all2'), n: sv.n }];
+    var maxT = Math.max.apply(null, curves.map(function (c) { return c.km.maxT || 0; }).concat([12])), step = maxT > 72 ? 24 : maxT > 30 ? 12 : 6, xMax = Math.ceil(maxT / step) * step;
+    var minLo = 1; curves.forEach(function (c) { c.km.steps.forEach(function (s) { if (s.lo < minLo) minLo = s.lo; }); });
+    var yMin = Math.max(0, Math.min(0.8, Math.floor((minLo - 0.02) * 10) / 10));
+    var X = function (v) { return ml + pw * v / xMax; }, Y = function (v) { return mt + ph * (1 - (v - yMin) / (1 - yMin)); }, r1 = function (v) { return Math.round(v * 10) / 10; };
+    var g = '<svg class="stdkm" id="stdKm" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(t('km')) + '">';
+    var ys = (1 - yMin) <= 0.3 ? 0.05 : (1 - yMin) <= 0.6 ? 0.1 : 0.2; for (var yv = yMin; yv <= 1.0001; yv = Math.round((yv + ys) * 1000) / 1000) { var yy = r1(Y(yv)); g += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + yy + '" y2="' + yy + '" stroke="#e3eaee"/><text x="' + (ml - 6) + '" y="' + (yy + 4) + '" text-anchor="end">' + St.fx(100 * yv, 0, lg) + '</text>'; }
+    for (var xv = 0; xv <= xMax; xv += step) { var xx = r1(X(xv)); g += '<line x1="' + xx + '" x2="' + xx + '" y1="' + mt + '" y2="' + (mt + ph) + '" stroke="#f0f4f6"/><text x="' + xx + '" y="' + (mt + ph + 16) + '" text-anchor="middle">' + xv + '</text>'; }
+    g += '<text x="' + (ml + pw / 2) + '" y="' + (mt + ph + 32) + '" text-anchor="middle">' + esc(t('kmX')) + '</text><text transform="translate(14 ' + (mt + ph / 2) + ') rotate(-90)" text-anchor="middle">' + esc(t('kmY')) + '</text>';
+    curves.forEach(function (c) {
+      var pts = [[0, 1]], band = [], up = [[0, 1]], lo = [[0, 1]], S0 = 1, L0 = 1, U0 = 1;
+      c.km.steps.forEach(function (s) { if (s.d) { pts.push([s.t, S0], [s.t, s.S]); up.push([s.t, U0], [s.t, s.hi]); lo.push([s.t, L0], [s.t, s.lo]); S0 = s.S; L0 = s.lo; U0 = s.hi; } });
+      pts.push([c.km.maxT, S0]); up.push([c.km.maxT, U0]); lo.push([c.km.maxT, L0]);
+      var path = function (a) { return a.map(function (q, i) { return (i ? 'L' : 'M') + r1(X(q[0])) + ' ' + r1(Y(Math.max(yMin, q[1]))); }).join(''); };
+      band = up.concat(lo.slice().reverse());
+      g += '<path d="' + path(band) + 'Z" class="' + c.cls + '" fill="currentColor" stroke="none" style="color:' + (c.cls === 'kmB' ? '#c2410c' : '#0b5f73') + ';opacity:.12"/>';
+      g += '<path d="' + path(pts) + '" class="' + c.cls + '" fill="none" stroke-width="2.4" data-km="' + c.cls + '"/>';
+      c.km.steps.forEach(function (s) { if (!s.c) return; var sx = r1(X(s.t)), sy = r1(Y(Math.max(yMin, s.S))); g += '<line x1="' + sx + '" x2="' + sx + '" y1="' + (sy - 5) + '" y2="' + (sy + 5) + '" class="' + c.cls + '" stroke-width="1.6"/>'; });
+    });
+    var ry = mt + ph + 52; g += '<text x="4" y="' + ry + '" font-weight="700">' + esc(t('risk')) + '</text>';
+    curves.forEach(function (c, k) {
+      var y = ry + (k + 1) * rh - 2, nR = function (x) { var n = 0; c.km.steps.forEach(function (s) { if (s.t >= x) n += s.d + s.c; }); return n; };
+      if (sv.groups) g += '<text x="4" y="' + y + '" class="' + c.cls + '" style="fill:' + (c.cls === 'kmB' ? '#c2410c' : '#0b5f73') + '">' + esc(String(c.name).length > 13 ? String(c.name).slice(0, 12) + '…' : c.name) + '</text>';
+      for (var xv2 = 0; xv2 <= xMax; xv2 += step) g += '<text x="' + r1(X(xv2)) + '" y="' + y + '" text-anchor="middle" data-risk="' + c.cls + '|' + xv2 + '">' + nR(xv2) + '</text>';
+    });
+    return g + '</svg>';
+  }
+  function cxHtml(c) {
+    var h = '<div class="card stdcard" id="stdCx"><h3>' + esc(t('c4')) + '</h3>';
+    if (!c.anyReg) return h + '<p class="muted" id="stdCxNone">' + esc(t('cxNone')) + '</p></div>';
+    var cx = c.cx, sv = c.sv, L = c.lg, rec = cx.recorded;
+    h += '<p class="muted">' + esc(f('cxLead', rec, c.rs.length)) + '</p><div class="stdrow stdflds">' +
+      '<label class="fld">' + esc(t('win')) + '<select id="stdCxDays">' + [['', 'winAll'], ['30', 'win30'], ['90', 'win90'], ['365', 'win365']].map(function (o) { return opt(o[0], t(o[1]), st.cxDays === o[0]); }).join('') + '</select></label>' +
+      '<label class="fld">' + esc(t('denom')) + '<select id="stdCxDenom">' + opt('all', t('denAll'), st.cxDenom === 'all') + opt('recorded', t('denRec'), st.cxDenom === 'recorded') + '</select></label>' +
+      '<label class="fld">' + esc(t('ep')) + '<select id="stdSvEnd">' + opt('revision', t('epRev'), st.svEnd === 'revision') + opt('reop', t('epReop'), st.svEnd === 'reop') + '</select></label>' +
+      '<label class="fld">' + esc(t('cens')) + '<select id="stdSvCens">' + opt('last', t('censLast'), st.svCens === 'last') + opt('today', t('censToday'), st.svCens === 'today') + '</select></label>' +
+      '<label class="stdchk"><input type="checkbox" id="stdCxTxt"' + (st.cxText ? ' checked' : '') + '> ' + esc(t('inTxt')) + '</label></div>';
+    var m = St.cxMatrix(cx, c.labels, L);
+    h += '<div class="stdhead"><h3>' + esc(t('cxT')) + '</h3><span class="stdbtns"><button class="small" id="stdCopyCx">' + esc(t('copyT')) + '</button></span></div><div class="stdscroll"><table class="stdtbl stdcxt" id="stdCxTbl"><thead><tr>' + m[0].map(function (x, i) { return '<th' + (i ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      m.slice(1).map(function (row, i) { var r = cx.rows[i]; return '<tr data-cxrow="' + esc(r.k) + '">' + row.map(function (x, j) { return '<td' + (j ? ' class="num"' : '') + (j === 0 && r.indent ? ' style="padding-left:1.4em"' : '') + '>' + esc(String(x).replace(/^ +/, '')) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+    h += '<div class="stdhead" style="margin-top:12px"><h3>' + esc(t('km')) + '</h3><span class="stdbtns"><button class="small" id="stdCopySv">' + esc(t('copyT')) + '</button></span></div>';
+    h += '<p class="small" id="stdKmN">' + esc(f('kmN', sv.n, sv.events, sv.excluded)) + (sv.groups && sv.logrank ? ' · <b>log-rank p = ' + esc(St.fp(sv.logrank.p, L)) + '</b>' : '') + '</p>';
+    if (sv.n) {
+      if (sv.groups) h += '<div class="stdkmleg"><span><i style="background:#0b5f73"></i>' + esc(c.labels.A) + ' (n = ' + sv.nA + ')</span><span><i style="background:#c2410c"></i>' + esc(c.labels.B) + ' (n = ' + sv.nB + ')</span></div>';
+      h += kmSvg(sv, c.labels, L);
+      var sm = St.survMatrix(sv, c.labels, L);
+      h += '<div class="stdscroll" style="margin-top:8px"><table class="stdtbl" id="stdSvTbl"><thead><tr>' + sm[0].map(function (x, i) { return '<th' + (i ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' + sm.slice(1).map(function (row) { return '<tr>' + row.map(function (x, j) { return '<td' + (j ? ' class="num"' : '') + '>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+    }
+    return h + '<p class="muted stdfoot">' + esc(t('kmFoot')) + '</p></div>';
+  }
   function txtHtml(c) {
     if (!c.rs.length) return '';
     return '<div class="card stdcard" id="stdText"><div class="stdhead"><h3>' + esc(t('txt')) + ' <span class="pill">' + (c.lg === 'en' ? 'EN' : 'ΕΛ') + '</span></h3><span class="stdbtns"><button class="small primary" id="stdCopyTxt">' + esc(t('copyX')) + '</button></span></div>' +
@@ -8802,7 +9395,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (!user) { pane.innerHTML = ''; return; }
     var y = window.scrollY, c = compute();
     pane.innerHTML = '<div class="card stdtop"><h2>' + esc(t('T')) + '</h2><p class="muted">' + esc(t('lead')) + '</p><p class="stdpriv" id="stdPriv">🔒 ' + esc(t('privacy')) + '</p></div>' +
-      cohortHtml(c) + groupHtml(c) + (c.rs.length ? measHtml(c) + t1Html(c) + outHtml(c) + txtHtml(c) : '');
+      cohortHtml(c) + groupHtml(c) + (c.rs.length ? measHtml(c) + t1Html(c) + outHtml(c) + cxHtml(c) + txtHtml(c) : '');
     bind(); if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
   }
   // ---------- actions ----------
@@ -8827,7 +9420,8 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       ['⚠ GDPR', en ? 'Health data (special category, GDPR Art. 9): store and share only in line with the GDPR and hospital procedures.' : 'Δεδομένα υγείας (ειδική κατηγορία, άρθρο 9 GDPR): φύλαξη και διαβίβαση μόνο σύμφωνα με τον GDPR και τις διαδικασίες του νοσοκομείου.'], [en ? 'Methods' : 'Μέθοδοι', S[L].foot]];
     var defs = [sheet(en ? 'Table 1' : 'Πίνακας 1', St.t1Matrix(c.t1, c.labels, L), [34, 16, 22, 22, 22, 9, 18, 10])];
     if (c.outs.length) defs.push(sheet(en ? 'Outcomes' : 'Αποτελέσματα', St.outMatrix(c.outs, c.t1.groups, c.labels, L), [26, 12, 14, 22, 14, 22, 10, 20, 20, 20, 10, 16, 16, 10]));
-    defs.push(sheet(en ? 'Data (anonymised)' : 'Δεδομένα (ανώνυμα)', St.dataMatrix(c.rs, c.outs, c.labels, L)));
+    if (c.anyReg) { defs.push(sheet(en ? 'Complications' : 'Επιπλοκές', St.cxMatrix(c.cx, c.labels, L), [36, 16, 18, 16, 18, 10, 18])); defs.push(sheet(en ? 'Implant survival' : 'Επιβίωση πρόθεσης', St.survMatrix(c.sv, c.labels, L), [22, 30, 12, 30, 12])); }
+    defs.push(sheet(en ? 'Data (anonymised)' : 'Δεδομένα (ανώνυμα)', St.dataMatrix(c.rs, c.outs, c.labels, L, { cx: c.anyReg })));
     defs.push({ name: 'Results', cols: [[en ? 'Results (text)' : 'Κείμενο Results', 120]], rows: c.txt.split('\n\n').map(function (p) { return [p]; }), noFreeze: true });
     defs.push({ name: en ? 'Info' : 'Πληροφορίες', cols: [[info[0][0], 24], [info[0][1], 100]], rows: info.slice(1), noFreeze: true });
     var bytes = E.writeXlsx(defs, { title: 'OrthoThessaly – Study', created: new Date().toISOString() });
@@ -8851,6 +9445,10 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     on('stdCopyT1', 'onclick', function () { var m = St.t1Matrix(last.t1, last.labels, last.lg); A.audit('study-copy', 'table1'); copy(St.tsv(m), tableHtml(m), this); });
     on('stdCopyOut', 'onclick', function () { var m = St.outMatrix(last.outs, last.t1.groups, last.labels, last.lg); A.audit('study-copy', 'outcomes'); copy(St.tsv(m), tableHtml(m), this); });
     on('stdCopyTxt', 'onclick', function () { A.audit('study-copy', 'results text ' + last.lg); copy(last.txt, null, this); });
+    on('stdCxDays', 'onchange', function () { st.cxDays = this.value; render(); }); on('stdCxDenom', 'onchange', function () { st.cxDenom = this.value; render(); });
+    on('stdSvEnd', 'onchange', function () { st.svEnd = this.value; render(); }); on('stdSvCens', 'onchange', function () { st.svCens = this.value; render(); }); on('stdCxTxt', 'onchange', function () { st.cxText = this.checked; render(); });
+    on('stdCopyCx', 'onclick', function () { var m = St.cxMatrix(last.cx, last.labels, last.lg); A.audit('study-copy', 'complications'); copy(St.tsv(m), tableHtml(m), this); });
+    on('stdCopySv', 'onclick', function () { var m = St.survMatrix(last.sv, last.labels, last.lg); A.audit('study-copy', 'survival'); copy(St.tsv(m), tableHtml(m), this); });
     on('stdCsv', 'onclick', csvOut); on('stdXlsx', 'onclick', xlsxOut);
   }
   new MutationObserver(function () { btn.textContent = t('tab'); if (!pane.classList.contains('hidden') && user) render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
