@@ -1196,6 +1196,22 @@ body.sh-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;ove
   body.sh-print .htoreport{position:static;padding:0;overflow:visible}
   body.sh-print .noprint{display:none!important}
 }
+/* ===== 🦿 Hip / THA sub-tab (reuses the 📐 PTS / 🦴 shoulder layout classes) ===== */
+.thatbl td:first-child{width:46%}.thatbl td:last-child{white-space:nowrap}
+.thacmp td,.thacmp th{white-space:nowrap}.thacmp td:first-child{white-space:normal}
+.thah3{margin:12px 0 4px;font-size:1rem}
+.thacal{margin-top:6px;border-top:1px dashed #b9c9cf;padding-top:6px}.thacal .row{gap:6px;align-items:center;flex-wrap:wrap}.thacal input{width:5.5em}
+.thar-figs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.thar-figs figure{margin:0}.thar-figs img{max-width:100%;display:block}
+.thareport .tbl{font-size:.82rem}.thareport .xhwarn{display:none}
+body.tha-print .htoreport{display:block;position:fixed;inset:0;z-index:100000;overflow:auto;background:#fff;color:#0b1f26;padding:14px}
+@media (max-width:640px){.thar-figs{grid-template-columns:1fr}}
+@media print{
+  body.tha-print>*:not(#thaReport){display:none!important}
+  body.tha-print .htoreport{position:static;padding:0;overflow:visible}
+  body.tha-print .noprint{display:none!important}
+}
+#xThaPane .tblwrap,.thareport .tblwrap{max-height:none;overflow:visible}
+#xThaPane .tblwrap{overflow-x:auto}
 /* ===== 🧠 Quiz (doctors only) – mobile-first ===== */
 #tab-quiz h2{margin:0;font-size:1.25rem;color:var(--brand)}
 .qzbar,.qzrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.qzsp{flex:1}
@@ -9259,7 +9275,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (p.created) ev.push({ kind: 'reg', date: String(p.created).slice(0, 10), by: p.enteredBy || null });
     if (p.surgeryDate) ev.push({ kind: 'surgery', date: p.surgeryDate, procedure: p.procedure, side: p.side || '' });
     (d.opnotes || []).filter(function (n) { return n.patientId === p.id; }).forEach(function (n) { ev.push({ kind: 'opnote', date: (n.fields && n.fields.date) || String(n.createdAt || '').slice(0, 10) || p.surgeryDate || '', id: n.id, status: n.status, note: n }); });
-    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { if (x.kind === 'pts') { if (x.pts) ev.push({ kind: 'pts', date: x.pts.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', pts: x.pts }); return; } if (x.kind === 'wrist') { if (x.wrist) ev.push({ kind: 'wrist', date: x.wrist.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', wrist: x.wrist }); return; } if (x.kind === 'patella') { if (x.patella) ev.push({ kind: 'patella', date: x.patella.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', patella: x.patella }); return; } if (x.kind === 'satt') { if (x.satt) ev.push({ kind: 'satt', date: x.satt.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', satt: x.satt }); return; } if (x.kind === 'shoulder') { if (x.shoulder) ev.push({ kind: 'shoulder', date: x.shoulder.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', shoulder: x.shoulder }); return; } ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} });
+    (d.xrays || []).filter(function (x) { return x.patientId === p.id; }).forEach(function (x) { if (x.kind === 'pts') { if (x.pts) ev.push({ kind: 'pts', date: x.pts.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', pts: x.pts }); return; } if (x.kind === 'wrist') { if (x.wrist) ev.push({ kind: 'wrist', date: x.wrist.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', wrist: x.wrist }); return; } if (x.kind === 'patella') { if (x.patella) ev.push({ kind: 'patella', date: x.patella.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', patella: x.patella }); return; } if (x.kind === 'satt') { if (x.satt) ev.push({ kind: 'satt', date: x.satt.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', satt: x.satt }); return; } if (x.kind === 'shoulder') { if (x.shoulder) ev.push({ kind: 'shoulder', date: x.shoulder.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', shoulder: x.shoulder }); return; } if (x.kind === 'tha') { if (x.tha) ev.push({ kind: 'tha', date: x.tha.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', tha: x.tha }); return; } ev.push({ kind: 'xray', date: x.date || '', id: x.id, phase: x.phase, side: x.side, results: x.results || {} });
       if (x.hto && x.hto.result) ev.push({ kind: 'hto', date: x.hto.date || x.date || '', id: x.id, side: x.side, filmDate: x.date || '', hto: x.hto }); });
     var groups = {};
     subs.forEach(function (s) { var k = s.timepoint + '|' + s.date; if (!groups[k]) { groups[k] = { kind: 'prom', date: s.date, tp: s.timepoint, subs: [] }; ev.push(groups[k]); } groups[k].subs.push(s); });
@@ -9267,7 +9283,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     var all = patientRows(p, subs, today, { optional: true, soon: 100000 });
     all.forEach(function (r) { ev.push({ kind: 'sched', date: r.status === 'overdue' || r.status === 'missed' ? r.to : r.from, tp: r.tp, status: r.status === 'soon' && r.days > SOON ? 'upcoming' : r.status, from: r.from, to: r.to, missing: r.missing, req: r.req, noDate: !!r.noDate, days: r.days }); });
     ev.push({ kind: 'today', date: today });
-    var RANK = { reg: 0, surgery: 1, opnote: 2, xray: 3, hto: 3.5, pts: 3.6, wrist: 3.7, patella: 3.8, prom: 4, rom: 5, sched: 6, today: 7 };
+    var RANK = { reg: 0, surgery: 1, opnote: 2, xray: 3, hto: 3.5, pts: 3.6, wrist: 3.7, patella: 3.8, tha: 3.9, prom: 4, rom: 5, sched: 6, today: 7 };
     return ev.sort(function (a, b) {
       var da = a.date || (a.kind === 'sched' ? '9999' : '0000'), db = b.date || (b.kind === 'sched' ? '9999' : '0000');
       if (da !== db) return da < db ? -1 : 1;
@@ -9388,7 +9404,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   function side(s) { s = String(s || '').charAt(0).toUpperCase(); return s === 'R' ? t('sR') : s === 'L' ? t('sL') : s === 'B' ? t('sB') : ''; }
   function f1(v) { return typeof v === 'number' ? (Math.round(v * 10) / 10).toFixed(1) : v; }
   function evHtml(e, p, i) {
-    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', hto: '🦴', pts: '📐', wrist: '🖐', patella: '🦵', satt: '📏', shoulder: '🦴', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
+    var ic = { reg: '📝', surgery: '🏥', opnote: '🩺', xray: '🩻', hto: '🦴', pts: '📐', wrist: '🖐', patella: '🦵', satt: '📏', shoulder: '🦴', tha: '🦿', prom: '📋', rom: '📷', sched: '⏳', today: '📍' }[e.kind], h = '', title = '', body = '', go = e.kind;
     var rel = p.surgeryDate && e.date && e.kind !== 'today' ? P.daysBetween(p.surgeryDate, e.date) : null;
     if (e.kind === 'today') return '<li class="tl-today" data-tlk="today"><span class="tldot">' + ic + '</span><div class="tlbody"><b>' + esc(t('today')) + '</b> <span class="muted">' + esc(dmy(e.date)) + '</span></div></li>';
     if (e.kind === 'reg') { title = t('reg'); body = e.by ? esc(t('by') + ' ' + (e.by.name || e.by.email || '')) : ''; }
@@ -9401,6 +9417,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     if (e.kind === 'pts') { title = (en() ? 'Posterior tibial slope' : 'Οπίσθια κλίση κνήμης') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xpts ? '<b class="tlxr">' + esc(window.__xpts.headline(e.pts, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'patella') { title = (en() ? 'Patellar instability' : 'Αστάθεια επιγονατίδας') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xpat ? '<b class="tlxr">' + esc(window.__xpat.headline(e.patella, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'shoulder') { title = (en() ? 'Shoulder · bone loss / track' : 'Ώμος · απώλεια οστού / track') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xsh ? '<b class="tlxr">' + esc(window.__xsh.headline(e.shoulder, en() ? 'en' : 'el')) + '</b>' : ''; }
+    if (e.kind === 'tha') { title = (en() ? 'Hip · LLD / offset (THA)' : 'Ισχίο · LLD / offset (THA)') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xtha ? '<b class="tlxr">' + esc(window.__xtha.headline(e.tha, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'satt') { title = 'SATT' + (e.side ? ' · ' + side(e.side) : ''); body = window.__xsatt ? '<b class="tlxr">' + esc(window.__xsatt.headline(e.satt, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'wrist') { title = (en() ? 'Wrist (distal radius)' : 'Πηχεοκαρπική') + (e.side ? ' · ' + side(e.side) : ''); body = window.__xwrist ? '<b class="tlxr">' + esc(window.__xwrist.headline(e.wrist, en() ? 'en' : 'el')) + '</b>' : ''; }
     if (e.kind === 'prom') { title = t('prom') + ' · ' + X.tpName(e.tp);
@@ -9429,6 +9446,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
         if (e.kind === 'pts' && window.__xpts && A.showTab) { A.showTab('xray'); window.__xpts.open(e.id); return; }
         if (e.kind === 'patella' && window.__xpat && A.showTab) { A.showTab('xray'); window.__xpat.open(e.id); return; }
         if (e.kind === 'satt' && window.__xsatt && A.showTab) { A.showTab('xray'); window.__xsatt.open(e.id); return; }
+        if (e.kind === 'tha' && window.__xtha && A.showTab) { A.showTab('xray'); window.__xtha.open(e.id); return; }
         if (e.kind === 'shoulder' && window.__xsh && A.showTab) { A.showTab('xray'); window.__xsh.open(e.id); return; }
         if (e.kind === 'wrist' && window.__xwrist && A.showTab) { A.showTab('xray'); window.__xwrist.open(e.id); return; }
         if (e.kind === 'hto' && window.__xray && window.__xray.openStudy && A.showTab) { A.showTab('xray'); window.__xray.openStudy(e.id, 'hto'); return; }
@@ -9590,7 +9608,9 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
     // ---- ⚠️ Complications & prostheses (doctor-only, patients.extra.registry): ONLY in the export of one patient (the doctor's own record) ----
     var RG = root.OrthoRegistry, registry = RG && opt.pid && pts.length === 1 ? RG.exportRows(pts[0], { lang: lg, daysOnly: !!opt.daysOnly, procName: procName }) : null;
     if (registry) registry.code = code[pts[0].id];
-    return { lang: lg, patients: pts, code: code, tps: tps, scores: scores, history: history, registry: registry, mcid: mcid, summary: summary, completeness: completeness, nSubs: subs.length, unscored: unscored, noBase: noBase, today: today };
+    // ---- 🦿 THA radiographic values (doctor-only, xray_studies kind 'tha'): coded, one row per saved study; dates dropped when only days are exported ----
+    var TH = root.OrthoTHA, tha = TH ? TH.exportRows(store, pts, code).map(function (r) { if (opt.daysOnly) { r[2] = null; r[3] = null; } return r; }) : null; if (tha && !tha.length) tha = null;
+    return { lang: lg, patients: pts, code: code, tps: tps, scores: scores, history: history, registry: registry, tha: tha, mcid: mcid, summary: summary, completeness: completeness, nSubs: subs.length, unscored: unscored, noBase: noBase, today: today };
   }
 
   // ===== Sheets (column definitions; headers localised) =====
@@ -9633,6 +9653,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       regS.push({ name: h.rgSheets[1], cols: [[h.code, 14], [h.rgSg, 36], [h.rgCat, 26], [h.rgManu, 18], [h.rgModel, 20], [h.rgSize, 10], [h.rgRef, 16], [h.rgLot, 16], [h.rgFix, 16], [h.side, 12], [h.date, 12, 'date'], [h.days, 11, 'num']],
         rows: g.imp.map(function (i) { return [g.code, i.surgery, i.cat, i.manufacturer, i.model, i.size, i.ref, i.lot, i.fixation, i.side, i.date, i.days]; }) });
     }
+    if (d.tha && root.OrthoTHA) regS.push({ name: 'THA', cols: root.OrthoTHA.EXPORT_COLS[lg === 'en' ? 'en' : 'el'].map(function (c, i) { return [c, i === 0 ? 14 : i < 4 ? 12 : 16, i === 2 || i === 3 ? 'date' : i >= 4 && i <= 16 ? 'num' : undefined]; }), rows: d.tha });
     if (!d.history) return [s1, s2, s3].concat(regS, [s4]);
     var HX = root.OrthoHistory, L0 = function (o) { return o == null ? '' : typeof o === 'string' ? o : (o[lg] || o.el); };
     var hcols = [[h.code, 14], [h.proc, 26], [h.side, 12], [h.hxSex, 10], [h.hxAge, 9, 'num']]
@@ -10232,6 +10253,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
   function OPN() { return root.OrthoOpNote; }
   function ARS() { return root.OrthoArthro; }
   function RG() { return root.OrthoRegistry; }
+  function THA() { return root.OrthoTHA; }
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function num(v) { if (v === '' || v == null) return null; var x = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; }
   function tr(o, lg) { return o == null ? '' : typeof o === 'string' ? o : (o[lg] != null ? o[lg] : (o.el || o.en || '')); }
@@ -10307,7 +10329,7 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
       var r = { pid: p.id, code: 'S' + String(i + 1).padStart(w, '0'), proc: p.procedure, ulType: p.ulType || null, sex: p.sex === 'F' || p.sex === 'M' ? p.sex : null, age: num(p.age), side: /^[RLB]$/.test(side) ? side : null,
         hasHx: hasHx, bmi: c ? c.bmi : null, cci: c ? c.cci.score : null, cciAge: c ? c.cci.ageAdj : null, asa: asaF || asaN || null, smoking: h && h.smoking || null,
         cond: hasHx ? H.CONDS.reduce(function (o, x) { o[x.k] = H.has(h, x.k) ? 1 : 0; return o; }, {}) : null, labs: hasHx ? H.LABS.reduce(function (o, l) { o[l.k] = H.num(h.labs && h.labs[l.k]); return o; }, {}) : null,
-        hasNote: !!note, op: nf, ar: ar, dur: num(nf.duration), tq: num(nf.tqTime), ebl: num(nf.ebl), fix: fixation(note) || (ii && ii.fix) || null, manu: manufacturer(note) || (ii && ii.manu) || null, hasReg: !!(RG() && p.registry && !RG().isEmpty(RG().normalize(p.registry))), fuDays: fu, fuMonths: fu != null ? fu / 30.4375 : null, g: null };
+        hasNote: !!note, op: nf, ar: ar, dur: num(nf.duration), tq: num(nf.tqTime), ebl: num(nf.ebl), fix: fixation(note) || (ii && ii.fix) || null, manu: manufacturer(note) || (ii && ii.manu) || null, hasReg: !!(RG() && p.registry && !RG().isEmpty(RG().normalize(p.registry))), fuDays: fu, fuMonths: fu != null ? fu / 30.4375 : null, tha: THA() ? THA().studyVars(store, p.id) : null, g: null };
       return r;
     });
   }
@@ -10415,6 +10437,12 @@ body.ptonly #tabAnatBtn,body.ptonly #tab-anat{display:none!important}
         else cat(tr(v.l, lg), get, lv, function (x) { return tr(v.o[x], lg); });
       });
       if (out.length === b0 + 1) out.pop();
+    }
+    if (rs.some(function (r) { return r.tha && (r.tha.postLld != null || r.tha.inc != null || r.tha.postGo != null); })) { // 🦿 THA radiographic, post-op (doctor-only)
+      var b1 = out.length, E1 = lg === 'en'; out.push({ kind: 'sect', label: E1 ? 'THA radiographic (post-op)' : 'Ακτινολογικά THA (post-op)', all: '', A: '', B: '', missing: rs.filter(function (r) { return !r.tha; }).length });
+      var tv = function (k) { return function (r) { return r.tha ? r.tha[k] : null; }; };
+      [['absLldPost', '|LLD| (mm)'], ['postGo', 'Global offset (mm)'], ['postdGo', E1 ? 'ΔGlobal offset vs contralateral (mm)' : 'ΔGlobal offset vs αντίπλευρο (mm)'], ['dGoPrePost', E1 ? 'Global offset change post − pre (mm)' : 'Μεταβολή global offset post − pre (mm)'], ['inc', 'Cup inclination (°)'], ['avL', 'Cup anteversion, Lewinnek (°)']].forEach(function (q) { if (rs.some(function (r) { return r.tha && r.tha[q[0]] != null; })) cont(q[1], tv(q[0]), 1); });
+      if (out.length === b1 + 1) out.pop();
     }
     cont(T(lg, 'fu'), function (r) { return r.fuMonths; }, 1);
     return { groups: grp, nAll: rs.length, nA: A.length, nB: B.length, rows: out, lang: lg };
@@ -14593,7 +14621,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- view transform ----------
   function vsize() { var v = $('xView'); return { w: v.clientWidth, h: v.clientHeight }; }
-  function fit() { if (!st.img) return; if ((st.sub === 'hto' && window.__xhto) || (st.sub === 'pts' && window.__xpts) || (st.sub === 'wrist' && window.__xwrist) || (st.sub === 'patella' && window.__xpat) || (st.sub === 'satt' && window.__xsatt) || (st.sub === 'shoulder' && window.__xsh)) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
+  function fit() { if (!st.img) return; if ((st.sub === 'hto' && window.__xhto) || (st.sub === 'pts' && window.__xpts) || (st.sub === 'wrist' && window.__xwrist) || (st.sub === 'patella' && window.__xpat) || (st.sub === 'satt' && window.__xsatt) || (st.sub === 'shoulder' && window.__xsh) || (st.sub === 'tha' && window.__xtha)) { st.fitted = false; return; } /* alignment viewer hidden: fitted when it is shown */ var z = vsize(), s = Math.min(z.w / st.W, z.h / st.H) * 0.96; st.view = { s: s, tx: (z.w - st.W * s) / 2, ty: (z.h - st.H * s) / 2 }; draw(); }
   function toScr(p) { return { x: p.x * st.view.s + st.view.tx, y: p.y * st.view.s + st.view.ty }; }
   function toImg(p) { return { x: (p.x - st.view.tx) / st.view.s, y: (p.y - st.view.ty) / st.view.s }; }
   function zoomAt(k, c) { var a = toImg(c); st.view.s = Math.max(0.05, Math.min(12, st.view.s * k)); st.view.tx = c.x - a.x * st.view.s; st.view.ty = c.y - a.y * st.view.s; draw(); }
@@ -15145,8 +15173,8 @@ window.OrthoQRGen = qrcode; })();
     var root = $('tab-xray'); if (!root) return;
     var api = P(), pts = api ? api.store.patients : [];
     if (!st.date) st.date = today();
-    var hto = window.__xhto, ptsU = window.__xpts, wriU = window.__xwrist, patU = window.__xpat, satU = window.__xsatt, shU = window.__xsh, sub = hto && st.sub === 'hto' ? 'hto' : ptsU && st.sub === 'pts' ? 'pts' : wriU && st.sub === 'wrist' ? 'wrist' : patU && st.sub === 'patella' ? 'patella' : satU && st.sub === 'satt' ? 'satt' : shU && st.sub === 'shoulder' ? 'shoulder' : 'align';
-    var h = hto ? '<div class="xsubbar" role="tablist" aria-label="' + esc(t('title')) + '"><button class="xsub' + (sub === 'align' ? ' on' : '') + '" id="xSubAlign" role="tab" aria-selected="' + (sub === 'align') + '" data-xsub="align">🩻 ' + esc(lang() === 'el' ? 'Ευθυγράμμιση' : 'Alignment') + '</button><button class="xsub' + (sub === 'hto' ? ' on' : '') + '" id="xSubHto" role="tab" aria-selected="' + (sub === 'hto') + '" data-xsub="hto">🦴 ' + esc(lang() === 'el' ? 'Σχεδιασμός HTO' : 'HTO planning') + '</button>' + (ptsU ? '<button class="xsub' + (sub === 'pts' ? ' on' : '') + '" id="xSubPts" role="tab" aria-selected="' + (sub === 'pts') + '" data-xsub="pts">📐 ' + esc(lang() === 'el' ? 'Οπίσθια κλίση (PTS)' : 'Posterior slope (PTS)') + '</button>' : '') + (wriU ? '<button class="xsub' + (sub === 'wrist' ? ' on' : '') + '" id="xSubWrist" role="tab" aria-selected="' + (sub === 'wrist') + '" data-xsub="wrist">🖐 ' + esc(lang() === 'el' ? 'Πηχεοκαρπική' : 'Wrist (distal radius)') + '</button>' : '') + (patU ? '<button class="xsub' + (sub === 'patella' ? ' on' : '') + '" id="xSubPatella" role="tab" aria-selected="' + (sub === 'patella') + '" data-xsub="patella">🦵 ' + esc(lang() === 'el' ? 'Αστάθεια επιγονατίδας' : 'Patellar instability') + '</button>' : '') + (satU ? '<button class="xsub' + (sub === 'satt' ? ' on' : '') + '" id="xSubSatt" role="tab" aria-selected="' + (sub === 'satt') + '" data-xsub="satt">📏 SATT</button>' : '') + (shU ? '<button class="xsub' + (sub === 'shoulder' ? ' on' : '') + '" id="xSubShoulder" role="tab" aria-selected="' + (sub === 'shoulder') + '" data-xsub="shoulder">🦴 ' + esc(lang() === 'el' ? 'Ώμος · Απώλεια οστού / Track' : 'Shoulder · Bone loss / Track') + '</button>' : '') + '</div>' : '';
+    var hto = window.__xhto, ptsU = window.__xpts, wriU = window.__xwrist, patU = window.__xpat, satU = window.__xsatt, shU = window.__xsh, thU = window.__xtha, sub = hto && st.sub === 'hto' ? 'hto' : ptsU && st.sub === 'pts' ? 'pts' : wriU && st.sub === 'wrist' ? 'wrist' : patU && st.sub === 'patella' ? 'patella' : satU && st.sub === 'satt' ? 'satt' : shU && st.sub === 'shoulder' ? 'shoulder' : thU && st.sub === 'tha' ? 'tha' : 'align';
+    var h = hto ? '<div class="xsubbar" role="tablist" aria-label="' + esc(t('title')) + '"><button class="xsub' + (sub === 'align' ? ' on' : '') + '" id="xSubAlign" role="tab" aria-selected="' + (sub === 'align') + '" data-xsub="align">🩻 ' + esc(lang() === 'el' ? 'Ευθυγράμμιση' : 'Alignment') + '</button><button class="xsub' + (sub === 'hto' ? ' on' : '') + '" id="xSubHto" role="tab" aria-selected="' + (sub === 'hto') + '" data-xsub="hto">🦴 ' + esc(lang() === 'el' ? 'Σχεδιασμός HTO' : 'HTO planning') + '</button>' + (ptsU ? '<button class="xsub' + (sub === 'pts' ? ' on' : '') + '" id="xSubPts" role="tab" aria-selected="' + (sub === 'pts') + '" data-xsub="pts">📐 ' + esc(lang() === 'el' ? 'Οπίσθια κλίση (PTS)' : 'Posterior slope (PTS)') + '</button>' : '') + (wriU ? '<button class="xsub' + (sub === 'wrist' ? ' on' : '') + '" id="xSubWrist" role="tab" aria-selected="' + (sub === 'wrist') + '" data-xsub="wrist">🖐 ' + esc(lang() === 'el' ? 'Πηχεοκαρπική' : 'Wrist (distal radius)') + '</button>' : '') + (patU ? '<button class="xsub' + (sub === 'patella' ? ' on' : '') + '" id="xSubPatella" role="tab" aria-selected="' + (sub === 'patella') + '" data-xsub="patella">🦵 ' + esc(lang() === 'el' ? 'Αστάθεια επιγονατίδας' : 'Patellar instability') + '</button>' : '') + (satU ? '<button class="xsub' + (sub === 'satt' ? ' on' : '') + '" id="xSubSatt" role="tab" aria-selected="' + (sub === 'satt') + '" data-xsub="satt">📏 SATT</button>' : '') + (shU ? '<button class="xsub' + (sub === 'shoulder' ? ' on' : '') + '" id="xSubShoulder" role="tab" aria-selected="' + (sub === 'shoulder') + '" data-xsub="shoulder">🦴 ' + esc(lang() === 'el' ? 'Ώμος · Απώλεια οστού / Track' : 'Shoulder · Bone loss / Track') + '</button>' : '') + (thU ? '<button class="xsub' + (sub === 'tha' ? ' on' : '') + '" id="xSubTha" role="tab" aria-selected="' + (sub === 'tha') + '" data-xsub="tha">🦿 ' + esc(lang() === 'el' ? 'Ισχίο · LLD / Offset (THA)' : 'Hip · LLD / Offset (THA)') + '</button>' : '') + '</div>' : '';
     h += '<div class="card xtopcard' + (sub !== 'align' ? ' xtop-hto' : '') + '"><h2>🩻 ' + esc(t('title')) + ' <span class="pill demo">DEMO</span></h2><div class="xptrow"><label class="fld inl">' + esc(t('patient')) + ' <select id="xPid"><option value="">—</option>' + pts.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === st.pid ? ' selected' : '') + '>' + esc(p.id) + '</option>'; }).join('') + '</select></label><div id="xTabs" class="xtabswrap"></div></div><p class="muted">' + esc(t('lead')) + '</p><div class="grid2 xform">' +
       '<label class="fld">' + esc(t('date')) + '<input type="date" id="xDate" value="' + esc(st.date) + '"></label>' +
       '<label class="fld">' + esc(t('phase')) + '<select id="xPhase"><option value="pre"' + (st.phase === 'pre' ? ' selected' : '') + '>' + esc(t('pre')) + '</option><option value="post"' + (st.phase === 'post' ? ' selected' : '') + '>' + esc(t('post')) + '</option></select></label>' +
@@ -15158,7 +15186,7 @@ window.OrthoQRGen = qrcode; })();
       '<label class="rng">☀ ' + esc(t('bright')) + '<input type="range" id="xBr" min="40" max="220" value="' + st.bright + '"></label><label class="rng">◐ ' + esc(t('contrast')) + '<input type="range" id="xCo" min="40" max="300" value="' + st.contrast + '"></label>' +
       '<label class="chk"><input type="checkbox" id="xInv"' + (st.invert ? ' checked' : '') + '> ' + esc(t('invert')) + '</label><label class="chk"><input type="checkbox" id="xMirror"' + (st.mirror ? ' checked' : '') + '> ' + esc(t('mirror')) + '</label><label class="chk"><input type="checkbox" id="xSnap"' + (st.snap ? ' checked' : '') + '> ' + esc(t('snap')) + '</label><button id="xResetSide">↺ ' + esc(t('resetSide')) + '</button></div>' +
       '<div class="xviewpair"><div class="xview" id="xView" role="tabpanel"><canvas id="xImg"></canvas><canvas id="xOv"></canvas><div id="xBanner" class="xbanner hidden" role="status" aria-live="polite"></div><canvas id="xLoupe" class="xloupe hidden" aria-label="' + esc(t('loupe')) + '"></canvas><div class="xempty" id="xEmpty">' + emptyHtml() + '</div>' + (st.img && st.imgNote === 'imgThumb' ? '<div class="ximgnote" id="xImgNote">' + esc(t('imgThumb')) + '</div>' : '') + '</div><div class="xview xview2" id="xView2" aria-hidden="true"><canvas id="xImg2"></canvas><div class="xv2lab" id="xV2Lab"></div></div></div></div>' +
-      '<div class="card xpanel" id="xSide"></div></div>' + (hto ? '<div id="xHtoPane" class="xhto' + (sub === 'hto' ? '' : ' hidden') + '"></div>' : '') + (ptsU ? '<div id="xPtsPane" class="xpts' + (sub === 'pts' ? '' : ' hidden') + '"></div>' : '') + (wriU ? '<div id="xWristPane" class="xwri' + (sub === 'wrist' ? '' : ' hidden') + '"></div>' : '') + (patU ? '<div id="xPatPane" class="xpat xpts' + (sub === 'patella' ? '' : ' hidden') + '"></div>' : '') + (satU ? '<div id="xSattPane" class="xsatt xpts' + (sub === 'satt' ? '' : ' hidden') + '"></div>' : '') + (shU ? '<div id="xShPane" class="xsh xpts' + (sub === 'shoulder' ? '' : ' hidden') + '"></div>' : '');
+      '<div class="card xpanel" id="xSide"></div></div>' + (hto ? '<div id="xHtoPane" class="xhto' + (sub === 'hto' ? '' : ' hidden') + '"></div>' : '') + (ptsU ? '<div id="xPtsPane" class="xpts' + (sub === 'pts' ? '' : ' hidden') + '"></div>' : '') + (wriU ? '<div id="xWristPane" class="xwri' + (sub === 'wrist' ? '' : ' hidden') + '"></div>' : '') + (patU ? '<div id="xPatPane" class="xpat xpts' + (sub === 'patella' ? '' : ' hidden') + '"></div>' : '') + (satU ? '<div id="xSattPane" class="xsatt xpts' + (sub === 'satt' ? '' : ' hidden') + '"></div>' : '') + (shU ? '<div id="xShPane" class="xsh xpts' + (sub === 'shoulder' ? '' : ' hidden') + '"></div>' : '') + (thU ? '<div id="xThaPane" class="xtha xpts' + (sub === 'tha' ? '' : ' hidden') + '"></div>' : '');
     root.innerHTML = h; renderTabs();
     root.querySelectorAll('[data-xsub]').forEach(function (b) { b.onclick = function () { setSub(b.dataset.xsub); }; });
     var syncTka = function () { var b = $('xTka'); if (b) b.checked = tkaOn(); };
@@ -15187,6 +15215,7 @@ window.OrthoQRGen = qrcode; })();
     if (sub === 'patella') { patU.render(); return; }
     if (sub === 'satt') { satU.render(); return; }
     if (sub === 'shoulder') { shU.render(); return; }
+    if (sub === 'tha') { thU.render(); return; }
     requestAnimationFrame(function () { if (st.img && !st.fitted) { fit(); st.fitted = true; } else draw(); });
   }
   window.addEventListener('resize', function () { if ($('xView') && !$('tab-xray').classList.contains('hidden')) draw(); });
@@ -15197,7 +15226,7 @@ window.OrthoQRGen = qrcode; })();
   /** Saves one side (as the 💾 button does) and returns the stored study, or null with the reason shown in the status line. */
   function saveSide(sd) { var keep = st.side; st.side = sd; lastSaved = null; saveStudy(); st.side = keep; return lastSaved; }
   /** Sub-tab switch: 🩻 Alignment ↔ 🦴 HTO planning (the film, patient and tabs are shared). */
-  function setSub(v) { st.sub = v === 'hto' ? 'hto' : v === 'pts' && window.__xpts ? 'pts' : v === 'wrist' && window.__xwrist ? 'wrist' : v === 'patella' && window.__xpat ? 'patella' : v === 'satt' && window.__xsatt ? 'satt' : v === 'shoulder' && window.__xsh ? 'shoulder' : 'align'; syncSub(); render(); }
+  function setSub(v) { st.sub = v === 'hto' ? 'hto' : v === 'pts' && window.__xpts ? 'pts' : v === 'wrist' && window.__xwrist ? 'wrist' : v === 'patella' && window.__xpat ? 'patella' : v === 'satt' && window.__xsatt ? 'satt' : v === 'shoulder' && window.__xsh ? 'shoulder' : v === 'tha' && window.__xtha ? 'tha' : 'align'; syncSub(); render(); }
   /** Opens a saved study (e.g. from the patient timeline) in its film tab, on its side, in the given sub-tab. */
   function openStudy(id, sub) {
     var api = P(), x = ((api && api.store.xrays) || []).filter(function (q) { return q.id === id; })[0]; if (!x) return false;
@@ -15221,7 +15250,7 @@ window.OrthoQRGen = qrcode; })();
     if (!st.filmId) st.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     var tkaF = st.phase === 'post' && isTkaSide(sd0), label = pt && pt.surgeryDate && window.__xcmp ? window.__xcmp.intervalLabel(pt.surgeryDate, st.date) : null;
     var prevHto = null; store.xrays.forEach(function (x) { if (x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.hto) prevHto = x.hto; });
-    store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder'); }); // 📐 PTS / 🖐 wrist / 🦵 patella / 📏 SATT / 🦴 shoulder records are separate studies
+    store.xrays = store.xrays.filter(function (x) { return !(x.patientId === st.pid && x.date === st.date && x.phase === st.phase && x.side === st.side && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder' && x.kind !== 'tha'); }); // 📐 PTS / 🖐 wrist / 🦵 patella / 📏 SATT / 🦴 shoulder records are separate studies
     store.xrays.push({ id: 'x' + Math.random().toString(36).slice(2, 10), patientId: st.pid, date: st.date, phase: st.phase, side: st.side, landmarks: JSON.parse(JSON.stringify(st.lm[st.side])), results: res, image: st.name + (st.demo ? ' (DEMO)' : ''), savedBy: { email: u.email, name: u.name }, source: 'clinician',
       landmarkSource: landmarkSource(sd0), origins: JSON.parse(JSON.stringify(st.origin[sd0])), autoConfidence: conf, detector: det ? det.version : null, autoStatus: det ? det.status : null, confirmed: cfd, tka: tkaF, tkaDetected: !!(det && det.tka), label: label, synth: st.demo ? st.variant : null, thumb: makeThumb(sd0), filmId: st.filmId, imgStored: !st.demo && st.imgNote !== 'imgThumb' && !!st.img });
     if (prevHto) store.xrays[store.xrays.length - 1].hto = prevHto;
@@ -15266,9 +15295,9 @@ window.OrthoQRGen = qrcode; })();
   }
 
   // ---------- dashboard section ----------
-  function dashHtml(p) { return dashAlign(p) + (window.__xpts && window.__xpts.dashHtml ? window.__xpts.dashHtml(p) : '') + (window.__xwrist && window.__xwrist.dashHtml ? window.__xwrist.dashHtml(p) : '') + (window.__xpat && window.__xpat.dashHtml ? window.__xpat.dashHtml(p) : '') + (window.__xsatt && window.__xsatt.dashHtml ? window.__xsatt.dashHtml(p) : '') + (window.__xsh && window.__xsh.dashHtml ? window.__xsh.dashHtml(p) : ''); }
+  function dashHtml(p) { return dashAlign(p) + (window.__xpts && window.__xpts.dashHtml ? window.__xpts.dashHtml(p) : '') + (window.__xwrist && window.__xwrist.dashHtml ? window.__xwrist.dashHtml(p) : '') + (window.__xpat && window.__xpat.dashHtml ? window.__xpat.dashHtml(p) : '') + (window.__xsatt && window.__xsatt.dashHtml ? window.__xsatt.dashHtml(p) : '') + (window.__xsh && window.__xsh.dashHtml ? window.__xsh.dashHtml(p) : '') + (window.__xtha && window.__xtha.dashHtml ? window.__xtha.dashHtml(p) : ''); }
   function dashAlign(p) {
-    var api = P(), xs = ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder'; });
+    var api = P(), xs = ((api && api.store.xrays) || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'wrist' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder' && x.kind !== 'tha'; });
     if (!xs.length && p.procedure !== 'TKA') return '';
     var h = '<h3 style="margin-top:12px">🩻 ' + esc(t('dashT')) + '</h3>';
     if (!xs.length) return h + '<p class="muted">' + esc(t('dashNone')) + '</p>';
@@ -15289,7 +15318,7 @@ window.OrthoQRGen = qrcode; })();
 
   // ---------- paste (Ctrl/Cmd+V, 📋 button) and drag & drop: the image goes into the ACTIVE sub-tab through that sub-tab's own file input ----------
   // (same pipeline as «Ανεβάστε Ακτινογραφία»: EXIF / downscale, worker detection, independent per-sub-tab film, training opt-in)
-  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile', wrist: 'wristFile', patella: 'patFile', satt: 'sattFile', shoulder: 'shFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
+  var PASTE_IN = { align: 'xFile', hto: 'htoFile', pts: 'ptsFile', wrist: 'wristFile', patella: 'patFile', satt: 'sattFile', shoulder: 'shFile', tha: 'thaFile' }, pasteMsg = { sub: '', txt: '', at: 0 };
   var PT = {
     el: { btn: '📋 Επικόλληση', hint: 'Ctrl+V για επικόλληση από PACS', aria: 'Επικόλληση ακτινογραφίας από το πρόχειρο', no: 'Πατήστε Ctrl+V ή χρησιμοποιήστε το «Ανεβάστε Ακτινογραφία»', empty: 'Δεν βρέθηκε εικόνα στο πρόχειρο – αντιγράψτε πρώτα την ακτινογραφία (π.χ. από το PACS).', drop: 'Αφήστε την εικόνα εδώ', notImg: 'Το αρχείο δεν είναι εικόνα ακτινογραφίας (PNG, JPEG ή DICOM).' },
     en: { btn: '📋 Paste', hint: 'Ctrl+V to paste from PACS', aria: 'Paste X-ray from the clipboard', no: 'Press Ctrl+V or use «Upload X-ray»', empty: 'No image on the clipboard – copy the X-ray first (e.g. from PACS).', drop: 'Drop the image here', notImg: 'The file is not an X-ray image (PNG, JPEG or DICOM).' } };
@@ -15311,6 +15340,7 @@ window.OrthoQRGen = qrcode; })();
     if (st.sub === 'patella' && window.__xpat && window.__xpat.loadFile) { window.__xpat.loadFile(file); return true; }
     if (st.sub === 'satt' && window.__xsatt && window.__xsatt.loadFile) { window.__xsatt.loadFile(file); return true; }
     if (st.sub === 'shoulder' && window.__xsh && window.__xsh.loadFile) { window.__xsh.loadFile(file); return true; }
+    if (st.sub === 'tha' && window.__xtha && window.__xtha.loadFile) { window.__xtha.loadFile(file); return true; }
     return false;
   }
   function imageFromItems(items) { for (var i = 0; items && i < items.length; i++) { var it = items[i]; if (it.kind === 'file' && /^image\//.test(it.type)) { var f = it.getAsFile(); if (f) return f; } } return null; }
@@ -15348,7 +15378,7 @@ window.OrthoQRGen = qrcode; })();
   /** 📋 button + desktop hint next to every «Ανεβάστε Ακτινογραφία» of the active sub-tab (the sub-tab UIs re-render freely; this re-attaches). */
   function ensurePasteUi() {
     var r = $('tab-xray'); if (!r) return;
-    var ids = ['xFile', 'htoFile', 'ptsFile', 'wristFile', 'patFile', 'sattFile', 'shFile'];
+    var ids = ['xFile', 'htoFile', 'ptsFile', 'wristFile', 'patFile', 'sattFile', 'shFile', 'thaFile'];
     [].forEach.call(r.querySelectorAll(ids.map(function (i) { return 'label[for="' + i + '"]'; }).join(',')), function (lab) {
       if (lab.nextElementSibling && lab.nextElementSibling.classList.contains('xpastewrap')) return;
       var w = document.createElement('span'); w.className = 'xpastewrap';
@@ -21517,6 +21547,600 @@ window.OrthoQRGen = qrcode; })();
     toScreen: function (p) { var cv = $('shCv'), v = V(); if (!cv || !v.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * v.lv.s + v.lv.tx, y: r.top + p.y * v.lv.s + v.lv.ty }; } };
 })();
 </script>
+<!-- ===== 🦿 Hip / THA: LLD (inter-teardrop / bi-ischial line → lesser trochanters), femoral / acetabular / global offset, cup inclination + anteversion, pre-op vs post-op (pure, tested in Node) + UI ===== -->
+<script id="ortho-xray-tha">
+// ===== OrthoThessaly · 🦿 THA leg length & offset core: AP pelvis, pre-op vs post-op (pure; unit-tested in Node) =====
+// Points (image px, y down; R / L = the PATIENT's right / left, whatever the film orientation):
+//   TR, TL      inferior tips of the teardrops → inter-teardrop (reference) line
+//   ISR, ISL    optional lowest points of the ischial tuberosities → bi-ischial line (alternative LLD reference)
+//   LTR, LTL    tips of the lesser trochanters
+//   HR1..HR3 / HL1..HL3  ≥ 3 points on the femoral head (native or prosthetic) outline → best-fit circle → centre of rotation (CoR), head Ø
+//   FR1, FR2 / FL1, FL2  two points on the proximal femoral shaft axis (centre of the canal at two levels)
+//   C1, C2      ends of the long axis of the cup opening (operated side, post-op) · C3 point of the opening ellipse farthest from C1–C2
+//   C4          optional: dome of the cup (for TL of the Widmer ratio; without it TL ≈ (L + S) / 2 of a hemispherical cup)
+//   CAL1, CAL2  optional ruler of known length · B1..B3 optional calibration ball outline (known Ø)
+// LLD (per reference line): perpendicular distance of each lesser-trochanter tip below the line; LLD = d(R) − d(L) → > 0: right longer.
+// Femoral offset = CoR → femoral shaft axis (perpendicular) · acetabular offset = CoR → perpendicular to the inter-teardrop line through the
+// teardrop of the same side · global offset = femoral + acetabular. Cup inclination = angle between C1–C2 and the inter-teardrop line.
+// Radiographic anteversion: Lewinnek (ellipse) asin(S / L) · Widmer 48.05 × S / TL − 0.3 (S = short axis, L = long axis, TL = projected cup length along S).
+(function (root) {
+  'use strict';
+  var VERSION = 'tha-1.0';
+  var REF = { lld: { max: 10 }, fo: { lo: 35, hi: 50 }, dOff: { max: 5 }, inc: { lo: 30, hi: 50 }, av: { lo: 5, hi: 25 } };
+  var KEYS = { ref: ['TR', 'TL'], is: ['ISR', 'ISL'], lt: ['LTR', 'LTL'], hR: ['HR1', 'HR2', 'HR3'], hL: ['HL1', 'HL2', 'HL3'], fR: ['FR1', 'FR2'], fL: ['FL1', 'FL2'], cup: ['C1', 'C2', 'C3'], cupOpt: ['C4'], cal: ['CAL1', 'CAL2'], ball: ['B1', 'B2', 'B3'] };
+  var okP = function (p) { return !!p && isFinite(p.x) && isFinite(p.y); };
+  var sub = function (a, b) { return { x: a.x - b.x, y: a.y - b.y }; }, dot = function (a, b) { return a.x * b.x + a.y * b.y; }, len = function (a) { return Math.hypot(a.x, a.y); };
+  var D = 180 / Math.PI;
+  function spacingXY(sp) {
+    if (sp == null) return null; if (typeof sp === 'string') sp = sp.split(/[\\,\s]+/).map(Number);
+    if (typeof sp === 'number') sp = [sp, sp]; if (!Array.isArray(sp) || !(sp[0] > 0)) return null; var r = +sp[0], c = sp[1] > 0 ? +sp[1] : r; return { sx: c, sy: r };
+  }
+  /** Least-squares circle (algebraic Kåsa + Gauss–Newton). → { cx, cy, r, rms, n } or null (< 3 points / collinear). */
+  function fitCircle(P) {
+    P = (P || []).filter(okP); var n = P.length; if (n < 3) return null;
+    var mx = 0, my = 0; P.forEach(function (p) { mx += p.x; my += p.y; }); mx /= n; my /= n;
+    var Suu = 0, Svv = 0, Suv = 0, Suuu = 0, Svvv = 0, Suvv = 0, Svuu = 0;
+    P.forEach(function (p) { var u = p.x - mx, v = p.y - my; Suu += u * u; Svv += v * v; Suv += u * v; Suuu += u * u * u; Svvv += v * v * v; Suvv += u * v * v; Svuu += v * u * u; });
+    var det = Suu * Svv - Suv * Suv; if (Math.abs(det) < 1e-9 * Math.max(1, Suu * Svv)) return null;
+    var a = 0.5 * (Suuu + Suvv), b = 0.5 * (Svvv + Svuu), uc = (a * Svv - b * Suv) / det, vc = (b * Suu - a * Suv) / det;
+    var cx = uc + mx, cy = vc + my, r = Math.sqrt(uc * uc + vc * vc + (Suu + Svv) / n);
+    for (var it = 0; it < 30; it++) {
+      var J = [0, 0, 0, 0, 0, 0, 0, 0, 0], g = [0, 0, 0];
+      P.forEach(function (p) { var dx = cx - p.x, dy = cy - p.y, di = Math.hypot(dx, dy) || 1e-12, res = di - r, jr = [dx / di, dy / di, -1];
+        for (var i = 0; i < 3; i++) { g[i] += jr[i] * res; for (var j = 0; j < 3; j++) J[i * 3 + j] += jr[i] * jr[j]; } });
+      var s = solve3(J, g); if (!s) break; cx -= s[0]; cy -= s[1]; r -= s[2]; if (Math.abs(s[0]) + Math.abs(s[1]) + Math.abs(s[2]) < 1e-10) break;
+    }
+    var rms = Math.sqrt(P.reduce(function (q, p) { var e = Math.hypot(p.x - cx, p.y - cy) - r; return q + e * e; }, 0) / n);
+    return r > 0 && isFinite(r) ? { cx: cx, cy: cy, r: r, rms: rms, n: n } : null;
+  }
+  function solve3(A, b) {
+    var m = [[A[0], A[1], A[2], b[0]], [A[3], A[4], A[5], b[1]], [A[6], A[7], A[8], b[2]]];
+    for (var c = 0; c < 3; c++) { var p = c; for (var r = c + 1; r < 3; r++) if (Math.abs(m[r][c]) > Math.abs(m[p][c])) p = r; if (Math.abs(m[p][c]) < 1e-14) return null; var t = m[c]; m[c] = m[p]; m[p] = t;
+      for (var r2 = 0; r2 < 3; r2++) if (r2 !== c) { var f = m[r2][c] / m[c][c]; for (var k = c; k < 4; k++) m[r2][k] -= f * m[c][k]; } }
+    return [m[0][3] / m[0][0], m[1][3] / m[1][1], m[2][3] / m[2][2]];
+  }
+  var pts3 = function (pts, ks) { return ks.map(function (k) { return pts && pts[k]; }).filter(okP); };
+  /** Scale. o: { mode: 'auto'|'dicom'|'ruler'|'ball'|'head', spacing, cal1, cal2, calMm, ball: [pts], ballMm, head: circle(px), headMm, demoMmPerPx }.
+   *  DICOM pixel spacing is at the detector (no magnification correction) → approx; ruler → approx; ball / known head Ø at hip level → not flagged. */
+  function calibration(o) {
+    o = o || {}; var mode = o.mode || 'auto', sp = spacingXY(o.spacing), out = function (sx, sy, src, approx, extra) { return Object.assign({ sx: sx, sy: sy, mmPerPx: (sx + sy) / 2, source: src, approx: approx, aniso: Math.abs(sx - sy) > 0.01 * Math.max(sx, sy) }, extra || {}); };
+    var ball = function () { var c = fitCircle(o.ball || []); return c && o.ballMm > 0 && c.r > 2 ? out(o.ballMm / (2 * c.r), o.ballMm / (2 * c.r), 'ball', false, { pxDiam: 2 * c.r }) : null; };
+    var head = function () { var c = o.head; return c && c.r > 2 && o.headMm > 0 ? out(o.headMm / (2 * c.r), o.headMm / (2 * c.r), 'head', false, { pxDiam: 2 * c.r }) : null; };
+    var ruler = function () { if (!okP(o.cal1) || !okP(o.cal2) || !(o.calMm > 0)) return null; var l = len(sub(o.cal1, o.cal2)); return l > 3 ? out(o.calMm / l, o.calMm / l, 'ruler', true) : null; };
+    var dicom = function () { return sp ? out(sp.sx, sp.sy, 'dicom', true) : null; };
+    var demo = function () { return o.demoMmPerPx > 0 ? out(o.demoMmPerPx, o.demoMmPerPx, 'demo', false) : null; };
+    var order = mode === 'ball' ? [ball] : mode === 'head' ? [head] : mode === 'ruler' ? [ruler] : mode === 'dicom' ? [dicom] : [ball, head, ruler, dicom, demo];
+    for (var i = 0; i < order.length; i++) { var c = order[i](); if (c) return c; }
+    if (mode !== 'auto' && o.demoMmPerPx > 0) return demo();
+    return { sx: null, sy: null, mmPerPx: null, source: 'none', approx: false, aniso: false };
+  }
+  /** Signed perpendicular distance of q from the line a→b along its caudal (image-down) normal, in mm (scale s = {sx, sy}). */
+  function lineFrame(a, b, s) { var A = { x: a.x * s.sx, y: a.y * s.sy }, B = { x: b.x * s.sx, y: b.y * s.sy }, d = sub(B, A), L = len(d); if (L < 1e-9) return null; var u = { x: d.x / L, y: d.y / L }, n = { x: -u.y, y: u.x }; if (n.y < 0) n = { x: -n.x, y: -n.y }; return { A: A, u: u, n: n, len: L }; }
+  var mmP = function (p, s) { return { x: p.x * s.sx, y: p.y * s.sy }; };
+  function angleTo(fr, a, b, s) { var v = sub(mmP(b, s), mmP(a, s)), L = len(v); if (!fr || L < 1e-9) return null; var c = Math.min(1, Math.abs(dot(v, fr.u)) / L); return Math.acos(c) * D; }
+  function distToLine(q, a, b, s) { var Q = mmP(q, s), A = mmP(a, s), d = sub(mmP(b, s), A), L = len(d); if (L < 1e-9) return null; return Math.abs((Q.x - A.x) * d.y - (Q.y - A.y) * d.x) / L; }
+  /** Femoral head circles (px). */
+  function heads(pts) { return { R: fitCircle(pts3(pts, KEYS.hR.concat(['HR4', 'HR5']))), L: fitCircle(pts3(pts, KEYS.hL.concat(['HL4', 'HL5']))) }; }
+  /** All values of one film. o: { cal: calibration(), ref: 'teardrop'|'ischial', op: 'R'|'L'|'' (operated side), cup: bool }. Lengths mm (null without scale). */
+  function measure(pts, o) {
+    pts = pts || {}; o = o || {}; var cal = o.cal || calibration({}), has = cal.mmPerPx > 0, s = has ? cal : { sx: 1, sy: 1 }, q = [], r = { cal: cal, scaled: has, quality: q };
+    var tR = pts.TR, tL = pts.TL, fr = okP(tR) && okP(tL) ? lineFrame(tR, tL, s) : null; r.teardrop = !!fr;
+    if (fr) { var img = lineFrame(tR, tL, { sx: 1, sy: 1 }); r.tilt = Math.atan2(img.u.y, img.u.x) * D; if (Math.abs(r.tilt) > 5) q.push({ code: 'tilt', v: r.tilt }); if (tR.x > tL.x) r.flipped = true; }
+    var isF = okP(pts.ISR) && okP(pts.ISL) ? lineFrame(pts.ISR, pts.ISL, s) : null; r.ischial = !!isF;
+    var refK = o.ref === 'ischial' && isF ? 'ischial' : 'teardrop', rf = refK === 'ischial' ? isF : fr; r.ref = refK;
+    var below = function (p) { if (!rf || !okP(p)) return null; var P = mmP(p, s); return dot(sub(P, rf.A), rf.n); };
+    var dR = below(pts.LTR), dL = below(pts.LTL);
+    if (dR != null && dL != null) { var k = has ? 1 : null; r.ltR = has ? dR : null; r.ltL = has ? dL : null; r.lld = has ? dR - dL : null; r.lldPx = dR - dL; r.longer = Math.abs(dR - dL) < 0.05 * (has ? 1 : 1 / (cal.mmPerPx || 1)) ? 'eq' : dR > dL ? 'R' : 'L'; r.lldOk = true; void k; }
+    // second LLD on the other line, if both exist (shown as a cross-check)
+    var alt = refK === 'ischial' ? fr : isF;
+    if (alt && okP(pts.LTR) && okP(pts.LTL) && has) { var b2 = function (p) { return dot(sub(mmP(p, s), alt.A), alt.n); }; r.lldAlt = b2(pts.LTR) - b2(pts.LTL); r.refAlt = refK === 'ischial' ? 'teardrop' : 'ischial'; }
+    var H = heads(pts); r.heads = H;
+    ['R', 'L'].forEach(function (sd) {
+      var c = H[sd], o2 = r[sd] = { cor: c ? { x: c.cx, y: c.cy } : null, diam: c && has ? 2 * c.r * cal.mmPerPx : null, rms: c ? c.rms * (has ? cal.mmPerPx : 1) : null };
+      var f1 = pts['F' + sd + '1'], f2 = pts['F' + sd + '2'], T = pts['T' + sd];
+      if (c && okP(f1) && okP(f2) && has) { o2.fo = distToLine(o2.cor, f1, f2, s); var fa = lineFrame(f1, f2, { sx: 1, sy: 1 }); o2.shaftDeg = fa ? Math.abs(Math.atan2(fa.u.x, fa.u.y) * D) : null; if (o2.shaftDeg != null && o2.shaftDeg > 90) o2.shaftDeg = 180 - o2.shaftDeg; }
+      if (c && fr && okP(T) && has) o2.ao = Math.abs(dot(sub(mmP(o2.cor, s), mmP(T, s)), fr.u));
+      if (o2.fo != null && o2.ao != null) o2.go = o2.fo + o2.ao;
+      if (c && fr && has) o2.vcor = dot(sub(mmP(o2.cor, s), fr.A), fr.n); // CoR height relative to the teardrop line (negative = above)
+    });
+    var op = o.op === 'L' ? 'L' : o.op === 'R' ? 'R' : '', ct = op === 'R' ? 'L' : op === 'L' ? 'R' : '', A = op || 'R', B = ct || 'L';
+    r.op = op; r.diff = {}; ['fo', 'ao', 'go', 'vcor'].forEach(function (k) { r.diff[k] = r[A][k] != null && r[B][k] != null ? r[A][k] - r[B][k] : null; }); r.diffOf = A + '−' + B;
+    // cup (post-op)
+    if (o.cup !== false && okP(pts.C1) && okP(pts.C2)) {
+      var cu = r.cup = { inc: angleTo(fr, pts.C1, pts.C2, s) }, Lc = len(sub(mmP(pts.C2, s), mmP(pts.C1, s)));
+      cu.L = has ? Lc : null; cu.Lpx = Lc;
+      if (okP(pts.C3)) {
+        var Sh = 2 * distToLine(pts.C3, pts.C1, pts.C2, s), ratio = Math.min(1, Sh / Lc); cu.S = has ? Sh : null; cu.ratio = Sh / Lc; cu.avL = Math.asin(ratio) * D;
+        var TL = okP(pts.C4) ? distToLine(pts.C4, pts.C1, pts.C2, s) + Sh / 2 : (Lc + Sh) / 2; cu.tl = TL; cu.tlMeasured = okP(pts.C4); cu.avW = 48.05 * Sh / TL - 0.3;
+        if (Sh / Lc > 1.02) q.push({ code: 'cupRatio' });
+      }
+      if (cu.inc == null) q.push({ code: 'cupNoRef' });
+    }
+    var cor = r[A].cor; if (cor && r.cup && okP(pts.C1) && okP(pts.C2)) { var mid = { x: (pts.C1.x + pts.C2.x) / 2, y: (pts.C1.y + pts.C2.y) / 2 }; r.cup.corToCupPx = len(sub(cor, mid)); }
+    r.ok = !!(r.lldOk || r.R.fo != null || r.L.fo != null || (r.cup && r.cup.inc != null));
+    if (r.lld != null && Math.abs(r.lld) > 40) q.push({ code: 'lldBig' });
+    ['R', 'L'].forEach(function (sd) { var x = r[sd]; if (x.fo != null && (x.fo < 10 || x.fo > 80)) q.push({ code: 'foOdd', side: sd }); if (x.diam != null && (x.diam < 20 || x.diam > 70)) q.push({ code: 'headOdd', side: sd }); });
+    if (r.cup && r.cup.inc != null && (r.cup.inc < 10 || r.cup.inc > 75)) q.push({ code: 'incOdd' });
+    return r;
+  }
+  /** Pre vs post comparison rows: [{ k, pre, post, delta }] for the operated side (op) and LLD. */
+  function compare(pre, post) {
+    var g = function (m, f) { return m ? f(m) : null; }, ks = [
+      ['lld', function (m) { return m.lld; }], ['foOp', function (m) { return m[m.op || 'R'].fo; }], ['aoOp', function (m) { return m[m.op || 'R'].ao; }], ['goOp', function (m) { return m[m.op || 'R'].go; }],
+      ['dFo', function (m) { return m.diff.fo; }], ['dAo', function (m) { return m.diff.ao; }], ['dGo', function (m) { return m.diff.go; }], ['dV', function (m) { return m.diff.vcor; }],
+      ['foCt', function (m) { return m[m.op === 'L' ? 'R' : 'L'].fo; }], ['goCt', function (m) { return m[m.op === 'L' ? 'R' : 'L'].go; }]];
+    return ks.map(function (k) { var a = g(pre, k[1]), b = g(post, k[1]); return { k: k[0], pre: a == null ? null : a, post: b == null ? null : b, delta: a != null && b != null ? b - a : null }; });
+  }
+  var inR = function (v, lo, hi) { return v == null ? null : v >= lo && v <= hi; };
+  /** Reference-range membership (no interpretation; for a neutral mark next to the value). */
+  function inRef(k, v) {
+    if (v == null || !isFinite(v)) return null;
+    if (k === 'lld') return Math.abs(v) <= REF.lld.max; if (k === 'fo') return inR(v, REF.fo.lo, REF.fo.hi);
+    if (k === 'dFo' || k === 'dGo') return Math.abs(v) <= REF.dOff.max; if (k === 'inc') return inR(v, REF.inc.lo, REF.inc.hi); if (k === 'av') return inR(v, REF.av.lo, REF.av.hi); return null;
+  }
+  /** Flat values for Studies / Excel from a saved study (record.tha). */
+  function flat(t) {
+    var R = function (s) { return s && s.result ? s.result : null; }, a = R(t && t.pre), b = R(t && t.post), n = function (v) { return v == null || !isFinite(v) ? null : Math.round(v * 100) / 100; };
+    var o = {}; [['pre', a], ['post', b]].forEach(function (q) { var m = q[1] || {}; o[q[0] + 'Lld'] = n(m.lld); o[q[0] + 'Fo'] = n(m.foOp); o[q[0] + 'Ao'] = n(m.aoOp); o[q[0] + 'Go'] = n(m.goOp); o[q[0] + 'dFo'] = n(m.dFo); o[q[0] + 'dGo'] = n(m.dGo); });
+    o.inc = n(b && b.inc); o.avL = n(b && b.avL); o.avW = n(b && b.avW); o.absLldPost = o.postLld == null ? null : Math.abs(o.postLld); o.dLld = o.preLld != null && o.postLld != null ? n(o.postLld - o.preLld) : null; o.dGoPrePost = o.preGo != null && o.postGo != null ? n(o.postGo - o.preGo) : null;
+    return o;
+  }
+  /** Latest saved study with a post-op film for a patient (store.xrays, kind 'tha'). */
+  function latest(store, pid) { var xs = ((store && store.xrays) || []).filter(function (x) { return x && x.kind === 'tha' && x.patientId === pid && x.tha; }); xs.sort(function (a, b) { return (a.date || '') < (b.date || '') ? -1 : 1; }); var wp = xs.filter(function (x) { return x.tha.post && x.tha.post.result; }); return wp.pop() || xs.pop() || null; }
+  function studyVars(store, pid) { var x = latest(store, pid); return x ? flat(x.tha) : null; }
+  /** Excel rows: one per saved study (code instead of the patient id). */
+  function exportRows(store, pts, code) { var ids = {}; (pts || []).forEach(function (p) { ids[p.id] = 1; }); return ((store && store.xrays) || []).filter(function (x) { return x && x.kind === 'tha' && x.tha && ids[x.patientId]; }).sort(function (a, b) { return (a.date || '') < (b.date || '') ? -1 : 1; }).map(function (x) { var f = flat(x.tha); return [code ? code[x.patientId] : x.patientId, x.side || '', x.tha.pre && x.tha.pre.date || null, x.tha.post && x.tha.post.date || null, f.preLld, f.postLld, f.preFo, f.postFo, f.preAo, f.postAo, f.preGo, f.postGo, f.predGo, f.postdGo, f.inc, f.avL, f.avW, x.tha.calSrc || '']; }); }
+  var EXPORT_COLS = { el: ['Κωδικός', 'Πλευρά', 'Ημ/νία pre-op', 'Ημ/νία post-op', 'LLD pre (mm)', 'LLD post (mm)', 'Femoral offset pre (mm)', 'Femoral offset post (mm)', 'Acetabular offset pre (mm)', 'Acetabular offset post (mm)', 'Global offset pre (mm)', 'Global offset post (mm)', 'ΔGlobal offset vs αντίπλευρο pre (mm)', 'ΔGlobal offset vs αντίπλευρο post (mm)', 'Cup inclination (°)', 'Cup anteversion Lewinnek (°)', 'Cup anteversion Widmer (°)', 'Βαθμονόμηση'],
+    en: ['Code', 'Side', 'Pre-op date', 'Post-op date', 'LLD pre (mm)', 'LLD post (mm)', 'Femoral offset pre (mm)', 'Femoral offset post (mm)', 'Acetabular offset pre (mm)', 'Acetabular offset post (mm)', 'Global offset pre (mm)', 'Global offset post (mm)', 'ΔGlobal offset vs contralateral pre (mm)', 'ΔGlobal offset vs contralateral post (mm)', 'Cup inclination (°)', 'Cup anteversion Lewinnek (°)', 'Cup anteversion Widmer (°)', 'Calibration'] };
+  // ---------- synthetic AP pelvis (DEMO + tests): known geometry, mm/px given ----------
+  function rng(s) { return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  /** o: { mmPerPx, lldMm (right LT lower by …), foR, foL, aoR, aoL, headR, headL (Ø mm), post: bool, inc, av (deg, Lewinnek), op, tilt (deg) }. → { W, H, data, mmPerPx, truth: points + values } */
+  function synthPelvis(o) {
+    o = Object.assign({ mmPerPx: 0.25, W: 1520, H: 1000, lldMm: 6, foR: 40, foL: 44, aoR: 34, aoL: 33, headR: 46, headL: 47, post: false, op: 'R', inc: 42, av: 18, cupMm: 52, ballMm: 25, seed: 5, noise: 7, tilt: 0 }, o || {});
+    var W = o.W, H = o.H, k = 1 / o.mmPerPx, data = new Uint8ClampedArray(W * H), rnd = rng(o.seed), cx = W / 2, yT = H * 0.42, sep = 110 * k, th = (o.tilt || 0) / D;
+    var rot = function (p) { var dx = p.x - cx, dy = p.y - yT; return { x: cx + dx * Math.cos(th) - dy * Math.sin(th), y: yT + dx * Math.sin(th) + dy * Math.cos(th) }; };
+    // un-rotated frame: teardrop line y = yT; patient right on the viewer's left
+    var T = { R: { x: cx - sep / 2, y: yT }, L: { x: cx + sep / 2, y: yT } }, out = { truth: {} }, P = {};
+    var side = function (sd) {
+      var sg = sd === 'R' ? -1 : 1, ao = sd === 'R' ? o.aoR : o.aoL, fo = sd === 'R' ? o.foR : o.foL, hd = (sd === 'R' ? o.headR : o.headL) * k / 2, prosth = o.post && sd === o.op;
+      if (prosth) hd = 16 * k; // 32 mm prosthetic head
+      var cor = { x: T[sd].x + sg * ao * k, y: yT - 12 * k }, shaftAng = 8 / D; // shaft tilted 8° (distal end medial)
+      // femoral axis passes at fo (perpendicular) lateral to the CoR; direction (sg*sin, cos) with distal medial
+      var dir = { x: -sg * Math.sin(shaftAng), y: Math.cos(shaftAng) }, nrm = { x: dir.y * sg, y: -dir.x * sg }; // lateral normal
+      var base = { x: cor.x + nrm.x * fo * k, y: cor.y + nrm.y * fo * k }, F1 = { x: base.x + dir.x * 75 * k, y: base.y + dir.y * 75 * k }, F2 = { x: base.x + dir.x * 135 * k, y: base.y + dir.y * 135 * k };
+      var ltD = 55 + (sd === 'R' ? o.lldMm / 2 : -o.lldMm / 2), al = (yT + ltD * k - base.y) / dir.y, ax = { x: base.x + dir.x * al, y: base.y + dir.y * al }, LT = { x: ax.x - nrm.x * 21 * k, y: ax.y - nrm.y * 21 * k }; out.ltb = out.ltb || {}; out.ltb[sd] = { x: ax.x - nrm.x * 14 * k, y: ax.y - nrm.y * 14 * k };
+      P['T' + sd] = T[sd]; P['LT' + sd] = LT; P['F' + sd + '1'] = F1; P['F' + sd + '2'] = F2;
+      [200, 270, 340].forEach(function (a, i) { var t = (sd === 'R' ? a : 180 - a) / D; P['H' + sd + (i + 1)] = { x: cor.x + hd * Math.cos(t), y: cor.y + hd * Math.sin(t) }; });
+      out.truth[sd] = { cor: cor, fo: fo, ao: ao, go: fo + ao, diam: 2 * hd / k, dir: dir, base: base, hd: hd, prosth: prosth };
+    };
+    side('R'); side('L');
+    P.ISR = { x: cx - 66 * k, y: yT + 49 * k }; P.ISL = { x: cx + 66 * k, y: yT + 49 * k };
+    var cup = null;
+    if (o.post) {
+      var c0 = out.truth[o.op].cor, Rc = o.cupMm * k / 2, sg = o.op === 'R' ? -1 : 1, inc = o.inc / D, u = { x: sg * Math.cos(inc), y: -Math.sin(inc) }; // lateral end up
+      var C1 = { x: c0.x - u.x * Rc, y: c0.y - u.y * Rc }, C2 = { x: c0.x + u.x * Rc, y: c0.y + u.y * Rc }, Sx = Rc * Math.sin(o.av / D), nn = { x: -u.y, y: u.x }; if (nn.y < 0) nn = { x: -nn.x, y: -nn.y };
+      var C3 = { x: c0.x + nn.x * Sx, y: c0.y + nn.y * Sx }, C4 = { x: c0.x - nn.x * Rc, y: c0.y - nn.y * Rc };
+      P.C1 = C1; P.C2 = C2; P.C3 = C3; P.C4 = C4; cup = { c: c0, R: Rc, u: u, n: nn, S: Sx };
+    }
+    var ball = { x: cx, y: H - 90 * k * 0.5 - 20, r: o.ballMm * k / 2 }; [30, 150, 270].forEach(function (a, i) { P['B' + (i + 1)] = { x: ball.x + ball.r * Math.cos(a / D), y: ball.y + ball.r * Math.sin(a / D) }; });
+    // raster (un-rotated frame, then rotate sample positions)
+    var irot = function (x, y) { var dx = x - cx, dy = y - yT; return { x: cx + dx * Math.cos(-th) - dy * Math.sin(-th), y: yT + dx * Math.sin(-th) + dy * Math.cos(-th) }; };
+    var tR = out.truth.R, tL = out.truth.L;
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var q = th ? irot(x, y) : { x: x, y: y }, v = 30 + 10 * (y / H);
+      // pelvis ring: ellipse band
+      [-1, 1].forEach(function (s2) { var ix = (q.x - (cx + s2 * 105 * k)) / (75 * k), iy = (q.y - (yT - 95 * k)) / (80 * k), e = ix * ix + iy * iy; if (e < 1 && q.y < yT - 5 * k) v = Math.max(v, 95 + 25 * e); });
+      var sx2 = (q.x - cx) / (48 * k), sy2 = (q.y - (yT - 95 * k)) / (70 * k); if (sx2 * sx2 + sy2 * sy2 < 1) v = Math.max(v, 105);
+      [-1, 1].forEach(function (s2) { var jx = (q.x - (cx + s2 * 62 * k)) / (30 * k), jy = (q.y - (yT + 10 * k)) / (40 * k); if (jx * jx + jy * jy < 1) v = Math.max(v, 100); var ux2 = (q.x - (cx + s2 * 66 * k)) / (14 * k), uy2 = (q.y - (yT + 40 * k)) / (9 * k); if (ux2 * ux2 + uy2 * uy2 < 1) v = Math.max(v, 140); });
+      var px3 = (q.x - cx) / (8 * k), py3 = (q.y - (yT + 25 * k)) / (22 * k); if (px3 * px3 + py3 * py3 < 1) v = Math.max(v, 110);
+      // obturator rings
+      [-1, 1].forEach(function (s2) { var ox = (q.x - (cx + s2 * 40 * k)) / (28 * k), oy = (q.y - (yT + 30 * k)) / (22 * k), r2 = ox * ox + oy * oy; if (r2 < 1.25 && r2 > 0.8) v = 125; });
+      // teardrops
+      ['R', 'L'].forEach(function (sd) { var t = T[sd], dx = q.x - t.x, dy = q.y - (t.y - 10 * k); if (dx * dx / (5 * k * 5 * k) + dy * dy / (11 * k * 11 * k) < 1 && dy < 10 * k) v = Math.max(v, 170); });
+      ['R', 'L'].forEach(function (sd) {
+        var tt = sd === 'R' ? tR : tL, dx = q.x - tt.cor.x, dy = q.y - tt.cor.y, rr = Math.hypot(dx, dy);
+        if (rr < tt.hd) v = tt.prosth ? 245 : Math.max(v, 160 - 30 * rr / tt.hd);
+        // neck + shaft as thick band along the axis from the CoR region down
+        var rel = { x: q.x - tt.base.x, y: q.y - tt.base.y }, along = rel.x * tt.dir.x + rel.y * tt.dir.y, perp = Math.abs(rel.x * tt.dir.y - rel.y * tt.dir.x);
+        if (along > -20 * k && along < 300 * k && perp < 15 * k + Math.max(0, 10 * k - along * 0.3)) v = Math.max(v, perp > 9 * k ? 175 : 115);
+        if (tt.prosth && along > -5 * k && along < 140 * k && perp < 6 * k) v = 240;
+        var nx = q.x - tt.cor.x, ny = q.y - tt.cor.y, nl = { x: tt.base.x + tt.dir.x * 30 * k - tt.cor.x, y: tt.base.y + tt.dir.y * 30 * k - tt.cor.y }, L2 = nl.x * nl.x + nl.y * nl.y, tq = Math.max(0, Math.min(1, (nx * nl.x + ny * nl.y) / L2)), px2 = nx - tq * nl.x, py2 = ny - tq * nl.y;
+        if (Math.hypot(px2, py2) < 11 * k) v = Math.max(v, tt.prosth && tq < 0.9 ? 240 : 150);
+        var lb = out.ltb[sd]; if (Math.hypot(q.x - lb.x, q.y - lb.y) < 7 * k) v = Math.max(v, 165);
+      });
+      if (cup) { var dx2 = q.x - cup.c.x, dy2 = q.y - cup.c.y, rc = Math.hypot(dx2, dy2), side2 = dx2 * cup.n.x + dy2 * cup.n.y; if (rc < cup.R && rc > cup.R - 4 * k && side2 < 0) v = 250; var a1 = dx2 * cup.u.x + dy2 * cup.u.y, b1 = side2; if (cup.S > 1 && Math.abs(a1 * a1 / (cup.R * cup.R) + b1 * b1 / (cup.S * cup.S) - 1) < 0.06) v = 230; }
+      if (Math.abs(Math.hypot(x - ball.x, y - ball.y) - ball.r) < 3) v = 250; else if (Math.hypot(x - ball.x, y - ball.y) < ball.r) v = 200;
+      data[y * W + x] = Math.max(0, Math.min(255, Math.round(v + (rnd() - 0.5) * 2 * o.noise)));
+    }
+    if (th) Object.keys(P).forEach(function (kk) { P[kk] = rot(P[kk]); });
+    var tr = { pts: P, lld: o.lldMm, R: { fo: o.foR, ao: o.aoR, go: o.foR + o.aoR, diam: out.truth.R.diam }, L: { fo: o.foL, ao: o.aoL, go: o.foL + o.aoL, diam: out.truth.L.diam }, inc: o.post ? o.inc : null, av: o.post ? o.av : null, ballMm: o.ballMm };
+    return { W: W, H: H, data: data, mmPerPx: o.mmPerPx, truth: tr, opt: o };
+  }
+  root.OrthoTHA = { VERSION: VERSION, REF: REF, KEYS: KEYS, spacingXY: spacingXY, fitCircle: fitCircle, calibration: calibration, heads: heads, measure: measure, compare: compare, inRef: inRef, flat: flat, latest: latest, studyVars: studyVars, exportRows: exportRows, EXPORT_COLS: EXPORT_COLS, synthPelvis: synthPelvis };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script id="ortho-xray-tha-ui">
+// ===== OrthoThessaly · 🦿 Hip / THA sub-tab (X-rays section): LLD, femoral / acetabular / global offset, cup inclination + anteversion, pre-op vs post-op =====
+// Two AP pelvis films of the same patient: ① pre-op and ② post-op. Each: PNG / JPEG / DICOM, paste (Ctrl+V / 📋) or drag & drop. Scale: DICOM pixel
+// spacing (≈, detector plane), 📏 ruler, calibration ball or a prosthetic head of known Ø. The doctor places every point (no automatic detection);
+// points are draggable, values update live. Saved as its own X-ray study of the selected patient (kind 'tha' → xray_studies.extra); images stay on
+// this device only (IndexedDB, never uploaded). A4 print sheet + Excel (this patient). Doctor-only (portal: nothing). Values + reference ranges only.
+(function () {
+  'use strict';
+  var T0 = window.OrthoTHA, X = window.OrthoXray; if (!T0 || !X) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var lang = function () { return document.documentElement.lang === 'en' ? 'en' : 'el'; };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var num = function (v, d, L) { if (v == null || !isFinite(v)) return '–'; var s = (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); if (/^-0[.,]?0*$/.test(s)) s = s.slice(1); return (L || lang()) === 'el' ? s.replace('.', ',') : s; };
+  var f1 = function (v, L) { return num(v, 1, L); }, sg = function (v, L) { return v == null || !isFinite(v) ? '–' : (v > 0.049 ? '+' : '') + f1(v, L); };
+  var today = function () { var d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+  var fmt = function (s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ''; }); };
+  var COL = { T: '#22d3ee', IS: '#a3e635', LT: '#f472b6', HR: '#fb923c', HL: '#facc15', FR: '#4ade80', FL: '#34d399', C: '#e879f9', CAL: '#60a5fa', B: '#93c5fd' };
+  var gk = function (k) { return /^IS/.test(k) ? 'IS' : /^LT/.test(k) ? 'LT' : /^T[RL]$/.test(k) ? 'T' : /^H[RL]\d$/.test(k) ? k.slice(0, 2) : /^F[RL]\d$/.test(k) ? k.slice(0, 2) : /^C\d$/.test(k) ? 'C' : /^CAL/.test(k) ? 'CAL' : /^B\d$/.test(k) ? 'B' : k; };
+  var colOf = function (k) { return COL[gk(k)] || '#fff'; };
+  var S = {
+    el: { title: 'Ισχίο · LLD / Offset (THA)', sub: 'AP pelvis πριν και μετά την ολική αρθροπλαστική ισχίου: leg length discrepancy (LLD), femoral / acetabular / global offset, cup inclination και anteversion.',
+      secPre: '① Pre-op', secPost: '② Post-op', secPreT: 'Προεγχειρητική AP pelvis (σε όρθια ή ύπτια θέση, πόδια σε ~15° έσω στροφή)', secPostT: 'Μετεγχειρητική AP pelvis με την πρόθεση',
+      upload: 'Ανεβάστε Ακτινογραφία', demo: '🧪 DEMO (συνθετικές)', fileTypes: 'PNG, JPEG ή DICOM', local: 'Οι εικόνες μένουν μόνο σε αυτή τη συσκευή· αποθηκεύονται μόνο τα σημεία και οι τιμές.',
+      noPt: 'Χωρίς επιλεγμένο ασθενή η μέτρηση δεν αποθηκεύεται· επιλέξτε ασθενή για να την κρατήσετε.', noFilmPre: 'Δεν έχει ανοιχτεί προεγχειρητική ακτινογραφία', noFilmPost: 'Δεν έχει ανοιχτεί μετεγχειρητική ακτινογραφία',
+      steps: ['Επιλέξτε ασθενή (πάνω, «Ασθενής») και την πλευρά της επέμβασης.', 'Ανεβάστε ή επικολλήστε AP pelvis (PNG, JPEG, DICOM).', 'Τοποθετήστε τα σημεία με τη σειρά που ζητείται· βαθμονομήστε (σφαίρα, χάρακας ή κεφαλή πρόθεσης)· ελέγξτε και επιβεβαιώστε.'],
+      lmHelp: 'Πατήστε για το σημείο που ζητείται· σύρετε ένα σημείο για να το μετακινήσετε· ροδέλα / τσίμπημα = ζουμ, σύρσιμο στο κενό = μετακίνηση. R / L = δεξιά / αριστερά του ασθενούς.',
+      n_TR: 'Teardrop R', n_TL: 'Teardrop L', n_ISR: 'Ischial tuberosity R', n_ISL: 'Ischial tuberosity L', n_LTR: 'Lesser trochanter R', n_LTL: 'Lesser trochanter L',
+      n_HR: 'Femoral head R · {i}', n_HL: 'Femoral head L · {i}', n_FR1: 'Femoral axis R · κεντρικά', n_FR2: 'Femoral axis R · περιφερικά', n_FL1: 'Femoral axis L · κεντρικά', n_FL2: 'Femoral axis L · περιφερικά',
+      n_C1: 'Cup · άκρο μεγάλου άξονα 1', n_C2: 'Cup · άκρο μεγάλου άξονα 2', n_C3: 'Cup · μικρός άξονας', n_C4: 'Cup · dome', n_CAL1: 'Χάρακας 1', n_CAL2: 'Χάρακας 2', n_B: 'Σφαίρα · {i}',
+      p_TR: 'Teardrop (R): το κατώτερο σημείο', p_TL: 'Teardrop (L): το κατώτερο σημείο', p_ISR: 'Ischial tuberosity (R): το κατώτερο σημείο', p_ISL: 'Ischial tuberosity (L): το κατώτερο σημείο',
+      p_LTR: 'Lesser trochanter (R): η κορυφή (το πιο έσω προέχον σημείο)', p_LTL: 'Lesser trochanter (L): η κορυφή (το πιο έσω προέχον σημείο)',
+      p_HR: 'Femoral head (R): σημείο {i} στο περίγραμμα της κεφαλής', p_HL: 'Femoral head (L): σημείο {i} στο περίγραμμα της κεφαλής',
+      p_FR1: 'Femoral axis (R): κέντρο του αυλού, κεντρικά (κάτω από τον lesser trochanter)', p_FR2: 'Femoral axis (R): κέντρο του αυλού, περιφερικά', p_FL1: 'Femoral axis (L): κέντρο του αυλού, κεντρικά (κάτω από τον lesser trochanter)', p_FL2: 'Femoral axis (L): κέντρο του αυλού, περιφερικά',
+      p_C1: 'Cup: το ένα άκρο του μεγάλου άξονα του στομίου', p_C2: 'Cup: το άλλο άκρο του μεγάλου άξονα του στομίου', p_C3: 'Cup: το σημείο της έλλειψης του στομίου πιο μακριά από τον μεγάλο άξονα', p_C4: 'Cup: το dome (κορυφή του θόλου)',
+      p_CAL1: 'Χάρακας: το πρώτο άκρο', p_CAL2: 'Χάρακας: το δεύτερο άκρο', p_B: 'Σφαίρα βαθμονόμησης: σημείο {i} στο περίγραμμα',
+      addIS: '+ Ischial tuberosities', addC4: '+ Cup dome', zin: 'Μεγέθυνση', zout: 'Σμίκρυνση', zfit: 'Όλη η εικόνα', zroi: '🎯 Περιοχή σημείων', del: '🗑 Διαγραφή', clear: '↺ Καθαρισμός σημείων',
+      calT: 'Βαθμονόμηση', cm_auto: 'Αυτόματη', cm_dicom: 'DICOM pixel spacing', cm_ruler: 'Χάρακας', cm_ball: 'Σφαίρα βαθμονόμησης', cm_head: 'Κεφαλή πρόθεσης (γνωστή Ø)', calMm: 'mm', ballMm: 'Ø σφαίρας (mm)', headMm: 'Ø κεφαλής πρόθεσης (mm)',
+      calSetR: '📏 Σημεία χάρακα', calSetB: '⚪ Σημεία σφαίρας', calClr: '✕', calNone: 'Χωρίς κλίμακα: δεν υπολογίζονται mm (οι γωνίες και ο λόγος S/L υπολογίζονται).',
+      src_dicom: 'DICOM pixel spacing (≈, χωρίς διόρθωση μεγέθυνσης)', src_ruler: 'χάρακας (≈)', src_ball: 'σφαίρα βαθμονόμησης', src_head: 'κεφαλή πρόθεσης γνωστής Ø', src_demo: 'DEMO (γνωστή κλίμακα)', src_none: 'καμία',
+      side: 'Πλευρά επέμβασης', R: 'Δεξιά', L: 'Αριστερά', date: 'Ημερομηνία', refT: 'Γραμμή αναφοράς LLD', ref_teardrop: 'Inter-teardrop line', ref_ischial: 'Bi-ischial line',
+      resT: 'Τιμές', normal: 'Εύρος αναφοράς', value: 'Τιμή', lld: 'LLD', longer: 'μακρύτερο: {s}', equal: 'ίσα', ltDist: 'Lesser trochanter → γραμμή αναφοράς (R / L)', lldAlt: 'LLD με {r}',
+      fo: 'Femoral offset', ao: 'Acetabular offset', go: 'Global offset', dVs: 'Δ {a} − {b}', vcor: 'Centre of rotation: κατακόρυφη απόσταση από την inter-teardrop line', diam: 'Femoral head Ø', inc: 'Cup inclination', avL: 'Cup anteversion (Lewinnek)', avW: 'Cup anteversion (Widmer)', ratio: 'Λόγος S / L', tl: 'TL (Widmer)', tlEst: 'TL ≈ (L + S) / 2 (χωρίς dome)',
+      tilt: 'Η inter-teardrop line έχει κλίση {v}° ως προς τον οριζόντιο άξονα της εικόνας', check: 'εκτός αναμενόμενου εύρους – ελέγξτε τα σημεία', cupRatio: 'S > L: ελέγξτε τα σημεία του cup',
+      cmpT: 'Σύγκριση pre-op / post-op (πλευρά επέμβασης)', pre: 'Pre-op', post: 'Post-op', delta: 'Διαφορά', cmpNone: 'Η σύγκριση εμφανίζεται όταν έχουν μετρηθεί και οι δύο ακτινογραφίες.',
+      c_lld: 'LLD (R − L)', c_foOp: 'Femoral offset (επέμβαση)', c_aoOp: 'Acetabular offset (επέμβαση)', c_goOp: 'Global offset (επέμβαση)', c_dFo: 'ΔFemoral offset vs αντίπλευρο', c_dAo: 'ΔAcetabular offset vs αντίπλευρο', c_dGo: 'ΔGlobal offset vs αντίπλευρο', c_dV: 'ΔCentre of rotation (κατακόρυφα) vs αντίπλευρο', c_foCt: 'Femoral offset (αντίπλευρο)', c_goCt: 'Global offset (αντίπλευρο)',
+      confirm: '✔ Επιβεβαίωση σημείων', conf: 'Επιβεβαιωμένα', notConf: 'Τα σημεία δεν έχουν επιβεβαιωθεί.', save: '💾 Αποθήκευση στον φάκελο', print: '🖨 Εκτύπωση / PDF', xlsx: '📊 Excel', saved: 'Αποθηκεύτηκε',
+      needLogin: 'Συνδεθείτε ως γιατρός.', needPt: 'Επιλέξτε ασθενή.', needMeas: 'Τοποθετήστε τουλάχιστον τα σημεία για LLD ή offset ή cup.', needConf: 'Επιβεβαιώστε πρώτα τα σημεία.', needSide: 'Επιλέξτε πλευρά επέμβασης.',
+      listT: 'Αποθηκευμένες μετρήσεις THA', open: 'Άνοιγμα', newM: '＋ Νέα μέτρηση', editing: 'Επεξεργασία αποθηκευμένης μέτρησης', dash: 'Ισχίο · LLD / Offset (THA)', loadFail: 'Η εικόνα δεν βρέθηκε σε αυτή τη συσκευή· τα σημεία και οι τιμές διατηρούνται.', imgFail: 'Η εικόνα δεν μπορεί να ανοιχτεί: ',
+      sheet: 'Ισχίο · LLD / Offset (THA)', patient: 'Ασθενής', filmD: 'Ακτινογραφίες', sign: 'Υπογραφή', close: '✕ Κλείσιμο', doPrint: '🖨 Εκτύπωση', synth: 'DEMO – συνθετικές εικόνες', unconf: 'Τα σημεία δεν έχουν επιβεβαιωθεί.', calW: 'Βαθμονόμηση',
+      disc: 'Μετρήσεις σε ψηφιακή ακτινογραφία με σημεία που τοποθέτησε ο γιατρός· η ακρίβεια εξαρτάται από τη λήψη και τη βαθμονόμηση.', xlsxName: 'THA-ακτινολογικά', sh: 'THA' },
+    en: { title: 'Hip · LLD / Offset (THA)', sub: 'AP pelvis before and after total hip arthroplasty: leg length discrepancy (LLD), femoral / acetabular / global offset, cup inclination and anteversion.',
+      secPre: '① Pre-op', secPost: '② Post-op', secPreT: 'Pre-operative AP pelvis (standing or supine, feet ~15° internally rotated)', secPostT: 'Post-operative AP pelvis with the prosthesis',
+      upload: 'Upload X-ray', demo: '🧪 DEMO (synthetic)', fileTypes: 'PNG, JPEG or DICOM', local: 'Images stay on this device only; only the points and values are saved.',
+      noPt: 'Without a selected patient the measurement is not saved; select a patient to keep it.', noFilmPre: 'No pre-op film opened', noFilmPost: 'No post-op film opened',
+      steps: ['Select a patient (top, «Patient») and the operated side.', 'Upload or paste an AP pelvis (PNG, JPEG, DICOM).', 'Place the points in the order requested; calibrate (ball, ruler or prosthetic head); check and confirm.'],
+      lmHelp: 'Tap for the requested point; drag a point to move it; wheel / pinch = zoom, drag on empty space = pan. R / L = patient right / left.',
+      n_TR: 'Teardrop R', n_TL: 'Teardrop L', n_ISR: 'Ischial tuberosity R', n_ISL: 'Ischial tuberosity L', n_LTR: 'Lesser trochanter R', n_LTL: 'Lesser trochanter L',
+      n_HR: 'Femoral head R · {i}', n_HL: 'Femoral head L · {i}', n_FR1: 'Femoral axis R · proximal', n_FR2: 'Femoral axis R · distal', n_FL1: 'Femoral axis L · proximal', n_FL2: 'Femoral axis L · distal',
+      n_C1: 'Cup · long-axis end 1', n_C2: 'Cup · long-axis end 2', n_C3: 'Cup · short axis', n_C4: 'Cup · dome', n_CAL1: 'Ruler 1', n_CAL2: 'Ruler 2', n_B: 'Ball · {i}',
+      p_TR: 'Teardrop (R): the lowest point', p_TL: 'Teardrop (L): the lowest point', p_ISR: 'Ischial tuberosity (R): the lowest point', p_ISL: 'Ischial tuberosity (L): the lowest point',
+      p_LTR: 'Lesser trochanter (R): the tip (most medial prominence)', p_LTL: 'Lesser trochanter (L): the tip (most medial prominence)',
+      p_HR: 'Femoral head (R): point {i} on the head outline', p_HL: 'Femoral head (L): point {i} on the head outline',
+      p_FR1: 'Femoral axis (R): canal centre, proximal (below the lesser trochanter)', p_FR2: 'Femoral axis (R): canal centre, distal', p_FL1: 'Femoral axis (L): canal centre, proximal (below the lesser trochanter)', p_FL2: 'Femoral axis (L): canal centre, distal',
+      p_C1: 'Cup: one end of the long axis of the opening', p_C2: 'Cup: the other end of the long axis of the opening', p_C3: 'Cup: the point of the opening ellipse farthest from the long axis', p_C4: 'Cup: the dome',
+      p_CAL1: 'Ruler: first end', p_CAL2: 'Ruler: second end', p_B: 'Calibration ball: point {i} on the outline',
+      addIS: '+ Ischial tuberosities', addC4: '+ Cup dome', zin: 'Zoom in', zout: 'Zoom out', zfit: 'Whole image', zroi: '🎯 Points area', del: '🗑 Delete', clear: '↺ Clear points',
+      calT: 'Calibration', cm_auto: 'Automatic', cm_dicom: 'DICOM pixel spacing', cm_ruler: 'Ruler', cm_ball: 'Calibration ball', cm_head: 'Prosthetic head (known Ø)', calMm: 'mm', ballMm: 'Ball Ø (mm)', headMm: 'Prosthetic head Ø (mm)',
+      calSetR: '📏 Ruler points', calSetB: '⚪ Ball points', calClr: '✕', calNone: 'No scale: no mm values (angles and the S/L ratio are computed).',
+      src_dicom: 'DICOM pixel spacing (≈, no magnification correction)', src_ruler: 'ruler (≈)', src_ball: 'calibration ball', src_head: 'prosthetic head of known Ø', src_demo: 'DEMO (known scale)', src_none: 'none',
+      side: 'Operated side', R: 'Right', L: 'Left', date: 'Date', refT: 'LLD reference line', ref_teardrop: 'Inter-teardrop line', ref_ischial: 'Bi-ischial line',
+      resT: 'Values', normal: 'Reference range', value: 'Value', lld: 'LLD', longer: 'longer: {s}', equal: 'equal', ltDist: 'Lesser trochanter → reference line (R / L)', lldAlt: 'LLD with {r}',
+      fo: 'Femoral offset', ao: 'Acetabular offset', go: 'Global offset', dVs: 'Δ {a} − {b}', vcor: 'Centre of rotation: vertical distance from the inter-teardrop line', diam: 'Femoral head Ø', inc: 'Cup inclination', avL: 'Cup anteversion (Lewinnek)', avW: 'Cup anteversion (Widmer)', ratio: 'Ratio S / L', tl: 'TL (Widmer)', tlEst: 'TL ≈ (L + S) / 2 (no dome)',
+      tilt: 'The inter-teardrop line is tilted {v}° to the image horizontal', check: 'outside the expected range – check the points', cupRatio: 'S > L: check the cup points',
+      cmpT: 'Pre-op / post-op comparison (operated side)', pre: 'Pre-op', post: 'Post-op', delta: 'Change', cmpNone: 'The comparison appears once both films are measured.',
+      c_lld: 'LLD (R − L)', c_foOp: 'Femoral offset (operated)', c_aoOp: 'Acetabular offset (operated)', c_goOp: 'Global offset (operated)', c_dFo: 'ΔFemoral offset vs contralateral', c_dAo: 'ΔAcetabular offset vs contralateral', c_dGo: 'ΔGlobal offset vs contralateral', c_dV: 'ΔCentre of rotation (vertical) vs contralateral', c_foCt: 'Femoral offset (contralateral)', c_goCt: 'Global offset (contralateral)',
+      confirm: '✔ Confirm points', conf: 'Confirmed', notConf: 'The points are not confirmed.', save: '💾 Save to the patient file', print: '🖨 Print / PDF', xlsx: '📊 Excel', saved: 'Saved',
+      needLogin: 'Sign in as a doctor.', needPt: 'Select a patient.', needMeas: 'Place at least the points for LLD, offset or the cup.', needConf: 'Confirm the points first.', needSide: 'Select the operated side.',
+      listT: 'Saved THA measurements', open: 'Open', newM: '＋ New measurement', editing: 'Editing a saved measurement', dash: 'Hip · LLD / Offset (THA)', loadFail: 'The image is not on this device; the points and values are kept.', imgFail: 'The image cannot be opened: ',
+      sheet: 'Hip · LLD / Offset (THA)', patient: 'Patient', filmD: 'Films', sign: 'Signature', close: '✕ Close', doPrint: '🖨 Print', synth: 'DEMO – synthetic images', unconf: 'The points are not confirmed.', calW: 'Calibration',
+      disc: 'Measurements on a digital radiograph with points placed by the doctor; accuracy depends on the projection and the calibration.', xlsxName: 'THA-radiographic', sh: 'THA' }
+  };
+  var t = function (k) { var v = S[lang()][k]; return v != null ? v : k; };
+  var XR = function () { return window.__xray; }, API = function () { return window.__orthoProms; };
+  var pid = function () { var s = XR() && XR().state; return (s && s.pid) || ''; };
+  var V0 = function () { return { img: null, W: 0, H: 0, name: '', dicom: null, blob: null, filmId: null, demo: null, note: '', pts: {}, lv: null, sel: null, pick: null, roi: false, date: today(), calMode: 'auto', calMm: 100, ballMm: 25, headMm: 32, optIS: false, optC4: false }; };
+  var ui = { sec: 'pre', v: { pre: V0(), post: V0() }, side: '', ref: 'teardrop', confirmed: null, msg: '', recId: null, pid: '', pending: false, last: null };
+  var V = function () { return ui.v[ui.sec]; };
+  // ---------- point keys ----------
+  function seqOf(sec) { var v = ui.v[sec], s = ['TR', 'TL', 'LTR', 'LTL', 'HR1', 'HR2', 'HR3', 'HL1', 'HL2', 'HL3', 'FR1', 'FR2', 'FL1', 'FL2']; if (sec === 'post') s = s.concat(['C1', 'C2', 'C3']); if (v.optIS) s = s.concat(['ISR', 'ISL']); if (sec === 'post' && v.optC4) s.push('C4'); return s; }
+  function allOf(sec) { return seqOf(sec).concat(['ISR', 'ISL', 'C4', 'CAL1', 'CAL2', 'B1', 'B2', 'B3']).filter(function (k, i, a) { return a.indexOf(k) === i; }); }
+  function missing(sec) { sec = sec || ui.sec; var v = ui.v[sec]; return seqOf(sec).filter(function (k) { return !v.pts[k]; }); }
+  function nextPt() { var v = V(); if (v.pick && !v.pts[v.pick]) return v.pick; return missing()[0] || null; }
+  var nm = function (pre, k) { var m = /^(H[RL]|B)(\d)$/.exec(k); return m ? fmt(t(pre + m[1]), { i: m[2] }) : t(pre + k); };
+  // ---------- measurement ----------
+  function calOf(sec) { var v = ui.v[sec], H = T0.heads(v.pts), op = ui.side || 'R';
+    return T0.calibration({ mode: v.calMode, spacing: v.dicom && v.dicom.spacing ? v.dicom.spacing : null, cal1: v.pts.CAL1, cal2: v.pts.CAL2, calMm: v.calMm, ball: ['B1', 'B2', 'B3'].map(function (k) { return v.pts[k]; }), ballMm: v.ballMm, head: sec === 'post' ? H[op] : null, headMm: v.headMm, demoMmPerPx: v.demo ? v.demo.mmPerPx : null }); }
+  function measureSec(sec) { var v = ui.v[sec]; return T0.measure(v.pts, { cal: calOf(sec), ref: ui.ref, op: ui.side, cup: sec === 'post' }); }
+  function resOf(m) { if (!m || !m.ok) return null; var op = m.op || 'R', ct = op === 'R' ? 'L' : 'R', r2 = function (x) { return x == null || !isFinite(x) ? null : Math.round(x * 100) / 100; };
+    return { lld: r2(m.lld), longer: m.longer || null, ltR: r2(m.ltR), ltL: r2(m.ltL), lldAlt: r2(m.lldAlt), ref: m.ref, foR: r2(m.R.fo), foL: r2(m.L.fo), aoR: r2(m.R.ao), aoL: r2(m.L.ao), goR: r2(m.R.go), goL: r2(m.L.go), foOp: r2(m[op].fo), aoOp: r2(m[op].ao), goOp: r2(m[op].go), foCt: r2(m[ct].fo), goCt: r2(m[ct].go),
+      dFo: r2(m.diff.fo), dAo: r2(m.diff.ao), dGo: r2(m.diff.go), dV: r2(m.diff.vcor), diamR: r2(m.R.diam), diamL: r2(m.L.diam), inc: r2(m.cup && m.cup.inc), avL: r2(m.cup && m.cup.avL), avW: r2(m.cup && m.cup.avW), ratio: m.cup && m.cup.ratio != null ? Math.round(m.cup.ratio * 1000) / 1000 : null,
+      calSrc: m.cal.source, approx: !!m.cal.approx, tilt: m.tilt != null ? r2(m.tilt) : null, quality: m.quality.map(function (q) { return q.code + (q.side ? ':' + q.side : ''); }) }; }
+  function compute() { var a = ui.v.pre.img || Object.keys(ui.v.pre.pts).length ? measureSec('pre') : null, b = ui.v.post.img || Object.keys(ui.v.post.pts).length ? measureSec('post') : null;
+    ui.last = { pre: a, post: b, cmp: a && b && a.ok && b.ok ? T0.compare(a, b) : null, ok: !!((a && a.ok) || (b && b.ok)) }; return ui.last; }
+  function headline(q, L) { L = L || lang(); if (!q) return ''; var r = (q.post && q.post.result) || (q.pre && q.pre.result); if (!r) return ''; var ap = r.approx ? '≈' : '';
+    return [r.lld != null ? 'LLD ' + ap + sg(r.lld, L) + ' mm' : '', r.dGo != null ? 'ΔGO ' + ap + sg(r.dGo, L) + ' mm' : '', r.inc != null ? 'Inc ' + f1(r.inc, L) + '°' : '', r.avL != null ? 'AV ' + f1(r.avL, L) + '°' : ''].filter(Boolean).join(' · ') + (q.post && q.post.result ? ' (post-op)' : ' (pre-op)'); }
+  // ---------- images ----------
+  function setImage(sec, c, name, dicom, blob, note, demo) {
+    var v = ui.v[sec]; v.img = c; v.W = c.width; v.H = c.height; v.name = name || ''; v.dicom = dicom || null; v.blob = blob || null; v.demo = demo || null; v.note = note || '';
+    v.filmId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); v.pts = {}; v.lv = null; v.sel = null; v.pick = null; v.roi = false;
+    if (!ui.recId) ui.pid = pid(); ui.confirmed = null; ui.msg = ''; ui.sec = sec; renderNow();
+  }
+  function loadUpload(file, sec) { var x = XR(); sec = sec || ui.sec; if (!file || !x || !x.decodeFile) return; x.decodeFile(file, function (c, name, dicom, blob, note) { setImage(sec, c, name, dicom, blob, note, null); }, function (m) { ui.msg = t('imgFail') + m; renderNow(); }); }
+  function grayCanvas(s) { var c = document.createElement('canvas'); c.width = s.W; c.height = s.H; var x = c.getContext('2d'), id = x.createImageData(s.W, s.H); for (var i = 0; i < s.W * s.H; i++) { var q = s.data[i]; id.data[4 * i] = id.data[4 * i + 1] = id.data[4 * i + 2] = q; id.data[4 * i + 3] = 255; } x.putImageData(id, 0, 0); return c; }
+  var DEMO_PRE = { lldMm: 9, foR: 41, foL: 44, aoR: 35, aoL: 33, seed: 5 }, DEMO_POST = { lldMm: 2, foR: 43, foL: 44, aoR: 31, aoL: 33, post: true, op: 'R', inc: 41, av: 17, seed: 9 };
+  var rp1 = function (q) { return { x: Math.round(q.x * 10) / 10, y: Math.round(q.y * 10) / 10 }; };
+  /** DEMO: two synthetic AP pelvis films (pre / post, right THA) with known geometry; example points placed (check, move, confirm like real ones). */
+  function loadDemo() {
+    resetAll(); ui.side = 'R';
+    [['pre', DEMO_PRE], ['post', DEMO_POST]].forEach(function (q) { var s = T0.synthPelvis(q[1]); setImage(q[0], grayCanvas(s), 'DEMO-THA-' + q[0], null, null, '', { mmPerPx: s.mmPerPx, opt: q[1] });
+      var v = ui.v[q[0]]; seqOf(q[0]).concat(['B1', 'B2', 'B3']).forEach(function (k) { if (s.truth.pts[k]) v.pts[k] = rp1(s.truth.pts[k]); }); v.calMode = 'ball'; v.roi = false; v.lv = null; });
+    ui.sec = 'pre'; renderNow();
+  }
+  // ---------- render ----------
+  function render() { if (ui.pending) return; ui.pending = true; requestAnimationFrame(function () { ui.pending = false; renderNow(); }); }
+  function renderNow() {
+    var el = $('xThaPane'); if (!el) return; var A = API();
+    if (!A || (A.store && A.store.portal)) { el.innerHTML = ''; return; } // doctor-only
+    if (ui.pid !== pid()) { if (ui.recId) resetAll(); ui.pid = pid(); ui.msg = ''; }
+    var P = pid(), v = V(), sec = ui.sec, m = compute();
+    var head = '<div class="card xhhead"><h2>🦿 ' + esc(t('title')) + '</h2><p class="muted small">' + esc(t('sub')) + '</p>' + (P ? '' : '<p class="xhwarn small" id="thaNoPt">' + esc(t('noPt')) + '</p>') +
+      '<div class="seg shsecs" id="thaSecSeg" role="tablist">' + ['pre', 'post'].map(function (k) { var mk = m[k] && m[k].ok; return '<button role="tab" data-thasec="' + k + '" class="' + (k === sec ? 'active' : '') + '" aria-selected="' + (k === sec) + '">' + esc(t(k === 'pre' ? 'secPre' : 'secPost')) + (mk ? ' ✓' : '') + '</button>'; }).join('') + '</div>' +
+      '<p class="muted small" id="thaSecHint">' + esc(t(sec === 'pre' ? 'secPreT' : 'secPostT')) + '</p>' +
+      '<div class="row xhfilm"><input type="file" id="thaFile" accept="image/*,.dcm,application/dicom" hidden><label for="thaFile" class="btn ' + (v.img ? 'small' : 'primary xhup') + '" id="thaUpload" role="button" tabindex="0">' + esc(t('upload')) + '</label>' +
+      '<button id="thaDemo" class="small">' + esc(t('demo')) + '</button>' + (v.img ? ' <span class="muted small" id="thaName">' + esc(v.name) + '</span>' : '') + '</div>' +
+      '<p class="muted small">' + esc(t('fileTypes')) + ' · ' + esc(t('local')) + '</p>' + (v.note ? '<p class="small xhwarn" id="thaNote">' + esc(v.note) + '</p>' : '') + (ui.msg && !v.img ? '<p class="xhwarn" id="thaMsg0">' + esc(ui.msg) + '</p>' : '') + '</div>';
+    var editor;
+    if (!v.img) {
+      editor = '<div class="card xhempty" id="thaEmpty"><h3>' + esc(t(sec === 'pre' ? 'noFilmPre' : 'noFilmPost')) + '</h3><ol class="xhsteps">' + t('steps').map(function (x, i) { var dn = i === 0 && P; return '<li class="' + (dn ? 'done' : '') + '">' + esc(x) + (dn ? ' <b>✓ ' + esc(P) + '</b>' : '') + '</li>'; }).join('') + '</ol></div>';
+    } else {
+      var nx = nextPt(), mi = missing(), chips = '<div class="row xhchips" id="thaChips">' + mi.map(function (k) { return chip(k, nx); }).join('') + (!v.optIS ? '<button class="small" id="thaAddIS">' + esc(t('addIS')) + '</button>' : '') + (sec === 'post' && !v.optC4 ? '<button class="small" id="thaAddC4">' + esc(t('addC4')) + '</button>' : '') + '</div>';
+      var tools = '<div class="row xhzoom"><button id="thaZin" class="small" aria-label="' + esc(t('zin')) + '">＋</button><button id="thaZout" class="small" aria-label="' + esc(t('zout')) + '">－</button><button id="thaZfit" class="small" aria-label="' + esc(t('zfit')) + '">⤢</button><button id="thaZroi" class="small">' + esc(t('zroi')) + '</button>' +
+        (v.sel && v.pts[v.sel] ? '<button id="thaDel" class="small">' + esc(t('del')) + ' · ' + esc(nm('n_', v.sel)) + '</button>' : '') + '<button id="thaClear" class="small">' + esc(t('clear')) + '</button></div>';
+      editor = '<div class="card xhedit" id="thaEditor">' + (ui.recId ? '<p class="small muted">✏️ ' + esc(t('editing')) + '</p>' : '') + (nx ? '<p class="xhprompt" id="thaPrompt" data-k="' + nx + '">👉 ' + esc(nm('p_', nx)) + '</p>' : '') + chips + tools +
+        '<div class="xhlmwrap"><canvas id="thaCv" aria-label="' + esc(t('title')) + '"></canvas></div><p class="muted small">' + esc(t('lmHelp')) + '</p>' + calHtml(m[sec]) + '</div>';
+    }
+    var form = '<div class="row ptsform"><span class="small">' + esc(t('side')) + '</span><div class="seg" id="thaSideSeg" role="group" aria-label="' + esc(t('side')) + '">' + ['R', 'L'].map(function (k) { return '<button data-thaside="' + k + '" class="' + (k === ui.side ? 'active' : '') + '">' + esc(t(k)) + '</button>'; }).join('') + '</div>' +
+      '<label class="fld inl">' + esc(t('date')) + ' <input type="date" id="thaDate" value="' + esc(v.date) + '"></label></div>' +
+      '<div class="row ptsform"><label class="fld inl">' + esc(t('refT')) + ' <select id="thaRef"><option value="teardrop"' + (ui.ref === 'teardrop' ? ' selected' : '') + '>' + esc(t('ref_teardrop')) + '</option><option value="ischial"' + (ui.ref === 'ischial' ? ' selected' : '') + '>' + esc(t('ref_ischial')) + '</option></select></label></div>';
+    var act = '<div class="row xhact">' + (m.ok ? (ui.confirmed ? '<span class="xhok small" id="thaConfd">✔ ' + esc(t('conf')) + '</span>' : '<button id="thaConfirm" class="primary">' + esc(t('confirm')) + '</button>') : '') + '<button id="thaSave"' + (P ? '' : ' disabled') + '>' + esc(t('save')) + '</button><button id="thaPrint"' + (m.ok ? '' : ' disabled') + '>' + esc(t('print')) + '</button><button id="thaXlsx"' + (P && recs(P).length ? '' : ' disabled') + '>' + esc(t('xlsx')) + '</button></div>' +
+      (m.ok && !ui.confirmed ? '<p class="small xhwarn" id="thaNotConf">' + esc(t('notConf')) + '</p>' : '') + '<p class="small" id="thaMsg" role="status">' + esc(ui.msg) + '</p>';
+    el.innerHTML = head + '<div class="xptsgrid"><div>' + editor + '</div><div class="card xhpanel" id="thaPanel">' + form + '<div id="thaRes">' + resultsHtml(m) + '</div>' + act + '</div></div>' + listHtml();
+    bindHead(); bindPane(); bindList(); bindEditor(); drawCv();
+  }
+  function chip(k, nx) { return '<button class="small xhchip' + (k === nx ? ' armed' : '') + '" data-thapick="' + k + '"><i style="background:' + colOf(k) + '"></i>' + esc(nm('n_', k)) + '</button>'; }
+  function calHtml(m) { var v = V(), c = m && m.cal, modes = ['auto', 'dicom', 'ruler', 'ball'].concat(ui.sec === 'post' ? ['head'] : []);
+    var h = '<div class="thacal" id="thaCalRow"><div class="row"><label class="fld inl small">' + esc(t('calT')) + ' <select id="thaCalMode">' + modes.map(function (k) { return '<option value="' + k + '"' + (v.calMode === k ? ' selected' : '') + '>' + esc(t('cm_' + k)) + '</option>'; }).join('') + '</select></label>';
+    if (v.calMode === 'ruler' || v.calMode === 'auto') h += '<button id="thaCalSet" class="small">' + esc(t('calSetR')) + '</button><label class="fld inl small">' + esc(t('calMm')) + ' <input type="number" id="thaCalMm" min="1" max="1000" step="0.5" value="' + v.calMm + '"></label>';
+    if (v.calMode === 'ball' || v.calMode === 'auto') h += '<button id="thaBallSet" class="small">' + esc(t('calSetB')) + '</button><label class="fld inl small">' + esc(t('ballMm')) + ' <input type="number" id="thaBallMm" min="5" max="60" step="0.5" value="' + v.ballMm + '"></label>';
+    if (v.calMode === 'head') h += '<label class="fld inl small">' + esc(t('headMm')) + ' <input type="number" id="thaHeadMm" min="22" max="60" step="1" value="' + v.headMm + '"></label>';
+    if (v.pts.CAL1 || v.pts.CAL2 || v.pts.B1) h += '<button id="thaCalClr" class="small" aria-label="clear calibration">' + esc(t('calClr')) + '</button>';
+    return h + '</div><p class="small muted" id="thaCalSrc">' + esc(t('calW')) + ': <b>' + esc(t('src_' + (c ? c.source : 'none'))) + '</b>' + (c && c.mmPerPx ? ' · ' + num(c.mmPerPx, 4) + ' mm/px' : '') + '</p></div>'; }
+  var refTxt = function (k) { var R = T0.REF; return k === 'lld' ? '≤ ' + R.lld.max + ' mm' : k === 'fo' ? R.fo.lo + '–' + R.fo.hi + ' mm' : k === 'dOff' ? '±' + R.dOff.max + ' mm' : k === 'inc' ? R.inc.lo + '–' + R.inc.hi + '°' : k === 'av' ? R.av.lo + '–' + R.av.hi + '°' : ''; };
+  function row(id, label, val, ref, extra, big) { return '<tr id="' + id + '"' + (big ? ' class="shbig"' : '') + '><td>' + esc(label) + '</td><td><b>' + esc(val) + '</b>' + (extra || '') + '</td><td class="muted small">' + esc(ref || '') + '</td></tr>'; }
+  /** Values of one film (+ the pre / post comparison). print: compact. */
+  function filmTable(m, sec, L) {
+    if (!m || !m.ok) return ''; var ap = m.cal.approx ? '≈' : '', mm = function (x) { return x == null ? '–' : ap + f1(x) + ' mm'; }, smm = function (x) { return x == null ? '–' : ap + sg(x) + ' mm'; }, op = m.op || 'R', ct = op === 'R' ? 'L' : 'R';
+    var w = function (c) { return m.quality.some(function (q) { return q.code === c; }) ? ' <span class="xhwarn small">' + esc(t('check')) + '</span>' : ''; };
+    var h = '<div class="tblwrap"><table class="tbl shtbl thatbl" id="thaTbl-' + sec + '"><tr><th>' + esc(t(sec === 'pre' ? 'secPre' : 'secPost')) + '</th><th>' + esc(t('value')) + '</th><th>' + esc(t('normal')) + '</th></tr>';
+    if (m.lldOk) h += row('thaLld-' + sec, t('lld') + ' (R − L) · ' + t('ref_' + m.ref), m.scaled ? smm(m.lld) + ' · ' + (m.longer === 'eq' ? t('equal') : fmt(t('longer'), { s: m.longer })) : '–', refTxt('lld'), w('lldBig'), true) +
+      (m.scaled ? row('thaLt-' + sec, t('ltDist'), mm(m.ltR) + ' / ' + mm(m.ltL), '') : '') + (m.lldAlt != null ? row('thaLldAlt-' + sec, fmt(t('lldAlt'), { r: t('ref_' + m.refAlt) }), smm(m.lldAlt), refTxt('lld')) : '');
+    var both = function (k, lab, ref) { if (m.R[k] == null && m.L[k] == null) return ''; return row('tha' + k + '-' + sec, lab + ' (R / L)', mm(m.R[k]) + ' / ' + mm(m.L[k]), ref, k === 'fo' ? w('foOdd') : ''); };
+    h += both('fo', t('fo'), refTxt('fo')) + both('ao', t('ao'), '') + both('go', t('go'), '');
+    var dl = function (k, lab) { return m.diff[k] == null ? '' : row('thaD' + k + '-' + sec, lab + ' · ' + fmt(t('dVs'), { a: op, b: ct }), smm(m.diff[k]), k === 'fo' || k === 'go' ? refTxt('dOff') : '', '', k === 'go'); };
+    h += dl('fo', t('fo')) + dl('ao', t('ao')) + dl('go', t('go')) + dl('vcor', 'Centre of rotation');
+    if (m.R.diam != null || m.L.diam != null) h += row('thaDiam-' + sec, t('diam') + ' (R / L)', mm(m.R.diam) + ' / ' + mm(m.L.diam), '', w('headOdd'));
+    if (m.cup) { var c = m.cup; h += row('thaInc-' + sec, t('inc'), c.inc == null ? '–' : f1(c.inc) + '°', refTxt('inc'), w('incOdd'), true);
+      if (c.avL != null) h += row('thaAvL-' + sec, t('avL'), f1(c.avL) + '°', refTxt('av'), w('cupRatio'), true) + row('thaAvW-' + sec, t('avW') + (c.tlMeasured ? '' : ' · ' + t('tlEst')), f1(c.avW) + '°', refTxt('av')) + row('thaRatio-' + sec, t('ratio'), num(c.ratio, 3), ''); }
+    h += '</table></div>';
+    if (!m.scaled) h += '<p class="small xhwarn" id="thaNoScale-' + sec + '">' + esc(t('calNone')) + '</p>';
+    if (m.tilt != null && Math.abs(m.tilt) > 5) h += '<p class="small muted" id="thaTilt-' + sec + '">' + esc(fmt(t('tilt'), { v: f1(m.tilt) })) + '</p>';
+    return h;
+  }
+  function cmpTable(m, L) {
+    if (!m.cmp) return '<p class="small muted" id="thaCmpNone">' + esc(t('cmpNone')) + '</p>'; var ap = (m.pre.cal.approx || m.post.cal.approx) ? '≈' : '', v = function (x, s) { return x == null ? '–' : ap + (s ? sg(x) : f1(x)) + ' mm'; };
+    var REFK = { lld: refTxt('lld'), foOp: refTxt('fo'), dFo: refTxt('dOff'), dGo: refTxt('dOff'), foCt: refTxt('fo') };
+    return '<h3 class="thah3">' + esc(t('cmpT')) + '</h3><div class="tblwrap"><table class="tbl shtbl thacmp" id="thaCmp"><tr><th></th><th>' + esc(t('pre')) + '</th><th>' + esc(t('post')) + '</th><th>' + esc(t('delta')) + '</th><th>' + esc(t('normal')) + '</th></tr>' +
+      m.cmp.filter(function (r) { return r.pre != null || r.post != null; }).map(function (r) { var s = /^(lld|d)/.test(r.k); return '<tr data-k="' + r.k + '"><td>' + esc(t('c_' + r.k)) + '</td><td>' + esc(v(r.pre, s)) + '</td><td><b>' + esc(v(r.post, s)) + '</b></td><td>' + esc(r.delta == null ? '–' : ap + sg(r.delta) + ' mm') + '</td><td class="muted small">' + esc(REFK[r.k] || '') + '</td></tr>'; }).join('') +
+      (m.post.cup && m.post.cup.inc != null ? '<tr data-k="inc"><td>' + esc(t('inc')) + '</td><td>–</td><td><b>' + f1(m.post.cup.inc) + '°</b></td><td>–</td><td class="muted small">' + esc(refTxt('inc')) + '</td></tr>' : '') +
+      (m.post.cup && m.post.cup.avL != null ? '<tr data-k="av"><td>' + esc(t('avL')) + '</td><td>–</td><td><b>' + f1(m.post.cup.avL) + '°</b></td><td>–</td><td class="muted small">' + esc(refTxt('av')) + '</td></tr>' : '') + '</table></div>';
+  }
+  function resultsHtml(m) { return filmTable(m[ui.sec], ui.sec) + cmpTable(m); }
+  function changed() { if (ui.confirmed) ui.confirmed = null; ui.msg = ''; }
+  function live() { var m = compute(), r = $('thaRes'); if (r) r.innerHTML = resultsHtml(m); drawCv(); }
+  function bindHead() {
+    document.querySelectorAll('[data-thasec]').forEach(function (b) { b.onclick = function () { ui.sec = b.dataset.thasec; renderNow(); }; });
+    var f = $('thaFile'); if (f) f.onchange = function () { var x = this.files && this.files[0]; if (x) loadUpload(x, ui.sec); this.value = ''; };
+    var u = $('thaUpload'); if (u) u.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('thaFile').click(); } };
+    if ($('thaDemo')) $('thaDemo').onclick = loadDemo;
+  }
+  function bindPane() {
+    document.querySelectorAll('[data-thaside]').forEach(function (b) { b.onclick = function () { ui.side = b.dataset.thaside; changed(); renderNow(); }; });
+    $('thaDate').onchange = function () { V().date = this.value || today(); }; $('thaRef').onchange = function () { ui.ref = this.value; changed(); renderNow(); };
+    var num2 = function (id, key) { var i = $(id); if (i) i.onchange = function () { var x = +String(this.value).replace(',', '.'); if (x > 0) { V()[key] = x; changed(); renderNow(); } }; };
+    num2('thaCalMm', 'calMm'); num2('thaBallMm', 'ballMm'); num2('thaHeadMm', 'headMm');
+    if ($('thaCalMode')) $('thaCalMode').onchange = function () { V().calMode = this.value; changed(); renderNow(); };
+    if ($('thaCalSet')) $('thaCalSet').onclick = function () { var v = V(); delete v.pts.CAL1; delete v.pts.CAL2; v.pick = 'CAL1'; v.sel = null; if (v.calMode === 'auto') v.calMode = 'ruler'; changed(); renderNow(); };
+    if ($('thaBallSet')) $('thaBallSet').onclick = function () { var v = V(); delete v.pts.B1; delete v.pts.B2; delete v.pts.B3; v.pick = 'B1'; v.sel = null; if (v.calMode === 'auto') v.calMode = 'ball'; changed(); renderNow(); };
+    if ($('thaCalClr')) $('thaCalClr').onclick = function () { var v = V(); ['CAL1', 'CAL2', 'B1', 'B2', 'B3'].forEach(function (k) { delete v.pts[k]; }); if (/^(CAL|B)/.test(v.pick || '')) v.pick = null; changed(); renderNow(); };
+    if ($('thaConfirm')) $('thaConfirm').onclick = confirmPts;
+    $('thaSave').onclick = function () { save(); }; $('thaPrint').onclick = function () { openSheet(); }; $('thaXlsx').onclick = function () { xlsx(); };
+    document.querySelectorAll('[data-thapick]').forEach(function (b) { b.onclick = function () { var v = V(); v.pick = b.dataset.thapick; v.sel = null; renderNow(); }; });
+    if ($('thaAddIS')) $('thaAddIS').onclick = function () { var v = V(); v.optIS = true; v.pick = 'ISR'; v.sel = null; renderNow(); };
+    if ($('thaAddC4')) $('thaAddC4').onclick = function () { var v = V(); v.optC4 = true; v.pick = 'C4'; v.sel = null; renderNow(); };
+  }
+  function confirmPts() { var A = API(), u = A && A.currentUser(); if (!u) { ui.msg = t('needLogin'); renderNow(); return false; } var m = compute(); if (!m.ok) { ui.msg = t('needMeas'); renderNow(); return false; }
+    ui.confirmed = { by: u.email, name: u.name, at: new Date().toISOString() }; ui.msg = ''; renderNow(); return true; }
+  // ---------- canvas editor ----------
+  function cvSize(cv) { var w = Math.max(160, cv.parentNode.getBoundingClientRect().width), h = Math.round(Math.min(window.innerHeight * 0.7, Math.max(340, w * 0.75), 720)), dpr = window.devicePixelRatio || 1;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px'; } return { w: w, h: h }; }
+  function fitView(v, z) { var k = Math.min(z.w / v.W, z.h / v.H) * 0.97; return { s: k, tx: (z.w - v.W * k) / 2, ty: (z.h - v.H * k) / 2 }; }
+  function roiView(v, z, sec) { var ks = allOf(sec).filter(function (k) { return v.pts[k]; }); if (ks.length < 2) return fitView(v, z); var xs = ks.map(function (k) { return v.pts[k].x; }), ys = ks.map(function (k) { return v.pts[k].y; });
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), pad = Math.max(x1 - x0, y1 - y0) * 0.12 + 30; x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
+    var k = Math.min(z.w / (x1 - x0), z.h / (y1 - y0)); return { s: k, tx: z.w / 2 - (x0 + x1) / 2 * k, ty: z.h / 2 - (y0 + y1) / 2 * k }; }
+  function drawCv() { var cv = $('thaCv'), v = V(); if (!cv || !v.img) return; var z = cvSize(cv), dpr = window.devicePixelRatio || 1;
+    if (!v.lv || v.lv.img !== v.img) { v.lv = v.roi ? roiView(v, z, ui.sec) : fitView(v, z); v.lv.img = v.img; v.roi = false; }
+    var g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); drawScene(g, z.w, z.h, v.lv, ui.sec, false); }
+  function drawScene(g, w, h, vw, sec, print) {
+    var v = ui.v[sec], p = v.pts, m = (ui.last && ui.last[sec]) || measureSec(sec), P = function (q) { return { x: q.x * vw.s + vw.tx, y: q.y * vw.s + vw.ty }; };
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.save(); g.translate(vw.tx, vw.ty); g.scale(vw.s, vw.s); g.imageSmoothingEnabled = true; g.drawImage(v.img, 0, 0); g.restore();
+    var L = function (a, b, col, lw, dash) { var A = P(a), B = P(b); g.save(); g.strokeStyle = col; g.lineWidth = lw || 2; g.setLineDash(dash || []); g.beginPath(); g.moveTo(A.x, A.y); g.lineTo(B.x, B.y); g.stroke(); g.restore(); };
+    var ext = function (a, b, f) { var d = { x: b.x - a.x, y: b.y - a.y }; return [{ x: a.x - d.x * f, y: a.y - d.y * f }, { x: b.x + d.x * f, y: b.y + d.y * f }]; };
+    var lab = function (q, s, col, dx, dy) { var A = P(q); g.save(); g.font = '700 13px system-ui,sans-serif'; g.lineWidth = 3.5; g.strokeStyle = 'rgba(0,0,0,.9)'; g.fillStyle = col; g.strokeText(s, A.x + (dx || 0), A.y + (dy || 0)); g.fillText(s, A.x + (dx || 0), A.y + (dy || 0)); g.restore(); };
+    var ap = m.cal.approx ? '≈' : '', okP = function (q) { return !!q; }, dense = !print && vw.s < 0.3; // small screens: only LLD + cup labels
+    // reference lines
+    if (p.TR && p.TL) { var e = ext(p.TR, p.TL, 0.9); L(e[0], e[1], COL.T, 2); }
+    if (p.ISR && p.ISL) { var e2 = ext(p.ISR, p.ISL, 0.6); L(e2[0], e2[1], COL.IS, 1.5, [6, 4]); }
+    // LT perpendiculars to the active reference line
+    var ra = m.ref === 'ischial' ? [p.ISR, p.ISL] : [p.TR, p.TL];
+    if (ra[0] && ra[1]) ['R', 'L'].forEach(function (sd) { var q = p['LT' + sd]; if (!q) return; var a = ra[0], b = ra[1], d = { x: b.x - a.x, y: b.y - a.y }, l2 = d.x * d.x + d.y * d.y, tt = ((q.x - a.x) * d.x + (q.y - a.y) * d.y) / l2, f = { x: a.x + d.x * tt, y: a.y + d.y * tt }; L(f, q, COL.LT, 2, [4, 3]);
+      if (!dense && m.scaled && m['lt' + sd] != null) lab({ x: (f.x + q.x) / 2, y: (f.y + q.y) / 2 }, ap + f1(m['lt' + sd]), COL.LT, 6, 4); });
+    ['R', 'L'].forEach(function (sd) {
+      var c = m.heads[sd]; if (c) { var C = P({ x: c.cx, y: c.cy }); g.save(); g.strokeStyle = COL['H' + sd]; g.lineWidth = 2; g.beginPath(); g.arc(C.x, C.y, c.r * vw.s, 0, 7); g.stroke(); g.beginPath(); g.moveTo(C.x - 7, C.y); g.lineTo(C.x + 7, C.y); g.moveTo(C.x, C.y - 7); g.lineTo(C.x, C.y + 7); g.stroke(); g.restore(); }
+      var a = p['F' + sd + '1'], b = p['F' + sd + '2']; if (a && b) { var e3 = ext(a, b, 0.8); L(e3[0], e3[1], COL['F' + sd], 2); }
+      if (c && a && b) { var d = { x: b.x - a.x, y: b.y - a.y }, l2 = d.x * d.x + d.y * d.y, tt = ((c.cx - a.x) * d.x + (c.cy - a.y) * d.y) / l2, f = { x: a.x + d.x * tt, y: a.y + d.y * tt }; L({ x: c.cx, y: c.cy }, f, COL['F' + sd], 2.5);
+        if (!dense && m[sd].fo != null) lab({ x: (c.cx + f.x) / 2, y: (c.cy + f.y) / 2 }, 'FO ' + ap + f1(m[sd].fo), COL['F' + sd], -20, -8); }
+      var T = p['T' + sd]; if (c && T && p.TR && p.TL) { var u = { x: p.TL.x - p.TR.x, y: p.TL.y - p.TR.y }, lu = Math.hypot(u.x, u.y); u = { x: u.x / lu, y: u.y / lu }; var s2 = (c.cx - T.x) * u.x + (c.cy - T.y) * u.y, foot = { x: T.x + u.x * s2, y: T.y + u.y * s2 };
+        L({ x: T.x + u.y * 150, y: T.y - u.x * 150 }, { x: T.x - u.y * 30, y: T.y + u.x * 30 }, COL.T, 1, [3, 3]); L(foot, { x: c.cx, y: c.cy }, COL.T, 1, [3, 3]); L(T, foot, '#fde68a', 2.5); if (!dense && m[sd].ao != null) lab(foot, 'AO ' + ap + f1(m[sd].ao), '#fde68a', -24, 18); }
+    });
+    if (m.cup && p.C1 && p.C2) { L(p.C1, p.C2, COL.C, 2.5); var cx = (p.C1.x + p.C2.x) / 2, cy = (p.C1.y + p.C2.y) / 2, Lh = Math.hypot(p.C2.x - p.C1.x, p.C2.y - p.C1.y) / 2, an = Math.atan2(p.C2.y - p.C1.y, p.C2.x - p.C1.x);
+      if (p.C3) { var Sh = Math.abs((p.C3.x - p.C1.x) * (p.C2.y - p.C1.y) - (p.C3.y - p.C1.y) * (p.C2.x - p.C1.x)) / (2 * Lh); var C = P({ x: cx, y: cy }); g.save(); g.strokeStyle = COL.C; g.setLineDash([5, 4]); g.lineWidth = 1.5; g.beginPath(); g.ellipse(C.x, C.y, Lh * vw.s, Math.max(0.5, Sh * vw.s), an, 0, 7); g.stroke(); g.restore(); }
+      if (m.cup.inc != null) lab(p.C2.y < p.C1.y ? p.C2 : p.C1, 'Inc ' + f1(m.cup.inc) + '°' + (m.cup.avL != null ? ' · AV ' + f1(m.cup.avL) + '°' : ''), COL.C, 10, -12); }
+    if (p.CAL1 && p.CAL2) L(p.CAL1, p.CAL2, COL.CAL, 2);
+    if (m.lldOk && m.scaled && p.TR && p.TL) lab({ x: (p.TR.x + p.TL.x) / 2, y: (p.TR.y + p.TL.y) / 2 }, 'LLD ' + ap + sg(m.lld) + ' mm', '#fff', -40, -14);
+    allOf(sec).forEach(function (k) { var q = p[k]; if (!q) return; var A = P(q), sl = v.sel === k; g.save(); g.beginPath(); g.arc(A.x, A.y, sl ? 8 : 5.5, 0, 7); g.fillStyle = colOf(k); g.fill(); g.lineWidth = 2; g.strokeStyle = '#000'; g.stroke();
+      if (!print && !dense && !/^[HB]/.test(k)) { g.font = '600 11px system-ui,sans-serif'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.fillStyle = '#fff'; var s = k; g.strokeText(s, A.x + 8, A.y - 7); g.fillText(s, A.x + 8, A.y - 7); } g.restore(); });
+    if (v.demo) { g.save(); g.font = '600 11px system-ui,sans-serif'; g.fillStyle = '#fbbf24'; g.fillText('DEMO', 6, 14); g.restore(); }
+    void okP;
+  }
+  function zoom(f, c) { var vw = V().lv; if (!vw) return; var ns = Math.max(0.02, Math.min(40, vw.s * f)), k = ns / vw.s; vw.tx = c.x - (c.x - vw.tx) * k; vw.ty = c.y - (c.y - vw.ty) * k; vw.s = ns; drawCv(); }
+  function afterPlace(v, k) { if (k === 'CAL1') return 'CAL2'; if (k === 'B1') return 'B2'; if (k === 'B2') return 'B3'; if (k === 'ISR' && !v.pts.ISL) return 'ISL'; return null; }
+  function bindEditor() {
+    var cv = $('thaCv'); if (!cv) return; var v = V();
+    var center = function () { return { x: cv.width / (window.devicePixelRatio || 1) / 2, y: cv.height / (window.devicePixelRatio || 1) / 2 }; };
+    $('thaZin').onclick = function () { zoom(1.5, center()); }; $('thaZout').onclick = function () { zoom(1 / 1.5, center()); }; $('thaZfit').onclick = function () { v.lv = null; drawCv(); };
+    $('thaZroi').onclick = function () { v.lv = null; v.roi = true; drawCv(); };
+    $('thaClear').onclick = function () { var keep = {}; ['CAL1', 'CAL2', 'B1', 'B2', 'B3'].forEach(function (k) { if (v.pts[k]) keep[k] = v.pts[k]; }); v.pts = keep; v.pick = null; v.sel = null; changed(); renderNow(); };
+    if ($('thaDel')) $('thaDel').onclick = function () { var k = v.sel; delete v.pts[k]; v.sel = null; v.pick = k; changed(); renderNow(); };
+    var ptr = {}, gest = null, rel = function (e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    var toImg = function (q) { var lv = v.lv; return { x: (q.x - lv.tx) / lv.s, y: (q.y - lv.ty) / lv.s }; };
+    var hit = function (q) { var best = null, bd = 18; allOf(ui.sec).forEach(function (k) { var p = v.pts[k]; if (!p) return; var lv = v.lv, d = Math.hypot(p.x * lv.s + lv.tx - q.x, p.y * lv.s + lv.ty - q.y); if (d < bd) { bd = d; best = k; } }); return best; };
+    cv.onpointerdown = function (e) {
+      if (!v.lv) return; try { cv.setPointerCapture(e.pointerId); } catch (_) {} var q = rel(e); ptr[e.pointerId] = q; e.preventDefault();
+      var ids = Object.keys(ptr); if (ids.length === 2) { var a = ptr[ids[0]], b = ptr[ids[1]]; gest = { type: 'pinch', d: Math.hypot(a.x - b.x, a.y - b.y), c: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }; return; }
+      var hk = hit(q); gest = hk ? { type: 'maybe', k: hk, start: q } : { type: 'tap', start: q, last: q };
+    };
+    cv.onpointermove = function (e) {
+      if (!gest) return; var q = rel(e); if (ptr[e.pointerId]) ptr[e.pointerId] = q;
+      if (gest.type === 'pinch') { var ids = Object.keys(ptr); if (ids.length < 2) return; var a = ptr[ids[0]], b = ptr[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), c = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; v.lv.tx += c.x - gest.c.x; v.lv.ty += c.y - gest.c.y; zoom(d / (gest.d || d), c); gest.d = d; gest.c = c; return; }
+      if (gest.type === 'maybe' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 5) gest = { type: 'drag', k: gest.k };
+      if (gest.type === 'drag') { v.pts[gest.k] = toImg(q); changed(); live(); return; }
+      if (gest.type === 'tap' && Math.hypot(q.x - gest.start.x, q.y - gest.start.y) > 9) gest.type = 'pan';
+      if (gest.type === 'pan') { v.lv.tx += q.x - gest.last.x; v.lv.ty += q.y - gest.last.y; drawCv(); }
+      if (gest.last) gest.last = q;
+    };
+    cv.onpointerup = function (e) {
+      var q = rel(e); delete ptr[e.pointerId]; var gs = gest; gest = null; if (!gs || gs.type === 'pinch') { if (Object.keys(ptr).length) gest = { type: 'pan', last: ptr[Object.keys(ptr)[0]] }; return; }
+      if (gs.type === 'maybe') { if (!nextPt()) { v.sel = gs.k; renderNow(); return; } gs = { type: 'tap' }; }
+      if (gs.type === 'drag') { v.sel = gs.k; renderNow(); return; }
+      if (gs.type === 'tap') { var k = nextPt(); if (!k) { v.sel = null; renderNow(); return; } var p = toImg(q); if (p.x < 0 || p.y < 0 || p.x > v.W || p.y > v.H) return; v.pts[k] = p; v.pick = afterPlace(v, k); v.sel = null; changed(); renderNow(); }
+    };
+    cv.onpointercancel = function (e) { delete ptr[e.pointerId]; gest = null; };
+    cv.onwheel = function (e) { e.preventDefault(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, rel(e)); };
+  }
+  // ---------- save / list / reopen ----------
+  var r2 = function (x) { return x == null || !isFinite(x) ? null : Math.round(x * 100) / 100; };
+  var rp = function (pts) { var o = {}; Object.keys(pts || {}).forEach(function (k) { if (pts[k]) o[k] = { x: r2(pts[k].x), y: r2(pts[k].y) }; }); return o; };
+  function secRec(sec, m) { var v = ui.v[sec]; if (!v.img && !Object.keys(v.pts).length) return null; var c = m ? m.cal : calOf(sec);
+    return { date: v.date, pts: rp(v.pts), cal: { mode: v.calMode, source: c.source, mmPerPx: c.mmPerPx, calMm: v.calMm, ballMm: v.ballMm, headMm: v.headMm }, opt: { IS: !!v.optIS, C4: !!v.optC4 }, filmId: v.img ? v.filmId : null, name: v.name, W: v.W, H: v.H, dicom: v.dicom ? { spacing: v.dicom.spacing || null, modality: v.dicom.modality || null } : null, result: resOf(m) }; }
+  function save() {
+    var A = API(), u = A && A.currentUser(), say = function (s) { ui.msg = s; var e = $('thaMsg'); if (e) e.textContent = s; return null; };
+    if (!u) return say(t('needLogin')); var P = pid(); if (!P) return say(t('needPt')); if (!ui.side) return say(t('needSide')); var m = compute(); if (!m.ok) return say(t('needMeas')); if (!ui.confirmed) return say(t('needConf'));
+    var store = A.store; store.xrays = store.xrays || []; var old = ui.recId ? store.xrays.filter(function (x) { return x.id === ui.recId; })[0] : null, vp = ui.v.pre, vq = ui.v.post, demo = !!(vp.demo || vq.demo);
+    var pre = secRec('pre', m.pre), post = secRec('post', m.post), main = post && post.result ? post : pre;
+    var q = { v: 1, version: T0.VERSION, date: today(), by: { email: u.email, name: u.name }, op: ui.side, ref: ui.ref, pre: pre, post: post, cmp: m.cmp ? m.cmp.map(function (r) { return { k: r.k, pre: r2(r.pre), post: r2(r.post), delta: r2(r.delta) }; }) : null, calSrc: main ? main.cal.source : null, confirmed: ui.confirmed,
+      synth: demo ? { pre: vp.demo ? vp.demo.opt : null, post: vq.demo ? vq.demo.opt : null } : null };
+    var rec = { id: old ? old.id : 'x' + Math.random().toString(36).slice(2, 10), patientId: P, date: main.date, phase: post && post.result ? 'post' : 'pre', side: ui.side, kind: 'tha', view: 'ap-pelvis', landmarks: {}, results: {}, image: [vp.name, vq.name].filter(Boolean).join(' + ') + (demo ? ' (DEMO)' : ''),
+      savedBy: { email: u.email, name: u.name }, source: 'clinician', landmarkSource: 'manual', confirmed: ui.confirmed, synth: demo ? 'tha' : null, thumb: null, filmId: vq.img ? vq.filmId : vp.img ? vp.filmId : null, imgStored: false, localOnly: true, tha: q };
+    store.xrays = store.xrays.filter(function (x) { return x.id !== rec.id; }); store.xrays.push(rec); ui.recId = rec.id;
+    A.persist(); if (A.audit) A.audit('tha-save', P + ' ' + ui.side + ' ' + rec.date + ' ' + headline(q, 'en'));
+    if (!demo) ['pre', 'post'].forEach(function (k) { var v = ui.v[k], of = old && old.tha && old.tha[k] && old.tha[k].filmId; if (v.img && v.filmId !== of) storeFilm(P, v); });
+    ui.msg = t('saved') + ': ' + P + ' · ' + t(ui.side) + ' · ' + headline(q); renderNow(); return rec;
+  }
+  /** The image stays on this device only (IndexedDB of the X-ray tab) – it is never sent to the cloud. */
+  function storeFilm(P, v) { var img = v.img, put = function (b) { if (!b) return; var x = XR(); if (x && x.putFilm) x.putFilm(v.filmId, { blob: b, w: img.width, h: img.height, name: v.name, pid: P, dicom: v.dicom, at: new Date().toISOString(), localOnly: true }).catch(function () {}); };
+    if (v.blob) put(v.blob); else if (img.toBlob) img.toBlob(put, 'image/png'); }
+  function recs(P) { var A = API(); return ((A && A.store.xrays) || []).filter(function (x) { return x.patientId === P && x.kind === 'tha' && x.tha; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); }
+  function listHtml() {
+    var P = pid(); if (!P) return ''; var xs = recs(P);
+    return '<div class="card" id="thaList"><h3>🦿 ' + esc(t('listT')) + ' · ' + esc(P) + '</h3>' + (xs.length ? '<div class="tblwrap"><table class="tbl ptslist"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('side')) + '</th><th>' + esc(t('resT')) + '</th><th></th></tr>' + xs.map(function (x) {
+      return '<tr data-tharec="' + esc(x.id) + '"' + (x.id === ui.recId ? ' class="on"' : '') + '><td>' + esc(x.date) + '</td><td>' + esc(t(x.side)) + '</td><td>' + esc(headline(x.tha)) + '</td><td><button class="small" data-thaopen="' + esc(x.id) + '">' + esc(t('open')) + '</button></td></tr>'; }).join('') + '</table></div>' : '<p class="muted small">—</p>') +
+      (ui.recId ? '<button id="thaNew" class="small">' + esc(t('newM')) + '</button>' : '') + '</div>';
+  }
+  function resetAll() { ui.v = { pre: V0(), post: V0() }; ui.recId = null; ui.confirmed = null; ui.msg = ''; ui.sec = 'pre'; ui.side = ''; ui.ref = 'teardrop'; }
+  function bindList() { document.querySelectorAll('[data-thaopen]').forEach(function (b) { b.onclick = function () { open(b.dataset.thaopen); }; }); if ($('thaNew')) $('thaNew').onclick = function () { resetAll(); renderNow(); }; }
+  function blobCanvas(blob) { return new Promise(function (res, rej) { var u = URL.createObjectURL(blob), im = new Image(); im.onload = function () { var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u); res(c); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('image')); }; im.src = u; }); }
+  function blankCanvas(w, h) { var c = document.createElement('canvas'); c.width = w || 1200; c.height = h || 900; var x = c.getContext('2d'); x.fillStyle = '#111'; x.fillRect(0, 0, c.width, c.height); return c; }
+  /** Opens a saved THA study (list, patient timeline): switches patient + sub-tab, restores points, values and the images (this device only). */
+  function open(id) {
+    var A = API(), x = ((A && A.store.xrays) || []).filter(function (q) { return q.id === id && q.kind === 'tha'; })[0]; if (!x) return Promise.resolve(false);
+    var X2 = XR(); if (X2 && pid() !== x.patientId) X2.selectPatient(x.patientId);
+    var q = x.tha; resetAll(); ui.pid = x.patientId; ui.recId = x.id; ui.side = q.op || x.side || ''; ui.ref = q.ref || 'teardrop'; ui.confirmed = x.confirmed || q.confirmed || null;
+    var jobs = ['pre', 'post'].map(function (k) {
+      var s = q[k]; if (!s) return Promise.resolve(); var v = ui.v[k]; v.pts = JSON.parse(JSON.stringify(s.pts || {})); v.date = s.date || x.date; v.name = s.name || ''; v.filmId = s.filmId; v.dicom = s.dicom || null; v.roi = false;
+      var c = s.cal || {}; v.calMode = c.mode || 'auto'; if (c.calMm) v.calMm = c.calMm; if (c.ballMm) v.ballMm = c.ballMm; if (c.headMm) v.headMm = c.headMm; v.optIS = !!(s.opt && s.opt.IS); v.optC4 = !!(s.opt && s.opt.C4);
+      var done = function (cv, note) { if (ui.recId !== x.id) return; v.img = cv; v.W = cv.width; v.H = cv.height; v.lv = null; v.note = note || ''; };
+      if (q.synth && q.synth[k]) { var sy = T0.synthPelvis(q.synth[k]); v.demo = { mmPerPx: sy.mmPerPx, opt: q.synth[k] }; done(grayCanvas(sy)); return Promise.resolve(); }
+      var dev = X2 && X2.getFilm && s.filmId ? X2.getFilm(s.filmId).then(function (r) { if (!r || !r.blob) throw new Error('none'); v.dicom = r.dicom || v.dicom; return blobCanvas(r.blob); }) : Promise.reject(new Error('none'));
+      return dev.then(function (cv) { done(cv); }, function () { done(blankCanvas(s.W, s.H), t('loadFail')); });
+    });
+    return Promise.all(jobs).then(function () { if (ui.recId !== x.id) return false; ui.sec = q.post ? 'post' : 'pre'; if (X2) X2.setSub('tha'); else renderNow(); return true; });
+  }
+  // ---------- dashboard section ----------
+  function dashHtml(p) {
+    var xs = recs(p.id); if (!xs.length) return '';
+    var c = function (r, k, u) { return r && r[k] != null ? (r.approx && u === 'mm' ? '≈' : '') + (/^(lld|d)/.test(k) ? sg(r[k]) : f1(r[k])) + (u === 'mm' ? ' mm' : '°') : '–'; };
+    return '<h3 style="margin-top:12px">🦿 ' + esc(t('dash')) + '</h3><div class="tblwrap"><table class="tbl" id="thaDash"><tr><th>' + esc(t('date')) + '</th><th>' + esc(t('side')) + '</th><th></th><th>LLD</th><th>' + esc(t('fo')) + '</th><th>ΔGO</th><th>Inc</th><th>AV</th></tr>' +
+      xs.map(function (x) { return ['pre', 'post'].map(function (k) { var s = x.tha[k], r = s && s.result; if (!r) return ''; return '<tr><td>' + esc(s.date || x.date) + '</td><td>' + esc(t(x.side)) + '</td><td>' + esc(t(k)) + '</td><td>' + esc(c(r, 'lld', 'mm')) + '</td><td>' + esc(c(r, 'foOp', 'mm')) + '</td><td>' + esc(c(r, 'dGo', 'mm')) + '</td><td>' + esc(c(r, 'inc')) + '</td><td>' + esc(c(r, 'avL')) + '</td></tr>'; }).join(''); }).join('') + '</table></div>';
+  }
+  // ---------- Excel (this patient, coded) ----------
+  function xlsx() {
+    var A = API(), E = window.OrthoExport, P = pid(); if (!A || !E || !E.writeXlsx || !P) return null; var L = lang();
+    var rows = T0.exportRows(A.store, [{ id: P }], null), cols = T0.EXPORT_COLS[L].map(function (h, i) { return [h, i === 0 ? 14 : i < 4 ? 12 : 16, i >= 2 && i <= 3 ? 'date' : i >= 4 && i <= 16 ? 'num' : undefined]; });
+    var bytes = E.writeXlsx([{ name: t('sh'), cols: cols, rows: rows }], { title: t('title') }), name = t('xlsxName') + '-' + P + '-' + today() + '.xlsx';
+    window.__lastThaXlsx = { name: name, rows: rows, size: bytes.length };
+    try { var b = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); } catch (e) { /* ignore */ }
+    if (A.audit) A.audit('tha-xlsx', P + ' · ' + rows.length + ' rows'); return bytes;
+  }
+  // ---------- A4 print sheet ----------
+  function closeSheet() { document.body.classList.remove('tha-print'); var r = $('thaReport'); if (r) r.remove(); }
+  function sheetImage(sec) { var v = ui.v[sec]; if (!v.img) return ''; var c = document.createElement('canvas'), w = 520, h = 380; c.width = w * 2; c.height = h * 2; var g = c.getContext('2d'); g.scale(2, 2); drawScene(g, w, h, roiView(v, { w: w, h: h }, sec), sec, true); return c.toDataURL('image/jpeg', 0.9); }
+  function openSheet() {
+    var m = compute(); if (!m.ok) { ui.msg = t('needMeas'); renderNow(); return; }
+    closeSheet(); var A = API(), P = pid(), pt = A && P ? A.store.patients.filter(function (x) { return x.id === P; })[0] : null, name = pt ? [pt.lastName, pt.firstName].filter(Boolean).join(' ') : '';
+    var demo = ui.v.pre.demo || ui.v.post.demo, figs = ['pre', 'post'].map(function (k) { var im = sheetImage(k); return im ? '<figure><img src="' + im + '" alt="' + k + '"><figcaption class="small muted">' + esc(t(k === 'pre' ? 'secPre' : 'secPost')) + ' · ' + esc(ui.v[k].date) + '</figcaption></figure>' : ''; }).join('');
+    var d = document.createElement('div'); d.id = 'thaReport'; d.className = 'htoreport thareport'; d.setAttribute('lang', lang());
+    d.innerHTML = '<div class="xcr-bar noprint"><button id="thaPrClose">' + esc(t('close')) + '</button><button id="thaPrDo" class="primary">' + esc(t('doPrint')) + '</button></div><div class="htor-page">' +
+      '<div class="htor-head"><div><h1>🦿 ' + esc(t('sheet')) + '</h1><div class="small">OrthoThessaly · AP pelvis</div></div><div class="htor-meta">' + esc(t('patient')) + ': <b>' + esc(P || '—') + '</b>' + (name ? ' · ' + esc(name) : '') + '<br>' + esc(t('side')) + ': ' + esc(ui.side ? t(ui.side) : '—') + ' · ' + esc(t('refT')) + ': ' + esc(t('ref_' + ui.ref)) + '</div></div>' +
+      (demo ? '<p class="htor-demo">' + esc(t('synth')) + '</p>' : '') + (!ui.confirmed ? '<p class="htor-demo">' + esc(t('unconf')) + '</p>' : '') +
+      '<div class="thar-figs">' + figs + '</div><div class="thar-vals">' + filmTable(m.pre, 'pre') + filmTable(m.post, 'post') + (m.cmp ? cmpTable(m) : '') +
+      ['pre', 'post'].map(function (k) { var x = m[k]; return x && x.ok ? '<p class="small muted">' + esc(t(k === 'pre' ? 'secPre' : 'secPost')) + ' · ' + esc(t('calW')) + ': ' + esc(t('src_' + x.cal.source)) + '</p>' : ''; }).join('') + '</div>' +
+      '<div class="htor-foot"><p>' + esc(t('sign')) + ': ______________________ </p><p>' + esc(t('disc')) + '</p></div></div>';
+    document.body.appendChild(d); document.body.classList.add('tha-print');
+    $('thaPrClose').onclick = closeSheet; $('thaPrDo').onclick = function () { window.print(); };
+  }
+  window.addEventListener('resize', function () { if ($('thaCv')) drawCv(); });
+  window.__xtha = { render: render, renderNow: renderNow, open: open, save: save, confirm: confirmPts, openSheet: openSheet, closeSheet: closeSheet, headline: headline, dashHtml: dashHtml, loadDemo: loadDemo, loadFile: loadUpload, xlsx: xlsx,
+    setSec: function (s) { ui.sec = s === 'post' ? 'post' : 'pre'; renderNow(); }, setSide: function (s) { ui.side = s; changed(); renderNow(); }, setPoint: function (sec, k, p) { ui.v[sec].pts[k] = p; changed(); renderNow(); },
+    clearPoints: function (sec) { ui.v[sec].pts = {}; ui.v[sec].pick = null; changed(); renderNow(); }, setCal: function (sec, o) { var v = ui.v[sec]; Object.keys(o).forEach(function (k) { v[k] = o[k]; }); changed(); renderNow(); },
+    reset: function () { resetAll(); renderNow(); }, compute: compute, get last() { return ui.last; }, get state() { return ui; },
+    toScreen: function (p) { var cv = $('thaCv'), v = V(); if (!cv || !v.lv) return null; var r = cv.getBoundingClientRect(); return { x: r.left + p.x * v.lv.s + v.lv.tx, y: r.top + p.y * v.lv.s + v.lv.ty }; } };
+})();
+</script>
 <!-- ===== TKA pre-op vs post-op comparison + print report ===== -->
 <script id="ortho-xray-compare">
 (function () {
@@ -21709,7 +22333,7 @@ window.OrthoQRGen = qrcode; })();
     return h;
   }
   function rerender(p) {
-    var el = $('xcmp'); if (!el) return; var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder'; });
+    var el = $('xcmp'); if (!el) return; var xs = (api().store.xrays || []).filter(function (x) { return x.patientId === p.id && x.kind !== 'pts' && x.kind !== 'patella' && x.kind !== 'satt' && x.kind !== 'shoulder' && x.kind !== 'tha'; });
     var d = document.createElement('div'); d.innerHTML = html(p, xs); var nw = d.firstChild; if (nw) { var inf = el.querySelector('#xcInfo'); if (inf && inf.open) nw.querySelector('#xcInfo').open = true; el.parentNode.replaceChild(nw, el); } bind(p);
   }
   function bind(p) {
